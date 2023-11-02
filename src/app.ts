@@ -1,10 +1,11 @@
 // Import required modules and dependencies
 import express, { Request, Response } from "express";
-import { Database , initiateDB } from "./models";
+import { Database, initiateDB } from "./models";
 import bodyParser from "body-parser";
 import cors from 'cors';
 import { router as VendorRoute } from "./routes/Public/Vendor.routes";
 import { BAXI_TOKEN } from "./utils/constatnts";
+import morgan from 'morgan'
 
 // Create an Express application
 const app = express();
@@ -12,6 +13,7 @@ const app = express();
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(cors())
+app.use(morgan('dev'))
 
 // Define a route for health checks
 app.get('/healthcheck', async (req: Request, res: Response) => {
@@ -22,7 +24,7 @@ app.get('/healthcheck', async (req: Request, res: Response) => {
     });
 });
 
-app.use('/api/v0',VendorRoute)
+app.use('/api/v0', VendorRoute)
 
 // Asynchronous function to start the server
 async function startServer(): Promise<void> {
