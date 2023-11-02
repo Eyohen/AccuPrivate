@@ -130,7 +130,7 @@ export default class VendorController {
             Amount,
             disco,
             isDebit
-        } = req.body
+        } = req.query as  Record<string, string>
 
         if (!isDebit) return res.status(400).json({ error: true, message: 'Transaction must be completed' })
         if (!BankRefID) return res.status(400).json({ error: true, message: 'Transaction reference is required' })

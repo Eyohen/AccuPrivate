@@ -85,12 +85,9 @@ export default class VendorService {
         try {
             // Make a GET request using the BuyPower Axios instance
             const response = await this.buyPowerAxios().get(`/check/meter?${params}`);
-            console.log(response)
             return response.data;
         } catch (error: any) {
-            console.error(error.response)
             throw new Error()
-
         }
     }
 
