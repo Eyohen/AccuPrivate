@@ -6,7 +6,7 @@ import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL } from "../utils/con
 
 // Define the VendorService class for handling vendor-related operations
 export default class VendorService {
-    
+
     // Static method for obtaining a Baxi vending token
     static async baxiVendToken() {
         // Implementation for obtaining a Baxi vending token can be added here
@@ -48,26 +48,26 @@ export default class VendorService {
             phone: body.phone
         }
 
-        let initialError : any
+        let initialError: any
 
         try {
             // Make a POST request using the BuyPower Axios instance
             const response = await this.buyPowerAxios().post(`/vend?strict=0`, postData);
             return response.data;
-        } catch (error : any) {
+        } catch (error: any) {
             initialError = error
             console.log(error.response.data.message)
         }
 
-        if(initialError.response.data.message === "An unexpected error occurred. Please requery."){
-            try{
+        if (initialError.response.data.message === "An unexpected error occurred. Please requery.") {
+            try {
                 const response = await this.buyPowerAxios().get(`/transaction/${body.transactionId}`)
                 return response.data
-            }catch(error){
+            } catch (error) {
                 throw error
             }
         }
-        
+
     }
 
 
@@ -78,16 +78,19 @@ export default class VendorService {
             meter: body.meterNumber,
             disco: body.disco,
             vendType: 'PREPAID',
+            vertical: 'ELECTRICITY'
         }
         const params: string = querystring.stringify(paramsObject);
 
         try {
             // Make a GET request using the BuyPower Axios instance
             const response = await this.buyPowerAxios().get(`/check/meter?${params}`);
+            console.log(response)
             return response.data;
         } catch (error: any) {
+            console.error(error.response)
             throw new Error()
-            
+
         }
     }
 
