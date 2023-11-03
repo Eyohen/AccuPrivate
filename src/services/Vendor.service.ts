@@ -47,6 +47,7 @@ export default class VendorService {
             const response = await this.baxiAxios().post<IBaxiValidateMeterResponse>('/verify', postData)
             return response.data.data
         } catch (error: any) {
+            console.error(error)
             throw new Error(error.message)
         }
     }
@@ -72,7 +73,7 @@ export default class VendorService {
         const AxiosCreate = axios.create({
             baseURL: `${BAXI_URL}`,
             headers: {
-                Authorization: `Bearer ${BAXI_TOKEN}`
+                'x-api-key': BAXI_TOKEN
             }
         });
 
