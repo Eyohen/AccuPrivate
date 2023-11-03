@@ -4,7 +4,7 @@ import { Database, initiateDB } from "./models";
 import bodyParser from "body-parser";
 import cors from 'cors';
 import { router as VendorRoute } from "./routes/Public/Vendor.routes";
-import { BAXI_TOKEN } from "./utils/constatnts";
+import { BAXI_TOKEN } from "./utils/Constants";
 import morgan from 'morgan'
 
 // Create an Express application

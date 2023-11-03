@@ -1,6 +1,6 @@
 // Import required modules and types
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
-import { IBaxiGetProviderResponse, IBaxiPurchaseResponse, IValidateMeter, IVendToken } from "../utils/Interface";
+import { IBaxiGetProviderResponse, IBaxiPurchaseResponse, IBaxiValidateMeterResponse, IBuyPowerValidateMeterResponse, IValidateMeter, IVendToken } from "../utils/Interface";
 import querystring from "querystring";
 import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL } from "../utils/Constants";
 
@@ -44,8 +44,8 @@ export default class VendorService {
         }
 
         try {
-            const response = await this.baxiAxios().post<IBaxiPurchaseResponse>('/verify', postData)
-            return response.data
+            const response = await this.baxiAxios().post<IBaxiValidateMeterResponse>('/verify', postData)
+            return response.data.data
         } catch (error: any) {
             throw new Error(error.message)
         }
@@ -141,8 +141,8 @@ export default class VendorService {
 
         try {
             // Make a GET request using the BuyPower Axios instance
-            const response = await this.buyPowerAxios().get(`/check/meter?${params}`);
-            return response.data;
+            const response = await this.buyPowerAxios().get<IBuyPowerValidateMeterResponse>(`/check/meter?${params}`);
+            return response.data.data;
         } catch (error: any) {
             throw new Error()
         }

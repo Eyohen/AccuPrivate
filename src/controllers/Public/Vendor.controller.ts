@@ -9,6 +9,7 @@ import Meter from "../../models/Meter.model";
 import VendorService from "../../services/Vendor.service";
 import PowerUnit from "../../models/PowerUnit.model";
 import PowerUnitService from "../../services/PowerUnit.service";
+import { DEFAULT_ELECTRICITY_PROVIDER } from "../../utils/Constants";
 
 interface valideMeterRequestBody {
     meterNumber: string
@@ -58,11 +59,13 @@ export default class VendorController {
             }
 
             // We Check for Meter User 
-            const response = await VendorService.buyPowerValidateMeter({
-                transactionId,
-                meterNumber,
-                disco,
-            })
+            const response = DEFAULT_ELECTRICITY_PROVIDER === 'buypower'
+                ? await VendorService.buyPowerValidateMeter({
+                    transactionId,
+                    meterNumber,
+                    disco,
+                })
+                : await VendorService.baxiValidateMeter(disco, meterNumber)
 
             //Add User
             const user: User | Error = await UserService.addUser({
@@ -130,7 +133,7 @@ export default class VendorController {
             Amount,
             disco,
             isDebit
-        } = req.query as  Record<string, string>
+        } = req.query as Record<string, string>
 
         if (!isDebit) return res.status(400).json({ error: true, message: 'Transaction must be completed' })
         if (!BankRefID) return res.status(400).json({ error: true, message: 'Transaction reference is required' })

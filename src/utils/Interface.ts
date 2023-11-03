@@ -1,16 +1,16 @@
 export interface IVendToken {
-    transactionId: string 
-    meterNumber: string 
-    disco: string 
-    amount: string 
-    phone: string 
+    transactionId: string
+    meterNumber: string
+    disco: string
+    amount: string
+    phone: string
 }
 
 
 export interface IValidateMeter {
-    transactionId: string 
-    meterNumber: string 
-    disco: string 
+    transactionId: string
+    meterNumber: string
+    disco: string
 }
 
 
@@ -63,5 +63,39 @@ export interface IBaxiPurchaseResponse {
         };
         provider_message: string;
         baxiReference: number;
+    }
+}
+
+export interface IBaxiValidateMeterResponse {
+    status: 'success',
+    message: 'Successful',
+    code: 200,
+    data: {
+        name: string,
+        address: string,
+        outstandingBalance: number,
+        dueDate: string,
+        district: string,
+        accountNumber: string,
+        minimumAmount: number,
+        rawOutput: null,
+        errorMessage: null
+    }
+}
+
+export interface IBuyPowerValidateMeterResponse {
+    data: {
+        error: false,
+        discoCode: string,
+        vendType: 'PREPAID' | 'POSTPAID',
+        meterNo: `${number}`,
+        minVendAmount: number,
+        maxVendAmount: number,
+        responseCode: number,
+        outstanding: number,
+        debtRepayment: number,
+        name: string,
+        address: string,
+        orderId: string
     }
 }
