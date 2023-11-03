@@ -6,5 +6,5 @@ export const BAXI_TOKEN: string | undefined = process.env.BAXI_TOKEN
 export const BUYPOWER_URL: string | undefined = process.env.BUYPOWER_URL
 export const BUYPOWER_TOKEN: string | undefined = process.env.BUYPOWER_TOKEN
 export const DEFAULT_ELECTRICITY_PROVIDER = process.env.DEFAULT_ELECTRICITY_PROVIDER as 'baxi' | 'buypower'
-
+export const NODE_ENV = process.env.NODE_ENV as 'development' | 'production'
 

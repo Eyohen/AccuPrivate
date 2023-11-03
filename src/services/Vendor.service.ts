@@ -1,8 +1,8 @@
 // Import required modules and types
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
-import { IBaxiGetProviderResponse, IBaxiPurchaseResponse, IBaxiValidateMeterResponse, IBuyPowerValidateMeterResponse, IValidateMeter, IVendToken } from "../utils/Interface";
+import { IBaxiGetProviderResponse, IBaxiPurchaseResponse, IBaxiValidateMeterResponse, IBuyPowerGetProvidersResponse, IBuyPowerValidateMeterResponse, IValidateMeter, IVendToken } from "../utils/Interface";
 import querystring from "querystring";
-import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL } from "../utils/Constants";
+import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL, NODE_ENV } from "../utils/Constants";
 
 
 // Define the VendorService class for handling vendor-related operations
@@ -40,7 +40,7 @@ export default class VendorService {
         const serviceType = disco.toLowerCase() + '_electric' + '_prepaid'  // e.g. aedc_electric_prepaid
         const postData = {
             service_type: serviceType,
-            account_number: meterNumber
+            account_number: NODE_ENV === 'development' ? '6528651914' : meterNumber // Baxi has a test meter number
         }
 
         try {
@@ -52,11 +52,20 @@ export default class VendorService {
         }
     }
 
+    static async baxiFetchAvailableDiscos() {
+        try {
+            const response = await this.baxiAxios().get<IBaxiGetProviderResponse>('/billers')
+            return response.data
+        } catch (error) {
+            console.error(error)
+            throw new Error()
+        }
+    }
+
     // Static method for checking Disco updates with Baxi
     static async baxiCheckDiscoUp(disco: string) {
         try {
-            const response = await this.baxiAxios().get<IBaxiGetProviderResponse>('/billers')
-            const responseData = response.data
+            const responseData = await this.baxiFetchAvailableDiscos()
 
             for (const provider of responseData.data.providers) {
                 if (provider.shortname === disco) {
@@ -133,7 +142,7 @@ export default class VendorService {
     static async buyPowerValidateMeter(body: IValidateMeter) {
         // Define query parameters using the querystring module
         const paramsObject: any = {
-            meter: body.meterNumber,
+            meter: NODE_ENV === 'development' ? '12345678910' : body.meterNumber,
             disco: body.disco,
             vendType: 'PREPAID',
             vertical: 'ELECTRICITY'
@@ -143,7 +152,7 @@ export default class VendorService {
         try {
             // Make a GET request using the BuyPower Axios instance
             const response = await this.buyPowerAxios().get<IBuyPowerValidateMeterResponse>(`/check/meter?${params}`);
-            return response.data.data;
+            return response.data;
         } catch (error: any) {
             throw new Error()
         }
@@ -159,6 +168,16 @@ export default class VendorService {
             else return false;
         } catch (error) {
             console.log(error)
+            throw new Error()
+        }
+    }
+
+    static async buyPowerFetchAvailableDiscos() {
+        try {
+            const response = await this.buyPowerAxios().get<IBuyPowerGetProvidersResponse>('/discos/status')
+            return response.data
+        } catch (error) {
+            console.error(error)
             throw new Error()
         }
     }

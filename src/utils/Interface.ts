@@ -84,18 +84,35 @@ export interface IBaxiValidateMeterResponse {
 }
 
 export interface IBuyPowerValidateMeterResponse {
-    data: {
-        error: false,
-        discoCode: string,
-        vendType: 'PREPAID' | 'POSTPAID',
-        meterNo: `${number}`,
-        minVendAmount: number,
-        maxVendAmount: number,
-        responseCode: number,
-        outstanding: number,
-        debtRepayment: number,
-        name: string,
-        address: string,
-        orderId: string
-    }
+    error: false,
+    discoCode: string,
+    vendType: 'PREPAID' | 'POSTPAID',
+    meterNo: `${number}`,
+    minVendAmount: number,
+    maxVendAmount: number,
+    responseCode: number,
+    outstanding: number,
+    debtRepayment: number,
+    name: string,
+    address: string,
+    orderId: string
+}
+
+export interface IBuyPowerGetProvidersResponse {
+    "ABUJA": true,
+    "EKO": true,
+    "IKEJA": true,
+    "IBADAN": true,
+    "ENUGU": true,
+    "PH": true,
+    "JOS": true,
+    "KADUNA": true,
+    "KANO": true,
+    "BH": true,
+    "PROTOGY": false,
+    "PHISBOND": false, 
+    "ACCESSPOWER": false,
+    "APLE": false,
+    "BENIN": false,
+    "YOLA": true
 }

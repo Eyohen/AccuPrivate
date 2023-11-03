@@ -33,95 +33,92 @@ interface vendTokenRequestBody {
 
 export default class VendorController {
 
-        static async validateMeter(req: Request, res: Response) {
-            const {
-                meterNumber,
-                venderType,
-                disco,
-                partnerName,
-                phoneNumber,
-                email,
-            }: valideMeterRequestBody = req.body
-            try {
-                const transaction: Transaction | Error = await TransactionService.addTransaction({
-                    id: uuidv4(),
-                    Amount: '0',
-                    Status: Status.PENDING,
-                    Payment_type: PaymentType.PAYMENT,
-                    Transaction_timestamp: new Date(),
-                    Disco: disco,
-                    Superagent: "BUYPOWERNG",
+    static async validateMeter(req: Request, res: Response) {
+        const {
+            meterNumber,
+            venderType,
+            disco,
+            partnerName,
+            phoneNumber,
+            email,
+        }: valideMeterRequestBody = req.body
+        try {
+            const transaction: Transaction | Error = await TransactionService.addTransaction({
+                id: uuidv4(),
+                Amount: '0',
+                Status: Status.PENDING,
+                Payment_type: PaymentType.PAYMENT,
+                Transaction_timestamp: new Date(),
+                Disco: disco,
+                Superagent: "BUYPOWERNG",
+            })
+
+            let transactionId: string = ''
+            if (transaction instanceof Transaction) {
+                transactionId = transaction.id
+            }
+
+            // We Check for Meter User 
+            const response = DEFAULT_ELECTRICITY_PROVIDER === 'buypower'
+                ? await VendorService.buyPowerValidateMeter({
+                    transactionId,
+                    meterNumber,
+                    disco,
                 })
+                : await VendorService.baxiValidateMeter(disco, meterNumber)
 
-                let transactionId: string = ''
-                if (transaction instanceof Transaction) {
-                    transactionId = transaction.id
-                }
+            //Add User
+            const user: User | Error = await UserService.addUser({
+                id: uuidv4(),
+                Address: response.address,
+                Email: email,
+                Name: response.name,
+                Phone_number: phoneNumber,
+            }, transaction)
 
-                // We Check for Meter User 
-                const response = DEFAULT_ELECTRICITY_PROVIDER === 'buypower'
-                    ? await VendorService.buyPowerValidateMeter({
-                        transactionId,
-                        meterNumber,
-                        disco,
-                    })
-                    : await VendorService.baxiValidateMeter(disco, meterNumber)
+            let userId: string = ''
+            if (user instanceof User && transaction instanceof Transaction) {
+                userId = user.id
+            }
 
-                //Add User
-                const user: User | Error = await UserService.addUser({
-                    id: uuidv4(),
-                    Address: response.address,
-                    Email: email,
-                    Name: response.name,
-                    Phone_number: phoneNumber,
-                }, transaction)
+            //Add Meter 
+            const meter: Meter | void = await MeterService.addMeter({
+                id: uuidv4(),
+                address: response.address,
+                Meter_number: meterNumber,
+                UserId: userId,
+                Disco: disco
+            })
 
-                let userId: string = ''
-                if (user instanceof User && transaction instanceof Transaction) {
-                    userId = user.id
-                }
-
-                //Add Meter 
-                const meter: Meter | void = await MeterService.addMeter({
-                    id: uuidv4(),
-                    address: response.address,
-                    Meter_number: meterNumber,
-                    UserId: userId,
-                    Disco: disco
-                })
-
-                if (transaction instanceof Transaction && meter instanceof Meter && user instanceof User) {
-                    res.status(200).json({
-                        transaction: {
-                            transactionId: transaction.id,
-                            Status: transaction.Status,
-                        },
-                        meter: {
-                            disco: meter.Disco,
-                            number: meter.Meter_number,
-                            address: meter.address,
-                            phone: user.Phone_number,
-                            name: user.Name
-                        }
-                    })
-                } else {
-                    throw Error()
-                }
-
-
-            } catch (err) {
-                console.error(err)
-                res.status(400).json(
-                    {
-                        error: true,
-                        message: 'Something went wrong opss'
+            if (transaction instanceof Transaction && meter instanceof Meter && user instanceof User) {
+                res.status(200).json({
+                    transaction: {
+                        transactionId: transaction.id,
+                        Status: transaction.Status,
+                    },
+                    meter: {
+                        disco: meter.Disco,
+                        number: meter.Meter_number,
+                        address: meter.address,
+                        phone: user.Phone_number,
+                        name: user.Name
                     }
-                )
+                })
+            } else {
+                throw Error()
             }
 
 
+        } catch (err) {
+            console.error(err)
+            res.status(400).json(
+                {
+                    error: true,
+                    message: 'Something went wrong opss'
+                }
+            )
         }
-
+    }
 
     static async requestToken(req: Request, res: Response) {
         const {
@@ -206,4 +203,28 @@ export default class VendorController {
 
     }
 
+    static async getDiscos(req: Request, res: Response) {
+        try {
+            if (!['baxi', 'buypower'].includes(req.query.provider as string)) {
+                return res.status(400).json({
+                    error: true,
+                    message: 'Invalid provider'
+                })
+            }
+
+            const discos = req.query.provider === 'baxi'
+                ? await VendorService.baxiFetchAvailableDiscos().then(r => r.data.providers)
+                : await VendorService.buyPowerFetchAvailableDiscos()
+
+            res.status(200).json({
+                discos: discos
+            })
+        } catch (error) {
+            res.status(400).json({
+                error: true,
+                message: 'Something went wrong'
+            })
+        }
+
+    }
 }
