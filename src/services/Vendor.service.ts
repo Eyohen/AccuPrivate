@@ -1,25 +1,82 @@
 // Import required modules and types
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
-import { IValidateMeter, IVendToken } from "../utils/Interface";
+import { IBaxiGetProviderResponse, IBaxiPurchaseResponse, IValidateMeter, IVendToken } from "../utils/Interface";
 import querystring from "querystring";
-import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL } from "../utils/constatnts";
+import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL } from "../utils/Constants";
+
 
 // Define the VendorService class for handling vendor-related operations
 export default class VendorService {
 
     // Static method for obtaining a Baxi vending token
-    static async baxiVendToken() {
-        // Implementation for obtaining a Baxi vending token can be added here
+    static async baxiVendToken(body: IVendToken) {
+        const {
+            transactionId,
+            meterNumber,
+            disco,
+            amount,
+            phone
+        } = body
+
+        try {
+            const response = await this.baxiAxios().post<IBaxiPurchaseResponse>('/request', {
+                amount,
+                phone,
+                account_number: meterNumber,
+                service_type: disco.toLowerCase() + '_electric' + '_prepaid',
+                agentId: 'baxi',
+                agentReference: transactionId
+            })
+
+            return response.data.data
+        } catch (error: any) {
+            console.error(error)
+            throw new Error(error.message)
+        }
     }
 
     // Static method for validating a meter with Baxi
-    static async baxiValidateMeter() {
-        // Implementation for validating a meter with Baxi can be added here
+    static async baxiValidateMeter(disco: string, meterNumber: string) {
+        const serviceType = disco.toLowerCase() + '_electric' + '_prepaid'  // e.g. aedc_electric_prepaid
+        const postData = {
+            service_type: serviceType,
+            account_number: meterNumber
+        }
+
+        try {
+            const response = await this.baxiAxios().post<IBaxiPurchaseResponse>('/verify', postData)
+            return response.data
+        } catch (error: any) {
+            throw new Error(error.message)
+        }
     }
 
     // Static method for checking Disco updates with Baxi
-    static async baxiCheckDiscoUp() {
-        // Implementation for checking Disco updates with Baxi can be added here
+    static async baxiCheckDiscoUp(disco: string) {
+        try {
+            const response = await this.baxiAxios().get<IBaxiGetProviderResponse>('/billers')
+            const responseData = response.data
+
+            for (const provider of responseData.data.providers) {
+                if (provider.shortname === disco) {
+                    return true
+                }
+            }
+        } catch (error) {
+            console.error(error)
+            throw new Error()
+        }
+    }
+
+    static baxiAxios(): AxiosInstance {
+        const AxiosCreate = axios.create({
+            baseURL: `${BAXI_URL}`,
+            headers: {
+                Authorization: `Bearer ${BAXI_TOKEN}`
+            }
+        });
+
+        return AxiosCreate;
     }
 
     // Static method for creating a BuyPower Axios instance
