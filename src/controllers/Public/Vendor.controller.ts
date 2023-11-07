@@ -45,12 +45,12 @@ export default class VendorController {
         try {
             const transaction: Transaction | Error = await TransactionService.addTransaction({
                 id: uuidv4(),
-                Amount: '0',
-                Status: Status.PENDING,
-                Payment_type: PaymentType.PAYMENT,
-                Transaction_timestamp: new Date(),
-                Disco: disco,
-                Superagent: "BUYPOWERNG",
+                amount: '0',
+                status: Status.PENDING,
+                paymentType: PaymentType.PAYMENT,
+                transactionTimestamp: new Date(),
+                disco: disco,
+                superagent: "BUYPOWERNG",
             })
 
             let transactionId: string = ''
@@ -70,10 +70,10 @@ export default class VendorController {
             //Add User
             const user: User | Error = await UserService.addUser({
                 id: uuidv4(),
-                Address: response.address,
-                Email: email,
-                Name: response.name,
-                Phone_number: phoneNumber,
+                address: response.address,
+                email: email,
+                name: response.name,
+                phoneNumber: phoneNumber,
             }, transaction)
 
             let userId: string = ''
@@ -85,9 +85,9 @@ export default class VendorController {
             const meter: Meter | void = await MeterService.addMeter({
                 id: uuidv4(),
                 address: response.address,
-                Meter_number: meterNumber,
-                UserId: userId,
-                Disco: disco
+                meterNumber: meterNumber,
+                userId: userId,
+                disco: disco
             })
 
             if (transaction instanceof Transaction && meter instanceof Meter && user instanceof User) {
@@ -97,11 +97,11 @@ export default class VendorController {
                         Status: transaction.Status,
                     },
                     meter: {
-                        disco: meter.Disco,
-                        number: meter.Meter_number,
+                        disco: meter.disco,
+                        number: meter.meterNumber,
                         address: meter.address,
-                        phone: user.Phone_number,
-                        name: user.Name
+                        phone: user.phoneNumber,
+                        name: user.name
                     }
                 })
             } else {
@@ -125,15 +125,15 @@ export default class VendorController {
             meterNumber,
             transactionId,
             phoneNumber,
-            BankRefID,
-            BankComment,
-            Amount,
+            bankRefId,
+            bankComment,
+            amount,
             disco,
             isDebit
         } = req.query as Record<string, string>
 
         if (!isDebit) return res.status(400).json({ error: true, message: 'Transaction must be completed' })
-        if (!BankRefID) return res.status(400).json({ error: true, message: 'Transaction reference is required' })
+        if (!bankRefId) return res.status(400).json({ error: true, message: 'Transaction reference is required' })
 
         try {
             //Check if Disco is Up
@@ -146,7 +146,7 @@ export default class VendorController {
                 transactionId,
                 meterNumber,
                 disco,
-                amount: Amount,
+                amount: amount,
                 phone: phoneNumber,
             })
 
@@ -154,9 +154,12 @@ export default class VendorController {
             console.log(tokenInfo)
 
             //Get Meter 
+            console.log('pre')
             const meter: Meter | void | null = await MeterService.veiwSingleMeterByMeterNumber(meterNumber)
+            console.log('post')
             let meterId = ''
             let meterAddress = ''
+            console.log('meter', meter)
             if (meter instanceof Meter) {
                 meterId = meter.id
                 meterAddress = meter.address
@@ -166,22 +169,22 @@ export default class VendorController {
             // add PowerUnit 
             const newPowerUnit: PowerUnit | void = await PowerUnitService.addPowerUnit({
                 id: uuidv4(),
-                TransactionId: transactionId,
-                Disco: disco,
-                Amount: Amount,
-                MeterId: meterId,
-                Superagent: 'BUYPOWER',
-                Address: meterAddress,
-                Token_number: tokenInfo.token,
-                Token_units: tokenInfo.units
+                transactionId: transactionId,
+                disco: disco,
+                amount: amount,
+                meterId: meterId,
+                superagent: 'BUYPOWER',
+                address: meterAddress,
+                tokenNumber: tokenInfo.token,
+                tokenUnits: tokenInfo.units
             })
 
             //update Transaction
-            await TransactionService.updateSingleTransaction(transactionId, { Amount })
+            await TransactionService.updateSingleTransaction(transactionId, { amount })
 
             //return PowerUnit
             res.status(200).json({
-                newPowerUnit
+                newPowerUnit: { ...newPowerUnit, token: '0000-0000-0000-0000' }
             })
 
         } catch (err: any) {

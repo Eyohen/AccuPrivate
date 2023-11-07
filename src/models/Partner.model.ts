@@ -36,7 +36,7 @@ export default class Partner extends Model<Partner | IPartner> {
 // Interface representing the structure of a Partner entity
 export interface IPartner {
     id: string;              // Unique identifier for the Partner
-    companyAddress: string; // Address of the Partner's company
+    companyAddress: string; // address of the Partner's company
     companyEmail: string;   // Email address of the Partner's company
     companyName: string;    // Name of the Partner's company
     contactPhone: string;   // Phone number for contacting the Partner

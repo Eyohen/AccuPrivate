@@ -32,9 +32,9 @@ export default class MeterService {
         }
     }
 
-    static async veiwSingleMeterByMeterNumber(Meter_number: string): Promise<Meter | void | null> {
+    static async veiwSingleMeterByMeterNumber(meterNumber: string): Promise<Meter | void | null> {
         try {
-            const meter: Meter | null = await Meter.findOne({ where: { Meter_number } })
+            const meter: Meter | null = await Meter.findOne({ where: { meterNumber } })
             return meter
         } catch (error) {
             console.log(error)

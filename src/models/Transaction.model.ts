@@ -1,8 +1,8 @@
 // Import necessary modules and dependencies
 import { Table, Column, Model, DataType, IsUUID, PrimaryKey, ForeignKey, BelongsTo, HasMany, HasOne } from "sequelize-typescript";
-import User  from "./User.model";
+import User from "./User.model";
 import Partner from "./Partner.model";
-import Event  from "./Event.model";
+import Event from "./Event.model";
 import PowerUnit from "./PowerUnit.model";
 
 // Define enums for status and payment type
@@ -26,9 +26,9 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     @Column
     id: string;
 
-    // Amount associated with the transaction
+    // amount associated with the transaction
     @Column({ type: DataType.STRING, allowNull: false, defaultValue: '0' })
-    Amount: string;
+    amount: string;
 
     // Status of the transaction (complete, pending, or failed)
     @Column({ type: DataType.ENUM, values: Object.values(Status), defaultValue: Status.PENDING, allowNull: false })
@@ -54,7 +54,7 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     @Column({ type: DataType.STRING, allowNull: true })
     bankComment?: string;
 
-    // Superagent associated with the transaction
+    // superagent associated with the transaction
     @Column({ type: DataType.STRING, allowNull: false })
     superagent: string;
 
@@ -89,16 +89,16 @@ export default class Transaction extends Model<ITransaction | Transaction> {
 
 
 // Define an interface representing a transaction (ITransaction) with various properties.
-export interface ITransaction  {
+export interface ITransaction {
     id: string; // Unique identifier for the transaction
-    amount: string; // Amount associated with the transaction
+    amount: string; // amount associated with the transaction
     status: Status; // Status of the transaction (e.g., COMPLETE, PENDING, FAILED)
     paymentType: PaymentType; // Type of payment (e.g., REVERSAL, PAYMENT)
     transactionTimestamp: Date; // Timestamp of the transaction
     disco: string; // Disco associated with the transaction
     bankRefID?: string; // Bank reference ID related to the transaction
     bankComment?: string; // Comments or notes from the bank regarding the transaction
-    superagent: string; // Superagent associated with the transaction
+    superagent: string; // superagent associated with the transaction
     userId?: string; // Unique identifier of the user associated with the transaction
     partnerId?: string; // Unique identifier of the Partner associated with the transaction
 }

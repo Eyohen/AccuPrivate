@@ -12,7 +12,7 @@ export default class Meter extends Model<Meter | IMeter> {
     @Column
     id: string;
 
-    // Address associated with the meter
+    // address associated with the meter
     @Column({ type: DataType.STRING, allowNull: false })
     address: string;
 
@@ -42,7 +42,7 @@ export default class Meter extends Model<Meter | IMeter> {
 // Interface to represent a Meter object with specific properties
 export interface IMeter {
     id: string;          // Unique identifier for the meter
-    address: string;     // Address associated with the meter
+    address: string;     // address associated with the meter
     meterNumber: string; // Meter number for identification
     userId: string;      // Identifier of the associated user
     disco: string;      // Disco name for meter 

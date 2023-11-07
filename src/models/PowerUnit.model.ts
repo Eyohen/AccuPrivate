@@ -12,7 +12,7 @@ export default class PowerUnit extends Model<PowerUnit | IPowerUnit> {
     @Column
     id: string;
 
-    // Address of the power unit
+    // address of the power unit
     @Column({ type: DataType.STRING, allowNull: false })
     address: string;
 
@@ -20,11 +20,11 @@ export default class PowerUnit extends Model<PowerUnit | IPowerUnit> {
     @Column({ type: DataType.STRING, allowNull: false })
     disco: string;
 
-    // Superagent associated with the power unit
+    // superagent associated with the power unit
     @Column({ type: DataType.STRING, allowNull: false })
     superagent: string;
 
-    // Amount associated with the power unit (with a default value)
+    // amount associated with the power unit (with a default value)
     @Column({ type: DataType.STRING, allowNull: false, defaultValue: '0' })
     amount: string;
 
@@ -61,10 +61,10 @@ export default class PowerUnit extends Model<PowerUnit | IPowerUnit> {
 // Define an interface for a PowerUnit, representing the shape of a PowerUnit object.
 export interface IPowerUnit {
     id: string;               // Unique identifier for the PowerUnit.
-    address: string;         // Address associated with the PowerUnit.
+    address: string;         // address associated with the PowerUnit.
     disco: string;           // Disco (Distribution Company) associated with the PowerUnit.
-    superagent: string;      // Superagent associated with the PowerUnit.
-    amount: string;          // Amount related to the PowerUnit.
+    superagent: string;      // superagent associated with the PowerUnit.
+    amount: string;          // amount related to the PowerUnit.
     tokenNumber: number;    // Token number associated with the PowerUnit.
     tokenUnits: string;    // Token units associated with the PowerUnit.
     meterId: string;         // Unique identifier of the Meter associated with the PowerUnit.
