@@ -3,6 +3,7 @@ import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
 import { IBaxiGetProviderResponse, IBaxiPurchaseResponse, IBaxiValidateMeterResponse, IBuyPowerGetProvidersResponse, IBuyPowerValidateMeterResponse, IValidateMeter, IVendToken } from "../utils/Interface";
 import querystring from "querystring";
 import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL, NODE_ENV } from "../utils/Constants";
+import logger from "../utils/Logger";
 
 
 // Define the VendorService class for handling vendor-related operations
@@ -30,7 +31,7 @@ export default class VendorService {
 
             return response.data.data
         } catch (error: any) {
-            console.error(error)
+            logger.error(error)
             throw new Error(error.message)
         }
     }
@@ -47,7 +48,7 @@ export default class VendorService {
             const response = await this.baxiAxios().post<IBaxiValidateMeterResponse>('/verify', postData)
             return response.data.data
         } catch (error: any) {
-            console.error(error)
+            logger.error(error)
             throw new Error(error.message)
         }
     }
@@ -57,7 +58,7 @@ export default class VendorService {
             const response = await this.baxiAxios().get<IBaxiGetProviderResponse>('/billers')
             return response.data
         } catch (error) {
-            console.error(error)
+            logger.error(error)
             throw new Error()
         }
     }
@@ -73,7 +74,7 @@ export default class VendorService {
                 }
             }
         } catch (error) {
-            console.error(error)
+            logger.error(error)
             throw new Error()
         }
     }
@@ -123,7 +124,7 @@ export default class VendorService {
             return response.data;
         } catch (error: any) {
             initialError = error
-            console.log(error.response.data.message)
+            logger.info(error.response.data.message)
         }
 
         if (initialError.response.data.message === "An unexpected error occurred. Please requery.") {
@@ -154,7 +155,7 @@ export default class VendorService {
             const response = await this.buyPowerAxios().get<IBuyPowerValidateMeterResponse>(`/check/meter?${params}`);
             return response.data;
         } catch (error: any) {
-            throw new Error()
+            throw new Error('An error occurred while validating meter');
         }
     }
 
@@ -167,7 +168,7 @@ export default class VendorService {
             if (data[disco] === true) return true;
             else return false;
         } catch (error) {
-            console.log(error)
+            logger.info(error)
             throw new Error()
         }
     }
@@ -177,7 +178,7 @@ export default class VendorService {
             const response = await this.buyPowerAxios().get<IBuyPowerGetProvidersResponse>('/discos/status')
             return response.data
         } catch (error) {
-            console.error(error)
+            logger.error(error)
             throw new Error()
         }
     }

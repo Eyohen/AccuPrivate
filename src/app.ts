@@ -1,15 +1,20 @@
+import 'express-async-errors'
 // Import required modules and dependencies
 import express, { Request, Response } from "express";
+import errorHandler from "./middlewares/ErrorHandler";
 import { Database, initiateDB } from "./models";
 import bodyParser from "body-parser";
 import cors from 'cors';
 import { router as VendorRoute } from "./routes/Public/Vendor.routes";
 import { BAXI_TOKEN } from "./utils/Constants";
 import morgan from 'morgan'
+import logger from "./utils/Logger";
+import helmet from 'helmet';
 
 // Create an Express application
 const app = express();
 
+app.use(helmet())
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(cors())
@@ -25,6 +30,8 @@ app.get('/healthcheck', async (req: Request, res: Response) => {
 });
 
 app.use('/api/v0', VendorRoute)
+app.use(errorHandler)
+
 
 // Asynchronous function to start the server
 async function startServer(): Promise<void> {
@@ -37,11 +44,11 @@ async function startServer(): Promise<void> {
 
         // Start the server and listen on port 3000
         app.listen(3000, () => {
-            console.log("Server Started on Port 3000");
+            logger.info("Server Started on Port 3000");
         });
     } catch (err) {
         // Log any errors that occur during server startup
-        console.error(err);
+        logger.error(err);
         // Exit the process with a non-zero status code to indicate an error
         process.exit(1);
     }

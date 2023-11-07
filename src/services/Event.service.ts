@@ -1,10 +1,11 @@
 // Import necessary types and the Event model
 import { ICreateEvent, IEvent } from "../models/Event.model";
 import Event from "../models/Event.model";
+import logger from "../utils/Logger";
 
 // EventService class for handling event-related operations
 export default class EventService {
-    
+
     // Method for adding a new event to the database
     async addEvent(event: ICreateEvent): Promise<Event | void> {
         try {
@@ -14,7 +15,7 @@ export default class EventService {
             newEvent.save();
             return newEvent;
         } catch (err) {
-            console.log('Error Logging Event');
+            logger.info('Error Logging Event');
         }
     }
 
@@ -25,11 +26,11 @@ export default class EventService {
             const event: Event | null = await Event.findByPk(uuid);
             return event;
         } catch (err) {
-            console.log('Error reading Event');
+            logger.info('Error reading Event');
         }
     }
 
-   // async updateSingleEvent(uuid: string , event: IEvent): Promise<Event>{
+    // async updateSingleEvent(uuid: string , event: IEvent): Promise<Event>{
 
     // }
 

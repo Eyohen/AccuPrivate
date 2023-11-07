@@ -6,11 +6,13 @@ export default class UserService {
 
     static async addUser(user: ICreateUser, transaction?: Transaction | Error, TransactionId?: string,): Promise<User | Error> {
         try {
+            console.log('adding user')
             const newUser: User = User.build(user)
             await newUser.save()
             if (transaction && transaction instanceof Transaction) newUser.$add('transaction', transaction)
             return newUser
         } catch (error) {
+            console.error(error)
             throw new Error()
         }
     }

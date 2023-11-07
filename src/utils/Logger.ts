@@ -22,7 +22,6 @@ const enumerateErrorFormat = format((info) => {
 const logger = winston.createLogger({
     level: 'info',
     format: combine(
-        enumerateErrorFormat(),
         colorize({
             colors: { info: 'cyan', error: 'red' }
         }),
@@ -40,7 +39,6 @@ const logger = winston.createLogger({
                     colors: { info: 'cyan', error: 'red' }
                 }),
                 logFormat,
-                enumerateErrorFormat(),
             ),
         }),
     ]
