@@ -36,71 +36,71 @@ export default class Transaction extends Model<ITransaction | Transaction> {
 
     // Type of payment (reversal or payment)
     @Column({ type: DataType.ENUM, values: Object.values(PaymentType), defaultValue: PaymentType.PAYMENT, allowNull: false })
-    Payment_type: PaymentType;
+    paymentType: PaymentType;
 
     // Timestamp of the transaction
     @Column({ type: DataType.DATE, allowNull: false })
-    Transaction_timestamp: Date;
+    transactionTimestamp: Date;
 
     // Disco associated with the transaction
     @Column({ type: DataType.STRING, allowNull: true })
-    Disco: string;
+    disco: string;
 
     // Bank Transaction Reference ID associated with the transaction
     @Column({ type: DataType.STRING, allowNull: true })
-    BankRefID?: string;
+    bankRefID?: string;
 
     // Bank Comment Reference ID associated with the transaction
     @Column({ type: DataType.STRING, allowNull: true })
-    BankComment?: string;
+    bankComment?: string;
 
     // Superagent associated with the transaction
     @Column({ type: DataType.STRING, allowNull: false })
-    Superagent: string;
+    superagent: string;
 
     // Foreign key for the associated User
     @ForeignKey(() => User)
     @IsUUID(4)
     @Column
-    UserId?: string;
+    userId?: string;
 
     // Belongs to a User
     @BelongsTo(() => User)
-    User: User;
+    user: User;
 
     // Foreign key for the associated Partner
     @ForeignKey(() => Partner)
     @IsUUID(4)
     @Column
-    PartnerId?: string;
+    partnerId?: string;
 
     // Belongs to a Partner
     @BelongsTo(() => Partner)
-    Partner: Partner;
+    partner: Partner;
 
     // Has many associated events
     @HasMany(() => Event)
-    Events: Event[];
+    events: Event[];
 
     // Has one associated PowerUnit
     @HasOne(() => PowerUnit)
-    PowerUnit: PowerUnit;
+    powerUnit: PowerUnit;
 }
 
 
 // Define an interface representing a transaction (ITransaction) with various properties.
 export interface ITransaction  {
     id: string; // Unique identifier for the transaction
-    Amount: string; // Amount associated with the transaction
-    Status: Status; // Status of the transaction (e.g., COMPLETE, PENDING, FAILED)
-    Payment_type: PaymentType; // Type of payment (e.g., REVERSAL, PAYMENT)
-    Transaction_timestamp: Date; // Timestamp of the transaction
-    Disco: string; // Disco associated with the transaction
-    BankRefID?: string; // Bank reference ID related to the transaction
-    BankComment?: string; // Comments or notes from the bank regarding the transaction
-    Superagent: string; // Superagent associated with the transaction
-    UserId?: string; // Unique identifier of the user associated with the transaction
-    PartnerId?: string; // Unique identifier of the Partner associated with the transaction
+    amount: string; // Amount associated with the transaction
+    status: Status; // Status of the transaction (e.g., COMPLETE, PENDING, FAILED)
+    paymentType: PaymentType; // Type of payment (e.g., REVERSAL, PAYMENT)
+    transactionTimestamp: Date; // Timestamp of the transaction
+    disco: string; // Disco associated with the transaction
+    bankRefID?: string; // Bank reference ID related to the transaction
+    bankComment?: string; // Comments or notes from the bank regarding the transaction
+    superagent: string; // Superagent associated with the transaction
+    userId?: string; // Unique identifier of the user associated with the transaction
+    partnerId?: string; // Unique identifier of the Partner associated with the transaction
 }
 
 // Define an interface representing the creation of a transaction (ICreateTransaction).
