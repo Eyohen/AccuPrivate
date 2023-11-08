@@ -1,8 +1,6 @@
 import { Request, Response } from "express";
-import Transaction, { ITransaction } from "../../models/Transaction.model";
-import TransactionService from "../../services/Transaction.service";
+import { ITransaction } from "../../models/Transaction.model";
 import { NotFoundError } from "../../utils/Errors";
-import { Status } from "../../models/Event.model";
 import MeterService from "../../services/Meter.service";
 import Meter from "../../models/Meter.model";
 
