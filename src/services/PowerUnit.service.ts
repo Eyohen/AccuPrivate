@@ -1,6 +1,5 @@
 import PowerUnit from "../models/PowerUnit.model";
-import { IPowerUnit, ICreatePowerUnit } from "../models/PowerUnit.model";
-import logger from "../utils/Logger";
+import { ICreatePowerUnit } from "../models/PowerUnit.model";
 export default class PowerUnitService {
 
     static async addPowerUnit(powerUnit: ICreatePowerUnit): Promise<PowerUnit> {
@@ -9,6 +8,15 @@ export default class PowerUnitService {
         return newPowerUnit
     }
 
+    static async viewPowerUnitByToken(token: string): Promise<PowerUnit | null> {
+        const powerUnit: PowerUnit | null = await PowerUnit.findOne({ where: { token } })
+        return powerUnit
+    }
+
+    static async viewPowerUnitsWithCustomQuery(query: any): Promise<PowerUnit[]> {
+        const powerUnits: PowerUnit[] = await PowerUnit.findAll(query)
+        return powerUnits
+    }
 
     static async viewPowerUnits(): Promise<PowerUnit[] | void> {
         const PowerUnits: PowerUnit[] = await PowerUnit.findAll()
@@ -23,6 +31,4 @@ export default class PowerUnitService {
     static async updateSinglePowerUnit() {
 
     }
-
-
 }
