@@ -9,9 +9,9 @@ import Meter from "../../models/Meter.model";
 import VendorService from "../../services/Vendor.service";
 import PowerUnit from "../../models/PowerUnit.model";
 import PowerUnitService from "../../services/PowerUnit.service";
-import { DEFAULT_ELECTRICITY_PROVIDER } from "../../utils/Constants";
-import logger from "../../utils/Logger";
-import { BadRequestError } from "../../utils/Errors";
+import { DEFAULT_ELECTRICITY_PROVIDER, NODE_ENV } from "../../utils/Constants";
+import { BadRequestError, InternalServerError } from "../../utils/Errors";
+import { generateRandomToken } from "../../utils/Helper";
 
 interface valideMeterRequestBody {
     meterNumber: string
@@ -93,7 +93,7 @@ export default class VendorController {
         })
 
         const successful = transaction instanceof Transaction && user instanceof User && meter instanceof Meter
-        if (!successful) throw Error()
+        if (!successful) throw new InternalServerError('An error occured while validating meter')
 
         res.status(200).json({
             status: 'success',
@@ -173,7 +173,7 @@ export default class VendorController {
             meterId: meterId,
             superagent: vendType,
             address: meterAddress,
-            token: tokenInfo.data.token,
+            token: NODE_ENV === 'development' ? generateRandomToken() : tokenInfo.data.token,
             tokenNumber: tokenInfo.token,
             tokenUnits: tokenInfo.units
         })
