@@ -13,14 +13,19 @@ export default class MeterService {
         return meters
     }
 
-    static async viewSingleMeter(uuid: string): Promise<Meter | void | null> {
+    static async viewSingleMeter(uuid: string): Promise<Meter | null> {
         const meter: Meter | null = await Meter.findByPk(uuid)
         return meter
     }
 
-    static async viewSingleMeterByMeterNumber(meterNumber: string): Promise<Meter | void | null> {
+    static async viewSingleMeterByMeterNumber(meterNumber: string): Promise<Meter | null> {
         const meter: Meter | null = await Meter.findOne({ where: { meterNumber } })
         return meter
+    }
+
+    static async viewMetersWithCustomQuery(query: any): Promise<Meter[]> {
+        const meters: Meter[] = await Meter.findAll(query)
+        return meters
     }
 
     static async updateSingleMeter() {

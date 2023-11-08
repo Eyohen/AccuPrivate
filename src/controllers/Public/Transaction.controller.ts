@@ -29,10 +29,12 @@ export default class TransactionController {
             throw new NotFoundError('Transaction not found')
         }
 
+        const powerUnit = await transaction.$get('powerUnit')
+
         res.status(200).json({
             status: 'success',
             message: 'Transaction info retrieved successfully',
-            data: transaction
+            data: { transaction: { ...transaction.dataValues, powerUnit } }
         })
     }
 
@@ -42,7 +44,7 @@ export default class TransactionController {
             userId, disco, superagent
         } = req.query as any as getTransactionsRequestBody
 
-        const query = { where: {}} as any
+        const query = { where: {} } as any
         if (status) query.where.status = status
         if (startDate && endDate) query.where.transactionTimestamp = { $between: [startDate, endDate] }
         if (userId) query.where.userId = userId
@@ -53,7 +55,6 @@ export default class TransactionController {
             query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit)
         }
 
-        console.log(query)
         const transactions: Transaction[] = await TransactionService.viewTransactionsWithCustomQuery(query)
         if (!transactions) {
             throw new NotFoundError('Transactions not found')
@@ -62,7 +63,7 @@ export default class TransactionController {
         res.status(200).json({
             status: 'success',
             message: 'Transactions retrieved successfully',
-            data: transactions
+            data: { transactions }
         })
     }
 }

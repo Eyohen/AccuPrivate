@@ -52,7 +52,7 @@ export interface IMeter {
     vendType: 'PREPAID' | 'POSTPAID'
 }
 
-// Interface to represent the structure of data for creating a new Meter
+// Interface to represent thep structure of data for creating a new Meter
 export interface ICreateMeter extends IMeter {
     // (You can add specific properties here if needed when creating a new meter)
 }
