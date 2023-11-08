@@ -1,26 +1,26 @@
-export default class NotificationService{
-    
-    
-    async addNotification(){
-        
-    }
+export default class NotificationService {
 
 
-    async veiwNotification(){
+    async addNotification() {
 
     }
 
-    async veiwSingleNotification(){
+
+    async viewNotification() {
 
     }
 
-    async updateSingleNotification(){
+    async viewSingleNotification() {
 
     }
 
-    async sendNotification(){
-        
+    async updateSingleNotification() {
+
     }
-   
+
+    async sendNotification() {
+
+    }
+
 
 }

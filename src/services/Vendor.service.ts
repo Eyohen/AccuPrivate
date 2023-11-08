@@ -124,9 +124,10 @@ export default class VendorService {
             return response.data;
         } catch (error: any) {
             initialError = error
-            logger.info(error.response.data.message)
+            logger.error(error.response.data.message)
         }
 
+        // TODO: Use event emitter to requery transaction after 10s
         if (initialError.response.data.message === "An unexpected error occurred. Please requery.") {
             try {
                 const response = await this.buyPowerAxios().get(`/transaction/${body.transactionId}`)
@@ -136,6 +137,7 @@ export default class VendorService {
             }
         }
 
+        throw initialError
     }
 
 

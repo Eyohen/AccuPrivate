@@ -18,7 +18,7 @@ export default class UserService {
     }
 
 
-    static async veiwUsers(): Promise<User[] | Error> {
+    static async viewUsers(): Promise<User[] | Error> {
         try {
             const Users: User[] = await User.findAll()
             return Users
@@ -27,7 +27,7 @@ export default class UserService {
         }
     }
 
-    static async veiwSingleUser(uuid: string): Promise<User | Error | null> {
+    static async viewSingleUser(uuid: string): Promise<User | Error | null> {
         try {
             const user: User | null = await User.findByPk(uuid)
             return user

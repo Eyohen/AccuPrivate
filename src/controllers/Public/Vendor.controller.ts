@@ -15,7 +15,7 @@ import { BadRequestError } from "../../utils/Errors";
 
 interface valideMeterRequestBody {
     meterNumber: string
-    venderType: string
+    venderType: 'BUYPOWERNG' | 'BAXI'
     disco: string
     phoneNumber: string
     partnerName: string
@@ -25,7 +25,7 @@ interface valideMeterRequestBody {
 
 interface vendTokenRequestBody {
     meterNumber: string
-    venderType: string
+    venderType: 'BUYPOWERNG' | 'BAXI'
     disco: string
     phoneNumber: string
     partnerName: string
@@ -36,12 +36,10 @@ interface vendTokenRequestBody {
 export default class VendorController {
 
     static async validateMeter(req: Request, res: Response, next: NextFunction) {
-        console.log('insid')
         const {
             meterNumber,
             venderType,
             disco,
-            partnerName,
             phoneNumber,
             email,
         }: valideMeterRequestBody = req.body
@@ -49,6 +47,7 @@ export default class VendorController {
             id: uuidv4(),
             amount: '0',
             status: Status.PENDING,
+            venderType: venderType,
             paymentType: PaymentType.PAYMENT,
             transactionTimestamp: new Date(),
             disco: disco,
@@ -58,7 +57,7 @@ export default class VendorController {
         let transactionId: string = transaction instanceof Transaction ? transaction.id : ''
 
         // We Check for Meter User 
-        const response = DEFAULT_ELECTRICITY_PROVIDER != 'buypower'
+        const response = DEFAULT_ELECTRICITY_PROVIDER != 'BUYPOWERNG'
             ? await VendorService.buyPowerValidateMeter({
                 transactionId,
                 meterNumber,
@@ -89,29 +88,28 @@ export default class VendorController {
             disco: disco
         })
 
-        throw new BadRequestError('Meter already exists')
-        // const successful = transaction instanceof Transaction && user instanceof User && meter instanceof Meter
-        // if (!successful) throw Error()
+        const successful = transaction instanceof Transaction && user instanceof User && meter instanceof Meter
+        if (!successful) throw Error()
 
-        // res.status(200).json({
-        //     status: 'success',
-        //     data: {
-        //         transaction: {
-        //             transactionId: transaction.id,
-        //             status: transaction.Status,
-        //         },
-        //         meter: {
-        //             disco: meter.disco,
-        //             number: meter.meterNumber,
-        //             address: meter.address,
-        //             phone: user.phoneNumber,
-        //             name: user.name
-        //         }
-        //     }
-        // })
+        res.status(200).json({
+            status: 'success',
+            data: {
+                transaction: {
+                    transactionId: transaction.id,
+                    status: transaction.status,
+                },
+                meter: {
+                    disco: meter.disco,
+                    number: meter.meterNumber,
+                    address: meter.address,
+                    phone: user.phoneNumber,
+                    name: user.name
+                }
+            }
+        })
     }
 
-    static async requestToken(req: Request, res: Response) {
+    static async requestToken(req: Request, res: Response, next: NextFunction) {
         const {
             meterNumber,
             transactionId,
@@ -123,79 +121,89 @@ export default class VendorController {
             isDebit
         } = req.query as Record<string, string>
 
-        if (!isDebit) return res.status(400).json({ status: 'error', error: true, message: 'Transaction must be completed' })
-        if (!bankRefId) return res.status(400).json({ status: 'error', error: true, message: 'Transaction reference is required' })
+        if (!isDebit) throw new BadRequestError('Missing required field')
+        if (!bankRefId) throw new BadRequestError('Transaction reference is required')
 
-        try {
-            //Check if Disco is Up
-            const checKDisco: boolean | Error = await VendorService.buyPowerCheckDiscoUp(disco)
-            if (!checKDisco) return res.status(400).json({ status: 'error', error: true, message: 'Disco is currently down' })
+        // Check if Disco is Up
+        const checKDisco: boolean | Error = await VendorService.buyPowerCheckDiscoUp(disco)
+        if (!checKDisco) throw new BadRequestError('Disco is currently down')
 
-            //request token
-
-            const tokenInfo = await VendorService.buyPowerVendToken({
-                transactionId,
-                meterNumber,
-                disco,
-                amount: amount,
-                phone: phoneNumber,
-            })
-
-
-            logger.info(tokenInfo)
-
-            //Get Meter 
-            logger.info('pre')
-            const meter: Meter | void | null = await MeterService.veiwSingleMeterByMeterNumber(meterNumber)
-            logger.info('post')
-            let meterId = ''
-            let meterAddress = ''
-            logger.info('meter', meter)
-            if (meter instanceof Meter) {
-                meterId = meter.id
-                meterAddress = meter.address
-            }
-
-
-            // add PowerUnit 
-            const newPowerUnit: PowerUnit | void = await PowerUnitService.addPowerUnit({
-                id: uuidv4(),
-                transactionId: transactionId,
-                disco: disco,
-                amount: amount,
-                meterId: meterId,
-                superagent: 'BUYPOWER',
-                address: meterAddress,
-                tokenNumber: tokenInfo.token,
-                tokenUnits: tokenInfo.units
-            })
-
-            //update Transaction
-            await TransactionService.updateSingleTransaction(transactionId, { amount })
-
-            //return PowerUnit
-            res.status(200).json({
-                newPowerUnit: { ...newPowerUnit, token: '0000-0000-0000-0000' }
-            })
-
-        } catch (err: any) {
-            logger.info(err)
-            res.status(400).json(
-                {
-                    status: 'error',
-                    error: true,
-                    message: err?.response.data.message
-                }
-            )
+        // Check if bankRefId has been used before
+        const existingTransaction: Transaction | null = await TransactionService.viewSingleTransactionByBankRefID(bankRefId)
+        if (existingTransaction instanceof Transaction) {
+            throw new BadRequestError('Transaction reference has been used before')
         }
 
+        const existingSuccessfulTransaction = await TransactionService.viewSingleTransaction(transactionId)
+        const transactionHasCompleted = existingSuccessfulTransaction instanceof Transaction && existingSuccessfulTransaction.status === Status.COMPLETE
+        if (transactionHasCompleted) {
+            throw new BadRequestError('Transaction has been completed before')
+        }
 
+        //  Get Meter 
+        const meter: Meter | void | null = await MeterService.viewSingleMeterByMeterNumber(meterNumber)
+        let meterId = ''
+        let meterAddress = ''
+        if (meter instanceof Meter) {
+            meterId = meter.id
+            meterAddress = meter.address
+        }
 
+        // request token
+        const tokenInfo = await VendorService.buyPowerVendToken({
+            transactionId,
+            meterNumber,
+            disco,
+            amount: amount,
+            phone: phoneNumber,
+        })
 
+        const newPowerUnit: PowerUnit = await PowerUnitService.addPowerUnit({
+            id: uuidv4(),
+            transactionId: transactionId,
+            disco: disco,
+            amount: amount,
+            meterId: meterId,
+            superagent: 'BUYPOWER',
+            address: meterAddress,
+            token: tokenInfo.data.token,
+            tokenNumber: tokenInfo.token,
+            tokenUnits: tokenInfo.units
+        })
+
+        //update Transaction
+        // TODO: Add request token event to transaction
+        await TransactionService.updateSingleTransaction(transactionId, { amount, bankRefId, bankComment })
+
+        // TODO: Send token to users email
+
+        //return PowerUnit
+        res.status(200).json({
+            newPowerUnit: newPowerUnit.dataValues
+        })
     }
 
     static async completeTransaction(req: Request, res: Response) {
+        const {
+            bankRefId
+        }: { bankRefId: string } = req.body
 
+        const existingTransaction: Transaction | null = await TransactionService.viewSingleTransactionByBankRefID(bankRefId)
+        if (!existingTransaction) {
+            throw new BadRequestError('Transaction does not found')
+        }
+
+        const transactionHasCompleted = existingTransaction instanceof Transaction && existingTransaction.status === Status.COMPLETE
+        if (transactionHasCompleted) {
+            throw new BadRequestError('Transaction is already complete')
+        }
+
+        // TODO: Add complete transaction event to transaction
+        await TransactionService.updateSingleTransaction(existingTransaction.id, { status: Status.COMPLETE })
+        res.status(200).json({
+            status: 'success',
+            message: 'Transaction has been completed'
+        })
     }
 
     static async getDiscos(req: Request, res: Response) {

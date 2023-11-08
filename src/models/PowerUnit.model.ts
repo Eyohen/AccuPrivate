@@ -32,6 +32,10 @@ export default class PowerUnit extends Model<PowerUnit | IPowerUnit> {
     @Column({ type: DataType.INTEGER, allowNull: false, defaultValue: 0 })
     tokenNumber: number
 
+    // Token number associated with the power unit (with a default value)
+    @Column({ type: DataType.STRING, allowNull: false })
+    token: string
+
     // Token units associated with the power unit (with a default value)
     @Column({ type: DataType.STRING, allowNull: false, defaultValue: '0' })
     tokenUnits: string
@@ -66,6 +70,7 @@ export interface IPowerUnit {
     superagent: string;      // superagent associated with the PowerUnit.
     amount: string;          // amount related to the PowerUnit.
     tokenNumber: number;    // Token number associated with the PowerUnit.
+    token: String;    // Token number associated with the PowerUnit
     tokenUnits: string;    // Token units associated with the PowerUnit.
     meterId: string;         // Unique identifier of the Meter associated with the PowerUnit.
     transactionId: string;  // Unique identifier of the Transaction associated with the PowerUnit.

@@ -8,17 +8,17 @@ export default class MeterService {
         return newMeter
     }
 
-    static async veiwMeters(): Promise<Meter[] | void> {
+    static async viewMeters(): Promise<Meter[] | void> {
         const meters: Meter[] = await Meter.findAll()
         return meters
     }
 
-    static async veiwSingleMeter(uuid: string): Promise<Meter | void | null> {
+    static async viewSingleMeter(uuid: string): Promise<Meter | void | null> {
         const meter: Meter | null = await Meter.findByPk(uuid)
         return meter
     }
 
-    static async veiwSingleMeterByMeterNumber(meterNumber: string): Promise<Meter | void | null> {
+    static async viewSingleMeterByMeterNumber(meterNumber: string): Promise<Meter | void | null> {
         const meter: Meter | null = await Meter.findOne({ where: { meterNumber } })
         return meter
     }

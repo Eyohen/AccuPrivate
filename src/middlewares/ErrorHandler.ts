@@ -3,8 +3,8 @@ import { CustomAPIError, } from '../utils/Errors';
 import logger from '../utils/Logger';
 
 function errorHandler(err: Error, req: Request, res: Response, next: NextFunction): Response {
-    logger.error(err)
-
+    console.error(err)
+    logger.error(err.stack);
     if (err instanceof CustomAPIError) {
         return res.status(err.statusCode).send({
             success: false,

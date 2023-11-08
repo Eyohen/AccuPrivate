@@ -32,7 +32,7 @@ export default class Transaction extends Model<ITransaction | Transaction> {
 
     // Status of the transaction (complete, pending, or failed)
     @Column({ type: DataType.ENUM, values: Object.values(Status), defaultValue: Status.PENDING, allowNull: false })
-    Status: Status;
+    status: Status;
 
     // Type of payment (reversal or payment)
     @Column({ type: DataType.ENUM, values: Object.values(PaymentType), defaultValue: PaymentType.PAYMENT, allowNull: false })
@@ -47,8 +47,8 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     disco: string;
 
     // Bank Transaction Reference ID associated with the transaction
-    @Column({ type: DataType.STRING, allowNull: true })
-    bankRefID?: string;
+    @Column({ type: DataType.STRING, allowNull: true, unique: true })
+    bankRefId?: string;
 
     // Bank Comment Reference ID associated with the transaction
     @Column({ type: DataType.STRING, allowNull: true })
@@ -95,8 +95,9 @@ export interface ITransaction {
     status: Status; // Status of the transaction (e.g., COMPLETE, PENDING, FAILED)
     paymentType: PaymentType; // Type of payment (e.g., REVERSAL, PAYMENT)
     transactionTimestamp: Date; // Timestamp of the transaction
+    venderType: 'BUYPOWERNG' | 'BAXI'; // Type of vender associated with the transaction
     disco: string; // Disco associated with the transaction
-    bankRefID?: string; // Bank reference ID related to the transaction
+    bankRefId?: string; // Bank reference ID related to the transaction
     bankComment?: string; // Comments or notes from the bank regarding the transaction
     superagent: string; // superagent associated with the transaction
     userId?: string; // Unique identifier of the user associated with the transaction

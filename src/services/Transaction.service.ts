@@ -21,32 +21,32 @@ export default class TransactionService {
     }
 
     // Static method for viewing all transactions
-    static async veiwTransactions(): Promise<Transaction[] | Error> {
+    static async viewTransactions(): Promise<Transaction[] | Error> {
         // Retrieve all transactions from the database
         const transactions: Transaction[] = await Transaction.findAll();
         return transactions;
     }
 
     // Static method for viewing a single transaction by UUID
-    static async veiwSingleTransaction(uuid: string): Promise<Transaction | Error> {
+    static async viewSingleTransaction(uuid: string): Promise<Transaction | null> {
         // Retrieve a single transaction by its UUID
         const transaction: Transaction | null = await Transaction.findByPk(uuid);
-        if (transaction == null) {
-            throw new Error()
-        }
+        return transaction;
+    }
+
+    static async viewSingleTransactionByBankRefID(bankRefId: string): Promise<Transaction | null> {
+        // Retrieve a single transaction by its UUID
+        const transaction: Transaction | null = await Transaction.findOne({ where: { bankRefId: bankRefId } });
         return transaction;
     }
 
     // Static method for updating a single transaction by UUID
-    static async updateSingleTransaction(uuid: string, updateTransaction: IUpdateTransaction): Promise<Transaction | Error> {
+    static async updateSingleTransaction(uuid: string, updateTransaction: IUpdateTransaction): Promise<Transaction | null> {
         // Update the transaction in the database
+        console.log(updateTransaction)
         const updateResult: [number] = await Transaction.update(updateTransaction, { where: { id: uuid } });
-        logger.info('this is the uuid', uuid)
         // Retrieve the updated transaction by its UUID
         const updatedTransaction: Transaction | null = await Transaction.findByPk(uuid);
-        if (updatedTransaction == null) {
-            throw new Error()
-        }
         return updatedTransaction;
     }
 }

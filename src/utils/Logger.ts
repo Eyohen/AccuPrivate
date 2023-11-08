@@ -3,13 +3,7 @@ import util from "util";
 
 const { combine, timestamp, printf, colorize } = format;
 const logFormat = printf((info) => {
-    let message = info.message;
-    
-    if (info instanceof Error) {
-        logger.error(info.stack)
-    }
-
-    return `${info.timestamp} [${info.level}]: ${message}`;
+    return `${info.timestamp} [${info.level}]: ${info.message}`;
 });
 
 const enumerateErrorFormat = format((info) => {

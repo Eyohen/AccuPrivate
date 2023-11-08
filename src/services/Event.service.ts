@@ -20,7 +20,7 @@ export default class EventService {
     }
 
     // Method for viewing a single event by its UUID
-    async veiwSingleEvent(uuid: string): Promise<Event | void | null> {
+    async viewSingleEvent(uuid: string): Promise<Event | void | null> {
         try {
             // Find and retrieve an event by its UUID
             const event: Event | null = await Event.findByPk(uuid);
@@ -34,7 +34,7 @@ export default class EventService {
 
     // }
 
-    // async veiwEvents(): Promise<Array<IEvent>>{
+    // async viewEvents(): Promise<Array<IEvent>>{
 
     // }
 }
