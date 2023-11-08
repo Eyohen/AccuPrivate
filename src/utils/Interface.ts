@@ -1,3 +1,5 @@
+import { ITransaction } from "../models/Transaction.model"
+
 export interface IVendToken {
     transactionId: string
     meterNumber: string
@@ -112,9 +114,15 @@ export interface IBuyPowerGetProvidersResponse {
     "KANO": true,
     "BH": true,
     "PROTOGY": false,
-    "PHISBOND": false, 
+    "PHISBOND": false,
     "ACCESSPOWER": false,
     "APLE": false,
     "BENIN": false,
     "YOLA": true
+}
+
+export interface IReceiptEmailTemplateProps {
+    transaction: ITransaction,
+    meterNumber: string,
+    token: string
 }
