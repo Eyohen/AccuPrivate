@@ -14,9 +14,9 @@ export default class TransactionService {
     // Static method for adding a new transaction
     static async addTransaction(transaction: ICreateTransaction): Promise<Transaction | Error> {
         // Build a new transaction object
-        const newTransaction: Transaction = await Transaction.build(transaction);
+        const newTransaction: Transaction = Transaction.build(transaction);
         // Save the new transaction to the database
-        newTransaction.save();
+        await newTransaction.save();
         return newTransaction;
     }
 
@@ -24,6 +24,12 @@ export default class TransactionService {
     static async viewTransactions(): Promise<Transaction[] | Error> {
         // Retrieve all transactions from the database
         const transactions: Transaction[] = await Transaction.findAll();
+        return transactions;
+    }
+
+    static async viewTransactionsWithCustomQuery(query: any): Promise<Transaction[]> {
+        // Retrieve all transactions from the database
+        const transactions: Transaction[] = await Transaction.findAll(query);
         return transactions;
     }
 
@@ -36,7 +42,7 @@ export default class TransactionService {
 
     static async viewSingleTransactionByBankRefID(bankRefId: string): Promise<Transaction | null> {
         // Retrieve a single transaction by its UUID
-        const transaction: Transaction | null = await Transaction.findOne({ where: { bankRefId: bankRefId } });
+        const transaction: Transaction | null = await Transaction.findOne({ where: { bankRefId: bankRefId } },);
         return transaction;
     }
 

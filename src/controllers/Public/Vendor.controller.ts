@@ -53,7 +53,7 @@ export default class VendorController {
             paymentType: PaymentType.PAYMENT,
             transactionTimestamp: new Date(),
             disco: disco,
-            superagent: "BUYPOWERNG",
+            superagent: provider,
         })
 
         let transactionId: string = transaction instanceof Transaction ? transaction.id : ''
@@ -88,7 +88,8 @@ export default class VendorController {
             address: response.address,
             meterNumber: meterNumber,
             userId: userId,
-            disco: disco
+            disco: disco,
+            vendType
         })
 
         const successful = transaction instanceof Transaction && user instanceof User && meter instanceof Meter
@@ -106,7 +107,8 @@ export default class VendorController {
                     number: meter.meterNumber,
                     address: meter.address,
                     phone: user.phoneNumber,
-                    name: user.name
+                    vendType: meter.vendType,
+                    name: user.name,
                 }
             }
         })
@@ -123,7 +125,7 @@ export default class VendorController {
             disco,
             isDebit,
             vendType
-        } = req.query as Record<string, string>
+        } = req.query as Record<string, any>
 
         if (!isDebit) throw new BadRequestError('Missing required field')
         if (!bankRefId) throw new BadRequestError('Transaction reference is required')
@@ -169,7 +171,7 @@ export default class VendorController {
             disco: disco,
             amount: amount,
             meterId: meterId,
-            superagent: 'BUYPOWER',
+            superagent: vendType,
             address: meterAddress,
             token: tokenInfo.data.token,
             tokenNumber: tokenInfo.token,
@@ -212,29 +214,20 @@ export default class VendorController {
     }
 
     static async getDiscos(req: Request, res: Response) {
-        try {
-            if (!['baxi', 'buypower'].includes(req.query.provider as string)) {
-                return res.status(400).json({
-                    status: 'error',
-                    error: true,
-                    message: 'Invalid provider'
-                })
-            }
-
-            const discos = req.query.provider === 'baxi'
-                ? await VendorService.baxiFetchAvailableDiscos().then(r => r.data.providers)
-                : await VendorService.buyPowerFetchAvailableDiscos()
-
-            res.status(200).json({
-                discos: discos
-            })
-        } catch (error) {
-            res.status(400).json({
+        if (!['baxi', 'buypower'].includes(req.query.provider as string)) {
+            return res.status(400).json({
                 status: 'error',
                 error: true,
-                message: 'Something went wrong'
+                message: 'Invalid provider'
             })
         }
 
+        const discos = req.query.provider === 'baxi'
+            ? await VendorService.baxiFetchAvailableDiscos().then(r => r.data.providers)
+            : await VendorService.buyPowerFetchAvailableDiscos()
+
+        res.status(200).json({
+            discos: discos
+        })
     }
 }

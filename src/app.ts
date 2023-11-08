@@ -5,7 +5,7 @@ import errorHandler from "./middlewares/ErrorHandler";
 import { Database, initiateDB } from "./models";
 import bodyParser from "body-parser";
 import cors from 'cors';
-import { router as VendorRoute } from "./routes/Public/Vendor.routes";
+import router from "./routes/Routes";
 import { BAXI_TOKEN } from "./utils/Constants";
 import morgan from 'morgan'
 import logger from "./utils/Logger";
@@ -29,8 +29,15 @@ app.get('/healthcheck', async (req: Request, res: Response) => {
     });
 });
 
-app.use('/api/v0', VendorRoute)
+app.use('/api/v0', router)
+
 app.use(errorHandler)
+app.use((req, res) => {
+    res.status(404).json({
+        status: 'error',
+        message: 'Route not found'
+    })
+})
 
 
 // Asynchronous function to start the server

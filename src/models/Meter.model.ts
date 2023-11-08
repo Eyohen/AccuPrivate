@@ -24,6 +24,9 @@ export default class Meter extends Model<Meter | IMeter> {
     @Column({ type: DataType.STRING, allowNull: false })
     disco: string;
 
+    @Column({ type: DataType.STRING, allowNull: false })
+    vendType: string;
+
     // Foreign key for the associated User
     @ForeignKey(() => User)
     @IsUUID(4)
@@ -46,6 +49,7 @@ export interface IMeter {
     meterNumber: string; // Meter number for identification
     userId: string;      // Identifier of the associated user
     disco: string;      // Disco name for meter 
+    vendType: 'PREPAID' | 'POSTPAID'
 }
 
 // Interface to represent the structure of data for creating a new Meter

@@ -67,7 +67,7 @@ export interface IPowerUnit {
     id: string;               // Unique identifier for the PowerUnit.
     address: string;         // address associated with the PowerUnit.
     disco: string;           // Disco (Distribution Company) associated with the PowerUnit.
-    superagent: string;      // superagent associated with the PowerUnit.
+    superagent: 'BUYPOWERNG' | 'BAXI';      // superagent associated with the PowerUnit.
     amount: string;          // amount related to the PowerUnit.
     tokenNumber: number;    // Token number associated with the PowerUnit.
     token: String;    // Token number associated with the PowerUnit
