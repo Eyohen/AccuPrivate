@@ -186,7 +186,11 @@ export default class VendorController {
 
         //return PowerUnit
         res.status(200).json({
-            newPowerUnit: newPowerUnit.dataValues
+            status: 'success',
+            message: 'Token retrieved successfully',
+            data: {
+                newPowerUnit: newPowerUnit.dataValues
+            }
         })
     }
 
@@ -227,7 +231,11 @@ export default class VendorController {
             : await VendorService.buyPowerFetchAvailableDiscos()
 
         res.status(200).json({
-            discos: discos
+            status: 'success',
+            message: 'Discos retrieved successfully',
+            data: {
+                discos: discos
+            }
         })
     }
 }
