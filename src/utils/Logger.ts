@@ -4,18 +4,15 @@ import util from "util";
 const { combine, timestamp, printf, colorize } = format;
 const logFormat = printf((info) => {
     let message = info.message;
-
-    if (typeof message === 'object') {
-        message = util.inspect(message, { depth: null });
+    
+    if (info instanceof Error) {
+        logger.error(info.stack)
     }
 
     return `${info.timestamp} [${info.level}]: ${message}`;
 });
 
 const enumerateErrorFormat = format((info) => {
-    if (info instanceof Error) {
-        Object.assign(info, { message: info.stack });
-    }
     return info;
 });
 
