@@ -95,7 +95,7 @@ export interface ITransaction {
     status: Status; // Status of the transaction (e.g., COMPLETE, PENDING, FAILED)
     paymentType: PaymentType; // Type of payment (e.g., REVERSAL, PAYMENT)
     transactionTimestamp: Date; // Timestamp of the transaction
-    venderType: 'BUYPOWERNG' | 'BAXI'; // Type of vender associated with the transaction
+    provider: 'BUYPOWERNG' | 'BAXI'; // Type of vender associated with the transaction
     disco: string; // Disco associated with the transaction
     bankRefId?: string; // Bank reference ID related to the transaction
     bankComment?: string; // Comments or notes from the bank regarding the transaction

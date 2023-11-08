@@ -4,6 +4,7 @@ export interface IVendToken {
     disco: string
     amount: string
     phone: string
+    vendType: 'PREPAID' | 'POSTPAID'
 }
 
 
@@ -11,6 +12,7 @@ export interface IValidateMeter {
     transactionId: string
     meterNumber: string
     disco: string
+    vendType: 'PREPAID' | 'POSTPAID'
 }
 
 

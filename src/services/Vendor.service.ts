@@ -6,7 +6,7 @@ import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL, NODE_ENV } from "..
 import logger from "../utils/Logger";
 
 
-// Define the VendorService class for handling vendor-related operations
+// Define the VendorService class for handling provider-related operations
 export default class VendorService {
 
     // Static method for obtaining a Baxi vending token
@@ -37,8 +37,8 @@ export default class VendorService {
     }
 
     // Static method for validating a meter with Baxi
-    static async baxiValidateMeter(disco: string, meterNumber: string) {
-        const serviceType = disco.toLowerCase() + '_electric' + '_prepaid'  // e.g. aedc_electric_prepaid
+    static async baxiValidateMeter(disco: string, meterNumber: string, vendType: 'PREPAID' | 'POSTPAID') {
+        const serviceType = disco.toLowerCase() + '_electric' + `_${vendType.toLowerCase()}`  // e.g. aedc_electric_prepaid
         const postData = {
             service_type: serviceType,
             account_number: NODE_ENV === 'development' ? '6528651914' : meterNumber // Baxi has a test meter number
@@ -111,7 +111,7 @@ export default class VendorService {
             meter: body.meterNumber,
             disco: body.disco,
             paymentType: "B2B",
-            vendType: "PREPAID",
+            vendType: body.vendType.toUpperCase(),
             amount: body.amount,
             phone: body.phone
         }
@@ -147,7 +147,7 @@ export default class VendorService {
         const paramsObject: any = {
             meter: NODE_ENV === 'development' ? '12345678910' : body.meterNumber,
             disco: body.disco,
-            vendType: 'PREPAID',
+            vendType: body.vendType.toUpperCase(),
             vertical: 'ELECTRICITY'
         }
         const params: string = querystring.stringify(paramsObject);

@@ -15,7 +15,8 @@ import { BadRequestError } from "../../utils/Errors";
 
 interface valideMeterRequestBody {
     meterNumber: string
-    venderType: 'BUYPOWERNG' | 'BAXI'
+    provider: 'BUYPOWERNG' | 'BAXI',
+    vendType: 'PREPAID' | 'POSTPAID',
     disco: string
     phoneNumber: string
     partnerName: string
@@ -25,7 +26,7 @@ interface valideMeterRequestBody {
 
 interface vendTokenRequestBody {
     meterNumber: string
-    venderType: 'BUYPOWERNG' | 'BAXI'
+    provider: 'BUYPOWERNG' | 'BAXI'
     disco: string
     phoneNumber: string
     partnerName: string
@@ -38,16 +39,17 @@ export default class VendorController {
     static async validateMeter(req: Request, res: Response, next: NextFunction) {
         const {
             meterNumber,
-            venderType,
+            provider,
             disco,
             phoneNumber,
             email,
+            vendType
         }: valideMeterRequestBody = req.body
         const transaction: Transaction | Error = await TransactionService.addTransaction({
             id: uuidv4(),
             amount: '0',
             status: Status.PENDING,
-            venderType: venderType,
+            provider: provider,
             paymentType: PaymentType.PAYMENT,
             transactionTimestamp: new Date(),
             disco: disco,
@@ -62,8 +64,9 @@ export default class VendorController {
                 transactionId,
                 meterNumber,
                 disco,
+                vendType
             })
-            : await VendorService.baxiValidateMeter(disco, meterNumber)
+            : await VendorService.baxiValidateMeter(disco, meterNumber, vendType)
 
         //Add User
         const user: User | Error = await UserService.addUser({
@@ -118,7 +121,8 @@ export default class VendorController {
             bankComment,
             amount,
             disco,
-            isDebit
+            isDebit,
+            vendType
         } = req.query as Record<string, string>
 
         if (!isDebit) throw new BadRequestError('Missing required field')
@@ -156,6 +160,7 @@ export default class VendorController {
             disco,
             amount: amount,
             phone: phoneNumber,
+            vendType: vendType as 'PREPAID' | 'POSTPAID'
         })
 
         const newPowerUnit: PowerUnit = await PowerUnitService.addPowerUnit({
