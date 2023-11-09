@@ -16,23 +16,19 @@ export default class UserService {
         }
     }
 
-
-    static async viewUsers(): Promise<User[] | Error> {
-        try {
-            const Users: User[] = await User.findAll()
-            return Users
-        } catch (err) {
-            throw new Error()
-        }
+    static async viewSingleUserWithEmail(email: string): Promise<User | null> {
+        const user: User | null = await User.findOne({ where: { email } })
+        return user
     }
 
-    static async viewSingleUser(uuid: string): Promise<User | Error | null> {
-        try {
-            const user: User | null = await User.findByPk(uuid)
-            return user
-        } catch (error) {
-            throw new Error()
-        }
+    static async viewUsers(): Promise<User[]> {
+        const Users: User[] = await User.findAll()
+        return Users
+    }
+
+    static async viewSingleUser(uuid: string): Promise<User | null> {
+        const user: User | null = await User.findByPk(uuid)
+        return user
     }
 
     static async updateSingleUser() {

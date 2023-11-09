@@ -24,7 +24,7 @@ export default class TransactionController {
         res.status(200).json({
             status: 'success',
             message: 'Power unit info retrieved successfully',
-            data: { ...powerUnit.dataValues, transaction, meter }
+            data: { powerUnit: powerUnit.dataValues, transaction, meter }
         })
     }
 

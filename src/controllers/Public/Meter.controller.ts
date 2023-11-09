@@ -30,7 +30,7 @@ export default class TransactionController {
         res.status(200).json({
             status: 'success',
             message: 'Meter info retrieved successfully',
-            data: { ...meter.dataValues, powerUnits }
+            data: { meter: { ...meter.dataValues, powerUnits } }
         })
     }
 

@@ -7,8 +7,8 @@ function errorHandler(err: Error, req: Request, res: Response, next: NextFunctio
     logger.error(err.stack);
     if (err instanceof CustomAPIError) {
         return res.status(err.statusCode).send({
-            success: false,
-            data: null,
+            status: 'error',
+            error: true,
             message: err.message,
         });
     }
