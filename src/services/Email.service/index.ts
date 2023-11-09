@@ -39,7 +39,7 @@ export default class EmailService {
 
             await transporter.sendMail(mailOptions);
         } catch (error: any) {
-            logger.error(error);
+            logger.error(error.stack);
         }
     }
 }

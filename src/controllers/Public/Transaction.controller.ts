@@ -17,7 +17,7 @@ interface getTransactionsRequestBody extends ITransaction {
     userId: string
     meterId: string
     disco: string
-    superagent: string
+    superagent: 'BUYPOWERNG' | 'BAXI'
 }
 
 export default class TransactionController {

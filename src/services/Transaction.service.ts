@@ -49,7 +49,6 @@ export default class TransactionService {
     // Static method for updating a single transaction by UUID
     static async updateSingleTransaction(uuid: string, updateTransaction: IUpdateTransaction): Promise<Transaction | null> {
         // Update the transaction in the database
-        console.log(updateTransaction)
         const updateResult: [number] = await Transaction.update(updateTransaction, { where: { id: uuid } });
         // Retrieve the updated transaction by its UUID
         const updatedTransaction: Transaction | null = await Transaction.findByPk(uuid);

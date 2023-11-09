@@ -12,10 +12,12 @@ import PowerUnitService from "../../services/PowerUnit.service";
 import { DEFAULT_ELECTRICITY_PROVIDER, NODE_ENV } from "../../utils/Constants";
 import { BadRequestError, InternalServerError } from "../../utils/Errors";
 import { generateRandomToken } from "../../utils/Helper";
+import EmailService, { EmailTemplate } from "../../services/Email.service";
+import { userInfo } from "os";
 
 interface valideMeterRequestBody {
     meterNumber: string
-    provider: 'BUYPOWERNG' | 'BAXI',
+    superagent: 'BUYPOWERNG' | 'BAXI',
     vendType: 'PREPAID' | 'POSTPAID',
     disco: string
     phoneNumber: string
@@ -39,7 +41,7 @@ export default class VendorController {
     static async validateMeter(req: Request, res: Response, next: NextFunction) {
         const {
             meterNumber,
-            provider,
+            superagent,
             disco,
             phoneNumber,
             email,
@@ -49,11 +51,10 @@ export default class VendorController {
             id: uuidv4(),
             amount: '0',
             status: Status.PENDING,
-            provider: provider,
+            superagent: superagent,
             paymentType: PaymentType.PAYMENT,
             transactionTimestamp: new Date(),
             disco: disco,
-            superagent: provider,
         })
 
         let transactionId: string = transaction instanceof Transaction ? transaction.id : ''
@@ -140,8 +141,12 @@ export default class VendorController {
             throw new BadRequestError('Transaction reference has been used before')
         }
 
-        const existingSuccessfulTransaction = await TransactionService.viewSingleTransaction(transactionId)
-        const transactionHasCompleted = existingSuccessfulTransaction instanceof Transaction && existingSuccessfulTransaction.status === Status.COMPLETE
+        const transactionRecord: Transaction | null = await TransactionService.viewSingleTransaction(transactionId)
+        if (!transactionRecord) {
+            throw new BadRequestError('Transaction does not exist')
+        }
+
+        const transactionHasCompleted = transactionRecord.status === Status.COMPLETE
         if (transactionHasCompleted) {
             throw new BadRequestError('Transaction has been completed before')
         }
@@ -155,7 +160,7 @@ export default class VendorController {
             meterAddress = meter.address
         }
 
-        // request token
+        // Initiate Purchase for token
         const tokenInfo = await VendorService.buyPowerVendToken({
             transactionId,
             meterNumber,
@@ -165,6 +170,12 @@ export default class VendorController {
             vendType: vendType as 'PREPAID' | 'POSTPAID'
         })
 
+        const user = await transactionRecord.$get('user')
+        if (!user) {
+            throw new InternalServerError(`Transaction ${transactionRecord.id} does not have a user`)
+        }
+
+        // Add Power Unit to store token 
         const newPowerUnit: PowerUnit = await PowerUnitService.addPowerUnit({
             id: uuidv4(),
             transactionId: transactionId,
@@ -178,9 +189,19 @@ export default class VendorController {
             tokenUnits: tokenInfo.units
         })
 
-        //update Transaction
+        // Update Transaction
         // TODO: Add request token event to transaction
         await TransactionService.updateSingleTransaction(transactionId, { amount, bankRefId, bankComment })
+
+        EmailService.sendEmail({
+            to: user.email,
+            subject: 'Token Purchase',
+            html: await new EmailTemplate().receipt({
+                transaction: transactionRecord,
+                meterNumber,
+                token: newPowerUnit.token
+            })
+        })
 
         // TODO: Send token to users email
 

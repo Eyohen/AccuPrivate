@@ -56,7 +56,7 @@ export default class Transaction extends Model<ITransaction | Transaction> {
 
     // superagent associated with the transaction
     @Column({ type: DataType.STRING, allowNull: false })
-    superagent: string;
+    superagent: ITransaction['superagent'];
 
     // Foreign key for the associated User
     @ForeignKey(() => User)
@@ -95,11 +95,10 @@ export interface ITransaction {
     status: Status; // Status of the transaction (e.g., COMPLETE, PENDING, FAILED)
     paymentType: PaymentType; // Type of payment (e.g., REVERSAL, PAYMENT)
     transactionTimestamp: Date; // Timestamp of the transaction
-    provider: 'BUYPOWERNG' | 'BAXI'; // Type of vender associated with the transaction
     disco: string; // Disco associated with the transaction
     bankRefId?: string; // Bank reference ID related to the transaction
     bankComment?: string; // Comments or notes from the bank regarding the transaction
-    superagent: string; // superagent associated with the transaction
+    superagent: 'BUYPOWERNG' | 'BAXI'; // superagent associated with the transaction
     userId?: string; // Unique identifier of the user associated with the transaction
     partnerId?: string; // Unique identifier of the Partner associated with the transaction
 }
