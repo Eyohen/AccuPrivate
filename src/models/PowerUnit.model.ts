@@ -1,7 +1,7 @@
 // Import necessary modules and dependencies
 import { Table, Column, Model, DataType, IsUUID, PrimaryKey, ForeignKey, BelongsTo } from "sequelize-typescript";
-import  Meter  from "./Meter.model";
-import  Transaction  from "./Transaction.model";
+import Meter from "./Meter.model";
+import Transaction from "./Transaction.model";
 
 // Define the Sequelize model for the "PowerUnit" table
 @Table
@@ -12,63 +12,68 @@ export default class PowerUnit extends Model<PowerUnit | IPowerUnit> {
     @Column
     id: string;
 
-    // Address of the power unit
+    // address of the power unit
     @Column({ type: DataType.STRING, allowNull: false })
-    Address: string;
+    address: string;
 
     // Disco associated with the power unit
     @Column({ type: DataType.STRING, allowNull: false })
-    Disco: string;
+    disco: string;
 
-    // Superagent associated with the power unit
+    // superagent associated with the power unit
     @Column({ type: DataType.STRING, allowNull: false })
-    Superagent: string;
+    superagent: string;
 
-    // Amount associated with the power unit (with a default value)
+    // amount associated with the power unit (with a default value)
     @Column({ type: DataType.STRING, allowNull: false, defaultValue: '0' })
-    Amount: string;
+    amount: string;
 
     // Token number associated with the power unit (with a default value)
     @Column({ type: DataType.INTEGER, allowNull: false, defaultValue: 0 })
-    Token_number: number
+    tokenNumber: number
+
+    // Token number associated with the power unit (with a default value)
+    @Column({ type: DataType.STRING, allowNull: false, unique: true })
+    token: string
 
     // Token units associated with the power unit (with a default value)
     @Column({ type: DataType.STRING, allowNull: false, defaultValue: '0' })
-    Token_units: string
+    tokenUnits: string
 
     // Foreign key for the associated Meter
     @ForeignKey(() => Meter)
     @IsUUID(4)
     @Column
-    MeterId: string;
+    meterId: string;
 
     // Belongs to a Meter
     @BelongsTo(() => Meter)
-    Meter: Meter;
+    meter: Meter;
 
     // Foreign key for the associated Transaction
     @ForeignKey(() => Transaction)
     @IsUUID(4)
     @Column
-    TransactionId: string;
+    transactionId: string;
 
     // Belongs to a Transaction
     @BelongsTo(() => Transaction)
-    Transaction: Transaction;
+    transaction: Transaction;
 }
 
 
 // Define an interface for a PowerUnit, representing the shape of a PowerUnit object.
-export interface IPowerUnit  {
+export interface IPowerUnit {
     id: string;               // Unique identifier for the PowerUnit.
-    Address: string;         // Address associated with the PowerUnit.
-    Disco: string;           // Disco (Distribution Company) associated with the PowerUnit.
-    Superagent: string;      // Superagent associated with the PowerUnit.
-    Amount: string;          // Amount related to the PowerUnit.
-    Token_number: number;    // Token number associated with the PowerUnit.
-    Token_units: string;    // Token units associated with the PowerUnit.
-    MeterId: string;         // Unique identifier of the Meter associated with the PowerUnit.
-    TransactionId: string;  // Unique identifier of the Transaction associated with the PowerUnit.
+    address: string;         // address associated with the PowerUnit.
+    disco: string;           // Disco (Distribution Company) associated with the PowerUnit.
+    superagent: 'BUYPOWERNG' | 'BAXI';      // superagent associated with the PowerUnit.
+    amount: string;          // amount related to the PowerUnit.
+    tokenNumber: number;    // Token number associated with the PowerUnit.
+    token: String;    // Token number associated with the PowerUnit
+    tokenUnits: string;    // Token units associated with the PowerUnit.
+    meterId: string;         // Unique identifier of the Meter associated with the PowerUnit.
+    transactionId: string;  // Unique identifier of the Transaction associated with the PowerUnit.
 }
 
 // Define an interface that extends the IPowerUnit interface, representing the shape of a new PowerUnit to be created.

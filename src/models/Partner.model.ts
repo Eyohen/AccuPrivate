@@ -14,32 +14,32 @@ export default class Partner extends Model<Partner | IPartner> {
 
     // Define a column for the Partner's address (string type, not nullable)
     @Column({ type: DataType.STRING, allowNull: false })
-    Company_address: string;
+    companyAddress: string;
 
     // Define a column for the Partner's email (string type, not nullable)
     @Column({ type: DataType.STRING, allowNull: false })
-    Company_email: string;
+    companyEmail: string;
 
     // Define a column for the Partner's name (string type, not nullable)
     @Column({ type: DataType.STRING, allowNull: false })
-    Company_name: string;
+    companyName: string;
 
     // Define a column for the Partner's phone number (string type, not nullable)
     @Column({ type: DataType.STRING, allowNull: false })
-    Contact_phone: string;
+    contactPhone: string;
 
     // Establish a "HasMany" association with the "Transaction" model
     @HasMany(() => Transaction)
-    Transactions: Transaction[];
+    transactions: Transaction[];
 }
 
 // Interface representing the structure of a Partner entity
 export interface IPartner {
     id: string;              // Unique identifier for the Partner
-    Company_address: string; // Address of the Partner's company
-    Company_email: string;   // Email address of the Partner's company
-    Company_name: string;    // Name of the Partner's company
-    Contact_phone: string;   // Phone number for contacting the Partner
+    companyAddress: string; // address of the Partner's company
+    companyEmail: string;   // Email address of the Partner's company
+    companyName: string;    // Name of the Partner's company
+    contactPhone: string;   // Phone number for contacting the Partner
 }
 
 // Interface representing the structure for creating a new Partner (inherits from IPartner)

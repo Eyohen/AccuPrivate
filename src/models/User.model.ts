@@ -14,37 +14,37 @@ export default class User extends Model<User | IUser> {
 
     // Define a column for the user's address, specifying data type and non-null constraint
     @Column({ type: DataType.STRING, allowNull: false })
-    Address: string;
+    address: string;
 
     // Define a column for the user's email address, specifying data type and non-null constraint
     @Column({ type: DataType.STRING, allowNull: false })
-    Email: string;
+    email: string;
 
     // Define a column for the user's name, specifying data type and non-null constraint
     @Column({ type: DataType.STRING, allowNull: true })
-    Name?: string;
+    name?: string;
 
     // Define a column for the user's phone number, specifying data type and non-null constraint
     @Column({ type: DataType.STRING, allowNull: false })
-    Phone_number: string;
+    phoneNumber: string;
 
     // Establish a "HasMany" relationship with the Meter model, indicating that a user can have multiple meters
     @HasMany(() => Meter)
-    Meters: Meter[];
+    meters: Meter[];
 
     // Establish a "HasMany" relationship with the Transaction model, indicating that a user can have multiple transactions
     @HasMany(() => Transaction)
-    Transactions: Transaction[];
+    transactions: Transaction[];
 }
 
 
 // Define an interface for a User
 export interface IUser {
     id: string;             // A unique identifier for the user
-    Address: string;        // The user's address
-    Email: string;          // The user's email address
-    Name?: string;           // The user's name
-    Phone_number: string;   // The user's phone number
+    address: string;        // The user's address
+    email: string;          // The user's email address
+    name?: string;           // The user's name
+    phoneNumber: string;   // The user's phone number
 }
 
 // Define an interface for creating a new User by extending the IUser interface

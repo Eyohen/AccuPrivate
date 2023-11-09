@@ -3,9 +3,10 @@ import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
 import { IBaxiGetProviderResponse, IBaxiPurchaseResponse, IBaxiValidateMeterResponse, IBuyPowerGetProvidersResponse, IBuyPowerValidateMeterResponse, IValidateMeter, IVendToken } from "../utils/Interface";
 import querystring from "querystring";
 import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL, NODE_ENV } from "../utils/Constants";
+import logger from "../utils/Logger";
 
 
-// Define the VendorService class for handling vendor-related operations
+// Define the VendorService class for handling provider-related operations
 export default class VendorService {
 
     // Static method for obtaining a Baxi vending token
@@ -30,14 +31,14 @@ export default class VendorService {
 
             return response.data.data
         } catch (error: any) {
-            console.error(error)
+            logger.error(error)
             throw new Error(error.message)
         }
     }
 
     // Static method for validating a meter with Baxi
-    static async baxiValidateMeter(disco: string, meterNumber: string) {
-        const serviceType = disco.toLowerCase() + '_electric' + '_prepaid'  // e.g. aedc_electric_prepaid
+    static async baxiValidateMeter(disco: string, meterNumber: string, vendType: 'PREPAID' | 'POSTPAID') {
+        const serviceType = disco.toLowerCase() + '_electric' + `_${vendType.toLowerCase()}`  // e.g. aedc_electric_prepaid
         const postData = {
             service_type: serviceType,
             account_number: NODE_ENV === 'development' ? '6528651914' : meterNumber // Baxi has a test meter number
@@ -47,7 +48,7 @@ export default class VendorService {
             const response = await this.baxiAxios().post<IBaxiValidateMeterResponse>('/verify', postData)
             return response.data.data
         } catch (error: any) {
-            console.error(error)
+            logger.error(error)
             throw new Error(error.message)
         }
     }
@@ -57,7 +58,7 @@ export default class VendorService {
             const response = await this.baxiAxios().get<IBaxiGetProviderResponse>('/billers')
             return response.data
         } catch (error) {
-            console.error(error)
+            logger.error(error)
             throw new Error()
         }
     }
@@ -73,7 +74,7 @@ export default class VendorService {
                 }
             }
         } catch (error) {
-            console.error(error)
+            logger.error(error)
             throw new Error()
         }
     }
@@ -110,7 +111,7 @@ export default class VendorService {
             meter: body.meterNumber,
             disco: body.disco,
             paymentType: "B2B",
-            vendType: "PREPAID",
+            vendType: body.vendType.toUpperCase(),
             amount: body.amount,
             phone: body.phone
         }
@@ -123,9 +124,10 @@ export default class VendorService {
             return response.data;
         } catch (error: any) {
             initialError = error
-            console.log(error.response.data.message)
+            logger.error(error.response.data.message)
         }
 
+        // TODO: Use event emitter to requery transaction after 10s
         if (initialError.response.data.message === "An unexpected error occurred. Please requery.") {
             try {
                 const response = await this.buyPowerAxios().get(`/transaction/${body.transactionId}`)
@@ -135,6 +137,7 @@ export default class VendorService {
             }
         }
 
+        throw initialError
     }
 
 
@@ -144,7 +147,7 @@ export default class VendorService {
         const paramsObject: any = {
             meter: NODE_ENV === 'development' ? '12345678910' : body.meterNumber,
             disco: body.disco,
-            vendType: 'PREPAID',
+            vendType: body.vendType.toUpperCase(),
             vertical: 'ELECTRICITY'
         }
         const params: string = querystring.stringify(paramsObject);
@@ -154,7 +157,7 @@ export default class VendorService {
             const response = await this.buyPowerAxios().get<IBuyPowerValidateMeterResponse>(`/check/meter?${params}`);
             return response.data;
         } catch (error: any) {
-            throw new Error()
+            throw new Error('An error occurred while validating meter');
         }
     }
 
@@ -167,7 +170,7 @@ export default class VendorService {
             if (data[disco] === true) return true;
             else return false;
         } catch (error) {
-            console.log(error)
+            logger.info(error)
             throw new Error()
         }
     }
@@ -177,7 +180,7 @@ export default class VendorService {
             const response = await this.buyPowerAxios().get<IBuyPowerGetProvidersResponse>('/discos/status')
             return response.data
         } catch (error) {
-            console.error(error)
+            logger.error(error)
             throw new Error()
         }
     }
