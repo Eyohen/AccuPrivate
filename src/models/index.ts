@@ -2,20 +2,11 @@
 import { Dialect, DataTypes } from 'sequelize'
 import { Sequelize } from 'sequelize-typescript';
 import logger from '../utils/Logger';
-// Define database connection parameters
-const db: string = 'accuvend'; // Database name
-const user: string = 'postgres'; // Database user
-const pass: string = 'postgres'; // Database password
-const port: number = 5432; // Database port
-const dialect: Dialect = 'postgres'; // Database dialect (PostgreSQL)
-const host: string = 'localhost'; // Database host
+import { DB_CONFIG } from '../utils/Constants';
 
 // Create a new Sequelize instance for database connection and add Models
-const Database = new Sequelize(db, user, pass, {
-    host: host,
-    dialect: dialect,
-    port: port,
-    logging: false,
+const Database = new Sequelize(DB_CONFIG.URL, {
+    logging: false
 });
 
 // Asynchronous function to initiate the database connection
