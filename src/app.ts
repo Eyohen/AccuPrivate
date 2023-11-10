@@ -50,7 +50,7 @@ async function startServer(): Promise<void> {
         await Database.sync();
 
         // Start the server and listen on port 3000
-        app.listen(3000, () => {
+        app.listen(process.env.PORT || 3000, () => {
             logger.info("Server Started on Port 3000");
         });
     } catch (err) {
