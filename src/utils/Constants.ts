@@ -4,7 +4,7 @@ dotenv.config();  // Load environment variables from .env file
 
 
 const deployed = process.env.DEPLOYED
-const path = deployed ? `/etc/secrets/env` : `${__dirname}/../.env`;
+const path = deployed ? `/etc/secrets/.env` : `${__dirname}/../.env`;
 dotenv.config({ path });
 
 export const BAXI_URL: string | undefined = process.env.BAXI_URL
