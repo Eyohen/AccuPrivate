@@ -56,7 +56,23 @@ export default class VendorService {
     static async baxiFetchAvailableDiscos() {
         try {
             const response = await this.baxiAxios().get<IBaxiGetProviderResponse>('/billers')
-            return response.data
+            const responseData = response.data
+
+            const providers = [] as { name: string, serviceType: 'PREPAID' | 'POSTPAID' }[]
+
+            for (const provider of responseData.data.providers) {
+                const serviceProvider = provider.service_type.split('_')[0].toUpperCase()
+                const serviceType = provider.service_type.split('_')[2].toUpperCase()
+
+                if (provider.service_type.includes('electric')) {
+                    providers.push({
+                        name: serviceProvider + ` ${serviceType}`,
+                        serviceType: serviceType as 'PREPAID' | 'POSTPAID',
+                    })
+                }
+            }
+
+            return providers
         } catch (error) {
             logger.error(error)
             throw new Error()
@@ -68,8 +84,8 @@ export default class VendorService {
         try {
             const responseData = await this.baxiFetchAvailableDiscos()
 
-            for (const provider of responseData.data.providers) {
-                if (provider.shortname === disco) {
+            for (const provider of responseData) {
+                if (provider.name === disco) {
                     return true
                 }
             }
@@ -177,8 +193,26 @@ export default class VendorService {
 
     static async buyPowerFetchAvailableDiscos() {
         try {
+            const providers = [] as { name: string, serviceType: 'PREPAID' | 'POSTPAID' }[]
+
             const response = await this.buyPowerAxios().get<IBuyPowerGetProvidersResponse>('/discos/status')
-            return response.data
+            const responseData = response.data
+
+            for (const key of Object.keys(responseData)) {
+                if (responseData[key as keyof IBuyPowerGetProvidersResponse] === true) {
+                    providers.push({
+                        name: key.toUpperCase() + ' PREPAID',
+                        serviceType: 'PREPAID',
+                    })
+
+                    providers.push({
+                        name: key.toUpperCase() + ' POSTPAID',
+                        serviceType: 'POSTPAID',
+                    })
+                }
+            }
+
+            return providers
         } catch (error) {
             logger.error(error)
             throw new Error()

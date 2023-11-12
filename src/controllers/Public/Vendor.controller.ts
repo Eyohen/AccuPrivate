@@ -41,12 +41,13 @@ export default class VendorController {
     static async validateMeter(req: Request, res: Response, next: NextFunction) {
         const {
             meterNumber,
-            superagent,
             disco,
             phoneNumber,
             email,
             vendType
         }: valideMeterRequestBody = req.body
+        const superagent = DEFAULT_ELECTRICITY_PROVIDER // BUYPOWERNG or BAXI
+
         const transaction: Transaction | Error = await TransactionService.addTransaction({
             id: uuidv4(),
             amount: '0',
@@ -60,7 +61,7 @@ export default class VendorController {
         let transactionId: string = transaction instanceof Transaction ? transaction.id : ''
 
         // We Check for Meter User 
-        const response = DEFAULT_ELECTRICITY_PROVIDER != 'BUYPOWERNG'
+        const response = superagent != 'BUYPOWERNG'
             ? await VendorService.buyPowerValidateMeter({
                 transactionId,
                 meterNumber,
@@ -182,7 +183,7 @@ export default class VendorController {
             disco: disco,
             amount: amount,
             meterId: meterId,
-            superagent: vendType,
+            superagent: transactionRecord.superagent,
             address: meterAddress,
             token: NODE_ENV === 'development' ? generateRandomToken() : tokenInfo.data.token,
             tokenNumber: tokenInfo.token,
@@ -239,18 +240,19 @@ export default class VendorController {
     }
 
     static async getDiscos(req: Request, res: Response) {
-        if (!['baxi', 'buypower'].includes(req.query.provider as string)) {
-            return res.status(400).json({
-                status: 'error',
-                error: true,
-                message: 'Invalid provider'
-            })
+        let discos: { name: string, serviceType: 'PREPAID' | 'POSTPAID' }[] = []
+
+        switch (DEFAULT_ELECTRICITY_PROVIDER) {
+            case 'BAXI':
+                discos = await VendorService.baxiFetchAvailableDiscos()
+                break
+            case 'BUYPOWERNG':
+                discos = await VendorService.buyPowerFetchAvailableDiscos()
+                break
+            default:
+                discos = []
+                break
         }
-
-        const discos = req.query.provider === 'baxi'
-            ? await VendorService.baxiFetchAvailableDiscos().then(r => r.data.providers)
-            : await VendorService.buyPowerFetchAvailableDiscos()
-
         res.status(200).json({
             status: 'success',
             message: 'Discos retrieved successfully',
