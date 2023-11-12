@@ -180,12 +180,12 @@ export default class VendorService {
         try {
             // Make a POST request using the BuyPower Axios instance
             const response = await this.buyPowerAxios().post(`/vend?strict=0`, postData);
+            throw new Error('Transaction timeout')
             return response.data;
         } catch (error: any) {
             if (error instanceof AxiosError) {
                 if (error.response?.data?.message === "An unexpected error occurred. Please requery.") {
                     logger.error(error.message, { meta: { stack: error.stack, responseData: error.response.data } })
-                    throw new Error('Transaction timeout')
                 }
             }
 

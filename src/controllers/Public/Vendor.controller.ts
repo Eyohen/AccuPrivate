@@ -124,7 +124,7 @@ export default class VendorController {
 
         let powerUnit = await transactionRecord.$get('powerUnit')
         const response = await VendorService.buyPowerRequeryTransaction({ transactionId: transactionRecord.id })
-        if (response.status !== true) {
+        if (response.status === false) {
             const transactionFailed = response.responseCode === 202
             const transactionIsPending = response.responseCode === 201
 
@@ -137,8 +137,7 @@ export default class VendorController {
                 data: {
                     requeryStatusCode: transactionFailed ? 400 : 202,
                     requeryStatusMessage: transactionFailed ? 'Transaction failed' : 'Transaction pending',
-                    transaction: transactionRecord,
-                    powerUnit: powerUnit
+                    transaction: ResponseTrimmer.trimTransaction(transactionRecord),
                 }
             })
         }
