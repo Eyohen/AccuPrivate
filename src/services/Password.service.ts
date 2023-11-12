@@ -12,6 +12,11 @@ export default class PasswordService{
         return result
     }
 
+    static async comparePassword(password: string, hashedPassword: string): Promise<boolean> {
+        const result = await Cypher.comparePassword(password, hashedPassword)
+        return result
+    }
+    
     static async viewPasswords(): Promise<Password[] | void> {
         const passwords: Password[] = await Password.findAll()
         return passwords

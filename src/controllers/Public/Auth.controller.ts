@@ -163,7 +163,7 @@ export default class AuthController {
 
         const accessToken = await AuthUtil.generateToken({ type: 'passwordreset', partner: partner.dataValues, expiry: 60 * 10 })
         const otpCode = await AuthUtil.generateCode({ type: 'passwordreset', partner: partner.dataValues, expiry: 60 * 10 })
-
+        console.log(otpCode)
         EmailService.sendEmail({
             to: email,
             subject: 'Forgot password',
@@ -182,6 +182,11 @@ export default class AuthController {
     static async resetPassword(req: Request, res: Response) {
         const { otpCode, newPassword }: { otpCode: string, newPassword: string } = req.body
 
+        const validPassword = Validator.validatePassword(newPassword)
+        if (!validPassword) {
+            throw new BadRequestError('Invalid password')
+        }
+
         const partner = await PartnerService.viewSinglePartner((req as any).user.partner.id)
         if (!partner) {
             throw new InternalServerError('Partner not found')
@@ -196,9 +201,9 @@ export default class AuthController {
         if (!password) {
             throw new InternalServerError('No password found for authneticate partner')
         }
-        
+
         await PasswordService.updatePassword(partner.id, newPassword)
-        await AuthUtil.deleteToken({ partner, tokenType: 'emailverification', tokenClass: 'token' })
+        await AuthUtil.deleteToken({ partner, tokenType: 'passwordreset', tokenClass: 'token' })
 
         await EmailService.sendEmail({
             to: partner.email,
@@ -214,25 +219,33 @@ export default class AuthController {
     }
 
     static async login(req: Request, res: Response) {
-        const { disco } = req.query
+        const { email, password } = req.body
 
-        let result = false
-        switch (DEFAULT_ELECTRICITY_PROVIDER) {
-            case 'BAXI':
-                result = await VendorService.baxiCheckDiscoUp(disco as string)
-                break;
-            case 'BUYPOWERNG':
-                result = await VendorService.buyPowerCheckDiscoUp(disco as string)
-                break;
-            default:
-                throw new InternalServerError('An error occured')
+        const partner = await PartnerService.viewSinglePartnerByEmail(email)
+        if (!partner) {
+            throw new BadRequestError('Invalid Email or password')
         }
+
+        const partnerPassword = await partner.$get('password')
+        if (!partnerPassword) {
+            throw new BadRequestError('Invalid Email or password')
+        }
+
+        const validPassword = await PasswordService.comparePassword(password, partnerPassword.password)
+        if (!validPassword) {
+            throw new BadRequestError('Invalid Email or password')
+        }
+
+        const accessToken = await AuthUtil.generateToken({ type: 'access', partner: partner.dataValues, expiry: 60 * 10 })
+        const refreshToken = await AuthUtil.generateToken({ type: 'refresh', partner: partner.dataValues, expiry: 60 * 60 * 24 * 30 })
 
         res.status(200).json({
             status: 'success',
-            message: 'Disco check successful',
+            message: 'Login successful',
             data: {
-                discAvailable: result
+                partner: ResponseTrimmer.trimPartner(partner),
+                accessToken,
+                refreshToken
             }
         })
     }

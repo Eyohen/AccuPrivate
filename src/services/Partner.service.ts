@@ -1,5 +1,6 @@
 import { Transaction } from "sequelize";
 import Partner, { IPartner } from "../models/Partner.model";
+import Cypher from "../utils/Cypher";
 
 export default class PartnerService{
     static async addPartner(partner: IPartner, transaction?: Transaction): Promise<Partner> {
