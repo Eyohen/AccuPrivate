@@ -5,7 +5,7 @@ import logger from '../utils/Logger';
 function errorHandler(err: Error, req: Request, res: Response, next: NextFunction): Response {
     console.error(err)
     logger.error(err.stack);
-    if (err instanceof CustomAPIError) {
+    if (err instanceof CustomAPIError && err.statusCode !== 500) {
         return res.status(err.statusCode).send({
             status: 'error',
             error: true,

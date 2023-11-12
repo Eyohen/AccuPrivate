@@ -1,4 +1,4 @@
-type HttpStatusCode = 400 | 401 | 403 | 404 | 500 | 407;
+type HttpStatusCode = 400 | 401 | 403 | 404 | 407 | 408 | 500 | 504;
 
 export class CustomAPIError extends Error {
     statusCode: HttpStatusCode;
@@ -36,5 +36,11 @@ export class NotFoundError extends CustomAPIError {
 export class InternalServerError extends CustomAPIError {
     constructor(message: string) {
         super(message, 500)
+    }
+}
+
+export class GateWayTimeoutError extends CustomAPIError {
+    constructor(message: string) {
+        super(message, 504)
     }
 }

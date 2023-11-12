@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import EmailTemplate from "./templates";
-import logger from "../../utils/Logger";
+import logger from "../Logger";
 import {
     EMAIL_HOST,
     EMAIL_HOST_ADDRESS,
@@ -9,7 +9,7 @@ import {
     OAUTH_CLIENT_ID,
     OAUTH_CLIENT_SECRET,
     OAUTH_REFRESH_TOKEN,
-} from "../../utils/Constants";
+} from "../Constants";
 
 interface IPartialMailOptions {
     from?: string;

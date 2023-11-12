@@ -12,7 +12,7 @@ export default class TransactionService {
     private static eventService: EventService = new EventService();
 
     // Static method for adding a new transaction
-    static async addTransaction(transaction: ICreateTransaction): Promise<Transaction | Error> {
+    static async addTransaction(transaction: ICreateTransaction): Promise<Transaction> {
         // Build a new transaction object
         const newTransaction: Transaction = Transaction.build(transaction);
         // Save the new transaction to the database

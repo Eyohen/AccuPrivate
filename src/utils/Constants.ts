@@ -21,6 +21,12 @@ export const OAUTH_CLIENT_SECRET = process.env.OAUTH_CLIENT_SECRET as string
 export const OAUTH_REFRESH_TOKEN = process.env.OAUTH_REFRESH_TOKEN as string
 export const OAUTH_ACCESS_TOKEN = process.env.OAUTH_ACCESS_TOKEN as string
 export const LOGO_URL = process.env.LOGO_URL as string
+export const JWT_SECRET = process.env.JWT_SECRET as string
+export const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY as string
+export const REDIS_HOST = process.env.REDIS_HOST as string
+export const REDIS_PASSWORD = process.env.REDIS_PASSWORD as string
+export const REDIS_PORT = parseInt(process.env.REDIS_PORT as string)
+export const REDIS_URL = process.env.REDIS_URL as string
 
 export const DB_CONFIG = {
     NAME: process.env.DB_NAME as string,

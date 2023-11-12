@@ -5,6 +5,46 @@ import querystring from "querystring";
 import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL, NODE_ENV } from "../utils/Constants";
 import logger from "../utils/Logger";
 
+interface _RequeryBuypowerSuccessResponse {
+    result: {
+        status: true,
+        data: {
+            id: number,
+            amountGenerated: number,
+            disco: string,
+            orderId: string,
+            receiptNo: string,
+            tax: `${number}`,
+            vendTime: Date,
+            token: `${number}-${number}-${number}-${number}-${number}`,
+            units: `${number}`,
+            vendRef: string,
+            responseCode: number,
+            responseMessage: string
+        }
+    }
+}
+
+interface SuccessResponseForBuyPowerRequery {
+    status: true,
+    message: string,
+    data: _RequeryBuypowerSuccessResponse['result']['data']
+    responseCode: 200,
+}
+
+interface InprogressResponseForBuyPowerRequery {
+    status: false,
+    message: string,
+    responseCode: 201
+}
+
+interface FailedResponseForBuyPowerRequery {
+    status: false,
+    message: string,
+    responseCode: 202
+}
+
+type BuypowerRequeryResponse = _RequeryBuypowerSuccessResponse | InprogressResponseForBuyPowerRequery | FailedResponseForBuyPowerRequery
 
 // Define the VendorService class for handling provider-related operations
 export default class VendorService {
@@ -56,7 +96,23 @@ export default class VendorService {
     static async baxiFetchAvailableDiscos() {
         try {
             const response = await this.baxiAxios().get<IBaxiGetProviderResponse>('/billers')
-            return response.data
+            const responseData = response.data
+
+            const providers = [] as { name: string, serviceType: 'PREPAID' | 'POSTPAID' }[]
+
+            for (const provider of responseData.data.providers) {
+                const serviceProvider = provider.service_type.split('_')[0].toUpperCase()
+                const serviceType = provider.service_type.split('_')[2].toUpperCase()
+
+                if (provider.service_type.includes('electric')) {
+                    providers.push({
+                        name: serviceProvider + ` ${serviceType}`,
+                        serviceType: serviceType as 'PREPAID' | 'POSTPAID',
+                    })
+                }
+            }
+
+            return providers
         } catch (error) {
             logger.error(error)
             throw new Error()
@@ -68,11 +124,14 @@ export default class VendorService {
         try {
             const responseData = await this.baxiFetchAvailableDiscos()
 
-            for (const provider of responseData.data.providers) {
-                if (provider.shortname === disco) {
+            for (const provider of responseData) {
+                const name = provider.name.split(' ')[0]
+                if (name.toUpperCase() === disco.toUpperCase()) {
                     return true
                 }
             }
+
+            return false
         } catch (error) {
             logger.error(error)
             throw new Error()
@@ -116,30 +175,48 @@ export default class VendorService {
             phone: body.phone
         }
 
-        let initialError: any
+        if (NODE_ENV === 'development') {
+            postData.phone = '08034210294'
+            postData.meter = '12345678910'
+        }
 
         try {
             // Make a POST request using the BuyPower Axios instance
             const response = await this.buyPowerAxios().post(`/vend?strict=0`, postData);
             return response.data;
         } catch (error: any) {
-            initialError = error
-            logger.error(error.response.data.message)
+            if (error instanceof AxiosError) {
+                if (error.response?.data?.message === "An unexpected error occurred. Please requery.") {
+                    logger.error(error.message, { meta: { stack: error.stack, responseData: error.response.data } })
+                    throw new Error('Transaction timeout')
+                }
+            }
+
+            throw error
         }
 
         // TODO: Use event emitter to requery transaction after 10s
-        if (initialError.response.data.message === "An unexpected error occurred. Please requery.") {
-            try {
-                const response = await this.buyPowerAxios().get(`/transaction/${body.transactionId}`)
-                return response.data
-            } catch (error) {
-                throw error
-            }
-        }
-
-        throw initialError
     }
 
+    static async buyPowerRequeryTransaction({ transactionId }: { transactionId: string }) {
+        try {
+            const response = await this.buyPowerAxios().get<BuypowerRequeryResponse>(`/transaction/${transactionId}`)
+
+            const successResponse = response.data as _RequeryBuypowerSuccessResponse
+            if (successResponse.result.status === true) {
+                return {
+                    status: true,
+                    message: 'Transaction successful',
+                    data: successResponse.result.data,
+                    responseCode: 200
+                } as SuccessResponseForBuyPowerRequery
+            }
+
+            return response.data as InprogressResponseForBuyPowerRequery | FailedResponseForBuyPowerRequery
+        } catch (error) {
+            throw error
+        }
+    }
 
     // Static method for validating a meter with BuyPower
     static async buyPowerValidateMeter(body: IValidateMeter) {
@@ -162,12 +239,12 @@ export default class VendorService {
     }
 
     // Static method for checking Disco updates with BuyPower
-    static async buyPowerCheckDiscoUp(disco: string): Promise<boolean | Error> {
+    static async buyPowerCheckDiscoUp(disco: string): Promise<boolean> {
         try {
             // Make a GET request to check Disco updates
             const response = await this.buyPowerAxios().get(`${BUYPOWER_URL}/discos/status`);
             const data = response.data;
-            if (data[disco] === true) return true;
+            if (data[disco.toUpperCase()] === true) return true;
             else return false;
         } catch (error) {
             logger.info(error)
@@ -177,8 +254,26 @@ export default class VendorService {
 
     static async buyPowerFetchAvailableDiscos() {
         try {
+            const providers = [] as { name: string, serviceType: 'PREPAID' | 'POSTPAID' }[]
+
             const response = await this.buyPowerAxios().get<IBuyPowerGetProvidersResponse>('/discos/status')
-            return response.data
+            const responseData = response.data
+
+            for (const key of Object.keys(responseData)) {
+                if (responseData[key as keyof IBuyPowerGetProvidersResponse] === true) {
+                    providers.push({
+                        name: key.toUpperCase() + ' PREPAID',
+                        serviceType: 'PREPAID',
+                    })
+
+                    providers.push({
+                        name: key.toUpperCase() + ' POSTPAID',
+                        serviceType: 'POSTPAID',
+                    })
+                }
+            }
+
+            return providers
         } catch (error) {
             logger.error(error)
             throw new Error()
