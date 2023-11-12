@@ -7,7 +7,7 @@
         "test": "echo \"Error: no test specified\" && exit 1",
         "start": "nodemon ./src/app.ts",
         "dev": "nodemon ./src/app.ts",
-        "dev:render": "node ./dist/server.js",
+        "dev:render": "node ./dist/app.js",
         "build": "tsc --project tsconfig.json",
         "lint": "tslint -c tslint.json -p tsconfig.json --fix",
         "db:makemigrations": "./node_modules/sequelize-auto-migrations/bin/makemigration.js"
