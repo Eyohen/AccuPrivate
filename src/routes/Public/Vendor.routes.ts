@@ -9,6 +9,7 @@ router
     .get('/token', VendorController.requestToken)
     .get('/discos', VendorController.getDiscos)
     .get('/requery-transaction', VendorController.requeryTimedOutTransaction)
+    .get('/discos/check', VendorController.checkDisco)
 
 export default router
 

@@ -14,107 +14,66 @@ import { BadRequestError, GateWayTimeoutError, InternalServerError, NotFoundErro
 import { generateRandomToken } from "../../utils/Helper";
 import EmailService, { EmailTemplate } from "../../utils/Email";
 import ResponseTrimmer from '../../utils/ResponseTrimmer'
+import Partner from "../../models/Partner.model";
+import PartnerService from "../../services/Partner.service";
+import { Database, Sequelize } from "../../models/index";
+import PasswordService from "../../services/Password.service";
+import { AuthUtil } from "../../utils/Auth/token";
+import Validator from "../../utils/Validators";
 
-interface valideMeterRequestBody {
-    meterNumber: string
-    superagent: 'BUYPOWERNG' | 'BAXI',
-    vendType: 'PREPAID' | 'POSTPAID',
-    disco: string
-    phoneNumber: string
-    partnerName: string
-    email: string
-}
+export default class AuthController {
 
-
-interface vendTokenRequestBody {
-    meterNumber: string
-    provider: 'BUYPOWERNG' | 'BAXI'
-    disco: string
-    phoneNumber: string
-    partnerName: string
-    email: string
-}
-
-
-export default class VendorController {
-
-    static async validateMeter(req: Request, res: Response, next: NextFunction) {
+    static async signup(req: Request, res: Response, next: NextFunction) {
         const {
-            meterNumber,
-            disco,
-            phoneNumber,
             email,
-            vendType
-        }: valideMeterRequestBody = req.body
-        const superagent = DEFAULT_ELECTRICITY_PROVIDER // BUYPOWERNG or BAXI
+            password,
+        } = req.body
 
-        const transactionId = uuidv4()
+        const validEmail = Validator.validateEmail(email)
+        if (!validEmail) {
+            throw new BadRequestError('Invalid email')
+        }
 
-        // We Check for Meter User 
-        const response = superagent != 'BUYPOWERNG'
-            ? await VendorService.buyPowerValidateMeter({
-                transactionId,
-                meterNumber,
-                disco,
-                vendType
-            }).catch(e => { throw new BadRequestError('Meter validation failed') })
-            : await VendorService.baxiValidateMeter(disco, meterNumber, vendType)
-                .catch(e => { throw new BadRequestError('Meter validation failed') })
+        const validPassword = Validator.validatePassword(password)
+        if (!validPassword) {
+            throw new BadRequestError('Invalid password')
+        }
 
-        //Add User
-        const user: User = await UserService.addUser({
+        const existingPartner: Partner | null = await PartnerService.viewSinglePartnerByEmail(email)
+        if (existingPartner) {
+            throw new BadRequestError('Email has been used before')
+        }
+
+        const transaction = await Database.transaction()
+        const newPartner = await PartnerService.addPartner({
             id: uuidv4(),
-            address: response.address,
-            email: email,
-            name: response.name,
-            phoneNumber: phoneNumber,
-        })
+            email,
+        }, transaction)
 
-        const transaction: Transaction = await TransactionService.addTransaction({
-            id: transactionId,
-            amount: '0',
-            status: Status.PENDING,
-            superagent: superagent,
-            paymentType: PaymentType.PAYMENT,
-            transactionTimestamp: new Date(),
-            disco: disco,
-            userId: user.id
-        })
-
-        const meter: Meter = await MeterService.addMeter({
+        const partnerPassword = await PasswordService.addPassword({
             id: uuidv4(),
-            address: response.address,
-            meterNumber: meterNumber,
-            userId: user.id,
-            disco: disco,
-            vendType,
-        })
+            partnerId: newPartner.id,
+            password
+        }, transaction)
 
-        await transaction.update({ meterId: meter.id })
+        console.log(newPartner.dataValues)
+        console.log(partnerPassword.dataValues)
 
-        const successful = transaction instanceof Transaction && user instanceof User && meter instanceof Meter
-        if (!successful) throw new InternalServerError('An error occured while validating meter')
+        const accessToken = await AuthUtil.generateToken({ type: 'access', partner: newPartner.dataValues, expiry: 60 * 10 })
 
-        res.status(200).json({
+        await transaction.commit()
+
+        res.status(201).json({
             status: 'success',
+            message: 'Partner created successfully',
             data: {
-                transaction: {
-                    transactionId: transaction.id,
-                    status: transaction.status,
-                },
-                meter: {
-                    disco: meter.disco,
-                    number: meter.meterNumber,
-                    address: meter.address,
-                    phone: user.phoneNumber,
-                    vendType: meter.vendType,
-                    name: user.name,
-                }
+                partner: ResponseTrimmer.trimPartner(newPartner),
+                accessToken,
             }
         })
     }
 
-    static async requeryTimedOutTransaction(req: Request, res: Response, next: NextFunction) {
+    static async verifyEmail(req: Request, res: Response, next: NextFunction) {
         const { bankRefId }: { bankRefId: string } = req.query as any
 
         let transactionRecord = await TransactionService.viewSingleTransactionByBankRefID(bankRefId)
@@ -207,7 +166,7 @@ export default class VendorController {
         })
     }
 
-    static async requestToken(req: Request, res: Response, next: NextFunction) {
+    static async resendVerificationEmail(req: Request, res: Response, next: NextFunction) {
         const {
             transactionId,
             bankRefId,
@@ -308,7 +267,7 @@ export default class VendorController {
         })
     }
 
-    static async getDiscos(req: Request, res: Response) {
+    static async forgotPassword(req: Request, res: Response) {
         let discos: { name: string, serviceType: 'PREPAID' | 'POSTPAID' }[] = []
 
         switch (DEFAULT_ELECTRICITY_PROVIDER) {
@@ -331,7 +290,31 @@ export default class VendorController {
         })
     }
 
-    static async checkDisco(req: Request, res: Response) {
+    static async resetPassword(req: Request, res: Response) {
+        const { disco } = req.query
+
+        let result = false
+        switch (DEFAULT_ELECTRICITY_PROVIDER) {
+            case 'BAXI':
+                result = await VendorService.baxiCheckDiscoUp(disco as string)
+                break;
+            case 'BUYPOWERNG':
+                result = await VendorService.buyPowerCheckDiscoUp(disco as string)
+                break;
+            default:
+                throw new InternalServerError('An error occured')
+        }
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Disco check successful',
+            data: {
+                discAvailable: result
+            }
+        })
+    }
+
+    static async login(req: Request, res: Response) {
         const { disco } = req.query
 
         let result = false

@@ -125,10 +125,13 @@ export default class VendorService {
             const responseData = await this.baxiFetchAvailableDiscos()
 
             for (const provider of responseData) {
-                if (provider.name === disco) {
+                const name = provider.name.split(' ')[0]
+                if (name.toUpperCase() === disco.toUpperCase()) {
                     return true
                 }
             }
+
+            return false
         } catch (error) {
             logger.error(error)
             throw new Error()
@@ -180,12 +183,12 @@ export default class VendorService {
         try {
             // Make a POST request using the BuyPower Axios instance
             const response = await this.buyPowerAxios().post(`/vend?strict=0`, postData);
-            throw new Error('Transaction timeout')
             return response.data;
         } catch (error: any) {
             if (error instanceof AxiosError) {
                 if (error.response?.data?.message === "An unexpected error occurred. Please requery.") {
                     logger.error(error.message, { meta: { stack: error.stack, responseData: error.response.data } })
+                    throw new Error('Transaction timeout')
                 }
             }
 
@@ -236,12 +239,12 @@ export default class VendorService {
     }
 
     // Static method for checking Disco updates with BuyPower
-    static async buyPowerCheckDiscoUp(disco: string): Promise<boolean | Error> {
+    static async buyPowerCheckDiscoUp(disco: string): Promise<boolean> {
         try {
             // Make a GET request to check Disco updates
             const response = await this.buyPowerAxios().get(`${BUYPOWER_URL}/discos/status`);
             const data = response.data;
-            if (data[disco] === true) return true;
+            if (data[disco.toUpperCase()] === true) return true;
             else return false;
         } catch (error) {
             logger.info(error)
