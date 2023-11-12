@@ -1,3 +1,4 @@
+import Partner from "../models/Partner.model"
 import PowerUnit from "../models/PowerUnit.model"
 import Transaction from "../models/Transaction.model"
 
@@ -17,6 +18,16 @@ class ResponseTrimmer {
             token: powerUnit.token,
             tokenUnits: powerUnit.tokenUnits,
             meter: powerUnit.meter
+        }
+    }
+
+    static trimPowerUnits(powerUnits: PowerUnit[]) {
+        return powerUnits.map(powerUnit => this.trimPowerUnit(powerUnit))
+    }
+
+    static trimPartner(partner: Partner) {
+        return {
+            email: partner.email,
         }
     }
 }
