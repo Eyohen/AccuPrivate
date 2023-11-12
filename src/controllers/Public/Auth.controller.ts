@@ -236,6 +236,10 @@ export default class AuthController {
             throw new BadRequestError('Invalid Email or password')
         }
 
+        if (!partner.status.activated) {
+            throw new BadRequestError('Account not activated')
+        }
+        
         const accessToken = await AuthUtil.generateToken({ type: 'access', partner: partner.dataValues, expiry: 60 * 10 })
         const refreshToken = await AuthUtil.generateToken({ type: 'refresh', partner: partner.dataValues, expiry: 60 * 60 * 24 * 30 })
 
