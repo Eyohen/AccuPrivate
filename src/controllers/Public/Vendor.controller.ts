@@ -13,8 +13,7 @@ import { DEFAULT_ELECTRICITY_PROVIDER, NODE_ENV } from "../../utils/Constants";
 import { BadRequestError, GateWayTimeoutError, InternalServerError, NotFoundError } from "../../utils/Errors";
 import { generateRandomToken } from "../../utils/Helper";
 import EmailService, { EmailTemplate } from "../../services/Email.service";
-import { userInfo } from "os";
-import { error } from "console";
+import ResponseTrimmer from '../../utils/ResponseTrimmer'
 
 interface valideMeterRequestBody {
     meterNumber: string
@@ -199,8 +198,8 @@ export default class VendorController {
             data: {
                 requeryStatusCode: 200,
                 requeryStatusMessage: 'Transaction successful',
-                transaction: transactionRecord,
-                powerUnit: powerUnit
+                transaction: ResponseTrimmer.trimTransaction(transactionRecord),
+                powerUnit: ResponseTrimmer.trimPowerUnit(powerUnit)
             }
         })
     }
@@ -255,7 +254,7 @@ export default class VendorController {
             meterNumber: meter.meterNumber,
             disco,
             amount: amount,
-            phone: user?.phoneNumber,
+            phone: user.phoneNumber,
             vendType: vendType as 'PREPAID' | 'POSTPAID'
         }).catch(error => error)
         if (tokenInfo instanceof Error) {
@@ -301,7 +300,7 @@ export default class VendorController {
             status: 'success',
             message: 'Token retrieved successfully',
             data: {
-                newPowerUnit: newPowerUnit.dataValues
+                newPowerUnit: ResponseTrimmer.trimPowerUnit(newPowerUnit)
             }
         })
     }

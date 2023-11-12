@@ -172,7 +172,10 @@ export default class VendorService {
             phone: body.phone
         }
 
-        let initialError: any
+        if (NODE_ENV === 'development') {
+            postData.phone = '08034210294'
+            postData.meter = '12345678910'
+        }
 
         try {
             // Make a POST request using the BuyPower Axios instance
