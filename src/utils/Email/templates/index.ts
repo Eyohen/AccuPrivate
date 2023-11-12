@@ -19,6 +19,9 @@ class EmailTemplate {
     emailVerification = async ({ partnerEmail, otpCode }: EmailVerificationProps) => {
         return container(await ejs.renderFile(__dirname + '/emailverification.ejs', { partnerEmail, otpCode }))
     }
+    awaitActivation = async (partnerEmail: string) => {
+        return container(await ejs.renderFile(__dirname + '/awaitactivation.ejs', { partnerEmail }))
+    }
 }
 
 export default EmailTemplate

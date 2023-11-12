@@ -18,7 +18,7 @@ import Partner from "../../models/Partner.model";
 import PartnerService from "../../services/Partner.service";
 import { Database, Sequelize } from "../../models/index";
 import PasswordService from "../../services/Password.service";
-import { AuthUtil } from "../../utils/Auth/token";
+import { AuthUtil, TokenUtil } from "../../utils/Auth/token";
 import Validator from "../../utils/Validators";
 import logger from "../../utils/Logger";
 
@@ -64,7 +64,7 @@ export default class AuthController {
         console.log(newPartner.dataValues)
         console.log(partnerPassword.dataValues)
 
-        const accessToken = await AuthUtil.generateToken({ type: 'access', partner: newPartner.dataValues, expiry: 60 * 10 })
+        const accessToken = await AuthUtil.generateToken({ type: 'emailverification', partner: newPartner.dataValues, expiry: 60 * 10 })
         const otpCode = await AuthUtil.generateCode({ type: 'emailverification', partner: newPartner.dataValues, expiry: 60 * 10 })
         await transaction.commit()
 
@@ -89,195 +89,67 @@ export default class AuthController {
     }
 
     static async verifyEmail(req: Request, res: Response, next: NextFunction) {
-        const { bankRefId }: { bankRefId: string } = req.query as any
+        const { otpCode }: { otpCode: string } = req.body
 
-        let transactionRecord = await TransactionService.viewSingleTransactionByBankRefID(bankRefId)
-        if (!transactionRecord) {
-            throw new NotFoundError('Transaction record not found')
+        const partner = await PartnerService.viewSinglePartner((req as any).user.partner.id)
+        if (!partner) {
+            throw new InternalServerError('Partner not found')
         }
 
-        if (transactionRecord.superagent === 'BUYPOWERNG') {
-            throw new BadRequestError('Transaction cannot be requery for this superagent')
+        if (partner.status.emailVerified) {
+            throw new BadRequestError('Email already verified')
         }
 
-        let powerUnit = await transactionRecord.$get('powerUnit')
-        const response = await VendorService.buyPowerRequeryTransaction({ transactionId: transactionRecord.id })
-        if (response.status === false) {
-            const transactionFailed = response.responseCode === 202
-            const transactionIsPending = response.responseCode === 201
-
-            if (transactionFailed) await TransactionService.updateSingleTransaction(transactionRecord.id, { status: Status.FAILED })
-            else if (transactionIsPending) await TransactionService.updateSingleTransaction(transactionRecord.id, { status: Status.PENDING })
-
-            return res.status(200).json({
-                status: 'success',
-                message: 'Requery request successful',
-                data: {
-                    requeryStatusCode: transactionFailed ? 400 : 202,
-                    requeryStatusMessage: transactionFailed ? 'Transaction failed' : 'Transaction pending',
-                    transaction: ResponseTrimmer.trimTransaction(transactionRecord),
-                }
-            })
+        const validCode = await AuthUtil.compareCode({ partner: partner.dataValues, tokenType: 'emailverification', token: otpCode })
+        if (!validCode) {
+            throw new BadRequestError('Invalid otp code')
         }
 
-        await TransactionService.updateSingleTransaction(transactionRecord.id, { status: Status.COMPLETE })
-        const user = await transactionRecord.$get('user')
-        if (!user) {
-            throw new InternalServerError(`Transaction ${transactionRecord.id} does not have a user`)
-        }
+        await partner.update({ status: { ...partner.status, emailVerified: true } })
+        await AuthUtil.deleteToken({ partner, tokenType: 'emailverification', tokenClass: 'token' })
 
-        if (!transactionRecord.userId) {
-            throw new InternalServerError(`Timedout transaction ${transactionRecord.id} does not have a user`)
-        }
-
-        const meter: Meter | null = await transactionRecord.$get('meter')
-        if (!meter) {
-            throw new InternalServerError(`Timedout transaction ${transactionRecord.id} does not have a meter`)
-        }
-
-        // Power unit will only be created if the transaction has been completed or if a sucessful requery has been don
-        const transactionHasBeenAccountedFor = !!powerUnit
-
-        // Add Power Unit to store token if transcation has not been accounted for 
-        powerUnit = powerUnit
-            ? powerUnit
-            : await PowerUnitService.addPowerUnit({
-                id: uuidv4(),
-                transactionId: transactionRecord.id,
-                disco: transactionRecord.disco,
-                amount: transactionRecord.amount,
-                meterId: meter.id,
-                superagent: transactionRecord.superagent,
-                address: meter.address,
-                token: NODE_ENV === 'development' ? generateRandomToken() : response.data.token,
-                tokenNumber: 0,
-                tokenUnits: response.data.token
-            })
-
-        // Update Transaction if transaction has not been accounted for
-        // TODO: Add request token event to transaction
-        transactionRecord = transactionHasBeenAccountedFor ? transactionRecord : await transactionRecord.update({ amount: transactionRecord.amount, status: Status.COMPLETE })
-
-        // TODO: Only send email if transaction has not been completed before
-        !transactionHasBeenAccountedFor && EmailService.sendEmail({
-            to: user.email,
-            subject: 'Token Purchase',
-            html: await new EmailTemplate().receipt({
-                transaction: transactionRecord,
-                meterNumber: meter.meterNumber,
-                token: powerUnit.token
-            })
+        await EmailService.sendEmail({
+            to: partner.email,
+            subject: 'Succesful Email Verification',
+            html: await new EmailTemplate().awaitActivation(partner.email)
         })
 
         res.status(200).json({
             status: 'success',
-            message: 'Requery request successful',
-            data: {
-                requeryStatusCode: 200,
-                requeryStatusMessage: 'Transaction successful',
-                transaction: ResponseTrimmer.trimTransaction(transactionRecord),
-                powerUnit: ResponseTrimmer.trimPowerUnit(powerUnit)
-            }
+            message: 'Email verified successfully',
+            data: null
         })
     }
 
     static async resendVerificationEmail(req: Request, res: Response, next: NextFunction) {
-        const {
-            transactionId,
-            bankRefId,
-            bankComment,
-            amount,
-            vendType
-        } = req.query as Record<string, any>
+        const email = req.query.email as string
 
-        if (!bankRefId) throw new BadRequestError('Transaction reference is required')
-
-        const transactionRecord: Transaction | null = await TransactionService.viewSingleTransaction(transactionId)
-        if (!transactionRecord) {
-            throw new BadRequestError('Transaction does not exist')
+        const newPartner = await PartnerService.viewSinglePartnerByEmail(email)
+        console.log(newPartner)
+        if (!newPartner) {
+            throw new InternalServerError('Authenticate partner record not found')
         }
 
-        const disco = transactionRecord.disco
-
-        // Check if Disco is Up
-        const checKDisco: boolean | Error = await VendorService.buyPowerCheckDiscoUp(disco)
-        if (!checKDisco) throw new BadRequestError('Disco is currently down')
-
-        // Check if bankRefId has been used before
-        const existingTransaction: Transaction | null = await TransactionService.viewSingleTransactionByBankRefID(bankRefId)
-        if (existingTransaction instanceof Transaction) {
-            throw new BadRequestError('Bank reference has been used before')
+        if (newPartner.status.emailVerified) {
+            throw new BadRequestError('Email already verified')
         }
 
-        const transactionHasCompleted = transactionRecord.status === Status.COMPLETE
-        if (transactionHasCompleted) {
-            throw new BadRequestError('Transaction has been completed before')
-        }
-
-        //  Get Meter 
-        const meter: Meter | null = await transactionRecord.$get('meter')
-        if (!meter) {
-            throw new InternalServerError(`Transaction ${transactionRecord.id} does not have a meter`)
-        }
-
-        const user = await transactionRecord.$get('user')
-        if (!user) {
-            throw new InternalServerError(`Transaction ${transactionRecord.id} does not have a user`)
-        }
-
-        // Initiate Purchase for token
-        const tokenInfo = await VendorService.buyPowerVendToken({
-            transactionId,
-            meterNumber: meter.meterNumber,
-            disco,
-            amount: amount,
-            phone: user.phoneNumber,
-            vendType: vendType as 'PREPAID' | 'POSTPAID'
-        }).catch(error => error)
-        if (tokenInfo instanceof Error) {
-            if (tokenInfo.message === 'Transaction timeout') {
-                await TransactionService.updateSingleTransaction(transactionId, { status: Status.PENDING, bankComment, bankRefId })
-                throw new GateWayTimeoutError('Transaction timeout')
-            }
-
-            throw tokenInfo
-        }
-
-
-        // Add Power Unit to store token 
-        const newPowerUnit: PowerUnit = await PowerUnitService.addPowerUnit({
-            id: uuidv4(),
-            transactionId: transactionId,
-            disco: disco,
-            amount: amount,
-            meterId: meter.id,
-            superagent: transactionRecord.superagent,
-            address: meter.address,
-            token: NODE_ENV === 'development' ? generateRandomToken() : tokenInfo.data.token,
-            tokenNumber: tokenInfo.token,
-            tokenUnits: tokenInfo.units
-        })
-
-        // Update Transaction
-        // TODO: Add request token event to transaction
-        await TransactionService.updateSingleTransaction(transactionId, { amount, bankRefId, bankComment, status: Status.COMPLETE })
+        const otpCode = await AuthUtil.generateCode({ type: 'emailverification', partner: newPartner.dataValues, expiry: 60 * 10 })
 
         EmailService.sendEmail({
-            to: user.email,
-            subject: 'Token Purchase',
-            html: await new EmailTemplate().receipt({
-                transaction: transactionRecord,
-                meterNumber: meter?.meterNumber,
-                token: newPowerUnit.token
+            to: newPartner.email,
+            subject: 'Verify Email',
+            html: await new EmailTemplate().emailVerification({
+                partnerEmail: newPartner.email,
+                otpCode: otpCode
             })
         })
 
-        //return PowerUnit
         res.status(200).json({
             status: 'success',
-            message: 'Token retrieved successfully',
+            message: 'Verification code sent successfully',
             data: {
-                newPowerUnit: ResponseTrimmer.trimPowerUnit(newPowerUnit)
+                partner: ResponseTrimmer.trimPartner(newPartner),
             }
         })
     }

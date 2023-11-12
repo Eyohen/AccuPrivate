@@ -30,7 +30,7 @@ class TokenUtil {
 
     static async compareToken(key: string, token: string) {
         const _token = await TokenUtil.getTokenFromCache(key)
-        return _token !== token
+        return _token === token
     }
 
     static async deleteTokenFromCache(key: string) {
@@ -38,7 +38,7 @@ class TokenUtil {
     }
 }
 
-type AuthToken = 'access' | 'refresh' | 'passwordreset' | 'emailverification'
+export type AuthToken = 'access' | 'refresh' | 'passwordreset' | 'emailverification'
 interface GenerateTokenData {
     type: AuthToken,
     partner: IPartner,
@@ -52,18 +52,24 @@ interface CompareTokenData {
     token: string
 }
 
+interface DeleteToken {
+    tokenType: AuthToken,
+    tokenClass: 'token' | 'code',
+    partner: IPartner
+}
+
 class AuthUtil {
     static async generateToken(info: GenerateTokenData) {
         const { type, partner, expiry, misc } = info
 
         const tokenKey = `${type}_token:${partner.id}`
-        const token = jwt.sign({ partner, misc }, JWT_SECRET, { expiresIn: info.expiry })
+        const token = jwt.sign({ partner, misc: { ...misc, tokenType: type } }, JWT_SECRET, { expiresIn: info.expiry })
 
         await TokenUtil.saveTokenToCache({ key: tokenKey, token, expiry })
 
         return token
     }
-    
+
     static async generateCode(info: GenerateTokenData) {
         const { type, partner, expiry, misc } = info
 
@@ -79,7 +85,7 @@ class AuthUtil {
         const tokenKey = `${tokenType}_token:${partner.id}`
         return TokenUtil.compareToken(tokenKey, token)
     }
-    
+
     static compareCode({ partner, tokenType, token }: Omit<CompareTokenData, 'misc'>) {
         const tokenKey = `${tokenType}_code:${partner.id}`
         return TokenUtil.compareToken(tokenKey, token)
@@ -90,7 +96,12 @@ class AuthUtil {
     }
 
     static verifyCode(code: string) {
-        
+
+    }
+
+    static async deleteToken({ partner, tokenType, tokenClass }: DeleteToken) {
+        const tokenKey = `${tokenType}_${tokenClass}:${partner.id}`
+        await TokenUtil.deleteTokenFromCache(tokenKey)
     }
 }
 
