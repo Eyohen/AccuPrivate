@@ -5,6 +5,46 @@ import querystring from "querystring";
 import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL, NODE_ENV } from "../utils/Constants";
 import logger from "../utils/Logger";
 
+interface _RequeryBuypowerSuccessResponse {
+    result: {
+        status: true,
+        data: {
+            id: number,
+            amountGenerated: number,
+            disco: string,
+            orderId: string,
+            receiptNo: string,
+            tax: `${number}`,
+            vendTime: Date,
+            token: `${number}-${number}-${number}-${number}-${number}`,
+            units: `${number}`,
+            vendRef: string,
+            responseCode: number,
+            responseMessage: string
+        }
+    }
+}
+
+interface SuccessResponseForBuyPowerRequery {
+    status: true,
+    message: string,
+    data: _RequeryBuypowerSuccessResponse['result']['data']
+    responseCode: 200,
+}
+
+interface InprogressResponseForBuyPowerRequery {
+    status: false,
+    message: string,
+    responseCode: 201
+}
+
+interface FailedResponseForBuyPowerRequery {
+    status: false,
+    message: string,
+    responseCode: 202
+}
+
+type BuypowerRequeryResponse = _RequeryBuypowerSuccessResponse | InprogressResponseForBuyPowerRequery | FailedResponseForBuyPowerRequery
 
 // Define the VendorService class for handling provider-related operations
 export default class VendorService {
@@ -139,23 +179,38 @@ export default class VendorService {
             const response = await this.buyPowerAxios().post(`/vend?strict=0`, postData);
             return response.data;
         } catch (error: any) {
-            initialError = error
-            logger.error(error.response.data.message)
+            if (error instanceof AxiosError) {
+                if (error.response?.data?.message === "An unexpected error occurred. Please requery.") {
+                    logger.error(error.message, { meta: { stack: error.stack, responseData: error.response.data } })
+                    throw new Error('Transaction timeout')
+                }
+            }
+
+            throw error
         }
 
         // TODO: Use event emitter to requery transaction after 10s
-        if (initialError.response.data.message === "An unexpected error occurred. Please requery.") {
-            try {
-                const response = await this.buyPowerAxios().get(`/transaction/${body.transactionId}`)
-                return response.data
-            } catch (error) {
-                throw error
-            }
-        }
-
-        throw initialError
     }
 
+    static async buyPowerRequeryTransaction({ transactionId }: { transactionId: string }) {
+        try {
+            const response = await this.buyPowerAxios().get<BuypowerRequeryResponse>(`/transaction/${transactionId}`)
+
+            const successResponse = response.data as _RequeryBuypowerSuccessResponse
+            if (successResponse.result.status === true) {
+                return {
+                    status: true,
+                    message: 'Transaction successful',
+                    data: successResponse.result.data,
+                    responseCode: 200
+                } as SuccessResponseForBuyPowerRequery
+            }
+
+            return response.data as InprogressResponseForBuyPowerRequery | FailedResponseForBuyPowerRequery
+        } catch (error) {
+            throw error
+        }
+    }
 
     // Static method for validating a meter with BuyPower
     static async buyPowerValidateMeter(body: IValidateMeter) {

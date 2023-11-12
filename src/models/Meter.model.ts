@@ -1,7 +1,8 @@
 // Import necessary modules and dependencies
-import { Table, Column, Model, DataType, IsUUID, PrimaryKey, BelongsTo, ForeignKey, HasMany } from "sequelize-typescript";
+import { Table, Column, Model, DataType, IsUUID, PrimaryKey, BelongsTo, ForeignKey, HasMany, BelongsToMany } from "sequelize-typescript";
 import User from "./User.model";
 import PowerUnit from "./PowerUnit.model";
+import Transaction from "./Transaction.model";
 
 // Define the Sequelize model for the "Meter" table
 @Table
@@ -40,6 +41,10 @@ export default class Meter extends Model<Meter | IMeter> {
     // Has many associated PowerUnits
     @HasMany(() => PowerUnit)
     powerUnits: PowerUnit[];
+
+    // Transactions associated with the meter
+    @HasMany(() => Transaction)
+    transactions: Transaction[];
 }
 
 // Interface to represent a Meter object with specific properties

@@ -4,6 +4,7 @@ import User from "./User.model";
 import Partner from "./Partner.model";
 import Event from "./Event.model";
 import PowerUnit from "./PowerUnit.model";
+import Meter from "./Meter.model";
 
 // Define enums for status and payment type
 export enum Status {
@@ -62,7 +63,7 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     @ForeignKey(() => User)
     @IsUUID(4)
     @Column
-    userId?: string;
+    userId: string;
 
     // Belongs to a User
     @BelongsTo(() => User)
@@ -85,6 +86,16 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     // Has one associated PowerUnit
     @HasOne(() => PowerUnit)
     powerUnit: PowerUnit;
+
+    // Optional foreign key
+    @ForeignKey(() => Meter)
+    @IsUUID(4)
+    @Column
+    meterId?: string;
+
+    // Has one associated Meter
+    @BelongsTo(() => Meter)
+    meter: Meter;
 }
 
 
@@ -99,8 +110,9 @@ export interface ITransaction {
     bankRefId?: string; // Bank reference ID related to the transaction
     bankComment?: string; // Comments or notes from the bank regarding the transaction
     superagent: 'BUYPOWERNG' | 'BAXI'; // superagent associated with the transaction
-    userId?: string; // Unique identifier of the user associated with the transaction
+    userId: string; // Unique identifier of the user associated with the transaction
     partnerId?: string; // Unique identifier of the Partner associated with the transaction
+    meterId?: string; // Unique identifier of the Meter associated with the transaction
 }
 
 // Define an interface representing the creation of a transaction (ICreateTransaction).

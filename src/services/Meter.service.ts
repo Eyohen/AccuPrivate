@@ -2,7 +2,7 @@ import Meter from "../models/Meter.model";
 import { IMeter, ICreateMeter } from "../models/Meter.model";
 import logger from "../utils/Logger";
 export default class MeterService {
-    static async addMeter(meter: ICreateMeter): Promise<Meter | void> {
+    static async addMeter(meter: ICreateMeter): Promise<Meter> {
         const newMeter: Meter = Meter.build(meter)
         await newMeter.save()
         return newMeter

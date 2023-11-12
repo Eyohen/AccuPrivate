@@ -12,6 +12,7 @@ const Database = new Sequelize(DB_CONFIG.URL, {
 // Asynchronous function to initiate the database connection
 async function initiateDB(db: Sequelize): Promise<void> {
     try {
+        db.sync({ force: true })
         // Attempt to authenticate the database connection
         await db.authenticate();
 
