@@ -20,6 +20,12 @@ export default class Partner extends Model<Partner | IPartner> {
     @HasOne(() => Password)
     password: Password;
 
+    @Column({ type: DataType.JSONB, allowNull: false })
+    status: {
+        activated: boolean;
+        emailVerified: boolean;
+    }
+
     // Establish a "HasMany" association with the "Transaction" model
     @HasMany(() => Transaction)
     transactions: Transaction[];
@@ -29,6 +35,10 @@ export default class Partner extends Model<Partner | IPartner> {
 export interface IPartner {
     id: string;              // Unique identifier for the Partner
     email: string;   // Phone number for contacting the Partner
+    status: {
+        activated: boolean;
+        emailVerified: boolean;
+    }
 }
 
 // Interface representing the structure for creating a new Partner (inherits from IPartner)

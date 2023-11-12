@@ -20,6 +20,7 @@ import { Database, Sequelize } from "../../models/index";
 import PasswordService from "../../services/Password.service";
 import { AuthUtil } from "../../utils/Auth/token";
 import Validator from "../../utils/Validators";
+import logger from "../../utils/Logger";
 
 export default class AuthController {
 
@@ -48,6 +49,10 @@ export default class AuthController {
         const newPartner = await PartnerService.addPartner({
             id: uuidv4(),
             email,
+            status: {
+                activated: false,
+                emailVerified: false
+            }
         }, transaction)
 
         const partnerPassword = await PasswordService.addPassword({
@@ -60,8 +65,18 @@ export default class AuthController {
         console.log(partnerPassword.dataValues)
 
         const accessToken = await AuthUtil.generateToken({ type: 'access', partner: newPartner.dataValues, expiry: 60 * 10 })
-
+        const otpCode = await AuthUtil.generateCode({ type: 'emailverification', partner: newPartner.dataValues, expiry: 60 * 10 })
         await transaction.commit()
+
+        logger.info(otpCode)
+        EmailService.sendEmail({
+            to: newPartner.email,
+            subject: 'Verify Email',
+            html: await new EmailTemplate().emailVerification({
+                partnerEmail: newPartner.email,
+                otpCode: otpCode
+            })
+        })
 
         res.status(201).json({
             status: 'success',

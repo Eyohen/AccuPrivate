@@ -56,21 +56,41 @@ class AuthUtil {
     static async generateToken(info: GenerateTokenData) {
         const { type, partner, expiry, misc } = info
 
-        const tokenKey = `${type}:${partner.id}`
+        const tokenKey = `${type}_token:${partner.id}`
         const token = jwt.sign({ partner, misc }, JWT_SECRET, { expiresIn: info.expiry })
 
         await TokenUtil.saveTokenToCache({ key: tokenKey, token, expiry })
 
         return token
     }
+    
+    static async generateCode(info: GenerateTokenData) {
+        const { type, partner, expiry, misc } = info
 
-    static compareToken({ partner, tokenType, token }: CompareTokenData) {
-        const tokenKey = `${tokenType}:${partner.id}`
+        const tokenKey = `${type}_code:${partner.id}`
+        const token = Math.floor(100000 + Math.random() * 900000).toString()
+
+        await TokenUtil.saveTokenToCache({ key: tokenKey, token, expiry })
+
+        return token
+    }
+
+    static compareToken({ partner, tokenType, token }: Omit<CompareTokenData, 'misc'>) {
+        const tokenKey = `${tokenType}_token:${partner.id}`
+        return TokenUtil.compareToken(tokenKey, token)
+    }
+    
+    static compareCode({ partner, tokenType, token }: Omit<CompareTokenData, 'misc'>) {
+        const tokenKey = `${tokenType}_code:${partner.id}`
         return TokenUtil.compareToken(tokenKey, token)
     }
 
     static verifyToken(token: string) {
         return jwt.verify(token, JWT_SECRET)
+    }
+
+    static verifyCode(code: string) {
+        
     }
 }
 
