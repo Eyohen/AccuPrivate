@@ -41,6 +41,7 @@ export default class Password extends Model<Password | IPassword> {
     }
 }
 
+
 // Interface representing the structure of a Partner entity
 export interface IPassword {
     id: string;              // Unique identifier for the Partner

@@ -22,6 +22,9 @@ class EmailTemplate {
     awaitActivation = async (partnerEmail: string) => {
         return container(await ejs.renderFile(__dirname + '/awaitactivation.ejs', { partnerEmail }))
     }
+    forgotPassword = async ({ email, otpCode}: { email: string, otpCode: string}) => {
+        return container(await ejs.renderFile(__dirname + '/forgotpassword.ejs', { email, otpCode }))
+    }
 }
 
 export default EmailTemplate

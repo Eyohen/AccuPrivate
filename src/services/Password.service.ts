@@ -1,6 +1,7 @@
 import { Transaction } from "sequelize";
 import Password, { IPassword } from "../models/Password.model";
 import Cypher from "../utils/Cypher";
+import Partner from "../models/Partner.model";
 
 export default class PasswordService{
     static async addPassword(password: IPassword, transaction?: Transaction): Promise<Password> {
@@ -19,6 +20,10 @@ export default class PasswordService{
     static async viewSinglePassword(uuid: string): Promise<Password | null> {
         const password: Password | null = await Password.findByPk(uuid)
         return password
+    }
+
+    static async updatePassword(partnerId: string, newPassword: string) {
+        return await Password.updatePassword(partnerId, newPassword)
     }
 
     static async viewSinglePasswordByPartnerId(partnerId: string): Promise<Password | null> {

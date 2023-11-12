@@ -125,7 +125,6 @@ export default class AuthController {
         const email = req.query.email as string
 
         const newPartner = await PartnerService.viewSinglePartnerByEmail(email)
-        console.log(newPartner)
         if (!newPartner) {
             throw new InternalServerError('Authenticate partner record not found')
         }
@@ -155,49 +154,62 @@ export default class AuthController {
     }
 
     static async forgotPassword(req: Request, res: Response) {
-        let discos: { name: string, serviceType: 'PREPAID' | 'POSTPAID' }[] = []
+        const { email } = req.body
 
-        switch (DEFAULT_ELECTRICITY_PROVIDER) {
-            case 'BAXI':
-                discos = await VendorService.baxiFetchAvailableDiscos()
-                break
-            case 'BUYPOWERNG':
-                discos = await VendorService.buyPowerFetchAvailableDiscos()
-                break
-            default:
-                discos = []
-                break
+        const partner = await PartnerService.viewSinglePartnerByEmail(email)
+        if (!partner) {
+            throw new BadRequestError('No account exist for this email')
         }
+
+        const accessToken = await AuthUtil.generateToken({ type: 'passwordreset', partner: partner.dataValues, expiry: 60 * 10 })
+        const otpCode = await AuthUtil.generateCode({ type: 'passwordreset', partner: partner.dataValues, expiry: 60 * 10 })
+
+        EmailService.sendEmail({
+            to: email,
+            subject: 'Forgot password',
+            html: await new EmailTemplate().forgotPassword({ email, otpCode })
+        })
+
         res.status(200).json({
             status: 'success',
-            message: 'Discos retrieved successfully',
+            message: 'Otpcode sent to users email',
             data: {
-                discos: discos
+                accessToken
             }
         })
     }
 
     static async resetPassword(req: Request, res: Response) {
-        const { disco } = req.query
+        const { otpCode, newPassword }: { otpCode: string, newPassword: string } = req.body
 
-        let result = false
-        switch (DEFAULT_ELECTRICITY_PROVIDER) {
-            case 'BAXI':
-                result = await VendorService.baxiCheckDiscoUp(disco as string)
-                break;
-            case 'BUYPOWERNG':
-                result = await VendorService.buyPowerCheckDiscoUp(disco as string)
-                break;
-            default:
-                throw new InternalServerError('An error occured')
+        const partner = await PartnerService.viewSinglePartner((req as any).user.partner.id)
+        if (!partner) {
+            throw new InternalServerError('Partner not found')
         }
+
+        const validCode = await AuthUtil.compareCode({ partner: partner.dataValues, tokenType: 'passwordreset', token: otpCode })
+        if (!validCode) {
+            throw new BadRequestError('Invalid otp code')
+        }
+
+        const password = await partner.$get('password')
+        if (!password) {
+            throw new InternalServerError('No password found for authneticate partner')
+        }
+        
+        await PasswordService.updatePassword(partner.id, newPassword)
+        await AuthUtil.deleteToken({ partner, tokenType: 'emailverification', tokenClass: 'token' })
+
+        await EmailService.sendEmail({
+            to: partner.email,
+            subject: 'Succesful Email Verification',
+            html: await new EmailTemplate().awaitActivation(partner.email)
+        })
 
         res.status(200).json({
             status: 'success',
-            message: 'Disco check successful',
-            data: {
-                discAvailable: result
-            }
+            message: 'Password reset successfully',
+            data: null
         })
     }
 
