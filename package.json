@@ -34,6 +34,7 @@
         "sequelize": "^6.33.0",
         "sequelize-auto-migrations": "github:scimonster/sequelize-auto-migrations#a063aa6535a3f580623581bf866cef2d609531ba",
         "sequelize-typescript": "^2.1.5",
+        "typescript": "^5.2.2",
         "uuid": "^9.0.1",
         "winston": "^3.11.0",
         "zod": "^3.22.4"
