@@ -8,6 +8,7 @@ import logger from "../utils/Logger";
 import PowerUnit from "../models/PowerUnit.model";
 import Partner from "../models/Partner.model";
 import User from "../models/User.model";
+import Meter from "../models/Meter.model";
 
 // Define the TransactionService class for handling transaction-related operations
 export default class TransactionService {
@@ -32,7 +33,7 @@ export default class TransactionService {
 
     static async viewTransactionsWithCustomQuery(query: any): Promise<Transaction[]> {
         // Retrieve all transactions from the database
-        const transactions: Transaction[] = await Transaction.findAll({ ...query, include: [PowerUnit, Partner, User] });
+        const transactions: Transaction[] = await Transaction.findAll({ ...query, include: [PowerUnit, Partner, User, Meter] });
         return transactions;
     }
 
