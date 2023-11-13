@@ -54,6 +54,7 @@ async function startServer(): Promise<void> {
             logger.info("Server Started on Port 3000");
         });
     } catch (err) {
+        console.error(err)
         // Log any errors that occur during server startup
         logger.error(err);
         // Exit the process with a non-zero status code to indicate an error
