@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken'
 import { JWT_SECRET } from "../utils/Constants";
 import { IPartner } from "../models/Partner.model";
 import { UnauthenticatedError } from "../utils/Errors";
+import Cypher from "../utils/Cypher";
 
 export const basicAuth = function (tokenType: AuthToken) {
     return async (req: Request, res: Response, next: NextFunction) => {
@@ -35,4 +36,52 @@ export const basicAuth = function (tokenType: AuthToken) {
 
         next()
     }
+}
+
+export const  validateApiKey = async (req: Request, res: Response, next: NextFunction) => {
+    const apiKey = req.headers['x-api-key'] as string
+    const apiSecret = req.headers['x-api-secret'] as string
+    if (!apiKey) {
+        return next(new UnauthenticatedError('Invalid API key'))
+    }
+
+    console.log({
+        apiKey,
+        apiSecret,
+    })
+    
+    const decryptedStr = Cypher.decryptString(apiKey)
+    const encryptedSecretForDecodingApiKey = await TokenUtil.getTokenFromCache(apiSecret)
+    console.log({
+        apiKey,
+        apiSecret,
+        decreyptedApiKey: decryptedStr,
+        encryptedSecretForDecodingApiKey,
+    })
+    if (!encryptedSecretForDecodingApiKey) {
+        return next(new UnauthenticatedError('Invalid API Secret'))
+    }
+    console.log({
+        apiKey,
+        apiSecret,
+        decreyptedApiKey: decryptedStr,
+        encryptedSecretForDecodingApiKey,
+    })
+    
+    const decryptedEncryptedSecretForDecodingApiKey = Cypher.decryptString(encryptedSecretForDecodingApiKey)
+    const validApiKey = Cypher.decodeApiKey(decryptedStr, decryptedEncryptedSecretForDecodingApiKey)
+    console.log({
+        apiKey,
+        apiSecret,
+        decreyptedApiKey: decryptedStr,
+        encryptedSecretForDecodingApiKey,
+        decryptedEncryptedSecretForDecodingApiKey,
+    })
+    if (!validApiKey) {
+        return next(new UnauthenticatedError('Invalid API key'))
+    }
+
+    (req as any).key = validApiKey
+
+    next()
 }

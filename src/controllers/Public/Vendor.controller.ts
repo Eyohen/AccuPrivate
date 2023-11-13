@@ -50,7 +50,7 @@ export default class VendorController {
 
         const transactionId = uuidv4()
 
-        // We Check for Meter User 
+        // We Check for Meter User *
         const response = superagent != 'BUYPOWERNG'
             ? await VendorService.buyPowerValidateMeter({
                 transactionId,

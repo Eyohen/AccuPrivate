@@ -5,6 +5,7 @@ import meterRoute from './Public/Meter.routes'
 import powerUnitRoute from './Public/PowerUnit.routes'
 import userRoute from './Public/User.routes'
 import authRoute from './Public/Auth.routes'
+import apikeyRoute from './Public/Apikey.routes'
 
 const router = Router()
 
@@ -15,6 +16,7 @@ router
     .use('/powerunit', powerUnitRoute)
     .use('/user', userRoute)
     .use('/auth', authRoute)
+    .use('/key', apikeyRoute)
 
 export default router
 

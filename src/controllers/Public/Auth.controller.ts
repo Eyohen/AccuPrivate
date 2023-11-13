@@ -21,6 +21,8 @@ import PasswordService from "../../services/Password.service";
 import { AuthUtil, TokenUtil } from "../../utils/Auth/token";
 import Validator from "../../utils/Validators";
 import logger from "../../utils/Logger";
+import Cypher from "../../utils/Cypher";
+import ApiKeyService from "../../services/ApiKey.service ";
 
 export default class AuthController {
 
@@ -51,18 +53,32 @@ export default class AuthController {
             email,
             status: {
                 activated: false,
-                emailVerified: false
-            }
+                emailVerified: false,
+            },
         }, transaction)
 
+        const apiKey = await ApiKeyService.addApiKey({
+            partnerId: newPartner.id,
+            key: newPartner.key,
+            active: true,
+            id: uuidv4()
+        }, transaction)
+
+        const secKeyInCache = Cypher.encryptString(newPartner.sec)
+        await TokenUtil.saveTokenToCache({ key: secKeyInCache, token: Cypher.encryptString(newPartner.key) })
+
+        console.log({
+            key: newPartner.key,
+            sec: newPartner.sec,
+            secKeyInCache,
+            encryptedKey: Cypher.encryptString(newPartner.key)
+        })
         const partnerPassword = await PasswordService.addPassword({
             id: uuidv4(),
             partnerId: newPartner.id,
             password
         }, transaction)
 
-        console.log(newPartner.dataValues)
-        console.log(partnerPassword.dataValues)
 
         const accessToken = await AuthUtil.generateToken({ type: 'emailverification', partner: newPartner.dataValues, expiry: 60 * 10 })
         const otpCode = await AuthUtil.generateCode({ type: 'emailverification', partner: newPartner.dataValues, expiry: 60 * 10 })
@@ -239,7 +255,7 @@ export default class AuthController {
         if (!partner.status.activated) {
             throw new BadRequestError('Account not activated')
         }
-        
+
         const accessToken = await AuthUtil.generateToken({ type: 'access', partner: partner.dataValues, expiry: 60 * 10 })
         const refreshToken = await AuthUtil.generateToken({ type: 'refresh', partner: partner.dataValues, expiry: 60 * 60 * 24 * 30 })
 

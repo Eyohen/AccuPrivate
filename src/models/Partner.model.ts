@@ -2,6 +2,7 @@
 import { Table, Column, Model, DataType, IsUUID, PrimaryKey, HasMany, HasOne } from "sequelize-typescript";
 import Transaction from "./Transaction.model";
 import Password from "./Password.model";
+import ApiKey from "./ApiKey.model";
 
 // Define the "Partner" table model
 @Table
@@ -29,6 +30,15 @@ export default class Partner extends Model<Partner | IPartner> {
     // Establish a "HasMany" association with the "Transaction" model
     @HasMany(() => Transaction)
     transactions: Transaction[];
+
+    @HasMany(() => ApiKey)
+    apiKeys: ApiKey[];
+
+    @Column({ type: DataType.STRING, allowNull: false })
+    key: string;
+    
+    @Column({ type: DataType.STRING, allowNull: false })
+    sec: string;
 }
 
 // Interface representing the structure of a Partner entity
@@ -38,7 +48,9 @@ export interface IPartner {
     status: {
         activated: boolean;
         emailVerified: boolean;
-    }
+    };
+    key: string;
+    sec: string;
 }
 
 // Interface representing the structure for creating a new Partner (inherits from IPartner)

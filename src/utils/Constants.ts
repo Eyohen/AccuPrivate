@@ -27,6 +27,9 @@ export const REDIS_HOST = process.env.REDIS_HOST as string
 export const REDIS_PASSWORD = process.env.REDIS_PASSWORD as string
 export const REDIS_PORT = parseInt(process.env.REDIS_PORT as string)
 export const REDIS_URL = process.env.REDIS_URL as string
+export const API_KEY_SECRET = process.env.API_KEY_SECRET as string
+export const CRYPTO_IV = process.env.CRYPTO_IV as string;
+export const CRYPTO_PASSWORD = process.env.CRYPTO_PASSWORD as string;
 
 export const DB_CONFIG = {
     NAME: process.env.DB_NAME as string,
