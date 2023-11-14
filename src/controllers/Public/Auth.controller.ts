@@ -66,13 +66,8 @@ export default class AuthController {
 
         const secKeyInCache = Cypher.encryptString(newPartner.sec)
         await TokenUtil.saveTokenToCache({ key: secKeyInCache, token: Cypher.encryptString(newPartner.key) })
+        await ApiKeyService.setCurrentActiveApiKeyInCache(newPartner, apiKey.key.toString())
 
-        console.log({
-            key: newPartner.key,
-            sec: newPartner.sec,
-            secKeyInCache,
-            encryptedKey: Cypher.encryptString(newPartner.key)
-        })
         const partnerPassword = await PasswordService.addPassword({
             id: uuidv4(),
             partnerId: newPartner.id,
@@ -179,7 +174,6 @@ export default class AuthController {
 
         const accessToken = await AuthUtil.generateToken({ type: 'passwordreset', partner: partner.dataValues, expiry: 60 * 10 })
         const otpCode = await AuthUtil.generateCode({ type: 'passwordreset', partner: partner.dataValues, expiry: 60 * 10 })
-        console.log(otpCode)
         EmailService.sendEmail({
             to: email,
             subject: 'Forgot password',

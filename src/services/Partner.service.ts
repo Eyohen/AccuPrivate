@@ -10,11 +10,6 @@ export default class PartnerService {
         const apiKey = Cypher.generateAPIKey(data, randomString)
         const sec = randomUUID()
 
-        console.log({
-            key: apiKey,
-            sec: sec,
-            randomString
-        })
         return {
             key: apiKey,
             sec: sec
@@ -58,7 +53,7 @@ export default class PartnerService {
             await ApiKeyService.deactivateApiKey(partnerActiveKey)
         }
 
-        const newApiKey = await ApiKeyService.addApiKey({
+        await ApiKeyService.addApiKey({
             key,
             partnerId: partner.id,
             active: true,

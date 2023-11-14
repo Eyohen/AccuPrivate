@@ -29,13 +29,6 @@ export default class ApiController {
 
         const secKeyInCache = Cypher.encryptString(partner_.sec)
         await TokenUtil.saveTokenToCache({ key: secKeyInCache, token: Cypher.encryptString(partner_.key) })
-        console.log({
-            key: partner_.key,
-            sec: partner_.sec,
-            secKeyInCache,
-            encryptedKey: Cypher.encryptString(partner_.key),
-            deceryptedKey: Cypher.decryptString(Cypher.encryptString(partner_.key))
-        })
 
         res.status(200).json({
             status: 'success',
@@ -59,6 +52,7 @@ export default class ApiController {
 
         const secKeyInCache = Cypher.encryptString(sec)
         await TokenUtil.saveTokenToCache({ key: secKeyInCache, token: Cypher.encryptString(key) })
+        await ApiKeyService.setCurrentActiveApiKeyInCache(partner, key)
 
         res.status(200).json({
             status: 'success',
