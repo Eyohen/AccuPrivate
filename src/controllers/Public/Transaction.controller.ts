@@ -5,7 +5,7 @@ import { BadRequestError, InternalServerError, NotFoundError } from "../../utils
 import { Status } from "../../models/Event.model";
 import EmailService, { EmailTemplate } from "../../utils/Email";
 import { generateRandomToken } from "../../utils/Helper";
-import { NODE_ENV } from "../../utils/Constants";
+import { DISCO_LOGO, NODE_ENV } from "../../utils/Constants";
 import PowerUnitService from "../../services/PowerUnit.service";
 import { UUIDV4 } from "sequelize";
 import ResponseTrimmer from "../../utils/ResponseTrimmer";
@@ -133,6 +133,7 @@ export default class TransactionController {
                 id: randomUUID(),
                 transactionId: transactionRecord.id,
                 disco: transactionRecord.disco,
+                discoLogo: DISCO_LOGO[transactionRecord.disco.toLowerCase() as keyof typeof DISCO_LOGO],
                 amount: transactionRecord.amount,
                 meterId: meter.id,
                 superagent: transactionRecord.superagent,
@@ -166,6 +167,23 @@ export default class TransactionController {
                 transaction: ResponseTrimmer.trimTransaction(transactionRecord),
                 powerUnit: ResponseTrimmer.trimPowerUnit(powerUnit)
             }
+        })
+    }
+
+    static async getYesterdaysTransactions(req: Request, res: Response) {
+        const { status } = req.query as any as { status: 'COMPLETED' | 'FAILED' | 'PENDING' }
+        const { partner } = (req as any).user
+
+        // const transactions = status
+            // ? await TransactionService.viewTransactionsForYesterdayByStatus(partner.id, status.toUpperCase() as typeof status)
+        const transactions = await TransactionService.viewTransactionForYesterday(partner.id)
+
+        const totalAmount = transactions.reduce((acc, curr) => acc + parseInt(curr.amount), 0)
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Transactions retrieved successfully',
+            data: { transactions, totalAmount }
         })
     }
 }

@@ -19,7 +19,11 @@ export default class TransactionService {
     static async addTransaction(transaction: ICreateTransaction): Promise<Transaction> {
         // Build a new transaction object
         const newTransaction: Transaction = Transaction.build(transaction);
-        // Save the new transaction to the database
+        // Save the new tran    saction to the database
+        const yesterdayDate = new Date()
+        yesterdayDate.setDate(yesterdayDate.getDate() - 1)
+        newTransaction.transactionTimestamp = yesterdayDate
+
         await newTransaction.save();
         return newTransaction;
     }
@@ -40,13 +44,13 @@ export default class TransactionService {
     // Static method for viewing a single transaction by UUID
     static async viewSingleTransaction(uuid: string): Promise<Transaction | null> {
         // Retrieve a single transaction by its UUID
-        const transaction: Transaction | null = await Transaction.findByPk(uuid);
+        const transaction: Transaction | null = await Transaction.findByPk(uuid, { include: [PowerUnit, Partner, User, Meter] });
         return transaction;
     }
 
     static async viewSingleTransactionByBankRefID(bankRefId: string): Promise<Transaction | null> {
         // Retrieve a single transaction by its UUID
-        const transaction: Transaction | null = await Transaction.findOne({ where: { bankRefId: bankRefId } },);
+        const transaction: Transaction | null = await Transaction.findOne({ where: { bankRefId: bankRefId }, include: [Partner] },);
         return transaction;
     }
 
@@ -57,5 +61,39 @@ export default class TransactionService {
         // Retrieve the updated transaction by its UUID
         const updatedTransaction: Transaction | null = await Transaction.findByPk(uuid);
         return updatedTransaction;
+    }
+
+    static async viewTransactionForYesterday(partnerId: string): Promise<Transaction[]> {
+        const yesterdayDate = new Date()
+        yesterdayDate.setDate(yesterdayDate.getDate() - 1)
+        console.log(yesterdayDate)
+        const transactions: Transaction[] = await Transaction.findAll({
+            where: {
+                partnerId: partnerId,
+                transactionTimestamp: {
+                    $between: [yesterdayDate, new Date()]
+                }
+            }
+        })
+
+        return transactions
+    }
+
+    static async viewTransactionsForYesterdayByStatus(partnerId: string, status: 'COMPLETED' | 'PENDING' | 'FAILED'): Promise<Transaction[]> {
+        const yesterdayDate = new Date()
+        yesterdayDate.setDate(yesterdayDate.getDate() - 1)
+        console.log(yesterdayDate)
+
+        const transactions: Transaction[] = await Transaction.findAll({
+            where: {
+                partnerId: partnerId,
+                status,
+                transactionTimestamp: {
+                    $between: [yesterdayDate, new Date()]
+                }
+            }
+        })
+
+        return transactions
     }
 }
