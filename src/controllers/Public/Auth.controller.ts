@@ -74,19 +74,16 @@ export default class AuthController {
             password
         }, transaction)
 
-
+        await newPartner.update({ status: { ...newPartner.status, emailVerified: true } })
         const accessToken = await AuthUtil.generateToken({ type: 'emailverification', partner: newPartner.dataValues, expiry: 60 * 10 })
         const otpCode = await AuthUtil.generateCode({ type: 'emailverification', partner: newPartner.dataValues, expiry: 60 * 10 })
         await transaction.commit()
 
         logger.info(otpCode)
-        EmailService.sendEmail({
+        await EmailService.sendEmail({
             to: newPartner.email,
-            subject: 'Verify Email',
-            html: await new EmailTemplate().emailVerification({
-                partnerEmail: newPartner.email,
-                otpCode: otpCode
-            })
+            subject: 'Succesful Email Verification',
+            html: await new EmailTemplate().awaitActivation(newPartner.email)
         })
 
         res.status(201).json({
@@ -107,6 +104,7 @@ export default class AuthController {
             throw new InternalServerError('Partner not found')
         }
 
+        await partner.update({ status: { ...partner.status, emailVerified: true } })
         if (partner.status.emailVerified) {
             throw new BadRequestError('Email already verified')
         }
@@ -116,7 +114,6 @@ export default class AuthController {
             throw new BadRequestError('Invalid otp code')
         }
 
-        await partner.update({ status: { ...partner.status, emailVerified: true } })
         await AuthUtil.deleteToken({ partner, tokenType: 'emailverification', tokenClass: 'token' })
 
         await EmailService.sendEmail({

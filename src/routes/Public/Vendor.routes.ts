@@ -6,11 +6,10 @@ const router: Router = express.Router()
 
 router
     .post('/validate/meter', validateApiKey, VendorController.validateMeter)
-    .post('/vend/power', VendorController.requestToken)
-    .get('/token', VendorController.requestToken)
+    .get('/token', validateApiKey, VendorController.requestToken)
     .get('/discos', VendorController.getDiscos)
     .get('/requery-transaction', VendorController.requeryTimedOutTransaction)
-    .get('/discos/check', VendorController.checkDisco)
+    .get('/discos/check', validateApiKey, VendorController.checkDisco)
 
 export default router
 
