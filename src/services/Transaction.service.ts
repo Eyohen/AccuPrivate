@@ -65,8 +65,9 @@ export default class TransactionService {
 
     static async viewTransactionForYesterday(partnerId: string): Promise<Transaction[]> {
         const yesterdayDate = new Date()
-        yesterdayDate.setDate(yesterdayDate.getDate() - 1)
+        yesterdayDate.setDate(yesterdayDate.getDate() - 5)
         console.log(yesterdayDate)
+        console.log(new Date())
         const transactions: Transaction[] = await Transaction.findAll({
             where: {
                 partnerId: partnerId,
@@ -83,6 +84,7 @@ export default class TransactionService {
         const yesterdayDate = new Date()
         yesterdayDate.setDate(yesterdayDate.getDate() - 1)
         console.log(yesterdayDate)
+        console.log(new Date())
 
         const transactions: Transaction[] = await Transaction.findAll({
             where: {
