@@ -196,8 +196,16 @@ export default class VendorController {
 
         // Update Transaction
         // TODO: Add request token event to transaction
-        await TransactionService.updateSingleTransaction(transactionId, { amount, bankRefId, bankComment, status: Status.COMPLETE })
+        await TransactionService.updateSingleTransaction(transactionId, { amount, bankRefId, bankComment, status: Status.COMPLETE, paymentType: vendType })
 
+        // Update all transactions paymentType to PREPAID
+        const transactions = await TransactionService.viewTransactionsWithCustomQuery({ })
+        for (let i = 0; i < transactions.length; i++) {
+            const transaction = transactions[i]
+            if (transaction.paymentType === PaymentType.PAYMENT) {
+                await transaction.update({ paymentType: vendType })
+            }
+        }
         EmailService.sendEmail({
             to: user.email,
             subject: 'Token Purchase',
