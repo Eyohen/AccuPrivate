@@ -45,43 +45,16 @@ export const validateApiKey = async (req: Request, res: Response, next: NextFunc
         return next(new UnauthenticatedError('Invalid API key'))
     }
 
-    console.log({
-        apiKey,
-        apiSecret,
-    })
-
-    const decryptedStr = Cypher.decryptString(apiKey).replace(/"/g, '')
     const encryptedSecretForDecodingApiKey = await TokenUtil.getTokenFromCache(apiSecret)
-    console.log({
-        apiKey,
-        apiSecret,
-        decreyptedApiKey: decryptedStr,
-        encryptedSecretForDecodingApiKey,
-    })
     if (!encryptedSecretForDecodingApiKey) {
         return next(new UnauthenticatedError('Invalid API Secret'))
     }
 
     const decryptedEncryptedSecretForDecodingApiKey = Cypher.decryptString(encryptedSecretForDecodingApiKey).replace(/"/g, '')
-
-    console.log({
-        apiKey,
-        apiSecret,
-        decreyptedApiKey: decryptedStr,
-        encryptedSecretForDecodingApiKey,
-        decryptedEncryptedSecretForDecodingApiKey
-    })
     const validApiKey = Cypher.decodeApiKey(apiKey, decryptedEncryptedSecretForDecodingApiKey)
-    console.log({
-        apiKey,
-        apiSecret,
-        decreyptedApiKey: decryptedStr,
-        encryptedSecretForDecodingApiKey,
-        decryptedEncryptedSecretForDecodingApiKey,
-    })
     if (!validApiKey) {
         return next(new UnauthenticatedError('Invalid API key'))
-    }
+    };
 
     (req as any).key = validApiKey
 

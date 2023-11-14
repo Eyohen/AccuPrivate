@@ -31,30 +31,20 @@ class Cypher {
         let decryptedStr = decipher.update(data, 'hex', 'utf8')
         decryptedStr += decipher.final('utf8')
 
-        return decryptedStr
+        return decryptedStr.replace(/"/g, '')
     }
 
     static generateAPIKey(data: string, encryptionKey: string): string {
-        console.log({
-            data, encryptionKey
-        })
         const apiKey = Cypher.encryptString(data + ':' + encryptionKey)
         return apiKey
     }
 
     static decodeApiKey(key: string, encryptedKey: string): any {
-        const secret = this.decryptString(encryptedKey).replace(/"/g, '')
-        console.log('secret', secret)
-        console.log('key', key)
+        const secret = this.decryptString(encryptedKey)
         const apiKey = Cypher.decryptString(key)
-        console.log('secret', apiKey)
+
         const [data, secretKey] = apiKey.split(':')
-        const valid = secretKey === secret
-        console.log({
-            apiKey,
-            secretKey,
-            data: apiKey.split(':')
-        })
+        const valid = secretKey === secret.split(':')[1]
 
         return valid ? data : null
     }
