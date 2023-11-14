@@ -47,6 +47,10 @@ __decorate([
     __metadata("design:type", Array)
 ], Partner.prototype, "apiKeys", void 0);
 __decorate([
+    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.STRING, allowNull: true }),
+    __metadata("design:type", String)
+], Partner.prototype, "profilePicture", void 0);
+__decorate([
     (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.STRING, allowNull: false }),
     __metadata("design:type", String)
 ], Partner.prototype, "key", void 0);

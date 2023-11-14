@@ -12,5 +12,6 @@ exports.router
     .use((0, Auth_1.basicAuth)('access'))
     .get('/info', Transaction_controller_1.default.getTransactionInfo)
     .get('/', Transaction_controller_1.default.getTransactions)
+    .get('/yesterday', Transaction_controller_1.default.getYesterdaysTransactions)
     .get('/requery-transaction', Transaction_controller_1.default.requeryTimedOutTransaction);
 exports.default = exports.router;

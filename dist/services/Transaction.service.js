@@ -26,7 +26,10 @@ class TransactionService {
         return __awaiter(this, void 0, void 0, function* () {
             // Build a new transaction object
             const newTransaction = Transaction_model_1.default.build(transaction);
-            // Save the new transaction to the database
+            // Save the new tran    saction to the database
+            const yesterdayDate = new Date();
+            yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+            newTransaction.transactionTimestamp = yesterdayDate;
             yield newTransaction.save();
             return newTransaction;
         });
@@ -50,14 +53,14 @@ class TransactionService {
     static viewSingleTransaction(uuid) {
         return __awaiter(this, void 0, void 0, function* () {
             // Retrieve a single transaction by its UUID
-            const transaction = yield Transaction_model_1.default.findByPk(uuid);
+            const transaction = yield Transaction_model_1.default.findByPk(uuid, { include: [PowerUnit_model_1.default, Partner_model_1.default, User_model_1.default, Meter_model_1.default] });
             return transaction;
         });
     }
     static viewSingleTransactionByBankRefID(bankRefId) {
         return __awaiter(this, void 0, void 0, function* () {
             // Retrieve a single transaction by its UUID
-            const transaction = yield Transaction_model_1.default.findOne({ where: { bankRefId: bankRefId } });
+            const transaction = yield Transaction_model_1.default.findOne({ where: { bankRefId: bankRefId }, include: [Partner_model_1.default] });
             return transaction;
         });
     }
@@ -69,6 +72,39 @@ class TransactionService {
             // Retrieve the updated transaction by its UUID
             const updatedTransaction = yield Transaction_model_1.default.findByPk(uuid);
             return updatedTransaction;
+        });
+    }
+    static viewTransactionForYesterday(partnerId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const yesterdayDate = new Date();
+            yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+            console.log(yesterdayDate);
+            const transactions = yield Transaction_model_1.default.findAll({
+                where: {
+                    partnerId: partnerId,
+                    transactionTimestamp: {
+                        $between: [yesterdayDate, new Date()]
+                    }
+                }
+            });
+            return transactions;
+        });
+    }
+    static viewTransactionsForYesterdayByStatus(partnerId, status) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const yesterdayDate = new Date();
+            yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+            console.log(yesterdayDate);
+            const transactions = yield Transaction_model_1.default.findAll({
+                where: {
+                    partnerId: partnerId,
+                    status,
+                    transactionTimestamp: {
+                        $between: [yesterdayDate, new Date()]
+                    }
+                }
+            });
+            return transactions;
         });
     }
 }

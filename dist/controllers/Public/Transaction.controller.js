@@ -141,6 +141,7 @@ class TransactionController {
                     id: (0, crypto_1.randomUUID)(),
                     transactionId: transactionRecord.id,
                     disco: transactionRecord.disco,
+                    discoLogo: Constants_1.DISCO_LOGO[transactionRecord.disco.toLowerCase()],
                     amount: transactionRecord.amount,
                     meterId: meter.id,
                     superagent: transactionRecord.superagent,
@@ -171,6 +172,21 @@ class TransactionController {
                     transaction: ResponseTrimmer_1.default.trimTransaction(transactionRecord),
                     powerUnit: ResponseTrimmer_1.default.trimPowerUnit(powerUnit)
                 }
+            });
+        });
+    }
+    static getYesterdaysTransactions(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { status } = req.query;
+            const { partner } = req.user;
+            // const transactions = status
+            // ? await TransactionService.viewTransactionsForYesterdayByStatus(partner.id, status.toUpperCase() as typeof status)
+            const transactions = yield Transaction_service_1.default.viewTransactionForYesterday(partner.id);
+            const totalAmount = transactions.reduce((acc, curr) => acc + parseInt(curr.amount), 0);
+            res.status(200).json({
+                status: 'success',
+                message: 'Transactions retrieved successfully',
+                data: { transactions, totalAmount }
             });
         });
     }

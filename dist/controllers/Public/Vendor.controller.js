@@ -55,6 +55,7 @@ class VendorController {
             const { meterNumber, disco, phoneNumber, email, vendType } = req.body;
             const superagent = Constants_1.DEFAULT_ELECTRICITY_PROVIDER; // BUYPOWERNG or BAXI
             const transactionId = (0, uuid_1.v4)();
+            const partnerId = req.key;
             // We Check for Meter User *
             const response = superagent != 'BUYPOWERNG'
                 ? yield Vendor_service_1.default.buyPowerValidateMeter({
@@ -65,7 +66,7 @@ class VendorController {
                 }).catch(e => { throw new Errors_1.BadRequestError('Meter validation failed'); })
                 : yield Vendor_service_1.default.baxiValidateMeter(disco, meterNumber, vendType)
                     .catch(e => { throw new Errors_1.BadRequestError('Meter validation failed'); });
-            //Add User
+            // Add User
             const user = yield User_service_1.default.addUser({
                 id: (0, uuid_1.v4)(),
                 address: response.address,
@@ -81,7 +82,8 @@ class VendorController {
                 paymentType: Transaction_model_1.PaymentType.PAYMENT,
                 transactionTimestamp: new Date(),
                 disco: disco,
-                userId: user.id
+                userId: user.id,
+                partnerId: partnerId,
             });
             const meter = yield Meter_service_1.default.addMeter({
                 id: (0, uuid_1.v4)(),
@@ -162,11 +164,14 @@ class VendorController {
                 }
                 throw tokenInfo;
             }
+            const discoLogo = Constants_1.DISCO_LOGO[disco.toLowerCase()];
+            console.log('discoLogo', discoLogo);
             // Add Power Unit to store token 
             const newPowerUnit = yield PowerUnit_service_1.default.addPowerUnit({
                 id: (0, uuid_1.v4)(),
                 transactionId: transactionId,
                 disco: disco,
+                discoLogo,
                 amount: amount,
                 meterId: meter.id,
                 superagent: transactionRecord.superagent,
