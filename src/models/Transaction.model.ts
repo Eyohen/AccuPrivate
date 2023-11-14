@@ -36,7 +36,7 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     status: Status;
 
     // Type of payment (reversal or payment)
-    @Column({ type: DataType.ENUM, values: ['PREPAID', 'POSTPAID'], defaultValue: PaymentType.PAYMENT, allowNull: false })
+    @Column({ type: DataType.ENUM, values: Object.values(PaymentType), defaultValue: PaymentType.PAYMENT, allowNull: false })
     paymentType: PaymentType;
 
     // Timestamp of the transaction
