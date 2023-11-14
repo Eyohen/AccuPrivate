@@ -36,6 +36,7 @@ const redisClient = new Redis({
 
 redisClient.on('error', (error) => {
     logger.info('An error occured while connecting to REDIS')
+    console.error(error)
     logger.error(error)
     process.exit(1)
 })

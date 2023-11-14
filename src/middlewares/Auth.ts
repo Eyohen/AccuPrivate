@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken'
 import { JWT_SECRET } from "../utils/Constants";
 import { IPartner } from "../models/Partner.model";
 import { UnauthenticatedError } from "../utils/Errors";
+import Cypher from "../utils/Cypher";
 
 export const basicAuth = function (tokenType: AuthToken) {
     return async (req: Request, res: Response, next: NextFunction) => {
@@ -35,4 +36,38 @@ export const basicAuth = function (tokenType: AuthToken) {
 
         next()
     }
+}
+
+export const validateApiKey = async (req: Request, res: Response, next: NextFunction) => {
+    const apiKey = req.headers['x-api-key'] as string
+    const apiSecret = req.headers['x-api-secret'] as string
+    if (!apiKey) {
+        return next(new UnauthenticatedError('Invalid API key'))
+    }
+
+    const encryptedSecretForDecodingApiKey = await TokenUtil.getTokenFromCache(apiSecret)
+    if (!encryptedSecretForDecodingApiKey) {
+        return next(new UnauthenticatedError('Invalid API Secret'))
+    }
+
+    const decryptedEncryptedSecretForDecodingApiKey = Cypher.decryptString(encryptedSecretForDecodingApiKey).replace(/"/g, '')
+    const validApiKey = Cypher.decodeApiKey(apiKey, decryptedEncryptedSecretForDecodingApiKey)
+    if (!validApiKey) {
+        return next(new UnauthenticatedError('Invalid API key'))
+    };
+
+    (req as any).key = validApiKey
+
+    // Check if this si the current active api key
+    const currentActiveApiKey = await TokenUtil.getTokenFromCache(`active_api_key:${validApiKey}`)
+    if (!currentActiveApiKey) {
+        return next(new UnauthenticatedError('Invalid API key'))
+    }
+
+    // TODO: Disallow api key if user is not yet active
+    if (Cypher.decryptString(currentActiveApiKey) !== apiKey) {
+        return next(new UnauthenticatedError('Invalid API key'))
+    }
+
+    next()
 }

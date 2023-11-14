@@ -21,6 +21,8 @@ import PasswordService from "../../services/Password.service";
 import { AuthUtil, TokenUtil } from "../../utils/Auth/token";
 import Validator from "../../utils/Validators";
 import logger from "../../utils/Logger";
+import Cypher from "../../utils/Cypher";
+import ApiKeyService from "../../services/ApiKey.service ";
 
 export default class AuthController {
 
@@ -51,9 +53,20 @@ export default class AuthController {
             email,
             status: {
                 activated: false,
-                emailVerified: false
-            }
+                emailVerified: false,
+            },
         }, transaction)
+
+        const apiKey = await ApiKeyService.addApiKey({
+            partnerId: newPartner.id,
+            key: newPartner.key,
+            active: true,
+            id: uuidv4()
+        }, transaction)
+
+        const secKeyInCache = Cypher.encryptString(newPartner.sec)
+        await TokenUtil.saveTokenToCache({ key: secKeyInCache, token: Cypher.encryptString(newPartner.key) })
+        await ApiKeyService.setCurrentActiveApiKeyInCache(newPartner, apiKey.key.toString())
 
         const partnerPassword = await PasswordService.addPassword({
             id: uuidv4(),
@@ -61,21 +74,16 @@ export default class AuthController {
             password
         }, transaction)
 
-        console.log(newPartner.dataValues)
-        console.log(partnerPassword.dataValues)
-
+        await newPartner.update({ status: { ...newPartner.status, emailVerified: true } })
         const accessToken = await AuthUtil.generateToken({ type: 'emailverification', partner: newPartner.dataValues, expiry: 60 * 10 })
         const otpCode = await AuthUtil.generateCode({ type: 'emailverification', partner: newPartner.dataValues, expiry: 60 * 10 })
         await transaction.commit()
 
         logger.info(otpCode)
-        EmailService.sendEmail({
+        await EmailService.sendEmail({
             to: newPartner.email,
-            subject: 'Verify Email',
-            html: await new EmailTemplate().emailVerification({
-                partnerEmail: newPartner.email,
-                otpCode: otpCode
-            })
+            subject: 'Succesful Email Verification',
+            html: await new EmailTemplate().awaitActivation(newPartner.email)
         })
 
         res.status(201).json({
@@ -96,6 +104,7 @@ export default class AuthController {
             throw new InternalServerError('Partner not found')
         }
 
+        await partner.update({ status: { ...partner.status, emailVerified: true } })
         if (partner.status.emailVerified) {
             throw new BadRequestError('Email already verified')
         }
@@ -105,7 +114,6 @@ export default class AuthController {
             throw new BadRequestError('Invalid otp code')
         }
 
-        await partner.update({ status: { ...partner.status, emailVerified: true } })
         await AuthUtil.deleteToken({ partner, tokenType: 'emailverification', tokenClass: 'token' })
 
         await EmailService.sendEmail({
@@ -163,7 +171,6 @@ export default class AuthController {
 
         const accessToken = await AuthUtil.generateToken({ type: 'passwordreset', partner: partner.dataValues, expiry: 60 * 10 })
         const otpCode = await AuthUtil.generateCode({ type: 'passwordreset', partner: partner.dataValues, expiry: 60 * 10 })
-        console.log(otpCode)
         EmailService.sendEmail({
             to: email,
             subject: 'Forgot password',
@@ -239,8 +246,8 @@ export default class AuthController {
         if (!partner.status.activated) {
             throw new BadRequestError('Account not activated')
         }
-        
-        const accessToken = await AuthUtil.generateToken({ type: 'access', partner: partner.dataValues, expiry: 60 * 10 })
+
+        const accessToken = await AuthUtil.generateToken({ type: 'access', partner: partner.dataValues, expiry: 60 * 60 })
         const refreshToken = await AuthUtil.generateToken({ type: 'refresh', partner: partner.dataValues, expiry: 60 * 60 * 24 * 30 })
 
         res.status(200).json({

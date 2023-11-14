@@ -10,8 +10,10 @@ interface SaveTokenToCache {
 }
 
 class TokenUtil {
-    static async encodeToken(payload: string, expiry: number) {
-        return jwt.sign(payload, ENCRYPTION_KEY, { expiresIn: expiry })
+    static async encodeToken(payload: string, expiry?: number) {
+        // Token without expire
+        if (!expiry) return jwt.sign(payload, ENCRYPTION_KEY)
+        else return jwt.sign(payload, ENCRYPTION_KEY, { expiresIn: expiry })
     }
 
     static async decodeToken(token: string) {
