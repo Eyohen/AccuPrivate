@@ -45,6 +45,18 @@ export default class PartnerService {
         return partners
     }
 
+    static async updateProfilePicture(partner: Partner, profilePicture: string): Promise<Partner> {
+        await partner.update({ profilePicture })
+
+        // Get updated partner info
+        const updatedPartner = await Partner.findByPk(partner.id)
+        if (!updatedPartner) {
+            throw new Error('Partner not found')
+        }
+        
+        return updatedPartner
+    }
+
     static async generateKeys(partner: Partner): Promise<{ key: string, sec: string }> {
         const { key, sec } = this.createKeys(partner.id)
         await Partner.update({ key, sec }, { where: { id: partner.id } })
