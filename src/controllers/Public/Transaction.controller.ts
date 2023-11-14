@@ -174,9 +174,9 @@ export default class TransactionController {
         const { status } = req.query as any as { status: 'COMPLETED' | 'FAILED' | 'PENDING' }
         const { partner } = (req as any).user
 
-        // const transactions = status
-            // ? await TransactionService.viewTransactionsForYesterdayByStatus(partner.id, status.toUpperCase() as typeof status)
-        const transactions = await TransactionService.viewTransactionForYesterday(partner.id)
+        const transactions = status
+            ? await TransactionService.viewTransactionsForYesterdayByStatus(partner.id, status.toUpperCase() as typeof status)
+            : await TransactionService.viewTransactionForYesterday(partner.id)
 
         const totalAmount = transactions.reduce((acc, curr) => acc + parseInt(curr.amount), 0)
 

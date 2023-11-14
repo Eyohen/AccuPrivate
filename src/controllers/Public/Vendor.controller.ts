@@ -176,9 +176,8 @@ export default class VendorController {
             throw tokenInfo
         }
 
-
         const discoLogo = DISCO_LOGO[disco.toLowerCase() as keyof typeof DISCO_LOGO]
-        console.log('discoLogo', discoLogo)
+
         // Add Power Unit to store token 
         const newPowerUnit: PowerUnit = await PowerUnitService.addPowerUnit({
             id: uuidv4(),
