@@ -7,7 +7,6 @@ import ApiKey from "./ApiKey.model";
 // Define the "Partner" table model
 @Table
 export default class Partner extends Model<Partner | IPartner> {
-
     // Define a primary key field with a UUID (Universally Unique Identifier) as its type
     @IsUUID(4)
     @PrimaryKey
@@ -34,6 +33,9 @@ export default class Partner extends Model<Partner | IPartner> {
     @HasMany(() => ApiKey)
     apiKeys: ApiKey[];
 
+    @Column({ type: DataType.STRING, allowNull: true })
+    profilePicture: string;
+
     @Column({ type: DataType.STRING, allowNull: false })
     key: string;
     
@@ -51,6 +53,7 @@ export interface IPartner {
     };
     key: string;
     sec: string;
+    profilePicture?: string;
 }
 
 // Interface representing the structure for creating a new Partner (inherits from IPartner)

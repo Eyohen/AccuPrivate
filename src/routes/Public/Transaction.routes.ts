@@ -8,6 +8,7 @@ router
     .use(basicAuth('access'))
     .get('/info', TransactionController.getTransactionInfo)
     .get('/', TransactionController.getTransactions)
+    .get('/yesterday', TransactionController.getYesterdaysTransactions)
     .get('/requery-transaction', TransactionController.requeryTimedOutTransaction)
 
 export default router

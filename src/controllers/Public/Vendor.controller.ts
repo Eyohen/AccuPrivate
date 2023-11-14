@@ -9,7 +9,7 @@ import Meter from "../../models/Meter.model";
 import VendorService from "../../services/Vendor.service";
 import PowerUnit from "../../models/PowerUnit.model";
 import PowerUnitService from "../../services/PowerUnit.service";
-import { DEFAULT_ELECTRICITY_PROVIDER, NODE_ENV } from "../../utils/Constants";
+import { DEFAULT_ELECTRICITY_PROVIDER, DISCO_LOGO, NODE_ENV } from "../../utils/Constants";
 import { BadRequestError, GateWayTimeoutError, InternalServerError, NotFoundError } from "../../utils/Errors";
 import { generateRandomToken } from "../../utils/Helper";
 import EmailService, { EmailTemplate } from "../../utils/Email";
@@ -35,7 +35,6 @@ interface vendTokenRequestBody {
     email: string
 }
 
-
 export default class VendorController {
 
     static async validateMeter(req: Request, res: Response, next: NextFunction) {
@@ -47,8 +46,8 @@ export default class VendorController {
             vendType
         }: valideMeterRequestBody = req.body
         const superagent = DEFAULT_ELECTRICITY_PROVIDER // BUYPOWERNG or BAXI
-
         const transactionId = uuidv4()
+        const partnerId = (req as any).key
 
         // We Check for Meter User *
         const response = superagent != 'BUYPOWERNG'
@@ -61,7 +60,7 @@ export default class VendorController {
             : await VendorService.baxiValidateMeter(disco, meterNumber, vendType)
                 .catch(e => { throw new BadRequestError('Meter validation failed') })
 
-        //Add User
+        // Add User
         const user: User = await UserService.addUser({
             id: uuidv4(),
             address: response.address,
@@ -78,7 +77,8 @@ export default class VendorController {
             paymentType: PaymentType.PAYMENT,
             transactionTimestamp: new Date(),
             disco: disco,
-            userId: user.id
+            userId: user.id,
+            partnerId: partnerId,
         })
 
         const meter: Meter = await MeterService.addMeter({
@@ -177,11 +177,14 @@ export default class VendorController {
         }
 
 
+        const discoLogo = DISCO_LOGO[disco.toLowerCase() as keyof typeof DISCO_LOGO]
+        console.log('discoLogo', discoLogo)
         // Add Power Unit to store token 
         const newPowerUnit: PowerUnit = await PowerUnitService.addPowerUnit({
             id: uuidv4(),
             transactionId: transactionId,
             disco: disco,
+            discoLogo,
             amount: amount,
             meterId: meter.id,
             superagent: transactionRecord.superagent,
