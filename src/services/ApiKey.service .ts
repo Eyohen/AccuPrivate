@@ -25,6 +25,12 @@ export default class ApiKeyService {
         return apiKey;
     }
 
+    static async deactivateApiKey(apiKey: ApiKey): Promise<ApiKey> {
+        apiKey.active = false;
+        await apiKey.save();
+        return apiKey;
+    }
+
     static async viewSingleApiKeyById(id: string): Promise<ApiKey | null> {
         const apiKey = await ApiKey.findOne({ where: { id: id } });
         return apiKey;

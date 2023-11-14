@@ -38,7 +38,7 @@ export const basicAuth = function (tokenType: AuthToken) {
     }
 }
 
-export const  validateApiKey = async (req: Request, res: Response, next: NextFunction) => {
+export const validateApiKey = async (req: Request, res: Response, next: NextFunction) => {
     const apiKey = req.headers['x-api-key'] as string
     const apiSecret = req.headers['x-api-secret'] as string
     if (!apiKey) {
@@ -49,8 +49,8 @@ export const  validateApiKey = async (req: Request, res: Response, next: NextFun
         apiKey,
         apiSecret,
     })
-    
-    const decryptedStr = Cypher.decryptString(apiKey)
+
+    const decryptedStr = Cypher.decryptString(apiKey).replace(/"/g, '')
     const encryptedSecretForDecodingApiKey = await TokenUtil.getTokenFromCache(apiSecret)
     console.log({
         apiKey,
@@ -61,15 +61,17 @@ export const  validateApiKey = async (req: Request, res: Response, next: NextFun
     if (!encryptedSecretForDecodingApiKey) {
         return next(new UnauthenticatedError('Invalid API Secret'))
     }
+
+    const decryptedEncryptedSecretForDecodingApiKey = Cypher.decryptString(encryptedSecretForDecodingApiKey).replace(/"/g, '')
+
     console.log({
         apiKey,
         apiSecret,
         decreyptedApiKey: decryptedStr,
         encryptedSecretForDecodingApiKey,
+        decryptedEncryptedSecretForDecodingApiKey
     })
-    
-    const decryptedEncryptedSecretForDecodingApiKey = Cypher.decryptString(encryptedSecretForDecodingApiKey)
-    const validApiKey = Cypher.decodeApiKey(decryptedStr, decryptedEncryptedSecretForDecodingApiKey)
+    const validApiKey = Cypher.decodeApiKey(apiKey, decryptedEncryptedSecretForDecodingApiKey)
     console.log({
         apiKey,
         apiSecret,

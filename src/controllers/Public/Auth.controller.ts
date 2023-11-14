@@ -256,7 +256,7 @@ export default class AuthController {
             throw new BadRequestError('Account not activated')
         }
 
-        const accessToken = await AuthUtil.generateToken({ type: 'access', partner: partner.dataValues, expiry: 60 * 10 })
+        const accessToken = await AuthUtil.generateToken({ type: 'access', partner: partner.dataValues, expiry: 60 * 60 })
         const refreshToken = await AuthUtil.generateToken({ type: 'refresh', partner: partner.dataValues, expiry: 60 * 60 * 24 * 30 })
 
         res.status(200).json({

@@ -34,15 +34,20 @@ class Cypher {
         return decryptedStr
     }
 
-    static generateAPIKey(data: string, encryptedKey: string): string {
-        const secret = this.decryptString(encryptedKey)
-        const apiKey = Cypher.encryptString(data + ':' + secret)
+    static generateAPIKey(data: string, encryptionKey: string): string {
+        console.log({
+            data, encryptionKey
+        })
+        const apiKey = Cypher.encryptString(data + ':' + encryptionKey)
         return apiKey
     }
 
     static decodeApiKey(key: string, encryptedKey: string): any {
-        const secret = this.decryptString(encryptedKey)
+        const secret = this.decryptString(encryptedKey).replace(/"/g, '')
+        console.log('secret', secret)
+        console.log('key', key)
         const apiKey = Cypher.decryptString(key)
+        console.log('secret', apiKey)
         const [data, secretKey] = apiKey.split(':')
         const valid = secretKey === secret
         console.log({
@@ -50,7 +55,7 @@ class Cypher {
             secretKey,
             data: apiKey.split(':')
         })
-        
+
         return valid ? data : null
     }
 }

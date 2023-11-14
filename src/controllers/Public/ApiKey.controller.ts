@@ -33,7 +33,8 @@ export default class ApiController {
             key: partner_.key,
             sec: partner_.sec,
             secKeyInCache,
-            encryptedKey: Cypher.encryptString(partner_.key)
+            encryptedKey: Cypher.encryptString(partner_.key),
+            deceryptedKey: Cypher.decryptString(Cypher.encryptString(partner_.key))
         })
 
         res.status(200).json({
@@ -47,12 +48,7 @@ export default class ApiController {
     }
 
     static async generateApiKeys(req: Request, res: Response, next: NextFunction) {
-        const { email } = req.body
-
-        const validEmail = Validator.validateEmail(email)
-        if (!validEmail) {
-            throw new BadRequestError('Invalid email')
-        }
+        const { email } = (req as any).user.partner
 
         const partner: Partner | null = await PartnerService.viewSinglePartnerByEmail(email)
         if (!partner) {
