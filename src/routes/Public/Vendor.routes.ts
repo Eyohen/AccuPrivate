@@ -8,8 +8,7 @@ router
     .post('/validate/meter', validateApiKey, VendorController.validateMeter)
     .get('/token', validateApiKey, VendorController.requestToken)
     .get('/discos', VendorController.getDiscos)
-    .get('/requery-transaction', VendorController.requeryTimedOutTransaction)
-    .get('/discos/check', validateApiKey, VendorController.checkDisco)
+    .get('/discos/check', VendorController.checkDisco)
 
 export default router
 

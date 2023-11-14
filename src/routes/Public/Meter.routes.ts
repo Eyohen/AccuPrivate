@@ -5,7 +5,7 @@ import { validateApiKey } from "../../middlewares/Auth";
 export const router: Router = express.Router()
 
 router
-    .get('/info', validateApiKey, MeterController.getMeterInfo)
-    .get('/', validateApiKey, MeterController.getMeters)
+    .get('/info', MeterController.getMeterInfo)
+    .get('/', MeterController.getMeters)
 
 export default router

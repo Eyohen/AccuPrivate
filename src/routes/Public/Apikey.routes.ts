@@ -5,8 +5,9 @@ import { basicAuth } from "../../middlewares/Auth";
 const router: Router = express.Router()
 
 router
-    .get('/active', basicAuth('access'), ApiKeyController.getActiveAPIKey)
-    .get('/new', basicAuth('access'), ApiKeyController.generateApiKeys)
+    .use(basicAuth('access'))
+    .get('/active', ApiKeyController.getActiveAPIKey)
+    .get('/new', ApiKeyController.generateApiKeys)
 
 export default router
 

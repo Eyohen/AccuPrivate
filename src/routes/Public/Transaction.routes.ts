@@ -1,11 +1,13 @@
 import express, { Router } from "express";
 import TransactionController from "../../controllers/Public/Transaction.controller";
-import { validateApiKey } from "../../middlewares/Auth";
+import { basicAuth, validateApiKey } from "../../middlewares/Auth";
 
 export const router: Router = express.Router()
 
 router
-    .get('/info', validateApiKey, TransactionController.getTransactionInfo)
-    .get('/', validateApiKey, TransactionController.getTransactions)
+    .use(basicAuth('access'))
+    .get('/info', TransactionController.getTransactionInfo)
+    .get('/', TransactionController.getTransactions)
+    .get('/requery-transaction', TransactionController.requeryTimedOutTransaction)
 
 export default router
