@@ -260,4 +260,19 @@ export default class AuthController {
             }
         })
     }
+    
+    static async getLoggedUserData(req: Request, res: Response) {
+        const partner = await PartnerService.viewSinglePartner((req as any).user.partner.id)
+        if (!partner) {
+            throw new InternalServerError('Partner not found')
+        }
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Partner data retrieved successfully',
+            data: {
+                partner: ResponseTrimmer.trimPartner(partner),
+            }
+        })
+    }
 }
