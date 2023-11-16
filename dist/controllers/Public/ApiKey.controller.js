@@ -54,7 +54,7 @@ class ApiController {
             yield ApiKey_service_1.default.setCurrentActiveApiKeyInCache(partner, key);
             res.status(200).json({
                 status: 'success',
-                message: 'Deactivated partner successfully',
+                message: 'Generated API keys successfully',
                 data: {
                     apiKey: key,
                     secretKey: secKeyInCache

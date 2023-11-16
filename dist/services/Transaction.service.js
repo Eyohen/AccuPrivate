@@ -19,6 +19,7 @@ const PowerUnit_model_1 = __importDefault(require("../models/PowerUnit.model"));
 const Partner_model_1 = __importDefault(require("../models/Partner.model"));
 const User_model_1 = __importDefault(require("../models/User.model"));
 const Meter_model_1 = __importDefault(require("../models/Meter.model"));
+const sequelize_1 = require("sequelize");
 // Define the TransactionService class for handling transaction-related operations
 class TransactionService {
     // Static method for adding a new transaction
@@ -60,7 +61,7 @@ class TransactionService {
     static viewSingleTransactionByBankRefID(bankRefId) {
         return __awaiter(this, void 0, void 0, function* () {
             // Retrieve a single transaction by its UUID
-            const transaction = yield Transaction_model_1.default.findOne({ where: { bankRefId: bankRefId }, include: [Partner_model_1.default] });
+            const transaction = yield Transaction_model_1.default.findOne({ where: { bankRefId: bankRefId }, include: [Partner_model_1.default, Meter_model_1.default, User_model_1.default] });
             return transaction;
         });
     }
@@ -77,16 +78,20 @@ class TransactionService {
     static viewTransactionForYesterday(partnerId) {
         return __awaiter(this, void 0, void 0, function* () {
             const yesterdayDate = new Date();
-            yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+            yesterdayDate.setDate(yesterdayDate.getDate() - 5);
+            const currentDate = new Date();
             console.log(yesterdayDate);
+            console.log(new Date());
+            console.log(partnerId);
             const transactions = yield Transaction_model_1.default.findAll({
                 where: {
-                    partnerId: partnerId,
+                    // partnerId: partnerId,
                     transactionTimestamp: {
-                        $between: [yesterdayDate, new Date()]
+                        [sequelize_1.Op.between]: [yesterdayDate, currentDate]
                     }
                 }
             });
+            // console.log(transactions)
             return transactions;
         });
     }
@@ -95,6 +100,7 @@ class TransactionService {
             const yesterdayDate = new Date();
             yesterdayDate.setDate(yesterdayDate.getDate() - 1);
             console.log(yesterdayDate);
+            console.log(new Date());
             const transactions = yield Transaction_model_1.default.findAll({
                 where: {
                     partnerId: partnerId,

@@ -14,7 +14,9 @@ router
     .get('/verifyemail', Auth_controller_1.default.resendVerificationEmail)
     .post('/forgotpassword', Auth_controller_1.default.forgotPassword)
     .post('/resetpassword', (0, Auth_1.basicAuth)('passwordreset'), Auth_controller_1.default.resetPassword)
+    .post('/changepassword', (0, Auth_1.basicAuth)('access'), Auth_controller_1.default.changePassword)
     .post('/login', Auth_controller_1.default.login)
     .post('/deactivate', Auth_controller_2.default.deactivatePartner)
-    .post('/activate', Auth_controller_2.default.activatePartner);
+    .post('/activate', Auth_controller_2.default.activatePartner)
+    .get('/loggeduser', (0, Auth_1.basicAuth)('access'), Auth_controller_1.default.getLoggedUserData);
 exports.default = router;

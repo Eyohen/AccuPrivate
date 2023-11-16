@@ -179,9 +179,9 @@ class TransactionController {
         return __awaiter(this, void 0, void 0, function* () {
             const { status } = req.query;
             const { partner } = req.user;
-            // const transactions = status
-            // ? await TransactionService.viewTransactionsForYesterdayByStatus(partner.id, status.toUpperCase() as typeof status)
-            const transactions = yield Transaction_service_1.default.viewTransactionForYesterday(partner.id);
+            const transactions = status
+                ? yield Transaction_service_1.default.viewTransactionsForYesterdayByStatus(partner.id, status.toUpperCase())
+                : yield Transaction_service_1.default.viewTransactionForYesterday(partner.id);
             const totalAmount = transactions.reduce((acc, curr) => acc + parseInt(curr.amount), 0);
             res.status(200).json({
                 status: 'success',

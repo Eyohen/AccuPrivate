@@ -218,6 +218,33 @@ class AuthController {
             });
         });
     }
+    static changePassword(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { oldPassword, newPassword } = req.body;
+            const validPassword = Validators_1.default.validatePassword(newPassword);
+            if (!validPassword) {
+                throw new Errors_1.BadRequestError('Invalid password');
+            }
+            const partner = yield Partner_service_1.default.viewSinglePartner(req.user.partner.id);
+            if (!partner) {
+                throw new Errors_1.InternalServerError('Partner not found');
+            }
+            const password = yield partner.$get('password');
+            if (!password) {
+                throw new Errors_1.InternalServerError('No password found for authneticate partner');
+            }
+            const validOldPassword = yield Password_service_1.default.comparePassword(oldPassword, password.password);
+            if (!validOldPassword) {
+                throw new Errors_1.BadRequestError('Invalid old password');
+            }
+            yield Password_service_1.default.updatePassword(partner.id, newPassword);
+            res.status(200).json({
+                status: 'success',
+                message: 'Password changed successfully',
+                data: null
+            });
+        });
+    }
     static login(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             const { email, password } = req.body;
@@ -236,7 +263,7 @@ class AuthController {
             if (!partner.status.activated) {
                 throw new Errors_1.BadRequestError('Account not activated');
             }
-            const accessToken = yield token_1.AuthUtil.generateToken({ type: 'access', partner: partner.dataValues, expiry: 60 * 60 });
+            const accessToken = yield token_1.AuthUtil.generateToken({ type: 'access', partner: partner.dataValues, expiry: 60 * 60 * 60 * 60 });
             const refreshToken = yield token_1.AuthUtil.generateToken({ type: 'refresh', partner: partner.dataValues, expiry: 60 * 60 * 24 * 30 });
             res.status(200).json({
                 status: 'success',
@@ -245,6 +272,21 @@ class AuthController {
                     partner: ResponseTrimmer_1.default.trimPartner(partner),
                     accessToken,
                     refreshToken
+                }
+            });
+        });
+    }
+    static getLoggedUserData(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const partner = yield Partner_service_1.default.viewSinglePartner(req.user.partner.id);
+            if (!partner) {
+                throw new Errors_1.InternalServerError('Partner not found');
+            }
+            res.status(200).json({
+                status: 'success',
+                message: 'Partner data retrieved successfully',
+                data: {
+                    partner: ResponseTrimmer_1.default.trimPartner(partner),
                 }
             });
         });

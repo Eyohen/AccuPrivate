@@ -11,6 +11,7 @@ const PowerUnit_routes_1 = __importDefault(require("./Public/PowerUnit.routes"))
 const User_routes_1 = __importDefault(require("./Public/User.routes"));
 const Auth_routes_1 = __importDefault(require("./Public/Auth.routes"));
 const Apikey_routes_1 = __importDefault(require("./Public/Apikey.routes"));
+const Profile_routes_1 = __importDefault(require("./Public/Profile.routes"));
 const router = (0, express_1.Router)();
 router
     .use('/transaction', Transaction_routes_1.default)
@@ -19,5 +20,6 @@ router
     .use('/powerunit', PowerUnit_routes_1.default)
     .use('/user', User_routes_1.default)
     .use('/auth', Auth_routes_1.default)
-    .use('/key', Apikey_routes_1.default);
+    .use('/key', Apikey_routes_1.default)
+    .use('/profile', Profile_routes_1.default);
 exports.default = router;

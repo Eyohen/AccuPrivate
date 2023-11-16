@@ -165,7 +165,6 @@ class VendorController {
                 throw tokenInfo;
             }
             const discoLogo = Constants_1.DISCO_LOGO[disco.toLowerCase()];
-            console.log('discoLogo', discoLogo);
             // Add Power Unit to store token 
             const newPowerUnit = yield PowerUnit_service_1.default.addPowerUnit({
                 id: (0, uuid_1.v4)(),

@@ -23,6 +23,7 @@ class ResponseTrimmer {
     static trimPartner(partner) {
         return {
             email: partner.email,
+            profilePicture: partner.profilePicture,
         };
     }
 }

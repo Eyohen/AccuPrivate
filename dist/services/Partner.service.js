@@ -81,6 +81,17 @@ class PartnerService {
             return partners;
         });
     }
+    static updateProfilePicture(partner, profilePicture) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield partner.update({ profilePicture });
+            // Get updated partner info
+            const updatedPartner = yield Partner_model_1.default.findByPk(partner.id);
+            if (!updatedPartner) {
+                throw new Error('Partner not found');
+            }
+            return updatedPartner;
+        });
+    }
     static generateKeys(partner) {
         return __awaiter(this, void 0, void 0, function* () {
             const { key, sec } = this.createKeys(partner.id);
