@@ -1,9 +1,9 @@
 import { Transaction } from "sequelize";
 import Password, { IPassword } from "../models/Password.model";
 import Cypher from "../utils/Cypher";
-import Partner from "../models/Partner.model";
+import Partner from "../models/Entity/Profiles/PartnerProfile.model";
 
-export default class PasswordService{
+export default class PasswordService {
     static async addPassword(password: IPassword, transaction?: Transaction): Promise<Password> {
         password.password = Cypher.hashPassword(password.password)
         const newPassword: Password = Password.build(password)
@@ -16,7 +16,7 @@ export default class PasswordService{
         const result = await Cypher.comparePassword(password, hashedPassword)
         return result
     }
-    
+
     static async viewPasswords(): Promise<Password[] | void> {
         const passwords: Password[] = await Password.findAll()
         return passwords

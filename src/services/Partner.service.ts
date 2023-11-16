@@ -1,5 +1,5 @@
 import { Transaction, UUIDV4 } from "sequelize";
-import Partner, { IPartner } from "../models/Partner.model";
+import Partner, { IPartner } from "../models/Entity/Profiles/PartnerProfile.model";
 import Cypher, { generateRandomString } from "../utils/Cypher";
 import { randomUUID } from "crypto";
 import ApiKeyService from "./ApiKey.service ";
@@ -53,7 +53,7 @@ export default class PartnerService {
         if (!updatedPartner) {
             throw new Error('Partner not found')
         }
-        
+
         return updatedPartner
     }
 

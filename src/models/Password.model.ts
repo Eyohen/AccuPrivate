@@ -1,8 +1,9 @@
 // Import necessary modules and dependencies
 import { Table, Column, Model, DataType, IsUUID, PrimaryKey, HasMany, HasOne, BelongsTo, ForeignKey } from "sequelize-typescript";
 import Transaction from "./Transaction.model";
-import Partner from "./Partner.model";
+import Partner from "./Entity/Profiles/PartnerProfile.model";
 import Cypher from "../utils/Cypher";
+import Entity from "./Entity/Entity.model";
 
 // Define the "Partner" table model
 @Table
@@ -17,13 +18,13 @@ export default class Password extends Model<Password | IPassword> {
     password: string;
 
     @IsUUID(4)
-    @ForeignKey(() => Partner)
+    @ForeignKey(() => Entity)
     @Column
-    partnerId: string;
+    entityId: string;
 
     // Define a column for the Partner's email (string type, not nullable)
-    @BelongsTo(() => Partner)
-    partner: Partner;
+    @BelongsTo(() => Entity)
+    entity: Entity;
 
     static updatePassword = async (partnerId: string, newPassword: string) => {
         const password = await Password.findOne({

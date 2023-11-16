@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Status } from '../models/Event.model';
 import logger from "../utils/Logger";
 import PowerUnit from "../models/PowerUnit.model";
-import Partner from "../models/Partner.model";
+import Partner from "../models/Entity/Profiles/PartnerProfile.model";
 import User from "../models/User.model";
 import Meter from "../models/Meter.model";
 import { Op } from "sequelize";

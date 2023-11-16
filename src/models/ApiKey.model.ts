@@ -1,6 +1,6 @@
 // Import necessary modules and dependencies
 import { Table, Column, Model, DataType, IsUUID, PrimaryKey, BelongsTo, ForeignKey } from "sequelize-typescript";
-import Partner from "./Partner.model";
+import Partner from "./Entity/Profiles/PartnerProfile.model";
 
 // Define the Sequelize model for the "ApiKey" table
 @Table

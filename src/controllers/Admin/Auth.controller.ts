@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { BadRequestError, InternalServerError } from "../../utils/Errors";
 import EmailService, { EmailTemplate } from "../../utils/Email";
 import ResponseTrimmer from '../../utils/ResponseTrimmer'
-import Partner from "../../models/Partner.model";
+import Partner from "../../models/Entity/Profiles/PartnerProfile.model";
 import PartnerService from "../../services/Partner.service";
 import { Database } from "../../models/index";
 import PasswordService from "../../services/Password.service";
@@ -26,7 +26,7 @@ export default class AuthController {
         }
 
         await partner.update({ status: { ...partner.status, activated: true } })
-        
+
         await EmailService.sendEmail({
             to: partner.email,
             subject: 'Account Activation',
@@ -39,7 +39,7 @@ export default class AuthController {
             data: null
         })
     }
-    
+
     static async deactivatePartner(req: Request, res: Response, next: NextFunction) {
         const { email } = req.body
 
@@ -54,7 +54,7 @@ export default class AuthController {
         }
 
         await partner.update({ status: { ...partner.status, activated: false } })
-        
+
         await EmailService.sendEmail({
             to: partner.email,
             subject: 'Account Activation',

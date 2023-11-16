@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { IPartner } from "../../models/Partner.model";
+import { IPartner } from "../../models/Entity/Profiles/PartnerProfile.model";
 import { ENCRYPTION_KEY, JWT_SECRET } from "../Constants";
 import { redisClient } from "../../models";
 

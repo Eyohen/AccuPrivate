@@ -1,8 +1,9 @@
 // Import necessary modules and dependencies
-import { Table, Column, Model, DataType, IsUUID, PrimaryKey, HasMany, HasOne } from "sequelize-typescript";
-import Transaction from "./Transaction.model";
-import Password from "./Password.model";
-import ApiKey from "./ApiKey.model";
+import { Table, Column, Model, DataType, IsUUID, PrimaryKey, HasMany, HasOne, Is, ForeignKey, BelongsTo } from "sequelize-typescript";
+import Transaction from "../../Transaction.model";
+import Password from "../../Password.model";
+import ApiKey from "../../ApiKey.model";
+import Entity from "../Entity.model";
 
 // Define the "Partner" table model
 @Table
@@ -17,14 +18,16 @@ export default class Partner extends Model<Partner | IPartner> {
     @Column({ type: DataType.STRING, allowNull: false })
     email: string;
 
-    @HasOne(() => Password)
-    password: Password;
+    @Column({ type: DataType.STRING, allowNull: true })
+    profilePicture: string;
 
-    @Column({ type: DataType.JSONB, allowNull: false })
-    status: {
-        activated: boolean;
-        emailVerified: boolean;
-    }
+    @ForeignKey(() => Entity)
+    @IsUUID(4)
+    @Column({ type: DataType.STRING, allowNull: false })
+    entityId: string;
+
+    @BelongsTo(() => Entity)
+    entity: Entity;
 
     // Establish a "HasMany" association with the "Transaction" model
     @HasMany(() => Transaction)
@@ -33,12 +36,9 @@ export default class Partner extends Model<Partner | IPartner> {
     @HasMany(() => ApiKey)
     apiKeys: ApiKey[];
 
-    @Column({ type: DataType.STRING, allowNull: true })
-    profilePicture: string;
-
     @Column({ type: DataType.STRING, allowNull: false })
     key: string;
-    
+
     @Column({ type: DataType.STRING, allowNull: false })
     sec: string;
 }
@@ -47,13 +47,10 @@ export default class Partner extends Model<Partner | IPartner> {
 export interface IPartner {
     id: string;              // Unique identifier for the Partner
     email: string;   // Phone number for contacting the Partner
-    status: {
-        activated: boolean;
-        emailVerified: boolean;
-    };
     key: string;
     sec: string;
     profilePicture?: string;
+    entityId: string;
 }
 
 // Interface representing the structure for creating a new Partner (inherits from IPartner)

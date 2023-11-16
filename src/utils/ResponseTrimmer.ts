@@ -1,4 +1,4 @@
-import Partner from "../models/Partner.model"
+import Partner from "../models/Entity/Profiles/PartnerProfile.model"
 import PowerUnit from "../models/PowerUnit.model"
 import Transaction from "../models/Transaction.model"
 

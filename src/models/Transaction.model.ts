@@ -1,7 +1,7 @@
 // Import necessary modules and dependencies
 import { Table, Column, Model, DataType, IsUUID, PrimaryKey, ForeignKey, BelongsTo, HasMany, HasOne } from "sequelize-typescript";
 import User from "./User.model";
-import Partner from "./Partner.model";
+import Partner from "./Entity/Profiles/PartnerProfile.model";
 import Event from "./Event.model";
 import PowerUnit from "./PowerUnit.model";
 import Meter from "./Meter.model";

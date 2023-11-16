@@ -14,7 +14,7 @@ import { BadRequestError, GateWayTimeoutError, InternalServerError, NotFoundErro
 import { generateRandomToken } from "../../utils/Helper";
 import EmailService, { EmailTemplate } from "../../utils/Email";
 import ResponseTrimmer from '../../utils/ResponseTrimmer'
-import Partner from "../../models/Partner.model";
+import Partner from "../../models/Entity/Profiles/PartnerProfile.model";
 import PartnerService from "../../services/Partner.service";
 import { Database, Sequelize } from "../../models/index";
 import PasswordService from "../../services/Password.service";
@@ -256,7 +256,7 @@ export default class AuthController {
             data: null
         })
     }
-    
+
     static async login(req: Request, res: Response) {
         const { email, password } = req.body
 
@@ -308,7 +308,7 @@ export default class AuthController {
             data: null
         })
     }
-    
+
     static async getLoggedUserData(req: Request, res: Response) {
         const partner = await PartnerService.viewSinglePartner((req as any).user.partner.id)
         if (!partner) {

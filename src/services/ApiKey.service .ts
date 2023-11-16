@@ -4,7 +4,7 @@ import ApiKey, { IApiKey } from "../models/ApiKey.model";
 import { ICreateEvent, IEvent } from "../models/Event.model";
 import Event from "../models/Event.model";
 import logger from "../utils/Logger";
-import Partner from "../models/Partner.model";
+import Partner from "../models/Entity/Profiles/PartnerProfile.model";
 import { TokenUtil } from "../utils/Auth/token";
 import Cypher from "../utils/Cypher";
 

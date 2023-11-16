@@ -6,7 +6,7 @@ import {
     CLOUDINARY_API_SECRET
 } from './Constants';
 import { randomUUID } from 'crypto';
-import Partner from '../models/Partner.model';
+import Partner from '../models/Entity/Profiles/PartnerProfile.model';
 
 interface ICloudinaryFileOptions {
     path: string;

@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { BadRequestError, InternalServerError } from "../../utils/Errors";
 import EmailService, { EmailTemplate } from "../../utils/Email";
 import ResponseTrimmer from '../../utils/ResponseTrimmer'
-import Partner, { IPartner } from "../../models/Partner.model";
+import Partner, { IPartner } from "../../models/Entity/Profiles/PartnerProfile.model";
 import PartnerService from "../../services/Partner.service";
 import { Database } from "../../models/index";
 import PasswordService from "../../services/Password.service";

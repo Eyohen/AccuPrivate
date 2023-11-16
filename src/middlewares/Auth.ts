@@ -2,7 +2,7 @@ import { AuthToken, TokenUtil } from "../utils/Auth/token";
 import { Request, Response, NextFunction } from "express";
 import jwt from 'jsonwebtoken'
 import { JWT_SECRET } from "../utils/Constants";
-import { IPartner } from "../models/Partner.model";
+import { IPartner } from "../models/Entity/Profiles/PartnerProfile.model";
 import { UnauthenticatedError } from "../utils/Errors";
 import Cypher from "../utils/Cypher";
 
