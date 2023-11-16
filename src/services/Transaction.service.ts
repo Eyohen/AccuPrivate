@@ -9,6 +9,7 @@ import PowerUnit from "../models/PowerUnit.model";
 import Partner from "../models/Partner.model";
 import User from "../models/User.model";
 import Meter from "../models/Meter.model";
+import { Op } from "sequelize";
 
 // Define the TransactionService class for handling transaction-related operations
 export default class TransactionService {
@@ -50,7 +51,7 @@ export default class TransactionService {
 
     static async viewSingleTransactionByBankRefID(bankRefId: string): Promise<Transaction | null> {
         // Retrieve a single transaction by its UUID
-        const transaction: Transaction | null = await Transaction.findOne({ where: { bankRefId: bankRefId }, include: [Partner] },);
+        const transaction: Transaction | null = await Transaction.findOne({ where: { bankRefId: bankRefId }, include: [Partner, Meter, User] },);
         return transaction;
     }
 
@@ -65,16 +66,20 @@ export default class TransactionService {
 
     static async viewTransactionForYesterday(partnerId: string): Promise<Transaction[]> {
         const yesterdayDate = new Date()
-        yesterdayDate.setDate(yesterdayDate.getDate() - 1)
+        yesterdayDate.setDate(yesterdayDate.getDate() - 5)
+        const currentDate = new Date()
         console.log(yesterdayDate)
+        console.log(new Date())
+        console.log(partnerId)
         const transactions: Transaction[] = await Transaction.findAll({
             where: {
-                partnerId: partnerId,
+                // partnerId: partnerId,
                 transactionTimestamp: {
-                    $between: [yesterdayDate, new Date()]
+                    [Op.between]: [yesterdayDate, currentDate]
                 }
             }
         })
+        // console.log(transactions)
 
         return transactions
     }
@@ -83,6 +88,7 @@ export default class TransactionService {
         const yesterdayDate = new Date()
         yesterdayDate.setDate(yesterdayDate.getDate() - 1)
         console.log(yesterdayDate)
+        console.log(new Date())
 
         const transactions: Transaction[] = await Transaction.findAll({
             where: {

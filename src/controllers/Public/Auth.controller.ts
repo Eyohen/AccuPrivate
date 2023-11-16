@@ -225,6 +225,38 @@ export default class AuthController {
         })
     }
 
+    static async changePassword(req: Request, res: Response) {
+        const { oldPassword, newPassword }: { oldPassword: string, newPassword: string } = req.body
+
+        const validPassword = Validator.validatePassword(newPassword)
+        if (!validPassword) {
+            throw new BadRequestError('Invalid password')
+        }
+
+        const partner = await PartnerService.viewSinglePartner((req as any).user.partner.id)
+        if (!partner) {
+            throw new InternalServerError('Partner not found')
+        }
+
+        const password = await partner.$get('password')
+        if (!password) {
+            throw new InternalServerError('No password found for authneticate partner')
+        }
+
+        const validOldPassword = await PasswordService.comparePassword(oldPassword, password.password)
+        if (!validOldPassword) {
+            throw new BadRequestError('Invalid old password')
+        }
+
+        await PasswordService.updatePassword(partner.id, newPassword)
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Password changed successfully',
+            data: null
+        })
+    }
+    
     static async login(req: Request, res: Response) {
         const { email, password } = req.body
 
@@ -247,7 +279,7 @@ export default class AuthController {
             throw new BadRequestError('Account not activated')
         }
 
-        const accessToken = await AuthUtil.generateToken({ type: 'access', partner: partner.dataValues, expiry: 60 * 60 })
+        const accessToken = await AuthUtil.generateToken({ type: 'access', partner: partner.dataValues, expiry: 60 * 60 * 60 * 60 })
         const refreshToken = await AuthUtil.generateToken({ type: 'refresh', partner: partner.dataValues, expiry: 60 * 60 * 24 * 30 })
 
         res.status(200).json({
@@ -257,6 +289,21 @@ export default class AuthController {
                 partner: ResponseTrimmer.trimPartner(partner),
                 accessToken,
                 refreshToken
+            }
+        })
+    }
+    
+    static async getLoggedUserData(req: Request, res: Response) {
+        const partner = await PartnerService.viewSinglePartner((req as any).user.partner.id)
+        if (!partner) {
+            throw new InternalServerError('Partner not found')
+        }
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Partner data retrieved successfully',
+            data: {
+                partner: ResponseTrimmer.trimPartner(partner),
             }
         })
     }
