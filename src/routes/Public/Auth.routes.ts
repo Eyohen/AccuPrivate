@@ -11,6 +11,7 @@ router
     .get('/verifyemail', PublicAuthController.resendVerificationEmail)
     .post('/forgotpassword', PublicAuthController.forgotPassword)
     .post('/resetpassword', basicAuth('passwordreset'), PublicAuthController.resetPassword)
+    .post('/changepassword', basicAuth('access'), PublicAuthController.changePassword)
     .post('/login', PublicAuthController.login)
     .post('/deactivate', AdminAuthController.deactivatePartner)
     .post('/activate', AdminAuthController.activatePartner)
