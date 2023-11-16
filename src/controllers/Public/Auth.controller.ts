@@ -292,6 +292,22 @@ export default class AuthController {
             }
         })
     }
+
+    static async logout(req: Request, res: Response) {
+        const partner = await PartnerService.viewSinglePartner((req as any).user.partner.id)
+        if (!partner) {
+            throw new InternalServerError('Partner not found')
+        }
+
+        await AuthUtil.deleteToken({ partner, tokenType: 'access', tokenClass: 'token' })
+        await AuthUtil.deleteToken({ partner, tokenType: 'refresh', tokenClass: 'token' })
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Logout successful',
+            data: null
+        })
+    }
     
     static async getLoggedUserData(req: Request, res: Response) {
         const partner = await PartnerService.viewSinglePartner((req as any).user.partner.id)
