@@ -276,6 +276,21 @@ class AuthController {
             });
         });
     }
+    static logout(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const partner = yield Partner_service_1.default.viewSinglePartner(req.user.partner.id);
+            if (!partner) {
+                throw new Errors_1.InternalServerError('Partner not found');
+            }
+            yield token_1.AuthUtil.deleteToken({ partner, tokenType: 'access', tokenClass: 'token' });
+            yield token_1.AuthUtil.deleteToken({ partner, tokenType: 'refresh', tokenClass: 'token' });
+            res.status(200).json({
+                status: 'success',
+                message: 'Logout successful',
+                data: null
+            });
+        });
+    }
     static getLoggedUserData(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             const partner = yield Partner_service_1.default.viewSinglePartner(req.user.partner.id);
