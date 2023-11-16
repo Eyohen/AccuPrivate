@@ -15,7 +15,7 @@ import { generateRandomToken } from "../../utils/Helper";
 import EmailService, { EmailTemplate } from "../../utils/Email";
 import ResponseTrimmer from '../../utils/ResponseTrimmer'
 import Partner from "../../models/Entity/Profiles/PartnerProfile.model";
-import PartnerService from "../../services/Partner.service";
+import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
 import { Database, Sequelize } from "../../models/index";
 import PasswordService from "../../services/Password.service";
 import { AuthUtil, TokenUtil } from "../../utils/Auth/token";

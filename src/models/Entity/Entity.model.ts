@@ -1,8 +1,9 @@
 // Import necessary modules and dependencies
-import { Table, Column, Model, DataType, IsUUID, PrimaryKey, HasMany, HasOne, ForeignKey, BelongsTo } from "sequelize-typescript";
-import Transaction from "../Transaction.model";
+import { Table, Column, Model, DataType, IsUUID, PrimaryKey, HasOne, ForeignKey, BelongsTo, NotEmpty, IsIn, BeforeValidate } from "sequelize-typescript";
 import Password from "../Password.model";
 import Role from "./Role.model";
+import { PartnerProfile } from "./Profiles";
+import TeamMember from "./Profiles/TeamMemberProfile.model";
 
 // Define the "Entity" table model
 @Table
@@ -26,6 +27,9 @@ export default class Entity extends Model<Entity | IEntity> {
         emailVerified: boolean;
     }
 
+    @Column({ type: DataType.STRING, allowNull: true })
+    profilePicture: string;
+
     //  Many to one relationship with Role model
     @ForeignKey(() => Role)
     @IsUUID(4)
@@ -34,6 +38,35 @@ export default class Entity extends Model<Entity | IEntity> {
 
     @BelongsTo(() => Role)
     role: Role;
+
+    @ForeignKey(() => PartnerProfile)
+    @IsUUID(4)
+    @NotEmpty
+    @IsIn([['teamMemberProfileId', 'partnerProfileId']])
+    @Column({ type: DataType.STRING, allowNull: true })
+    partnerProfileId: string;
+
+    @ForeignKey(() => TeamMember)
+    @IsUUID(4)
+    @NotEmpty
+    @IsIn([['teamMemberProfileId', 'partnerProfileId']])
+    @Column({ type: DataType.STRING, allowNull: true })
+    teamMemberProfileId: string;
+
+    // Relation to partner profile
+    @HasOne(() => PartnerProfile)
+    partnerProfile: PartnerProfile | null;
+
+    // Relation to team member profile
+    @HasOne(() => TeamMember)
+    teamMemberProfile: TeamMember | null;
+
+    @BeforeValidate
+    static ensureProfileIdIsSet(instance: Entity) {
+        if (!instance.teamMemberProfileId && !instance.partnerProfileId) {
+            throw new Error('Either teamMemberProfileId or partnerProfileId must be set.');
+        }
+    }
 }
 
 // Interface representing the structure of a Entity entity
@@ -44,6 +77,10 @@ export interface IEntity {
         activated: boolean;
         emailVerified: boolean;
     };
+    profilePicture?: string;
+    roleId: string;
+    partnerProfileId?: string;
+    teamMemberProfileId?: string;
 }
 
 // Interface representing the structure for creating a new Entity (inherits from IEntity)

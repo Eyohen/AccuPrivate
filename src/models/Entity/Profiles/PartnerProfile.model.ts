@@ -7,7 +7,7 @@ import Entity from "../Entity.model";
 
 // Define the "Partner" table model
 @Table
-export default class Partner extends Model<Partner | IPartner> {
+export default class PartnerProfile extends Model<PartnerProfile | IPartnerProfile> {
     // Define a primary key field with a UUID (Universally Unique Identifier) as its type
     @IsUUID(4)
     @PrimaryKey
@@ -17,9 +17,6 @@ export default class Partner extends Model<Partner | IPartner> {
     // Define a column for the Partner's email (string type, not nullable)
     @Column({ type: DataType.STRING, allowNull: false })
     email: string;
-
-    @Column({ type: DataType.STRING, allowNull: true })
-    profilePicture: string;
 
     @ForeignKey(() => Entity)
     @IsUUID(4)
@@ -44,22 +41,21 @@ export default class Partner extends Model<Partner | IPartner> {
 }
 
 // Interface representing the structure of a Partner entity
-export interface IPartner {
+export interface IPartnerProfile {
     id: string;              // Unique identifier for the Partner
     email: string;   // Phone number for contacting the Partner
     key: string;
     sec: string;
-    profilePicture?: string;
     entityId: string;
 }
 
 // Interface representing the structure for creating a new Partner (inherits from IPartner)
-export interface ICreatePartner extends IPartner {
+export interface ICreatePartnerProfile extends IPartnerProfile {
     // Inherits the properties from IPartner for creating a new Partner
 }
 
 // Interface for updating an existing Partner
-export interface IUpdatePartner {
+export interface IUpdatePartnerProfile {
     // You can define specific properties here that are updatable for a Partner
     // This interface is intentionally left empty for flexibility
 }

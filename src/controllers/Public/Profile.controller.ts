@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { BadRequestError, InternalServerError } from "../../utils/Errors";
-import PartnerService from "../../services/Partner.service";
+import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
 import FileUploadService from "../../utils/FileUpload";
 import fs from 'fs'
 
