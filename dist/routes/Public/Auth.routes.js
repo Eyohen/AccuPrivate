@@ -18,6 +18,6 @@ router
     .post('/login', Auth_controller_1.default.login)
     .post('/deactivate', Auth_controller_2.default.deactivatePartner)
     .post('/activate', Auth_controller_2.default.activatePartner)
-    .post('/logout', Auth_controller_1.default.logout)
+    .post('/logout', (0, Auth_1.basicAuth)('access'), Auth_controller_1.default.logout)
     .get('/loggeduser', (0, Auth_1.basicAuth)('access'), Auth_controller_1.default.getLoggedUserData);
 exports.default = router;
