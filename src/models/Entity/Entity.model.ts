@@ -1,7 +1,7 @@
 // Import necessary modules and dependencies
 import { Table, Column, Model, DataType, IsUUID, PrimaryKey, HasOne, ForeignKey, BelongsTo, NotEmpty, IsIn, BeforeValidate } from "sequelize-typescript";
 import Password from "../Password.model";
-import Role from "./Role.model";
+import Role from "../Role.model";
 import { PartnerProfile } from "./Profiles";
 import TeamMember from "./Profiles/TeamMemberProfile.model";
 
@@ -64,6 +64,8 @@ export default class Entity extends Model<Entity | IEntity> {
     @BeforeValidate
     static ensureProfileIdIsSet(instance: Entity) {
         if (!instance.teamMemberProfileId && !instance.partnerProfileId) {
+            throw new Error('Either teamMemberProfileId or partnerProfileId must be set.');
+        } else if (!instance.teamMemberProfileId && !instance.partnerProfileId) {
             throw new Error('Either teamMemberProfileId or partnerProfileId must be set.');
         }
     }

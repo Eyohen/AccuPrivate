@@ -1,10 +1,17 @@
 import { Transaction } from "sequelize"
-import Entity, { IUpdateEntity } from "../../models/Entity/Entity.model"
+import Entity, { IEntity, IUpdateEntity } from "../../models/Entity/Entity.model"
 import { PartnerProfile, TeamMemberProfile } from "../../models/Entity/Profiles"
+import RoleService from "../Role.service"
+import Role, { RoleEnum } from "../../models/Role.model"
 
-export default class TeamMemberProfileService {
-    static async addTeamMemberProfile(entityData: Entity, transaction?: Transaction): Promise<Entity> {
-        const entity: Entity = Entity.build(entityData)
+export default class EntityService {
+    static async addEntity(entityData: Omit<IEntity, 'roleId'>, transaction?: Transaction): Promise<Entity> {
+        const role = await RoleService.viewRoleByName(RoleEnum.Partner)
+        if (!role) {
+            throw new Error('Role not found')
+        }
+
+        const entity: Entity = Entity.build({ ...entityData, roleId: role.id })
         const _transaction = transaction ? await entity.save({ transaction }) : await entity.save()
 
         return _transaction

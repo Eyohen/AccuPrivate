@@ -1,7 +1,7 @@
 // Import necessary modules and dependencies
 import { Table, Column, Model, DataType, IsUUID, PrimaryKey, HasMany, HasOne, ForeignKey } from "sequelize-typescript";
-import Password from "../Password.model";
-import Entity from "./Entity.model";
+import Password from "./Password.model";
+import Entity from "./Entity/Entity.model";
 
 // Roles for each entity
 // One to one relationship with entity
@@ -11,7 +11,7 @@ export enum RoleEnum {
     TeamMember = 'TEAMMEMBER'
 }
 
-@Table 
+@Table
 export default class Role extends Model<IRole | Role> {
     @IsUUID(4)
     @PrimaryKey

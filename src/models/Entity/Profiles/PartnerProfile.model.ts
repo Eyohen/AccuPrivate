@@ -49,6 +49,11 @@ export interface IPartnerProfile {
     entityId: string;
 }
 
+export interface IPartnerProfileAssociations extends IPartnerProfile {
+    transactions: Transaction[];
+    entity: Entity;
+}
+
 // Interface representing the structure for creating a new Partner (inherits from IPartner)
 export interface ICreatePartnerProfile extends IPartnerProfile {
     // Inherits the properties from IPartner for creating a new Partner

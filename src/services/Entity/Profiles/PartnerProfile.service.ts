@@ -4,6 +4,7 @@ import Cypher, { generateRandomString } from "../../../utils/Cypher";
 import { randomUUID } from "crypto";
 import ApiKeyService from "../../ApiKey.service ";
 import Entity from "../../../models/Entity/Entity.model";
+import EntityService from "../Entity.service";
 
 export default class PartnerService {
     private static createKeys(data: string): { key: string, sec: string } {
@@ -37,12 +38,12 @@ export default class PartnerService {
     }
 
     static async viewSinglePartnerByEmail(email: string): Promise<PartnerProfile | null> {
-        const entity = await Entity.findOne({ where: { email } })
+        const entity = await Entity.findOne({ where: { email }, include: [PartnerProfile] })
         if (!entity) {
             return null
         }
 
-        const partner = await entity.$get('partnerProfile')
+        const partner = entity.partnerProfile
         if (!partner) {
             return null
         }
@@ -61,8 +62,7 @@ export default class PartnerService {
             throw new Error('Partner entity not found')
         }
 
-        partnerEntity.profilePicture = profilePicture
-        await partnerEntity.save()
+        await EntityService.updateEntity(partnerEntity, { profilePicture })
 
         // Get updated partner info
         const updatedPartner = await PartnerProfile.findByPk(partner.id)

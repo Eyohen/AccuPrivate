@@ -1,28 +1,18 @@
 import { NextFunction, Request, Response } from "express";
-import TransactionService from "../../services/Transaction.service";
-import Transaction, { PaymentType, Status } from "../../models/Transaction.model";
 import { v4 as uuidv4 } from 'uuid';
-import UserService from "../../services/User.service";
-import MeterService from "../../services/Meter.service";
-import User from "../../models/User.model";
-import Meter from "../../models/Meter.model";
-import VendorService from "../../services/Vendor.service";
-import PowerUnit from "../../models/PowerUnit.model";
-import PowerUnitService from "../../services/PowerUnit.service";
-import { DEFAULT_ELECTRICITY_PROVIDER, NODE_ENV } from "../../utils/Constants";
-import { BadRequestError, GateWayTimeoutError, InternalServerError, NotFoundError } from "../../utils/Errors";
-import { generateRandomToken } from "../../utils/Helper";
+import { BadRequestError, InternalServerError } from "../../utils/Errors";
 import EmailService, { EmailTemplate } from "../../utils/Email";
-import ResponseTrimmer from '../../utils/ResponseTrimmer'
+import ResponseTrimmer from '../../utils/ResponseTrimmer';
 import Partner from "../../models/Entity/Profiles/PartnerProfile.model";
 import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
-import { Database, Sequelize } from "../../models/index";
+import { Database } from "../../models/index";
 import PasswordService from "../../services/Password.service";
 import { AuthUtil, TokenUtil } from "../../utils/Auth/token";
 import Validator from "../../utils/Validators";
 import logger from "../../utils/Logger";
 import Cypher from "../../utils/Cypher";
 import ApiKeyService from "../../services/ApiKey.service ";
+import EntityService from "../../services/Entity/Entity.service";
 
 export default class AuthController {
 
@@ -48,13 +38,20 @@ export default class AuthController {
         }
 
         const transaction = await Database.transaction()
-        const newPartner = await PartnerService.addPartner({
+
+        const entity = await EntityService.addEntity({
             id: uuidv4(),
             email,
             status: {
                 activated: false,
-                emailVerified: false,
+                emailVerified: false
             },
+            partnerProfileId: uuidv4()
+        }, transaction)
+        const newPartner = await PartnerService.addPartner({
+            id: entity.partnerProfileId,
+            entityId: entity.id,
+            email,
         }, transaction)
 
         const apiKey = await ApiKeyService.addApiKey({
@@ -74,7 +71,7 @@ export default class AuthController {
             password
         }, transaction)
 
-        await newPartner.update({ status: { ...newPartner.status, emailVerified: true } })
+        await entity.update({ status: { ...entity.status, emailVerified: true } })
         const accessToken = await AuthUtil.generateToken({ type: 'emailverification', partner: newPartner.dataValues, expiry: 60 * 10 })
         const otpCode = await AuthUtil.generateCode({ type: 'emailverification', partner: newPartner.dataValues, expiry: 60 * 10 })
         await transaction.commit()
@@ -104,10 +101,16 @@ export default class AuthController {
             throw new InternalServerError('Partner not found')
         }
 
-        await partner.update({ status: { ...partner.status, emailVerified: true } })
-        if (partner.status.emailVerified) {
+        const entity = await partner.$get('entity')
+        if (!entity) {
+            throw new InternalServerError('Partner entity not found')
+        }
+
+        if (entity.status.emailVerified) {
             throw new BadRequestError('Email already verified')
         }
+
+        await entity.update({ status: { ...entity.status, emailVerified: true } })
 
         const validCode = await AuthUtil.compareCode({ partner: partner.dataValues, tokenType: 'emailverification', token: otpCode })
         if (!validCode) {
@@ -137,7 +140,12 @@ export default class AuthController {
             throw new InternalServerError('Authenticate partner record not found')
         }
 
-        if (newPartner.status.emailVerified) {
+        const entity = await newPartner.$get('entity')
+        if (!entity) {
+            throw new InternalServerError('Partner entity not found')
+        }
+
+        if (entity.status.emailVerified) {
             throw new BadRequestError('Email already verified')
         }
 
@@ -204,7 +212,12 @@ export default class AuthController {
             throw new BadRequestError('Invalid otp code')
         }
 
-        const password = await partner.$get('password')
+        const entity = await partner.$get('entity')
+        if (!entity) {
+            throw new InternalServerError('Partner entity not found')
+        }
+
+        const password = await entity.$get('password')
         if (!password) {
             throw new InternalServerError('No password found for authneticate partner')
         }
@@ -238,7 +251,12 @@ export default class AuthController {
             throw new InternalServerError('Partner not found')
         }
 
-        const password = await partner.$get('password')
+        const entity = await partner.$get('entity')
+        if (!entity) {
+            throw new InternalServerError('Partner entity not found')
+        }
+
+        const password = await entity.$get('password')
         if (!password) {
             throw new InternalServerError('No password found for authneticate partner')
         }
@@ -265,9 +283,15 @@ export default class AuthController {
             throw new BadRequestError('Invalid Email or password')
         }
 
-        const partnerPassword = await partner.$get('password')
+
+        const entity = await partner.$get('entity')
+        if (!entity) {
+            throw new InternalServerError('Partner entity not found')
+        }
+
+        const partnerPassword = await entity.$get('password')
         if (!partnerPassword) {
-            throw new BadRequestError('Invalid Email or password')
+            throw new InternalServerError('No password found for authneticate partner')
         }
 
         const validPassword = await PasswordService.comparePassword(password, partnerPassword.password)
@@ -275,7 +299,7 @@ export default class AuthController {
             throw new BadRequestError('Invalid Email or password')
         }
 
-        if (!partner.status.activated) {
+        if (!entity.status.activated) {
             throw new BadRequestError('Account not activated')
         }
 

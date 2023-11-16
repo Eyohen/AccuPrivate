@@ -1,21 +1,14 @@
 import { NextFunction, Request, Response } from "express";
-import { v4 as uuidv4 } from 'uuid';
 import { BadRequestError, InternalServerError } from "../../utils/Errors";
-import EmailService, { EmailTemplate } from "../../utils/Email";
-import ResponseTrimmer from '../../utils/ResponseTrimmer'
-import Partner, { IPartner } from "../../models/Entity/Profiles/PartnerProfile.model";
+import Partner, { IPartnerProfile } from "../../models/Entity/Profiles/PartnerProfile.model";
 import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
-import { Database } from "../../models/index";
-import PasswordService from "../../services/Password.service";
-import { AuthUtil, TokenUtil } from "../../utils/Auth/token";
-import Validator from "../../utils/Validators";
-import logger from "../../utils/Logger";
+import { TokenUtil } from "../../utils/Auth/token";
 import ApiKeyService from "../../services/ApiKey.service ";
 import Cypher from "../../utils/Cypher";
 
 export default class ApiController {
     static async getActiveAPIKey(req: Request, res: Response, next: NextFunction) {
-        const { partner }: { partner: IPartner } = (req as any).user
+        const { partner }: { partner: IPartnerProfile } = (req as any).user
 
         const partner_ = await PartnerService.viewSinglePartnerByEmail(partner.email)
         if (!partner_) {

@@ -25,7 +25,12 @@ export default class AuthController {
             throw new BadRequestError('Partner not found')
         }
 
-        await partner.update({ status: { ...partner.status, activated: true } })
+        const entity = await partner.$get('entity')
+        if (!entity) {
+            throw new InternalServerError('Partner entity not found')
+        }
+
+        await entity.update({ status: { ...entity.status, activated: true } })
 
         await EmailService.sendEmail({
             to: partner.email,
@@ -53,7 +58,13 @@ export default class AuthController {
             throw new BadRequestError('Partner not found')
         }
 
-        await partner.update({ status: { ...partner.status, activated: false } })
+        const entity = await partner.$get('entity')
+        if (!entity) {
+            throw new InternalServerError('Partner entity not found')
+        }
+
+        await entity.update({ status: { ...entity.status, activated: true } })
+
 
         await EmailService.sendEmail({
             to: partner.email,
