@@ -13,7 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const ApiKey_model_1 = __importDefault(require("../models/ApiKey.model"));
-const token_1 = require("../utils/Auth/token");
+const Token_1 = require("../utils/Auth/Token");
 const Cypher_1 = __importDefault(require("../utils/Cypher"));
 // EventService class for handling event-related operations
 class ApiKeyService {
@@ -58,12 +58,12 @@ class ApiKeyService {
     }
     static setCurrentActiveApiKeyInCache(partner, key) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield token_1.TokenUtil.saveTokenToCache({ key: `active_api_key:${partner.id}`, token: Cypher_1.default.encryptString(key) });
+            yield Token_1.TokenUtil.saveTokenToCache({ key: `active_api_key:${partner.id}`, token: Cypher_1.default.encryptString(key) });
         });
     }
     static getCurrentActiveApiKeyInCache(partner) {
         return __awaiter(this, void 0, void 0, function* () {
-            const key = yield token_1.TokenUtil.getTokenFromCache(`active_api_key:${partner.id}`);
+            const key = yield Token_1.TokenUtil.getTokenFromCache(`active_api_key:${partner.id}`);
             return key ? Cypher_1.default.decryptString(key) : null;
         });
     }

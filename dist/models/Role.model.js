@@ -12,37 +12,40 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.RoleEnum = void 0;
 // Import necessary modules and dependencies
 const sequelize_typescript_1 = require("sequelize-typescript");
-const PartnerProfile_model_1 = __importDefault(require("./Entity/Profiles/PartnerProfile.model"));
-// Define the Sequelize model for the "ApiKey" table
-let ApiKey = class ApiKey extends sequelize_typescript_1.Model {
+const Entity_model_1 = __importDefault(require("./Entity/Entity.model"));
+// Roles for each entity
+// One to one relationship with entity
+var RoleEnum;
+(function (RoleEnum) {
+    RoleEnum["Admin"] = "ADMIN";
+    RoleEnum["Partner"] = "PARTNER";
+    RoleEnum["TeamMember"] = "TEAMMEMBER";
+})(RoleEnum || (exports.RoleEnum = RoleEnum = {}));
+let Role = class Role extends sequelize_typescript_1.Model {
 };
 __decorate([
     (0, sequelize_typescript_1.IsUUID)(4),
     sequelize_typescript_1.PrimaryKey,
     sequelize_typescript_1.Column,
     __metadata("design:type", String)
-], ApiKey.prototype, "id", void 0);
+], Role.prototype, "id", void 0);
+__decorate([
+    sequelize_typescript_1.Unique,
+    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.STRING, allowNull: false }),
+    __metadata("design:type", String)
+], Role.prototype, "name", void 0);
+__decorate([
+    (0, sequelize_typescript_1.HasMany)(() => Entity_model_1.default),
+    __metadata("design:type", Array)
+], Role.prototype, "entities", void 0);
 __decorate([
     (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.STRING, allowNull: false }),
     __metadata("design:type", String)
-], ApiKey.prototype, "key", void 0);
-__decorate([
-    (0, sequelize_typescript_1.ForeignKey)(() => PartnerProfile_model_1.default),
-    (0, sequelize_typescript_1.IsUUID)(4),
-    sequelize_typescript_1.Column,
-    __metadata("design:type", String)
-], ApiKey.prototype, "partnerId", void 0);
-__decorate([
-    (0, sequelize_typescript_1.BelongsTo)(() => PartnerProfile_model_1.default),
-    __metadata("design:type", PartnerProfile_model_1.default)
-], ApiKey.prototype, "PartnerProfile", void 0);
-__decorate([
-    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.BOOLEAN, allowNull: false }),
-    __metadata("design:type", Boolean)
-], ApiKey.prototype, "active", void 0);
-ApiKey = __decorate([
+], Role.prototype, "description", void 0);
+Role = __decorate([
     sequelize_typescript_1.Table
-], ApiKey);
-exports.default = ApiKey;
+], Role);
+exports.default = Role;

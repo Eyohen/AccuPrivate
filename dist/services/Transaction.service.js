@@ -16,7 +16,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Transaction_model_1 = __importDefault(require("../models/Transaction.model"));
 const Event_service_1 = __importDefault(require("./Event.service"));
 const PowerUnit_model_1 = __importDefault(require("../models/PowerUnit.model"));
-const Partner_model_1 = __importDefault(require("../models/Partner.model"));
+const PartnerProfile_model_1 = __importDefault(require("../models/Entity/Profiles/PartnerProfile.model"));
 const User_model_1 = __importDefault(require("../models/User.model"));
 const Meter_model_1 = __importDefault(require("../models/Meter.model"));
 const sequelize_1 = require("sequelize");
@@ -46,7 +46,7 @@ class TransactionService {
     static viewTransactionsWithCustomQuery(query) {
         return __awaiter(this, void 0, void 0, function* () {
             // Retrieve all transactions from the database
-            const transactions = yield Transaction_model_1.default.findAll(Object.assign(Object.assign({}, query), { include: [PowerUnit_model_1.default, Partner_model_1.default, User_model_1.default, Meter_model_1.default] }));
+            const transactions = yield Transaction_model_1.default.findAll(Object.assign(Object.assign({}, query), { include: [PowerUnit_model_1.default, PartnerProfile_model_1.default, User_model_1.default, Meter_model_1.default] }));
             return transactions;
         });
     }
@@ -54,14 +54,14 @@ class TransactionService {
     static viewSingleTransaction(uuid) {
         return __awaiter(this, void 0, void 0, function* () {
             // Retrieve a single transaction by its UUID
-            const transaction = yield Transaction_model_1.default.findByPk(uuid, { include: [PowerUnit_model_1.default, Partner_model_1.default, User_model_1.default, Meter_model_1.default] });
+            const transaction = yield Transaction_model_1.default.findByPk(uuid, { include: [PowerUnit_model_1.default, PartnerProfile_model_1.default, User_model_1.default, Meter_model_1.default] });
             return transaction;
         });
     }
     static viewSingleTransactionByBankRefID(bankRefId) {
         return __awaiter(this, void 0, void 0, function* () {
             // Retrieve a single transaction by its UUID
-            const transaction = yield Transaction_model_1.default.findOne({ where: { bankRefId: bankRefId }, include: [Partner_model_1.default, Meter_model_1.default, User_model_1.default] });
+            const transaction = yield Transaction_model_1.default.findOne({ where: { bankRefId: bankRefId }, include: [PartnerProfile_model_1.default, Meter_model_1.default, User_model_1.default] });
             return transaction;
         });
     }

@@ -45,6 +45,7 @@ const PowerUnit_service_1 = __importDefault(require("../../services/PowerUnit.se
 const ResponseTrimmer_1 = __importDefault(require("../../utils/ResponseTrimmer"));
 const crypto_1 = require("crypto");
 const Vendor_service_1 = __importDefault(require("../../services/Vendor.service"));
+const PartnerProfile_service_1 = __importDefault(require("../../services/Entity/Profiles/PartnerProfile.service"));
 class TransactionController {
     static getTransactionInfo(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -110,7 +111,7 @@ class TransactionController {
                     yield Transaction_service_1.default.updateSingleTransaction(transactionRecord.id, { status: Event_model_1.Status.FAILED });
                 else if (transactionIsPending)
                     yield Transaction_service_1.default.updateSingleTransaction(transactionRecord.id, { status: Event_model_1.Status.PENDING });
-                return res.status(200).json({
+                res.status(200).json({
                     status: 'success',
                     message: 'Requery request successful',
                     data: {
@@ -119,6 +120,7 @@ class TransactionController {
                         transaction: ResponseTrimmer_1.default.trimTransaction(transactionRecord),
                     }
                 });
+                return;
             }
             yield Transaction_service_1.default.updateSingleTransaction(transactionRecord.id, { status: Event_model_1.Status.COMPLETE });
             const user = yield transactionRecord.$get('user');
@@ -178,7 +180,11 @@ class TransactionController {
     static getYesterdaysTransactions(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             const { status } = req.query;
-            const { partner } = req.user;
+            const { profile: { id } } = req.user.user;
+            const partner = yield PartnerProfile_service_1.default.viewSinglePartner(id);
+            if (!partner) {
+                throw new Errors_1.InternalServerError('Authenticated partner not found');
+            }
             const transactions = status
                 ? yield Transaction_service_1.default.viewTransactionsForYesterdayByStatus(partner.id, status.toUpperCase())
                 : yield Transaction_service_1.default.viewTransactionForYesterday(partner.id);

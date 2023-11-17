@@ -19,7 +19,7 @@ const ErrorHandler_1 = __importDefault(require("./middlewares/ErrorHandler"));
 const models_1 = require("./models");
 const body_parser_1 = __importDefault(require("body-parser"));
 const cors_1 = __importDefault(require("cors"));
-const Routes_1 = __importDefault(require("./routes/Routes"));
+const routes_1 = __importDefault(require("./routes"));
 const morgan_1 = __importDefault(require("morgan"));
 const Logger_1 = __importDefault(require("./utils/Logger"));
 const helmet_1 = __importDefault(require("helmet"));
@@ -38,7 +38,7 @@ app.get('/healthcheck', (req, res) => __awaiter(void 0, void 0, void 0, function
         message: "Server is working",
     });
 }));
-app.use('/api/v0', Routes_1.default);
+app.use('/api/v0', routes_1.default);
 app.use(ErrorHandler_1.default);
 app.use((req, res) => {
     res.status(404).json({
@@ -53,7 +53,7 @@ function startServer() {
             // Initialize the database (You may want to add a comment describing what "initiateDB" does)
             yield (0, models_1.initiateDB)(models_1.Database);
             // Synchronize the database (you may want to add options like force: true to reset the database)
-            yield models_1.Database.sync();
+            yield models_1.Database.sync({ alter: true });
             // Start the server and listen on port 3000
             app.listen(process.env.PORT || 3000, () => {
                 Logger_1.default.info("Server Started on Port 3000");
@@ -63,6 +63,7 @@ function startServer() {
             console.error(err);
             // Log any errors that occur during server startup
             Logger_1.default.error(err);
+            5;
             // Exit the process with a non-zero status code to indicate an error
             process.exit(1);
         }

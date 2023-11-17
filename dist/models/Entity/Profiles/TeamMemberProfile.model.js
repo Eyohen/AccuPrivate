@@ -14,35 +14,32 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 // Import necessary modules and dependencies
 const sequelize_typescript_1 = require("sequelize-typescript");
-const PartnerProfile_model_1 = __importDefault(require("./Entity/Profiles/PartnerProfile.model"));
-// Define the Sequelize model for the "ApiKey" table
-let ApiKey = class ApiKey extends sequelize_typescript_1.Model {
+const Entity_model_1 = __importDefault(require("../Entity.model"));
+const PartnerProfile_model_1 = __importDefault(require("./PartnerProfile.model"));
+// Define the "TeamMember" table model
+let TeamMemberProfile = class TeamMemberProfile extends sequelize_typescript_1.Model {
 };
 __decorate([
     (0, sequelize_typescript_1.IsUUID)(4),
     sequelize_typescript_1.PrimaryKey,
     sequelize_typescript_1.Column,
     __metadata("design:type", String)
-], ApiKey.prototype, "id", void 0);
+], TeamMemberProfile.prototype, "id", void 0);
 __decorate([
-    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.STRING, allowNull: false }),
-    __metadata("design:type", String)
-], ApiKey.prototype, "key", void 0);
+    (0, sequelize_typescript_1.HasOne)(() => Entity_model_1.default),
+    __metadata("design:type", Entity_model_1.default)
+], TeamMemberProfile.prototype, "entity", void 0);
 __decorate([
     (0, sequelize_typescript_1.ForeignKey)(() => PartnerProfile_model_1.default),
     (0, sequelize_typescript_1.IsUUID)(4),
-    sequelize_typescript_1.Column,
+    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.STRING, allowNull: false }),
     __metadata("design:type", String)
-], ApiKey.prototype, "partnerId", void 0);
+], TeamMemberProfile.prototype, "partnerId", void 0);
 __decorate([
     (0, sequelize_typescript_1.BelongsTo)(() => PartnerProfile_model_1.default),
     __metadata("design:type", PartnerProfile_model_1.default)
-], ApiKey.prototype, "PartnerProfile", void 0);
-__decorate([
-    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.BOOLEAN, allowNull: false }),
-    __metadata("design:type", Boolean)
-], ApiKey.prototype, "active", void 0);
-ApiKey = __decorate([
+], TeamMemberProfile.prototype, "partner", void 0);
+TeamMemberProfile = __decorate([
     sequelize_typescript_1.Table
-], ApiKey);
-exports.default = ApiKey;
+], TeamMemberProfile);
+exports.default = TeamMemberProfile;

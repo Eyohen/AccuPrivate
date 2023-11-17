@@ -24,15 +24,15 @@ var Password_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 // Import necessary modules and dependencies
 const sequelize_typescript_1 = require("sequelize-typescript");
-const Partner_model_1 = __importDefault(require("./Partner.model"));
 const Cypher_1 = __importDefault(require("../utils/Cypher"));
+const Entity_model_1 = __importDefault(require("./Entity/Entity.model"));
 // Define the "Partner" table model
 let Password = Password_1 = class Password extends sequelize_typescript_1.Model {
 };
-Password.updatePassword = (partnerId, newPassword) => __awaiter(void 0, void 0, void 0, function* () {
+Password.updatePassword = (entityId, newPassword) => __awaiter(void 0, void 0, void 0, function* () {
     const password = yield Password_1.findOne({
         where: {
-            partnerId
+            entityId
         }
     });
     if (!password)
@@ -53,14 +53,14 @@ __decorate([
 ], Password.prototype, "password", void 0);
 __decorate([
     (0, sequelize_typescript_1.IsUUID)(4),
-    (0, sequelize_typescript_1.ForeignKey)(() => Partner_model_1.default),
+    (0, sequelize_typescript_1.ForeignKey)(() => Entity_model_1.default),
     sequelize_typescript_1.Column,
     __metadata("design:type", String)
-], Password.prototype, "partnerId", void 0);
+], Password.prototype, "entityId", void 0);
 __decorate([
-    (0, sequelize_typescript_1.BelongsTo)(() => Partner_model_1.default),
-    __metadata("design:type", Partner_model_1.default)
-], Password.prototype, "partner", void 0);
+    (0, sequelize_typescript_1.BelongsTo)(() => Entity_model_1.default),
+    __metadata("design:type", Entity_model_1.default)
+], Password.prototype, "entity", void 0);
 Password = Password_1 = __decorate([
     sequelize_typescript_1.Table
 ], Password);

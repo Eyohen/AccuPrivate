@@ -34,6 +34,9 @@ class EmailTemplate {
         this.accountActivation = (email) => __awaiter(this, void 0, void 0, function* () {
             return container(yield ejs_1.default.renderFile(__dirname + '/accountactivation.ejs', { email }));
         });
+        this.inviteTeamMember = (email) => __awaiter(this, void 0, void 0, function* () {
+            return container(yield ejs_1.default.renderFile(__dirname + '/teaminvitation.ejs', { email }));
+        });
     }
 }
 exports.default = EmailTemplate;

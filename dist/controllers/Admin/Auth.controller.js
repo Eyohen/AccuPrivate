@@ -37,8 +37,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const Errors_1 = require("../../utils/Errors");
 const Email_1 = __importStar(require("../../utils/Email"));
-const Partner_service_1 = __importDefault(require("../../services/Partner.service"));
 const Validators_1 = __importDefault(require("../../utils/Validators"));
+const Entity_service_1 = __importDefault(require("../../services/Entity/Entity.service"));
 class AuthController {
     static activatePartner(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -47,19 +47,19 @@ class AuthController {
             if (!validEmail) {
                 throw new Errors_1.BadRequestError('Invalid email');
             }
-            const partner = yield Partner_service_1.default.viewSinglePartnerByEmail(email);
-            if (!partner) {
-                throw new Errors_1.BadRequestError('Partner not found');
+            const entity = yield Entity_service_1.default.viewSingleEntityByEmail(email);
+            if (!entity) {
+                throw new Errors_1.BadRequestError('Entity not found');
             }
-            yield partner.update({ status: Object.assign(Object.assign({}, partner.status), { activated: true }) });
+            yield entity.update({ status: Object.assign(Object.assign({}, entity.status), { activated: true }) });
             yield Email_1.default.sendEmail({
-                to: partner.email,
+                to: entity.email,
                 subject: 'Account Activation',
-                html: yield new Email_1.EmailTemplate().accountActivation(partner.email)
+                html: yield new Email_1.EmailTemplate().accountActivation(entity.email)
             });
             res.status(200).json({
                 status: 'success',
-                message: 'Activated partner successfully',
+                message: 'Activated user successfully',
                 data: null
             });
         });
@@ -71,19 +71,19 @@ class AuthController {
             if (!validEmail) {
                 throw new Errors_1.BadRequestError('Invalid email');
             }
-            const partner = yield Partner_service_1.default.viewSinglePartnerByEmail(email);
-            if (!partner) {
-                throw new Errors_1.BadRequestError('Partner not found');
+            const entity = yield Entity_service_1.default.viewSingleEntityByEmail(email);
+            if (!entity) {
+                throw new Errors_1.BadRequestError('Entity not found');
             }
-            yield partner.update({ status: Object.assign(Object.assign({}, partner.status), { activated: false }) });
+            yield entity.update({ status: Object.assign(Object.assign({}, entity.status), { activated: true }) });
             yield Email_1.default.sendEmail({
-                to: partner.email,
+                to: entity.email,
                 subject: 'Account Activation',
-                html: yield new Email_1.EmailTemplate().accountActivation(partner.email)
+                html: yield new Email_1.EmailTemplate().accountActivation(entity.email)
             });
             res.status(200).json({
                 status: 'success',
-                message: 'Deactivated partner successfully',
+                message: 'Deactivated user successfully',
                 data: null
             });
         });

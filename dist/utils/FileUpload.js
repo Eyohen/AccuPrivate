@@ -36,9 +36,9 @@ class FileUploadService {
             return data.secure_url;
         });
     }
-    static uploadProfilePicture({ filePath, partner }) {
+    static uploadProfilePicture({ filePath, entity }) {
         return __awaiter(this, void 0, void 0, function* () {
-            const path = filePath, fileName = `${(0, crypto_1.randomUUID)()}.jpg`, destinationPath = `profilepictueres/${partner.id}`;
+            const path = filePath, fileName = `${(0, crypto_1.randomUUID)()}.jpg`, destinationPath = `profilepictueres/${entity.id}`;
             const secureUrl = yield this.uploadToCloudinary({
                 path,
                 fileName,

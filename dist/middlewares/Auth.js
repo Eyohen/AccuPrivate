@@ -13,7 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.validateApiKey = exports.basicAuth = void 0;
-const token_1 = require("../utils/Auth/token");
+const Token_1 = require("../utils/Auth/Token");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const Constants_1 = require("../utils/Constants");
 const Errors_1 = require("../utils/Errors");
@@ -30,8 +30,8 @@ const basicAuth = function (tokenType) {
         if (tokenData.misc.tokenType !== tokenType) {
             return next(new Errors_1.UnauthenticatedError('Invalid authentication'));
         }
-        const key = `${tokenType}_token:${tokenData.partner.id}`;
-        const token = yield token_1.TokenUtil.getTokenFromCache(key);
+        const key = `${tokenType}_token:${tokenData.user.entity.id}`;
+        const token = yield Token_1.TokenUtil.getTokenFromCache(key);
         if (token !== jwtToken) {
             return next(new Errors_1.UnauthenticatedError('Invalid authentication'));
         }
@@ -46,7 +46,7 @@ const validateApiKey = (req, res, next) => __awaiter(void 0, void 0, void 0, fun
     if (!apiKey) {
         return next(new Errors_1.UnauthenticatedError('Invalid API key'));
     }
-    const encryptedSecretForDecodingApiKey = yield token_1.TokenUtil.getTokenFromCache(apiSecret);
+    const encryptedSecretForDecodingApiKey = yield Token_1.TokenUtil.getTokenFromCache(apiSecret);
     if (!encryptedSecretForDecodingApiKey) {
         return next(new Errors_1.UnauthenticatedError('Invalid API Secret'));
     }
@@ -58,7 +58,7 @@ const validateApiKey = (req, res, next) => __awaiter(void 0, void 0, void 0, fun
     ;
     req.key = validApiKey;
     // Check if this si the current active api key
-    const currentActiveApiKey = yield token_1.TokenUtil.getTokenFromCache(`active_api_key:${validApiKey}`);
+    const currentActiveApiKey = yield Token_1.TokenUtil.getTokenFromCache(`active_api_key:${validApiKey}`);
     if (!currentActiveApiKey) {
         return next(new Errors_1.UnauthenticatedError('Invalid API key'));
     }

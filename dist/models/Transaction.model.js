@@ -16,7 +16,7 @@ exports.PaymentType = exports.Status = void 0;
 // Import necessary modules and dependencies
 const sequelize_typescript_1 = require("sequelize-typescript");
 const User_model_1 = __importDefault(require("./User.model"));
-const Partner_model_1 = __importDefault(require("./Partner.model"));
+const PartnerProfile_model_1 = __importDefault(require("./Entity/Profiles/PartnerProfile.model"));
 const Event_model_1 = __importDefault(require("./Event.model"));
 const PowerUnit_model_1 = __importDefault(require("./PowerUnit.model"));
 const Meter_model_1 = __importDefault(require("./Meter.model"));
@@ -84,14 +84,14 @@ __decorate([
     __metadata("design:type", User_model_1.default)
 ], Transaction.prototype, "user", void 0);
 __decorate([
-    (0, sequelize_typescript_1.ForeignKey)(() => Partner_model_1.default),
+    (0, sequelize_typescript_1.ForeignKey)(() => PartnerProfile_model_1.default),
     (0, sequelize_typescript_1.IsUUID)(4),
     sequelize_typescript_1.Column,
     __metadata("design:type", String)
 ], Transaction.prototype, "partnerId", void 0);
 __decorate([
-    (0, sequelize_typescript_1.BelongsTo)(() => Partner_model_1.default),
-    __metadata("design:type", Partner_model_1.default)
+    (0, sequelize_typescript_1.BelongsTo)(() => PartnerProfile_model_1.default),
+    __metadata("design:type", PartnerProfile_model_1.default)
 ], Transaction.prototype, "partner", void 0);
 __decorate([
     (0, sequelize_typescript_1.HasMany)(() => Event_model_1.default),

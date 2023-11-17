@@ -41,14 +41,14 @@ class PasswordService {
             return password;
         });
     }
-    static updatePassword(partnerId, newPassword) {
+    static updatePassword(entityId, newPassword) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield Password_model_1.default.updatePassword(partnerId, newPassword);
+            return yield Password_model_1.default.updatePassword(entityId, newPassword);
         });
     }
-    static viewSinglePasswordByPartnerId(partnerId) {
+    static viewSinglePasswordByPartnerId(entityId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const password = yield Password_model_1.default.findOne({ where: { partnerId } });
+            const password = yield Password_model_1.default.findOne({ where: { entityId } });
             return password;
         });
     }

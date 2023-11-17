@@ -38,6 +38,7 @@ function initiateDB(db) {
             Logger_1.default.info('Connection has been established successfully.');
         }
         catch (error) {
+            console.log(error);
             // Handle errors if unable to connect to the database
             Logger_1.default.error('Unable to connect to the database:', error);
         }

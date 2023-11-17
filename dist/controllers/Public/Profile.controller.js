@@ -13,33 +13,54 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const Errors_1 = require("../../utils/Errors");
-const Partner_service_1 = __importDefault(require("../../services/Partner.service"));
+const PartnerProfile_service_1 = __importDefault(require("../../services/Entity/Profiles/PartnerProfile.service"));
 const FileUpload_1 = __importDefault(require("../../utils/FileUpload"));
 const fs_1 = __importDefault(require("fs"));
+const Entity_service_1 = __importDefault(require("../../services/Entity/Entity.service"));
 class ProfileController {
     static updateProfile(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { partner } = req.user;
+            const { entity: { id } } = req.user.user;
+            const entity = yield Entity_service_1.default.viewSingleEntity(id);
+            if (!entity) {
+                return next(new Errors_1.InternalServerError('Authenticated Entity not found'));
+            }
             const imageFile = req.file;
             if (!imageFile) {
                 return next(new Errors_1.BadRequestError('No image file provided'));
             }
-            const partner_ = yield Partner_service_1.default.viewSinglePartnerByEmail(partner.email);
-            if (!partner_) {
-                return next(new Errors_1.InternalServerError('Authenticated Partner not found'));
+            const profile = Entity_service_1.default.getAssociatedProfile(entity);
+            if (!profile) {
+                return next(new Errors_1.InternalServerError('Authenticated entity profile not found'));
             }
             const secureUrl = yield FileUpload_1.default.uploadProfilePicture({
                 filePath: imageFile.path,
-                partner: partner_
+                entity
             });
             fs_1.default.unlinkSync(imageFile.path);
-            yield partner_.update({ profilePicture: secureUrl });
+            yield entity.update({ profilePicture: secureUrl });
             res.status(200).json({
                 status: 'success',
                 message: 'Partner profile updated successfully',
                 data: {
                     imageLink: secureUrl
                 }
+            });
+        });
+    }
+    static updateProfileDAta(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { partner } = req.user;
+            const { email } = req.body;
+            const partner_ = yield PartnerProfile_service_1.default.viewSinglePartnerByEmail(partner.email);
+            if (!partner_) {
+                return next(new Errors_1.InternalServerError('Authenticated Partner not found'));
+            }
+            yield partner_.update({ email });
+            res.status(200).json({
+                status: 'success',
+                message: 'Partner profile updated successfully',
+                data: null
             });
         });
     }

@@ -39,14 +39,16 @@ const uuid_1 = require("uuid");
 const Errors_1 = require("../../utils/Errors");
 const Email_1 = __importStar(require("../../utils/Email"));
 const ResponseTrimmer_1 = __importDefault(require("../../utils/ResponseTrimmer"));
-const Partner_service_1 = __importDefault(require("../../services/Partner.service"));
+const PartnerProfile_service_1 = __importDefault(require("../../services/Entity/Profiles/PartnerProfile.service"));
 const index_1 = require("../../models/index");
 const Password_service_1 = __importDefault(require("../../services/Password.service"));
-const token_1 = require("../../utils/Auth/token");
+const Token_1 = require("../../utils/Auth/Token");
 const Validators_1 = __importDefault(require("../../utils/Validators"));
 const Logger_1 = __importDefault(require("../../utils/Logger"));
 const Cypher_1 = __importDefault(require("../../utils/Cypher"));
 const ApiKey_service_1 = __importDefault(require("../../services/ApiKey.service "));
+const Entity_service_1 = __importDefault(require("../../services/Entity/Entity.service"));
+const Role_model_1 = require("../../models/Role.model");
 class AuthController {
     static signup(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -59,18 +61,24 @@ class AuthController {
             if (!validPassword) {
                 throw new Errors_1.BadRequestError('Invalid password');
             }
-            const existingPartner = yield Partner_service_1.default.viewSinglePartnerByEmail(email);
+            const existingPartner = yield PartnerProfile_service_1.default.viewSinglePartnerByEmail(email);
             if (existingPartner) {
                 throw new Errors_1.BadRequestError('Email has been used before');
             }
             const transaction = yield index_1.Database.transaction();
-            const newPartner = yield Partner_service_1.default.addPartner({
+            const newPartner = yield PartnerProfile_service_1.default.addPartner({
+                id: (0, uuid_1.v4)(),
+                email,
+            }, transaction);
+            const entity = yield Entity_service_1.default.addEntity({
                 id: (0, uuid_1.v4)(),
                 email,
                 status: {
                     activated: false,
-                    emailVerified: false,
+                    emailVerified: false
                 },
+                partnerProfileId: newPartner.id,
+                role: Role_model_1.RoleEnum.Partner
             }, transaction);
             const apiKey = yield ApiKey_service_1.default.addApiKey({
                 partnerId: newPartner.id,
@@ -79,16 +87,16 @@ class AuthController {
                 id: (0, uuid_1.v4)()
             }, transaction);
             const secKeyInCache = Cypher_1.default.encryptString(newPartner.sec);
-            yield token_1.TokenUtil.saveTokenToCache({ key: secKeyInCache, token: Cypher_1.default.encryptString(newPartner.key) });
+            yield Token_1.TokenUtil.saveTokenToCache({ key: secKeyInCache, token: Cypher_1.default.encryptString(newPartner.key) });
             yield ApiKey_service_1.default.setCurrentActiveApiKeyInCache(newPartner, apiKey.key.toString());
             const partnerPassword = yield Password_service_1.default.addPassword({
                 id: (0, uuid_1.v4)(),
-                partnerId: newPartner.id,
+                entityId: entity.id,
                 password
             }, transaction);
-            yield newPartner.update({ status: Object.assign(Object.assign({}, newPartner.status), { emailVerified: true }) });
-            const accessToken = yield token_1.AuthUtil.generateToken({ type: 'emailverification', partner: newPartner.dataValues, expiry: 60 * 10 });
-            const otpCode = yield token_1.AuthUtil.generateCode({ type: 'emailverification', partner: newPartner.dataValues, expiry: 60 * 10 });
+            yield entity.update({ status: Object.assign(Object.assign({}, entity.status), { emailVerified: true }) });
+            const accessToken = yield Token_1.AuthUtil.generateToken({ type: 'emailverification', entity, profile: newPartner, expiry: 60 * 10 });
+            const otpCode = yield Token_1.AuthUtil.generateCode({ type: 'emailverification', entity, expiry: 60 * 10 });
             yield transaction.commit();
             Logger_1.default.info(otpCode);
             yield Email_1.default.sendEmail({
@@ -100,7 +108,7 @@ class AuthController {
                 status: 'success',
                 message: 'Partner created successfully',
                 data: {
-                    partner: ResponseTrimmer_1.default.trimPartner(newPartner),
+                    partner: ResponseTrimmer_1.default.trimPartner(Object.assign(Object.assign({}, newPartner.dataValues), { entity })),
                     accessToken,
                 }
             });
@@ -109,23 +117,24 @@ class AuthController {
     static verifyEmail(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             const { otpCode } = req.body;
-            const partner = yield Partner_service_1.default.viewSinglePartner(req.user.partner.id);
-            if (!partner) {
-                throw new Errors_1.InternalServerError('Partner not found');
+            const { entity: { id } } = req.user.user;
+            const entity = yield Entity_service_1.default.viewSingleEntity(id);
+            if (!entity) {
+                throw new Errors_1.InternalServerError('Entity not found');
             }
-            yield partner.update({ status: Object.assign(Object.assign({}, partner.status), { emailVerified: true }) });
-            if (partner.status.emailVerified) {
+            if (entity.status.emailVerified) {
                 throw new Errors_1.BadRequestError('Email already verified');
             }
-            const validCode = yield token_1.AuthUtil.compareCode({ partner: partner.dataValues, tokenType: 'emailverification', token: otpCode });
+            yield entity.update({ status: Object.assign(Object.assign({}, entity.status), { emailVerified: true }) });
+            const validCode = yield Token_1.AuthUtil.compareCode({ entity, tokenType: 'emailverification', token: otpCode });
             if (!validCode) {
                 throw new Errors_1.BadRequestError('Invalid otp code');
             }
-            yield token_1.AuthUtil.deleteToken({ partner, tokenType: 'emailverification', tokenClass: 'token' });
+            yield Token_1.AuthUtil.deleteToken({ entity, tokenType: 'emailverification', tokenClass: 'token' });
             yield Email_1.default.sendEmail({
-                to: partner.email,
+                to: entity.email,
                 subject: 'Succesful Email Verification',
-                html: yield new Email_1.EmailTemplate().awaitActivation(partner.email)
+                html: yield new Email_1.EmailTemplate().awaitActivation(entity.email)
             });
             res.status(200).json({
                 status: 'success',
@@ -137,14 +146,18 @@ class AuthController {
     static resendVerificationEmail(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             const email = req.query.email;
-            const newPartner = yield Partner_service_1.default.viewSinglePartnerByEmail(email);
+            const newPartner = yield PartnerProfile_service_1.default.viewSinglePartnerByEmail(email);
             if (!newPartner) {
                 throw new Errors_1.InternalServerError('Authenticate partner record not found');
             }
-            if (newPartner.status.emailVerified) {
+            const entity = yield newPartner.$get('entity');
+            if (!entity) {
+                throw new Errors_1.InternalServerError('Partner entity not found');
+            }
+            if (entity.status.emailVerified) {
                 throw new Errors_1.BadRequestError('Email already verified');
             }
-            const otpCode = yield token_1.AuthUtil.generateCode({ type: 'emailverification', partner: newPartner.dataValues, expiry: 60 * 10 });
+            const otpCode = yield Token_1.AuthUtil.generateCode({ type: 'emailverification', entity, expiry: 60 * 10 });
             Email_1.default.sendEmail({
                 to: newPartner.email,
                 subject: 'Verify Email',
@@ -165,12 +178,17 @@ class AuthController {
     static forgotPassword(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             const { email } = req.body;
-            const partner = yield Partner_service_1.default.viewSinglePartnerByEmail(email);
-            if (!partner) {
+            const entity = yield Entity_service_1.default.viewSingleEntityByEmail(email);
+            if (!entity) {
                 throw new Errors_1.BadRequestError('No account exist for this email');
             }
-            const accessToken = yield token_1.AuthUtil.generateToken({ type: 'passwordreset', partner: partner.dataValues, expiry: 60 * 10 });
-            const otpCode = yield token_1.AuthUtil.generateCode({ type: 'passwordreset', partner: partner.dataValues, expiry: 60 * 10 });
+            const profile = yield Entity_service_1.default.getAssociatedProfile(entity);
+            if (!profile) {
+                throw new Errors_1.InternalServerError('Partner profile not found');
+            }
+            const accessToken = yield Token_1.AuthUtil.generateToken({ type: 'passwordreset', entity, profile, expiry: 60 * 10 });
+            const otpCode = yield Token_1.AuthUtil.generateCode({ type: 'passwordreset', entity, expiry: 60 * 10 });
+            console.log(otpCode);
             Email_1.default.sendEmail({
                 to: email,
                 subject: 'Forgot password',
@@ -187,29 +205,30 @@ class AuthController {
     }
     static resetPassword(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
+            const { entity: { id } } = req.user.user;
             const { otpCode, newPassword } = req.body;
             const validPassword = Validators_1.default.validatePassword(newPassword);
             if (!validPassword) {
                 throw new Errors_1.BadRequestError('Invalid password');
             }
-            const partner = yield Partner_service_1.default.viewSinglePartner(req.user.partner.id);
-            if (!partner) {
-                throw new Errors_1.InternalServerError('Partner not found');
+            const entity = yield Entity_service_1.default.viewSingleEntity(id);
+            if (!entity) {
+                throw new Errors_1.InternalServerError('Partner entity not found');
             }
-            const validCode = yield token_1.AuthUtil.compareCode({ partner: partner.dataValues, tokenType: 'passwordreset', token: otpCode });
+            const validCode = yield Token_1.AuthUtil.compareCode({ entity, tokenType: 'passwordreset', token: otpCode });
             if (!validCode) {
                 throw new Errors_1.BadRequestError('Invalid otp code');
             }
-            const password = yield partner.$get('password');
+            const password = yield entity.$get('password');
             if (!password) {
                 throw new Errors_1.InternalServerError('No password found for authneticate partner');
             }
-            yield Password_service_1.default.updatePassword(partner.id, newPassword);
-            yield token_1.AuthUtil.deleteToken({ partner, tokenType: 'passwordreset', tokenClass: 'token' });
+            yield Password_service_1.default.updatePassword(entity.id, newPassword);
+            yield Token_1.AuthUtil.deleteToken({ entity, tokenType: 'passwordreset', tokenClass: 'token' });
             yield Email_1.default.sendEmail({
-                to: partner.email,
+                to: entity.email,
                 subject: 'Succesful Email Verification',
-                html: yield new Email_1.EmailTemplate().awaitActivation(partner.email)
+                html: yield new Email_1.EmailTemplate().awaitActivation(entity.email)
             });
             res.status(200).json({
                 status: 'success',
@@ -225,19 +244,24 @@ class AuthController {
             if (!validPassword) {
                 throw new Errors_1.BadRequestError('Invalid password');
             }
-            const partner = yield Partner_service_1.default.viewSinglePartner(req.user.partner.id);
-            if (!partner) {
-                throw new Errors_1.InternalServerError('Partner not found');
+            const { entity: { id } } = req.user.user;
+            const entity = yield Entity_service_1.default.viewSingleEntity(id);
+            if (!entity) {
+                throw new Errors_1.InternalServerError('Entity not found');
             }
-            const password = yield partner.$get('password');
+            const profile = yield Entity_service_1.default.getAssociatedProfile(entity);
+            if (!profile) {
+                throw new Errors_1.InternalServerError('Profile not found');
+            }
+            const password = yield entity.$get('password');
             if (!password) {
-                throw new Errors_1.InternalServerError('No password found for authneticate partner');
+                throw new Errors_1.InternalServerError('No password found for authneticate entity');
             }
             const validOldPassword = yield Password_service_1.default.comparePassword(oldPassword, password.password);
             if (!validOldPassword) {
                 throw new Errors_1.BadRequestError('Invalid old password');
             }
-            yield Password_service_1.default.updatePassword(partner.id, newPassword);
+            yield Password_service_1.default.updatePassword(entity.id, newPassword);
             res.status(200).json({
                 status: 'success',
                 message: 'Password changed successfully',
@@ -248,28 +272,32 @@ class AuthController {
     static login(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             const { email, password } = req.body;
-            const partner = yield Partner_service_1.default.viewSinglePartnerByEmail(email);
-            if (!partner) {
+            const entity = yield Entity_service_1.default.viewSingleEntityByEmail(email);
+            if (!entity) {
                 throw new Errors_1.BadRequestError('Invalid Email or password');
             }
-            const partnerPassword = yield partner.$get('password');
-            if (!partnerPassword) {
-                throw new Errors_1.BadRequestError('Invalid Email or password');
+            const entityPassword = yield entity.$get('password');
+            if (!entityPassword) {
+                throw new Errors_1.InternalServerError('No password found for authneticate entity');
             }
-            const validPassword = yield Password_service_1.default.comparePassword(password, partnerPassword.password);
+            const validPassword = yield Password_service_1.default.comparePassword(password, entityPassword.password);
             if (!validPassword) {
                 throw new Errors_1.BadRequestError('Invalid Email or password');
             }
-            if (!partner.status.activated) {
+            if (!entity.status.activated) {
                 throw new Errors_1.BadRequestError('Account not activated');
             }
-            const accessToken = yield token_1.AuthUtil.generateToken({ type: 'access', partner: partner.dataValues, expiry: 60 * 60 * 60 * 60 });
-            const refreshToken = yield token_1.AuthUtil.generateToken({ type: 'refresh', partner: partner.dataValues, expiry: 60 * 60 * 24 * 30 });
+            const profile = yield Entity_service_1.default.getAssociatedProfile(entity);
+            if (!profile) {
+                throw new Errors_1.InternalServerError('Profile not found');
+            }
+            const accessToken = yield Token_1.AuthUtil.generateToken({ type: 'access', entity, profile, expiry: 60 * 60 * 60 * 60 });
+            const refreshToken = yield Token_1.AuthUtil.generateToken({ type: 'refresh', entity, profile, expiry: 60 * 60 * 24 * 30 });
             res.status(200).json({
                 status: 'success',
                 message: 'Login successful',
                 data: {
-                    partner: ResponseTrimmer_1.default.trimPartner(partner),
+                    entity: entity.dataValues,
                     accessToken,
                     refreshToken
                 }
@@ -278,12 +306,13 @@ class AuthController {
     }
     static logout(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            const partner = yield Partner_service_1.default.viewSinglePartner(req.user.partner.id);
-            if (!partner) {
-                throw new Errors_1.InternalServerError('Partner not found');
+            const { entity: { id } } = req.user.user;
+            const entity = yield Entity_service_1.default.viewSingleEntity(id);
+            if (!entity) {
+                throw new Errors_1.InternalServerError('Entity not found');
             }
-            yield token_1.AuthUtil.deleteToken({ partner, tokenType: 'access', tokenClass: 'token' });
-            yield token_1.AuthUtil.deleteToken({ partner, tokenType: 'refresh', tokenClass: 'token' });
+            yield Token_1.AuthUtil.deleteToken({ entity, tokenType: 'access', tokenClass: 'token' });
+            yield Token_1.AuthUtil.deleteToken({ entity, tokenType: 'refresh', tokenClass: 'token' });
             res.status(200).json({
                 status: 'success',
                 message: 'Logout successful',
@@ -293,15 +322,19 @@ class AuthController {
     }
     static getLoggedUserData(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            const partner = yield Partner_service_1.default.viewSinglePartner(req.user.partner.id);
+            const partner = yield PartnerProfile_service_1.default.viewSinglePartner(req.user.user.profile.id);
             if (!partner) {
                 throw new Errors_1.InternalServerError('Partner not found');
+            }
+            const entity = yield partner.$get('entity');
+            if (!entity) {
+                throw new Errors_1.InternalServerError('Entity not found for authenticated user');
             }
             res.status(200).json({
                 status: 'success',
                 message: 'Partner data retrieved successfully',
                 data: {
-                    partner: ResponseTrimmer_1.default.trimPartner(partner),
+                    partner: ResponseTrimmer_1.default.trimPartner(Object.assign(Object.assign({}, partner.dataValues), { entity })),
                 }
             });
         });
