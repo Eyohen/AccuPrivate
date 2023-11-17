@@ -1,6 +1,5 @@
 import { Transaction } from "sequelize"
-import { TeamMemberProfile } from "../../../models/Entity/Profiles"
-import { ITeamMemberProfile } from "../../../models/Entity/Profiles/TeamMemberProfile.model"
+import TeamMemberProfile, { ITeamMemberProfile } from "../../../models/Entity/Profiles/TeamMemberProfile.model"
 
 export default class TeamMemberProfileService {
     static async addTeamMemberProfile(teamMember: ITeamMemberProfile, transaction?: Transaction): Promise<TeamMemberProfile> {
