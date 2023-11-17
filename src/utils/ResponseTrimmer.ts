@@ -1,4 +1,5 @@
-import Partner from "../models/Entity/Profiles/PartnerProfile.model"
+import Entity, { IEntity } from "../models/Entity/Entity.model"
+import Partner, { IPartnerProfile } from "../models/Entity/Profiles/PartnerProfile.model"
 import PowerUnit from "../models/PowerUnit.model"
 import Transaction from "../models/Transaction.model"
 
@@ -25,7 +26,7 @@ class ResponseTrimmer {
         return powerUnits.map(powerUnit => this.trimPowerUnit(powerUnit))
     }
 
-    static trimPartner(partner: Partner) {
+    static trimPartner(partner: IPartnerProfile & { entity: IEntity }) {
         return {
             email: partner.email,
             profilePicture: partner.entity.profilePicture,

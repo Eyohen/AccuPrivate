@@ -42,6 +42,11 @@ export default class AuthController {
 
         const transaction = await Database.transaction()
 
+        const newPartner = await PartnerService.addPartner({
+            id: uuidv4(),
+            email,
+        }, transaction)
+
         const entity = await EntityService.addEntity({
             id: uuidv4(),
             email,
@@ -49,14 +54,8 @@ export default class AuthController {
                 activated: false,
                 emailVerified: false
             },
-            partnerProfileId: uuidv4(),
+            partnerProfileId: newPartner.id,
             role: RoleEnum.Partner
-        }, transaction)
-
-        console.log(entity)
-        const newPartner = await PartnerService.addPartner({
-            id: entity.partnerProfileId,
-            email,
         }, transaction)
 
         const apiKey = await ApiKeyService.addApiKey({
@@ -72,13 +71,13 @@ export default class AuthController {
 
         const partnerPassword = await PasswordService.addPassword({
             id: uuidv4(),
-            entityId: newPartner.id,
+            entityId: entity.id,
             password
         }, transaction)
 
         await entity.update({ status: { ...entity.status, emailVerified: true } })
-        const accessToken = await AuthUtil.generateToken({ type: 'emailverification', entity: { ...entity.dataValues }, profile: newPartner, expiry: 60 * 10 })
-        const otpCode = await AuthUtil.generateCode({ type: 'emailverification', entity: { ...entity.dataValues }, expiry: 60 * 10 })
+        const accessToken = await AuthUtil.generateToken({ type: 'emailverification', entity, profile: newPartner, expiry: 60 * 10 })
+        const otpCode = await AuthUtil.generateCode({ type: 'emailverification', entity, expiry: 60 * 10 })
         await transaction.commit()
 
         logger.info(otpCode)
@@ -92,7 +91,7 @@ export default class AuthController {
             status: 'success',
             message: 'Partner created successfully',
             data: {
-                partner: ResponseTrimmer.trimPartner(newPartner),
+                partner: ResponseTrimmer.trimPartner({ ...newPartner.dataValues, entity }),
                 accessToken,
             }
         })
@@ -150,7 +149,7 @@ export default class AuthController {
             throw new BadRequestError('Email already verified')
         }
 
-        const otpCode = await AuthUtil.generateCode({ type: 'emailverification', entity: { ...entity.dataValues }, expiry: 60 * 10 })
+        const otpCode = await AuthUtil.generateCode({ type: 'emailverification', entity, expiry: 60 * 10 })
 
         EmailService.sendEmail({
             to: newPartner.email,
@@ -183,8 +182,9 @@ export default class AuthController {
             throw new InternalServerError('Partner profile not found')
         }
 
-        const accessToken = await AuthUtil.generateToken({ type: 'passwordreset', entity: { ...entity.dataValues }, profile, expiry: 60 * 10 })
-        const otpCode = await AuthUtil.generateCode({ type: 'passwordreset', entity: { ...entity.dataValues }, expiry: 60 * 10 })
+        const accessToken = await AuthUtil.generateToken({ type: 'passwordreset', entity, profile, expiry: 60 * 10 })
+        const otpCode = await AuthUtil.generateCode({ type: 'passwordreset', entity, expiry: 60 * 10 })
+        console.log(otpCode)
         EmailService.sendEmail({
             to: email,
             subject: 'Forgot password',
@@ -318,7 +318,7 @@ export default class AuthController {
             status: 'success',
             message: 'Login successful',
             data: {
-                partner: ResponseTrimmer.trimPartner(partner),
+                partner: ResponseTrimmer.trimPartner({ ...partner.dataValues, entity }),
                 accessToken,
                 refreshToken
             }

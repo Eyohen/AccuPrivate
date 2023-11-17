@@ -5,9 +5,9 @@ import RoleService from "../../services/Role.service";
 export default class RoleController {
 
     static async getRoleInfo(req: Request, res: Response, next: NextFunction) {
-        const { id } = req.query as Record<string, string>
+        const { roleId } = req.query as Record<string, string>
 
-        const role = await RoleService.viewRoleById(id)
+        const role = await RoleService.viewRoleById(roleId)
         if (!role) {
             throw new BadRequestError('Role not found')
         }

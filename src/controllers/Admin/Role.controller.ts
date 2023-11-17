@@ -20,16 +20,16 @@ export default class RoleController {
     }
 
     static async updateRole(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { id, name, description }: { id: string, name: RoleEnum, description: string } = req.body
+        const { roleId, name, description }: { roleId: string, name: RoleEnum, description: string } = req.body
 
-        const role = await RoleService.viewRoleById(id)
+        const role = await RoleService.viewRoleById(roleId)
         if (!role) {
             throw new BadRequestError('Role not found')
         }
 
         // Check if role name is among the default roles
-        if (Object.values(RoleEnum).includes(name)) {
-            throw new BadRequestError('You cannot update a default role')
+        if ((Object.values(RoleEnum).includes(name) || Object.values(RoleEnum).includes(role.name)) && name) {
+            throw new BadRequestError('You cannot update name of a default role')
         }
 
         const updatedRole = await RoleService.updateRole(role, { name, description })

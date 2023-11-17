@@ -3,7 +3,7 @@ import { IPartnerProfile } from "../../models/Entity/Profiles/PartnerProfile.mod
 import { ENCRYPTION_KEY, JWT_SECRET } from "../Constants";
 import { redisClient } from "../../models";
 import { ITeamMemberProfile } from "../../models/Entity/Profiles/TeamMemberProfile.model";
-import { IEntity } from "../../models/Entity/Entity.model";
+import Entity, { IEntity } from "../../models/Entity/Entity.model";
 import Role, { RoleEnum } from "../../models/Role.model";
 import RoleService from "../../services/Role.service";
 
@@ -48,7 +48,7 @@ export type AuthToken = 'access' | 'refresh' | 'passwordreset' | 'emailverificat
 interface GenerateTokenData {
     type: AuthToken,
     profile: IPartnerProfile | ITeamMemberProfile,
-    entity: IEntity
+    entity: Entity
     expiry: number,
     misc?: Record<string, any>
 }
@@ -83,8 +83,9 @@ class AuthUtil {
             throw new Error('Role not found')
         }
 
+        const tokenData: Omit<DecodedTokenData, 'token'> = { user: { profile, entity: { ...entity.dataValues, role: role.name } }, misc: { ...misc, tokenType: type } }
         const tokenKey = `${type}_token:${entity.id}`
-        const token = jwt.sign({ userInfo: { profile, entity: { ...entity, role: role.name } }, misc: { ...misc, tokenType: type } }, JWT_SECRET, { expiresIn: info.expiry })
+        const token = jwt.sign(tokenData, JWT_SECRET, { expiresIn: info.expiry })
 
         await TokenUtil.saveTokenToCache({ key: tokenKey, token, expiry })
 

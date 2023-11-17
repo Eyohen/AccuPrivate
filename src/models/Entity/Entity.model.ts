@@ -41,18 +41,17 @@ export default class Entity extends Model<Entity | IEntity> {
 
     @ForeignKey(() => TeamMember)
     @IsUUID(4)
-    @NotEmpty
-    @IsIn([['teamMemberProfileId', 'partnerProfileId']])
+    // @NotEmpty
+    // @IsIn([['teamMemberProfileId', 'partnerProfileId']])
     @Column({ type: DataType.STRING, allowNull: true })
     teamMemberProfileId: string;
 
     @ForeignKey(() => PartnerProfile)
     @IsUUID(4)
-    @NotEmpty
-    @IsIn([['teamMemberProfileId', 'partnerProfileId']])
+    // @NotEmpty
+    // @IsIn([['teamMemberProfileId', 'partnerProfileId']])
     @Column({ type: DataType.STRING, allowNull: true })
     partnerProfileId: string;
-
 
     @BelongsTo(() => PartnerProfile)
     partnerProfile: PartnerProfile | null;
@@ -62,7 +61,6 @@ export default class Entity extends Model<Entity | IEntity> {
     teamMemberProfile: TeamMember | null;
 
     // Relation to partner profile
-
     @BeforeValidate
     static ensureProfileIdIsSet(instance: Entity) {
         if (!instance.teamMemberProfileId && !instance.partnerProfileId) {

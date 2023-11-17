@@ -1,5 +1,5 @@
 // Import necessary modules and dependencies
-import { Table, Column, Model, DataType, IsUUID, PrimaryKey, HasMany, HasOne, ForeignKey } from "sequelize-typescript";
+import { Table, Column, Model, DataType, IsUUID, PrimaryKey, HasMany, HasOne, ForeignKey, Unique } from "sequelize-typescript";
 import Password from "./Password.model";
 import Entity from "./Entity/Entity.model";
 
@@ -18,7 +18,8 @@ export default class Role extends Model<IRole | Role> {
     @Column
     id: string;
 
-    @Column({ type: DataType.ENUM, unique: true, values: Object.values(RoleEnum) })
+    @Unique
+    @Column({ type: DataType.STRING, allowNull: false })
     name: RoleEnum;
 
     // One to many with Entity
