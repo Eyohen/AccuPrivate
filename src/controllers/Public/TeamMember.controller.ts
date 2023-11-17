@@ -9,6 +9,7 @@ import PartnerService from "../../services/Entity/Profiles/PartnerProfile.servic
 import Entity from "../../models/Entity/Entity.model";
 import { AuthenticatedRequest } from "../../utils/Interface";
 import PasswordService from "../../services/Password.service";
+import EmailService, { EmailTemplate } from "../../utils/Email";
 
 export default class TeamMemberProfileController {
     static async inviteTeamMember(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -38,6 +39,12 @@ export default class TeamMemberProfileController {
             password: uuidv4(),
             entityId: entity.id
         }, transaction)
+
+        EmailService.sendEmail({
+            to: email,
+            subject: 'Team Invitation',
+            html: await new EmailTemplate().inviteTeamMember(email)
+        })
 
         // Commit transaction
         await transaction.commit()
