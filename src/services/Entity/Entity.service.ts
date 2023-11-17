@@ -1,6 +1,6 @@
 import { Transaction } from "sequelize"
 import Entity, { IEntity, IUpdateEntity } from "../../models/Entity/Entity.model"
-import { PartnerProfile, TeamMemberProfile } from "../../models/Entity/Profiles"
+import { PartnerProfile, TeamMemberProfile } from "../../models/Entity/Profiles/index"
 import RoleService from "../Role.service"
 import Role, { RoleEnum } from "../../models/Role.model"
 

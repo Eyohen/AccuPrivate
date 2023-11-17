@@ -19,7 +19,7 @@ export default class ApiKey extends Model<ApiKey | IApiKey> {
     @ForeignKey(() => PartnerProfile)
     @IsUUID(4)
     @Column
-    PartnerProfileId: string;
+    partnerId: string;
 
     @BelongsTo(() => PartnerProfile)
     PartnerProfile: PartnerProfile;
@@ -32,7 +32,7 @@ export default class ApiKey extends Model<ApiKey | IApiKey> {
 export interface IApiKey {
     id: string; // Unique identifier for the ApiKey
     key: string; // Timestamp of the ApiKey
-    PartnerProfileId: string; // Data associated with the ApiKey (can be a string or JSON)
+    partnerId: string; // Data associated with the ApiKey (can be a string or JSON)
     active: boolean; // Data associated with the ApiKey (can be a string or JSON)
 }
 

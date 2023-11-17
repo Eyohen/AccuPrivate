@@ -8,7 +8,7 @@ import Partner from "./PartnerProfile.model";
 
 // Define the "TeamMember" table model
 @Table
-export default class TeamMember extends Model<TeamMember | ITeamMemberProfile> {
+export default class TeamMemberProfile extends Model<TeamMemberProfile | ITeamMemberProfile> {
     // Define a primary key field with a UUID (Universally Unique Identifier) as its type
     @IsUUID(4)
     @PrimaryKey

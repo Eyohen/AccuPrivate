@@ -6,7 +6,7 @@ import ApiKeyService from "../../ApiKey.service ";
 import Entity from "../../../models/Entity/Entity.model";
 import EntityService from "../Entity.service";
 
-export default class PartnerService {
+export default class PartnerProfileService {
     private static createKeys(data: string): { key: string, sec: string } {
         const randomString = generateRandomString(20)
         const apiKey = Cypher.generateAPIKey(data, randomString)
