@@ -184,7 +184,6 @@ export default class AuthController {
 
         const accessToken = await AuthUtil.generateToken({ type: 'passwordreset', entity, profile, expiry: 60 * 10 })
         const otpCode = await AuthUtil.generateCode({ type: 'passwordreset', entity, expiry: 60 * 10 })
-        console.log(otpCode)
         EmailService.sendEmail({
             to: email,
             subject: 'Forgot password',

@@ -13,6 +13,10 @@ router
         FileUploadService.multerUpload.single('profile_picture'),
         AuthenticatedController(ProfileController.updateProfile)
     )
+    .patch(
+        '/data',
+        AuthenticatedController(ProfileController.updateProfileData)
+    )
 
 export default router
 

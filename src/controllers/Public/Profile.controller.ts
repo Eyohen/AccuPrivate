@@ -5,6 +5,7 @@ import FileUploadService from "../../utils/FileUpload";
 import fs from 'fs'
 import { AuthenticatedRequest } from "../../utils/Interface";
 import EntityService from "../../services/Entity/Entity.service";
+import { AuthUtil, TokenUtil } from "../../utils/Auth/Token";
 
 export default class ProfileController {
 
@@ -36,26 +37,29 @@ export default class ProfileController {
 
         res.status(200).json({
             status: 'success',
-            message: 'Partner profile updated successfully',
+            message: 'Profile updated successfully',
             data: {
                 imageLink: secureUrl
             }
         })
     }
-    
-    static async updateProfileDAta(req: Request, res: Response, next: NextFunction) {
-        const { partner } = (req as any).user
+
+    static async updateProfileData(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        const { entity } = req.user.user
         const { email } = req.body
 
-        const partner_ = await PartnerService.viewSinglePartnerByEmail(partner.email)
-        if (!partner_) {
+        const entity_ = await EntityService.viewSingleEntityByEmail(entity.email)
+        if (!entity_) {
             return next(new InternalServerError('Authenticated Partner not found'))
         }
-        await partner_.update({ email })
+        await entity_.update({ email })
+
+        await AuthUtil.deleteToken({ entity: entity_, tokenType: 'access', tokenClass: 'token'})
+        await AuthUtil.deleteToken({ entity: entity_, tokenType: 'refresh', tokenClass: 'token'})
 
         res.status(200).json({
             status: 'success',
-            message: 'Partner profile updated successfully',
+            message: 'Profile updated successfully',
             data: null
         })
     }

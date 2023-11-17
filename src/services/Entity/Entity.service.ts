@@ -37,7 +37,7 @@ export default class EntityService {
         const entity: Entity | null = await Entity.findOne({ where: { email } })
 
         if (!entity) {
-            throw new Error('Entity not found')
+            return null
         }
 
         return entity
