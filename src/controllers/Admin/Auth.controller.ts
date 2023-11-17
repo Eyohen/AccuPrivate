@@ -1,18 +1,14 @@
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Response } from "express";
 import { v4 as uuidv4 } from 'uuid';
 import { BadRequestError, InternalServerError } from "../../utils/Errors";
 import EmailService, { EmailTemplate } from "../../utils/Email";
-import ResponseTrimmer from '../../utils/ResponseTrimmer'
 import Partner from "../../models/Entity/Profiles/PartnerProfile.model";
 import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
-import { Database } from "../../models/index";
-import PasswordService from "../../services/Password.service";
-import { AuthUtil } from "../../utils/Auth/token";
 import Validator from "../../utils/Validators";
-import logger from "../../utils/Logger";
+import { AuthenticatedRequest } from "../../utils/Interface";
 
 export default class AuthController {
-    static async activatePartner(req: Request, res: Response, next: NextFunction) {
+    static async activatePartner(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         const { email } = req.body
 
         const validEmail = Validator.validateEmail(email)
@@ -45,7 +41,7 @@ export default class AuthController {
         })
     }
 
-    static async deactivatePartner(req: Request, res: Response, next: NextFunction) {
+    static async deactivatePartner(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         const { email } = req.body
 
         const validEmail = Validator.validateEmail(email)

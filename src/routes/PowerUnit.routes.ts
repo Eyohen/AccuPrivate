@@ -1,6 +1,6 @@
 import express, { Router } from "express";
-import PowerUnitController from "../../controllers/Public/Powerunit.controller";
-import { basicAuth } from "../../middlewares/Auth";
+import PowerUnitController from "../controllers/Public/Powerunit.controller";
+import { basicAuth } from "../middlewares/Auth";
 
 const router: Router = express.Router()
 

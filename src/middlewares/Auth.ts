@@ -1,4 +1,4 @@
-import { AuthToken, TokenUtil } from "../utils/Auth/token";
+import { AuthToken, TokenUtil } from "../utils/Auth/Token";
 import { Request, Response, NextFunction } from "express";
 import jwt from 'jsonwebtoken'
 import { JWT_SECRET } from "../utils/Constants";

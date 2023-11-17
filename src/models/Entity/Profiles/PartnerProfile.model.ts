@@ -4,6 +4,7 @@ import Transaction from "../../Transaction.model";
 import Password from "../../Password.model";
 import ApiKey from "../../ApiKey.model";
 import Entity from "../Entity.model";
+import TeamMember from "./TeamMemberProfile.model";
 
 // Define the "Partner" table model
 @Table
@@ -30,6 +31,9 @@ export default class PartnerProfile extends Model<PartnerProfile | IPartnerProfi
     @HasMany(() => Transaction)
     transactions: Transaction[];
 
+    @HasMany(() => TeamMember)
+    teamMembers: TeamMember[];
+    
     @HasMany(() => ApiKey)
     apiKeys: ApiKey[];
 

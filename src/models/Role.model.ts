@@ -35,3 +35,8 @@ export interface IRole {
     name: RoleEnum;            // Phone number for contacting the Entity
     description: string;
 }
+
+export interface IUpdateRole {
+    name: RoleEnum;            // Phone number for contacting the Entity
+    description: string;
+}

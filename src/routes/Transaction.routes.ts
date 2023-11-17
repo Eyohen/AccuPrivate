@@ -1,6 +1,6 @@
 import express, { Router } from "express";
-import TransactionController from "../../controllers/Public/Transaction.controller";
-import { basicAuth, validateApiKey } from "../../middlewares/Auth";
+import TransactionController from "../controllers/Public/Transaction.controller";
+import { basicAuth, validateApiKey } from "../middlewares/Auth";
 
 export const router: Router = express.Router()
 

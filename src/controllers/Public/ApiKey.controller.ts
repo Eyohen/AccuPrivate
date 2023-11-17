@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { BadRequestError, InternalServerError } from "../../utils/Errors";
 import Partner, { IPartnerProfile } from "../../models/Entity/Profiles/PartnerProfile.model";
 import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
-import { TokenUtil } from "../../utils/Auth/token";
+import { TokenUtil } from "../../utils/Auth/Token";
 import ApiKeyService from "../../services/ApiKey.service ";
 import Cypher from "../../utils/Cypher";
 

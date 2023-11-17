@@ -5,7 +5,7 @@ import errorHandler from "./middlewares/ErrorHandler";
 import { Database, initiateDB } from "./models";
 import bodyParser from "body-parser";
 import cors from 'cors';
-import router from "./routes/Routes";
+import router from "./routes";
 import { BAXI_TOKEN } from "./utils/Constants";
 import morgan from 'morgan'
 import logger from "./utils/Logger";

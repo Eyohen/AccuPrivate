@@ -1,6 +1,6 @@
 import express, { Router } from "express";
-import VendorController from "../../controllers/Public/Vendor.controller";
-import { validateApiKey } from "../../middlewares/Auth";
+import VendorController from "../controllers/Public/Vendor.controller";
+import { validateApiKey } from "../middlewares/Auth";
 
 const router: Router = express.Router()
 

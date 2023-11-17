@@ -5,8 +5,8 @@ import RoleService from "../Role.service"
 import Role, { RoleEnum } from "../../models/Role.model"
 
 export default class EntityService {
-    static async addEntity(entityData: Omit<IEntity, 'roleId'>, transaction?: Transaction): Promise<Entity> {
-        const role = await RoleService.viewRoleByName(RoleEnum.Partner)
+    static async addEntity(entityData: Omit<IEntity, 'roleId'> & { role: RoleEnum }, transaction?: Transaction): Promise<Entity> {
+        const role = await RoleService.viewRoleByName(entityData.role)
         if (!role) {
             throw new Error('Role not found')
         }
@@ -24,6 +24,16 @@ export default class EntityService {
 
     static async viewSingleEntity(id: string): Promise<Entity | null> {
         const entity: Entity | null = await Entity.findByPk(id)
+
+        if (!entity) {
+            throw new Error('Entity not found')
+        }
+
+        return entity
+    }
+    
+    static async viewSingleEntityByEmail(email: string): Promise<Entity | null> {
+        const entity: Entity | null = await Entity.findOne({ where: { email }})
 
         if (!entity) {
             throw new Error('Entity not found')

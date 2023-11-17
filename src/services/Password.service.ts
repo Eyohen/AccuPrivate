@@ -27,12 +27,12 @@ export default class PasswordService {
         return password
     }
 
-    static async updatePassword(partnerId: string, newPassword: string) {
-        return await Password.updatePassword(partnerId, newPassword)
+    static async updatePassword(entityId: string, newPassword: string) {
+        return await Password.updatePassword(entityId, newPassword)
     }
 
-    static async viewSinglePasswordByPartnerId(partnerId: string): Promise<Password | null> {
-        const password: Password | null = await Password.findOne({ where: { partnerId } })
+    static async viewSinglePasswordByPartnerId(entityId: string): Promise<Password | null> {
+        const password: Password | null = await Password.findOne({ where: { entityId } })
         return password
     }
 

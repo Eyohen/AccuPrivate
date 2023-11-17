@@ -26,10 +26,10 @@ export default class Password extends Model<Password | IPassword> {
     @BelongsTo(() => Entity)
     entity: Entity;
 
-    static updatePassword = async (partnerId: string, newPassword: string) => {
+    static updatePassword = async (entityId: string, newPassword: string) => {
         const password = await Password.findOne({
             where: {
-                partnerId
+                entityId
             }
         });
 
@@ -47,5 +47,5 @@ export default class Password extends Model<Password | IPassword> {
 export interface IPassword {
     id: string;              // Unique identifier for the Partner
     password: string;   // Phone number for contacting the Partner
-    partnerId: string;
+    entityId: string;
 }
