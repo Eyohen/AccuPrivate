@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { v4 as uuidv4 } from 'uuid';
 import { BadRequestError } from "../../utils/Errors";
-import { RoleEnum } from "../../models/Role.model";
+import Role, { RoleEnum } from "../../models/Role.model";
 import { Database } from "../../models";
 import TeamMemberProfileService from "../../services/Entity/Profiles/TeamMemberProfile.service";
 import EntityService from "../../services/Entity/Entity.service";
@@ -32,7 +32,6 @@ export default class TeamMemberProfileController {
             teamMemberProfileId: teamMemberProfile.id
         }, transaction)
 
-
         // Commit transaction
         await transaction.commit()
 
@@ -47,21 +46,21 @@ export default class TeamMemberProfileController {
     }
 
     static async getTeamMembers(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { entity: { id } } = req.user.user
+        const { entity: { id }, profile } = req.user.user
 
         const entity = await EntityService.viewSingleEntity(id)
         if (!entity) {
             throw new BadRequestError('Entity not found')
         }
 
-        const partner = await PartnerService.viewSinglePartner(entity.id)
+        const partner = await PartnerService.viewSinglePartner(profile.id)
         if (!partner) {
             throw new BadRequestError('Partner not found')
         }
 
         const teamMembers = await TeamMemberProfileService.viewTeamMembersWithCustomQuery({
             where: { partnerId: partner.id },
-            include: [{ model: Entity, as: 'entity' }]
+            include: [{ model: Entity, as: 'entity', include: [{ model: Role, as: 'role' }] }]
         })
 
         res.status(200).json({
@@ -82,11 +81,16 @@ export default class TeamMemberProfileController {
             throw new BadRequestError('Team member not found')
         }
 
+        const fullProfile = await TeamMemberProfileService.viewTeamMemberFullProfile(teamMemberProfile)
+        if (!fullProfile) {
+            throw new BadRequestError('Team member not found')
+        }
+
         res.status(200).json({
             status: 'success',
             message: 'Team members fetched successfully',
             data: {
-                teamMember: teamMemberProfile.dataValues
+                teamMember: { ...teamMemberProfile.dataValues, entity: fullProfile.dataValues }
             }
         })
     }

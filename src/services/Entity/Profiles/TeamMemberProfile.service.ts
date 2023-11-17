@@ -1,6 +1,8 @@
-import { Transaction } from "sequelize"
+import { Model, Transaction } from "sequelize"
 import TeamMemberProfile, { ITeamMemberProfile } from "../../../models/Entity/Profiles/TeamMemberProfile.model"
 import EntityService from "../Entity.service"
+import Entity, { IEntity } from "../../../models/Entity/Entity.model"
+import Role, { IRole } from "../../../models/Role.model"
 
 export default class TeamMemberProfileService {
     static async addTeamMemberProfile(teamMember: ITeamMemberProfile, transaction?: Transaction): Promise<TeamMemberProfile> {
@@ -18,6 +20,15 @@ export default class TeamMemberProfileService {
     static async viewSingleTeamMember(uuid: string): Promise<TeamMemberProfile | null> {
         const teamMember: TeamMemberProfile | null = await TeamMemberProfile.findByPk(uuid)
         return teamMember
+    }
+
+    static async viewTeamMemberFullProfile(teamMember: TeamMemberProfile): Promise<Entity & { role: Role }> {
+        const entity = await Entity.findOne({ where: { teamMemberProfileId: teamMember.id }, include: [Role] }) as Entity & { role: Role }
+        if (!entity) {
+            throw new Error('Entity not found')
+        }
+
+        return entity
     }
 
     static async viewSingleTeamMemberByEmail(email: string): Promise<TeamMemberProfile | null> {

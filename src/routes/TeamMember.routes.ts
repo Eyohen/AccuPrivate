@@ -10,7 +10,7 @@ router
     .use(basicAuth('access'))
     .post('/member/new', AuthenticatedController(TeamMemberProfileController.inviteTeamMember))
     .get('/member/', AuthenticatedController(TeamMemberProfileController.getTeamMembers))
-    .get('/member/info', AuthenticatedController(PowerUnitController.getPowerUnits))
+    .get('/member/info', AuthenticatedController(TeamMemberProfileController.getTeamMemberInfo))
 
 export default router
 
