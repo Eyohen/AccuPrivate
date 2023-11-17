@@ -44,8 +44,9 @@ app.use((req, res) => {
 async function startServer(): Promise<void> {
     try {
         // Initialize the database (You may want to add a comment describing what "initiateDB" does)
-        await initiateDB(Database);
-
+        setTimeout(async () => {
+            await initiateDB(Database);
+        }, 5000)
         // Synchronize the database (you may want to add options like force: true to reset the database)
         await Database.sync({ alter: true });
 
