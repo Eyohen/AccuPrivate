@@ -15,13 +15,7 @@ export default class TeamMember extends Model<TeamMember | ITeamMemberProfile> {
     @Column
     id: string;
 
-
-    @ForeignKey(() => Entity)
-    @IsUUID(4)
-    @Column({ type: DataType.STRING, allowNull: false })
-    entityId: string;
-
-    @BelongsTo(() => Entity)
+    @HasOne(() => Entity)
     entity: Entity;
 
     @ForeignKey(() => Partner)
@@ -37,7 +31,6 @@ export default class TeamMember extends Model<TeamMember | ITeamMemberProfile> {
 // Interface representing the structure of a TeamMember entity
 export interface ITeamMemberProfile {
     id: string;              // Unique identifier for the TeamMember
-    entityId: string;
     partnerId: string;
 }
 

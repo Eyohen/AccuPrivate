@@ -1,7 +1,6 @@
 // Import necessary modules and dependencies
-import { Table, Column, Model, DataType, IsUUID, PrimaryKey, HasMany, HasOne, Is, ForeignKey, BelongsTo } from "sequelize-typescript";
+import { Table, Column, Model, DataType, IsUUID, PrimaryKey, HasMany, ForeignKey, BelongsTo, HasOne } from "sequelize-typescript";
 import Transaction from "../../Transaction.model";
-import Password from "../../Password.model";
 import ApiKey from "../../ApiKey.model";
 import Entity from "../Entity.model";
 import TeamMember from "./TeamMemberProfile.model";
@@ -19,12 +18,7 @@ export default class PartnerProfile extends Model<PartnerProfile | IPartnerProfi
     @Column({ type: DataType.STRING, allowNull: false })
     email: string;
 
-    @ForeignKey(() => Entity)
-    @IsUUID(4)
-    @Column({ type: DataType.STRING, allowNull: false })
-    entityId: string;
-
-    @BelongsTo(() => Entity)
+    @HasOne(() => Entity)
     entity: Entity;
 
     // Establish a "HasMany" association with the "Transaction" model
@@ -33,7 +27,7 @@ export default class PartnerProfile extends Model<PartnerProfile | IPartnerProfi
 
     @HasMany(() => TeamMember)
     teamMembers: TeamMember[];
-    
+
     @HasMany(() => ApiKey)
     apiKeys: ApiKey[];
 
@@ -42,6 +36,7 @@ export default class PartnerProfile extends Model<PartnerProfile | IPartnerProfi
 
     @Column({ type: DataType.STRING, allowNull: false })
     sec: string;
+
 }
 
 // Interface representing the structure of a Partner entity
@@ -50,7 +45,6 @@ export interface IPartnerProfile {
     email: string;   // Phone number for contacting the Partner
     key: string;
     sec: string;
-    entityId: string;
 }
 
 export interface IPartnerProfileAssociations extends IPartnerProfile {

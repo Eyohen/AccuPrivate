@@ -18,7 +18,7 @@ export default class Role extends Model<IRole | Role> {
     @Column
     id: string;
 
-    @Column({ type: DataType.ENUM, unique: true, values: Object.values(RoleEnum), allowNull: false })
+    @Column({ type: DataType.ENUM, values: Object.values(RoleEnum) })
     name: RoleEnum;
 
     // One to many with Entity

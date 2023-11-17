@@ -44,10 +44,11 @@ app.use((req, res) => {
 async function startServer(): Promise<void> {
     try {
         // Initialize the database (You may want to add a comment describing what "initiateDB" does)
-        await initiateDB(Database);
-
+        setTimeout(async () => {
+            await initiateDB(Database);
+        }, 5000)
         // Synchronize the database (you may want to add options like force: true to reset the database)
-        await Database.sync();
+        await Database.sync({ alter: true });
 
         // Start the server and listen on port 3000
         app.listen(process.env.PORT || 3000, () => {
@@ -56,7 +57,7 @@ async function startServer(): Promise<void> {
     } catch (err) {
         console.error(err)
         // Log any errors that occur during server startup
-        logger.error(err);
+        logger.error(err); 5
         // Exit the process with a non-zero status code to indicate an error
         process.exit(1);
     }

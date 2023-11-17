@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { BadRequestError, InternalServerError } from "../../utils/Errors";
+import { BadRequestError, ForbiddenError, InternalServerError } from "../../utils/Errors";
 import Partner, { IPartnerProfile } from "../../models/Entity/Profiles/PartnerProfile.model";
 import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
 import { TokenUtil } from "../../utils/Auth/Token";
@@ -11,13 +11,16 @@ export default class ApiController {
     static async getActiveAPIKey(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         const { entity, profile } = req.user.user
 
-        if (profile.)
-        const partner_ = await PartnerService.viewSinglePartnerByEmail(partner.email)
+        if (entity.role !== 'PARTNER') {
+            throw new ForbiddenError('Only partners can access this resource')
+        }
+
+        const partner_ = await PartnerService.viewSinglePartnerByEmail(entity.email)
         if (!partner_) {
             throw new InternalServerError('Authenticated partner not found')
         }
 
-        const apiKey = await ApiKeyService.viewActiveApiKeyByPartnerId(partner.id)
+        const apiKey = await ApiKeyService.viewActiveApiKeyByPartnerId(profile.id)
         if (!apiKey) {
             throw new BadRequestError('API Key not found')
         }

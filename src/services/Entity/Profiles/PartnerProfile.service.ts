@@ -43,7 +43,7 @@ export default class PartnerService {
             return null
         }
 
-        const partner = entity.partnerProfile
+        const partner = await entity.$get('partnerProfile')
         if (!partner) {
             return null
         }

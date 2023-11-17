@@ -54,7 +54,6 @@ export default class AuthController {
         }, transaction)
         const newPartner = await PartnerService.addPartner({
             id: entity.partnerProfileId,
-            entityId: entity.id,
             email,
         }, transaction)
 

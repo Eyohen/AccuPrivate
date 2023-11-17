@@ -17,7 +17,7 @@ router
     .post('/deactivate', AuthenticatedController(AdminAuthController.deactivatePartner))
     .post('/activate', AuthenticatedController(AdminAuthController.activatePartner))
     .post('/logout', basicAuth('access'), AuthenticatedController(PublicAuthController.logout))
-    .get('/loggeduser', basicAuth('access'), PublicAuthController.getLoggedUserData)
+    .get('/loggeduser', basicAuth('access'), AuthenticatedController(PublicAuthController.getLoggedUserData))
 
 export default router
 

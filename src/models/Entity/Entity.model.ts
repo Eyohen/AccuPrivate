@@ -2,7 +2,7 @@
 import { Table, Column, Model, DataType, IsUUID, PrimaryKey, HasOne, ForeignKey, BelongsTo, NotEmpty, IsIn, BeforeValidate } from "sequelize-typescript";
 import Password from "../Password.model";
 import Role from "../Role.model";
-import { PartnerProfile } from "./Profiles";
+import PartnerProfile from "./Profiles/PartnerProfile.model";
 import TeamMember from "./Profiles/TeamMemberProfile.model";
 
 // Define the "Entity" table model
@@ -39,13 +39,6 @@ export default class Entity extends Model<Entity | IEntity> {
     @BelongsTo(() => Role)
     role: Role;
 
-    @ForeignKey(() => PartnerProfile)
-    @IsUUID(4)
-    @NotEmpty
-    @IsIn([['teamMemberProfileId', 'partnerProfileId']])
-    @Column({ type: DataType.STRING, allowNull: true })
-    partnerProfileId: string;
-
     @ForeignKey(() => TeamMember)
     @IsUUID(4)
     @NotEmpty
@@ -53,22 +46,29 @@ export default class Entity extends Model<Entity | IEntity> {
     @Column({ type: DataType.STRING, allowNull: true })
     teamMemberProfileId: string;
 
-    // Relation to partner profile
-    @HasOne(() => PartnerProfile)
+    @ForeignKey(() => PartnerProfile)
+    @IsUUID(4)
+    @NotEmpty
+    @IsIn([['teamMemberProfileId', 'partnerProfileId']])
+    @Column({ type: DataType.STRING, allowNull: true })
+    partnerProfileId: string;
+
+
+    @BelongsTo(() => PartnerProfile)
     partnerProfile: PartnerProfile | null;
 
     // Relation to team member profile
-    @HasOne(() => TeamMember)
+    @BelongsTo(() => TeamMember)
     teamMemberProfile: TeamMember | null;
 
-    @BeforeValidate
-    static ensureProfileIdIsSet(instance: Entity) {
-        if (!instance.teamMemberProfileId && !instance.partnerProfileId) {
-            throw new Error('Either teamMemberProfileId or partnerProfileId must be set.');
-        } else if (!instance.teamMemberProfileId && !instance.partnerProfileId) {
-            throw new Error('Either teamMemberProfileId or partnerProfileId must be set.');
-        }
-    }
+    // Relation to partner profile
+
+    // @BeforeValidate
+    // static ensureProfileIdIsSet(instance: Entity) {
+    //     if (!instance.teamMemberProfileId && !instance.partnerProfileId) {
+    //         throw new Error('Either teamMemberProfileId or partnerProfileId must be set.');
+    //     }
+    // }
 }
 
 // Interface representing the structure of a Entity entity

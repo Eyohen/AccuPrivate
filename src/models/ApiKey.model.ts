@@ -1,6 +1,6 @@
 // Import necessary modules and dependencies
 import { Table, Column, Model, DataType, IsUUID, PrimaryKey, BelongsTo, ForeignKey } from "sequelize-typescript";
-import Partner from "./Entity/Profiles/PartnerProfile.model";
+import PartnerProfile from "./Entity/Profiles/PartnerProfile.model";
 
 // Define the Sequelize model for the "ApiKey" table
 @Table
@@ -16,13 +16,13 @@ export default class ApiKey extends Model<ApiKey | IApiKey> {
     key: String;
 
     // Foreign key for the associated Transaction
-    @ForeignKey(() => Partner)
+    @ForeignKey(() => PartnerProfile)
     @IsUUID(4)
     @Column
-    partnerId: string;
+    PartnerProfileId: string;
 
-    @BelongsTo(() => Partner)
-    partner: Partner;
+    @BelongsTo(() => PartnerProfile)
+    PartnerProfile: PartnerProfile;
 
     @Column({ type: DataType.BOOLEAN, allowNull: false })
     active: boolean;
@@ -32,7 +32,7 @@ export default class ApiKey extends Model<ApiKey | IApiKey> {
 export interface IApiKey {
     id: string; // Unique identifier for the ApiKey
     key: string; // Timestamp of the ApiKey
-    partnerId: string; // Data associated with the ApiKey (can be a string or JSON)
+    PartnerProfileId: string; // Data associated with the ApiKey (can be a string or JSON)
     active: boolean; // Data associated with the ApiKey (can be a string or JSON)
 }
 

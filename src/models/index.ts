@@ -22,6 +22,7 @@ async function initiateDB(db: Sequelize): Promise<void> {
         // Log a success message when the connection is established
         logger.info('Connection has been established successfully.');
     } catch (error) {
+        console.log(error)
         // Handle errors if unable to connect to the database
         logger.error('Unable to connect to the database:', error);
     }

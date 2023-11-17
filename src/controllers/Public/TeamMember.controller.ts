@@ -59,7 +59,7 @@ export default class TeamMemberProfileController {
         if (!partner) {
             throw new BadRequestError('Partner not found')
         }
-        
+
         const teamMembers = await TeamMemberProfileService.viewTeamMembersWithCustomQuery({
             where: { partnerId: partner.id },
             include: [{ model: Entity, as: 'entity' }]

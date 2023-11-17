@@ -31,9 +31,9 @@ export default class EntityService {
 
         return entity
     }
-    
+
     static async viewSingleEntityByEmail(email: string): Promise<Entity | null> {
-        const entity: Entity | null = await Entity.findOne({ where: { email }})
+        const entity: Entity | null = await Entity.findOne({ where: { email } })
 
         if (!entity) {
             throw new Error('Entity not found')
