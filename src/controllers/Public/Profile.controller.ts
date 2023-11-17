@@ -35,4 +35,21 @@ export default class ProfileController {
             }
         })
     }
+    
+    static async updateProfileDAta(req: Request, res: Response, next: NextFunction) {
+        const { partner } = (req as any).user
+        const { email } = req.body
+
+        const partner_ = await PartnerService.viewSinglePartnerByEmail(partner.email)
+        if (!partner_) {
+            return next(new InternalServerError('Authenticated Partner not found'))
+        }
+        await partner_.update({ email })
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Partner profile updated successfully',
+            data: null
+        })
+    }
 }
