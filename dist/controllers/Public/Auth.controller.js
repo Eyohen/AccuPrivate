@@ -188,7 +188,6 @@ class AuthController {
             }
             const accessToken = yield Token_1.AuthUtil.generateToken({ type: 'passwordreset', entity, profile, expiry: 60 * 10 });
             const otpCode = yield Token_1.AuthUtil.generateCode({ type: 'passwordreset', entity, expiry: 60 * 10 });
-            console.log(otpCode);
             Email_1.default.sendEmail({
                 to: email,
                 subject: 'Forgot password',

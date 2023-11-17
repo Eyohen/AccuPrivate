@@ -11,5 +11,6 @@ const Interface_1 = require("../utils/Interface");
 const router = express_1.default.Router();
 router
     .use((0, Auth_1.basicAuth)('access'))
-    .patch('/profilepicture', FileUpload_1.default.multerUpload.single('profile_picture'), (0, Interface_1.AuthenticatedController)(Profile_controller_1.default.updateProfile));
+    .patch('/profilepicture', FileUpload_1.default.multerUpload.single('profile_picture'), (0, Interface_1.AuthenticatedController)(Profile_controller_1.default.updateProfile))
+    .patch('/data', (0, Interface_1.AuthenticatedController)(Profile_controller_1.default.updateProfileData));
 exports.default = router;

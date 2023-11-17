@@ -45,7 +45,7 @@ class EntityService {
         return __awaiter(this, void 0, void 0, function* () {
             const entity = yield Entity_model_1.default.findOne({ where: { email } });
             if (!entity) {
-                throw new Error('Entity not found');
+                return null;
             }
             return entity;
         });
