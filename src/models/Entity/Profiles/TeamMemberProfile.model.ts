@@ -18,6 +18,9 @@ export default class TeamMemberProfile extends Model<TeamMemberProfile | ITeamMe
     @HasOne(() => Entity)
     entity: Entity;
 
+    @Column({ type: DataType.STRING, allowNull: true })
+    name: string;
+    
     @ForeignKey(() => Partner)
     @IsUUID(4)
     @Column({ type: DataType.STRING, allowNull: false })
@@ -32,6 +35,7 @@ export default class TeamMemberProfile extends Model<TeamMemberProfile | ITeamMe
 export interface ITeamMemberProfile {
     id: string;              // Unique identifier for the TeamMember
     partnerId: string;
+    name: string
 }
 
 // Interface representing the structure for creating a new TeamMember (inherits from ITeamMember)

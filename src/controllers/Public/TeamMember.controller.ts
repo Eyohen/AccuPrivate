@@ -15,12 +15,13 @@ export default class TeamMemberProfileController {
     static async inviteTeamMember(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         // The partner is the entity that is inviting the team member
         const { entity: { id }, profile } = req.user.user
-        const { email } = req.body
+        const { email, name } = req.body
 
         const transaction = await Database.transaction()
         const teamMemberProfile = await TeamMemberProfileService.addTeamMemberProfile({
             id: uuidv4(),
             partnerId: profile.id,
+            name
         }, transaction)
 
         const entity = await EntityService.addEntity({
