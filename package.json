@@ -11,7 +11,8 @@
         "dev:render": "node ./dist/app.js",
         "build": "tsc --project tsconfig.json",
         "lint": "tslint -c tslint.json -p tsconfig.json --fix",
-        "db:makemigrations": "./node_modules/sequelize-auto-migrations/bin/makemigration.js"
+        "db:makemigration": "sequelize db:migrate --config ./config/config.json --env production",
+        "db:undomigration": "sequelize db:migrate:undo --env production --config ./config/config.json"
     },
     "author": "",
     "license": "ISC",
