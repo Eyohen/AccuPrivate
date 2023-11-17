@@ -8,6 +8,7 @@ import EntityService from "../../services/Entity/Entity.service";
 import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
 import Entity from "../../models/Entity/Entity.model";
 import { AuthenticatedRequest } from "../../utils/Interface";
+import PasswordService from "../../services/Password.service";
 
 export default class TeamMemberProfileController {
     static async inviteTeamMember(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -25,11 +26,17 @@ export default class TeamMemberProfileController {
             id: uuidv4(),
             email: email,
             status: {
-                activated: false,
+                activated: true,
                 emailVerified: false
             },
             role: RoleEnum.TeamMember,
             teamMemberProfileId: teamMemberProfile.id
+        }, transaction)
+
+        const entityPasswrod = await PasswordService.addPassword({
+            id: uuidv4(),
+            password: uuidv4(),
+            entityId: entity.id
         }, transaction)
 
         // Commit transaction

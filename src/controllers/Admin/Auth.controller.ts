@@ -6,6 +6,7 @@ import Partner from "../../models/Entity/Profiles/PartnerProfile.model";
 import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
 import Validator from "../../utils/Validators";
 import { AuthenticatedRequest } from "../../utils/Interface";
+import EntityService from "../../services/Entity/Entity.service";
 
 export default class AuthController {
     static async activatePartner(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -16,27 +17,22 @@ export default class AuthController {
             throw new BadRequestError('Invalid email')
         }
 
-        const partner: Partner | null = await PartnerService.viewSinglePartnerByEmail(email)
-        if (!partner) {
-            throw new BadRequestError('Partner not found')
-        }
-
-        const entity = await partner.$get('entity')
+        const entity = await EntityService.viewSingleEntityByEmail(email)
         if (!entity) {
-            throw new InternalServerError('Partner entity not found')
+            throw new BadRequestError('Entity not found')
         }
 
         await entity.update({ status: { ...entity.status, activated: true } })
 
         await EmailService.sendEmail({
-            to: partner.email,
+            to: entity.email,
             subject: 'Account Activation',
-            html: await new EmailTemplate().accountActivation(partner.email)
+            html: await new EmailTemplate().accountActivation(entity.email)
         })
 
         res.status(200).json({
             status: 'success',
-            message: 'Activated partner successfully',
+            message: 'Activated user successfully',
             data: null
         })
     }
@@ -49,28 +45,22 @@ export default class AuthController {
             throw new BadRequestError('Invalid email')
         }
 
-        const partner: Partner | null = await PartnerService.viewSinglePartnerByEmail(email)
-        if (!partner) {
-            throw new BadRequestError('Partner not found')
-        }
-
-        const entity = await partner.$get('entity')
+        const entity = await EntityService.viewSingleEntityByEmail(email)
         if (!entity) {
-            throw new InternalServerError('Partner entity not found')
+            throw new BadRequestError('Entity not found')
         }
 
         await entity.update({ status: { ...entity.status, activated: true } })
 
-
         await EmailService.sendEmail({
-            to: partner.email,
+            to: entity.email,
             subject: 'Account Activation',
-            html: await new EmailTemplate().accountActivation(partner.email)
+            html: await new EmailTemplate().accountActivation(entity.email)
         })
 
         res.status(200).json({
             status: 'success',
-            message: 'Deactivated partner successfully',
+            message: 'Deactivated user successfully',
             data: null
         })
     }

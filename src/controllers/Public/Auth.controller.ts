@@ -282,14 +282,9 @@ export default class AuthController {
     static async login(req: Request, res: Response) {
         const { email, password } = req.body
 
-        const partner = await PartnerService.viewSinglePartnerByEmail(email)
-        if (!partner) {
-            throw new BadRequestError('Invalid Email or password')
-        }
-
-        const entity = await partner.$get('entity')
+        const entity = await EntityService.viewSingleEntityByEmail(email)
         if (!entity) {
-            throw new InternalServerError('Entity not found')
+            throw new BadRequestError('Invalid Email or password')
         }
 
         const entityPassword = await entity.$get('password')
@@ -318,7 +313,7 @@ export default class AuthController {
             status: 'success',
             message: 'Login successful',
             data: {
-                partner: ResponseTrimmer.trimPartner({ ...partner.dataValues, entity }),
+                entity: entity.dataValues,
                 accessToken,
                 refreshToken
             }
