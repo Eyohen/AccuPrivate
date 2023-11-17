@@ -6,7 +6,7 @@ import PartnerProfile from "./Profiles/PartnerProfile.model";
 import TeamMember from "./Profiles/TeamMemberProfile.model";
 
 // Define the "Entity" table model
-@Table
+@Table({ tableName: 'Entities' })
 export default class Entity extends Model<Entity | IEntity> {
     // Define a primary key field with a UUID (Universally Unique Identifier) as its type
     @IsUUID(4)
@@ -63,12 +63,12 @@ export default class Entity extends Model<Entity | IEntity> {
 
     // Relation to partner profile
 
-    // @BeforeValidate
-    // static ensureProfileIdIsSet(instance: Entity) {
-    //     if (!instance.teamMemberProfileId && !instance.partnerProfileId) {
-    //         throw new Error('Either teamMemberProfileId or partnerProfileId must be set.');
-    //     }
-    // }
+    @BeforeValidate
+    static ensureProfileIdIsSet(instance: Entity) {
+        if (!instance.teamMemberProfileId && !instance.partnerProfileId) {
+            throw new Error('Either teamMemberProfileId or partnerProfileId must be set.');
+        }
+    }
 }
 
 // Interface representing the structure of a Entity entity

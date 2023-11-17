@@ -7,7 +7,7 @@ import { AuthenticatedController } from "../utils/Interface";
 const router: Router = express.Router()
 
 router
-    .use(basicAuth('access'))
+    // .use(basicAuth('access'))
 
     // Public routes
     .get('/', PublicRoleController.getRoles)
