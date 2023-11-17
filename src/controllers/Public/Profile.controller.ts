@@ -3,29 +3,36 @@ import { BadRequestError, InternalServerError } from "../../utils/Errors";
 import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
 import FileUploadService from "../../utils/FileUpload";
 import fs from 'fs'
+import { AuthenticatedRequest } from "../../utils/Interface";
+import EntityService from "../../services/Entity/Entity.service";
 
 export default class ProfileController {
 
-    static async updateProfile(req: Request, res: Response, next: NextFunction) {
-        const { partner } = (req as any).user
+    static async updateProfile(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        const { entity: { id } } = req.user.user
+
+        const entity = await EntityService.viewSingleEntity(id)
+        if (!entity) {
+            return next(new InternalServerError('Authenticated Entity not found'))
+        }
 
         const imageFile = req.file
         if (!imageFile) {
             return next(new BadRequestError('No image file provided'))
         }
 
-        const partner_ = await PartnerService.viewSinglePartnerByEmail(partner.email)
-        if (!partner_) {
-            return next(new InternalServerError('Authenticated Partner not found'))
+        const profile = EntityService.getAssociatedProfile(entity)
+        if (!profile) {
+            return next(new InternalServerError('Authenticated entity profile not found'))
         }
 
         const secureUrl = await FileUploadService.uploadProfilePicture({
             filePath: imageFile.path,
-            partner: partner_
+            entity
         })
 
         fs.unlinkSync(imageFile.path)
-        await partner_.update({ profilePicture: secureUrl })
+        await entity.update({ profilePicture: secureUrl })
 
         res.status(200).json({
             status: 'success',

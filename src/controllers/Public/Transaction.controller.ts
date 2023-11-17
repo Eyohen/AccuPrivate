@@ -13,6 +13,8 @@ import { randomUUID } from "crypto";
 import Meter from "../../models/Meter.model";
 import VendorService from "../../services/Vendor.service";
 import { AuthenticatedRequest } from "../../utils/Interface";
+import EntityService from "../../services/Entity/Entity.service";
+import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
 
 interface getTransactionInfoRequestBody {
     bankRefId: string
@@ -173,9 +175,14 @@ export default class TransactionController {
         })
     }
 
-    static async getYesterdaysTransactions(req: Request, res: Response) {
+    static async getYesterdaysTransactions(req: AuthenticatedRequest, res: Response) {
         const { status } = req.query as any as { status: 'COMPLETED' | 'FAILED' | 'PENDING' }
-        const { partner } = (req as any).user
+        const { profile: { id } } = req.user.user
+
+        const  partner = await PartnerService.viewSinglePartner(id)
+        if (!partner) {
+            throw new InternalServerError('Authenticated partner not found')
+        }
 
         const transactions = status
             ? await TransactionService.viewTransactionsForYesterdayByStatus(partner.id, status.toUpperCase() as typeof status)

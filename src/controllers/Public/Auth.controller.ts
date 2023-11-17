@@ -100,14 +100,10 @@ export default class AuthController {
     static async verifyEmail(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         const { otpCode }: { otpCode: string } = req.body
 
-        const partner = await PartnerService.viewSinglePartner((req as any).user.partner.id)
-        if (!partner) {
-            throw new InternalServerError('Partner not found')
-        }
-
-        const entity = await partner.$get('entity')
+        const { entity: { id } } = req.user.user
+        const entity = await EntityService.viewSingleEntity(id)
         if (!entity) {
-            throw new InternalServerError('Partner entity not found')
+            throw new InternalServerError('Entity not found')
         }
 
         if (entity.status.emailVerified) {
@@ -124,9 +120,9 @@ export default class AuthController {
         await AuthUtil.deleteToken({ entity, tokenType: 'emailverification', tokenClass: 'token' })
 
         await EmailService.sendEmail({
-            to: partner.email,
+            to: entity.email,
             subject: 'Succesful Email Verification',
-            html: await new EmailTemplate().awaitActivation(partner.email)
+            html: await new EmailTemplate().awaitActivation(entity.email)
         })
 
         res.status(200).json({
@@ -153,7 +149,7 @@ export default class AuthController {
             throw new BadRequestError('Email already verified')
         }
 
-        const otpCode = await AuthUtil.generateCode({ type: 'emailverification', entity: { ...entity.dataValues}, expiry: 60 * 10 })
+        const otpCode = await AuthUtil.generateCode({ type: 'emailverification', entity: { ...entity.dataValues }, expiry: 60 * 10 })
 
         EmailService.sendEmail({
             to: newPartner.email,
@@ -186,7 +182,7 @@ export default class AuthController {
             throw new InternalServerError('Partner profile not found')
         }
 
-        const accessToken = await AuthUtil.generateToken({ type: 'passwordreset', entity: { ...entity.dataValues}, profile, expiry: 60 * 10 })
+        const accessToken = await AuthUtil.generateToken({ type: 'passwordreset', entity: { ...entity.dataValues }, profile, expiry: 60 * 10 })
         const otpCode = await AuthUtil.generateCode({ type: 'passwordreset', entity: { ...entity.dataValues }, expiry: 60 * 10 })
         EmailService.sendEmail({
             to: email,
@@ -346,8 +342,8 @@ export default class AuthController {
         })
     }
 
-    static async getLoggedUserData(req: Request, res: Response) {
-        const partner = await PartnerService.viewSinglePartner((req as any).user.partner.id)
+    static async getLoggedUserData(req: AuthenticatedRequest, res: Response) {
+        const partner = await PartnerService.viewSinglePartner(req.user.user.profile.id)
         if (!partner) {
             throw new InternalServerError('Partner not found')
         }

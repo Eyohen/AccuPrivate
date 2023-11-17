@@ -5,11 +5,13 @@ import PartnerService from "../../services/Entity/Profiles/PartnerProfile.servic
 import { TokenUtil } from "../../utils/Auth/Token";
 import ApiKeyService from "../../services/ApiKey.service ";
 import Cypher from "../../utils/Cypher";
+import { AuthenticatedRequest } from "../../utils/Interface";
 
 export default class ApiController {
-    static async getActiveAPIKey(req: Request, res: Response, next: NextFunction) {
-        const { partner }: { partner: IPartnerProfile } = (req as any).user
+    static async getActiveAPIKey(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        const { entity, profile } = req.user.user
 
+        if (profile.)
         const partner_ = await PartnerService.viewSinglePartnerByEmail(partner.email)
         if (!partner_) {
             throw new InternalServerError('Authenticated partner not found')
@@ -33,8 +35,8 @@ export default class ApiController {
         })
     }
 
-    static async generateApiKeys(req: Request, res: Response, next: NextFunction) {
-        const { email } = (req as any).user.partner
+    static async generateApiKeys(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        const { email } = req.user.user.entity
 
         const partner: Partner | null = await PartnerService.viewSinglePartnerByEmail(email)
         if (!partner) {

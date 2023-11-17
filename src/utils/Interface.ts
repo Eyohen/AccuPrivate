@@ -141,9 +141,7 @@ export interface AuthenticatedRequest extends ExpressApiRequest {
     user: DecodedTokenData;
 }
 
-export interface AuthenticatedAsyncController {
-    (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void>;
-}
+export type AuthenticatedAsyncController = (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<void>;
 
 export function AuthenticatedController(controller: AuthenticatedAsyncController) {
     return async (req: ExpressApiRequest, res: Response, next: NextFunction) => {

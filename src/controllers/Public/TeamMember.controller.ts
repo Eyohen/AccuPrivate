@@ -7,11 +7,12 @@ import TeamMemberProfileService from "../../services/Entity/Profiles/TeamMemberP
 import EntityService from "../../services/Entity/Entity.service";
 import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
 import Entity from "../../models/Entity/Entity.model";
+import { AuthenticatedRequest } from "../../utils/Interface";
 
 export default class TeamMemberProfileController {
-    static async inviteTeamMember(req: Request, res: Response, next: NextFunction) {
-        // Get partner id from decoded token in request
-        const { partner } = (req as any).user
+    static async inviteTeamMember(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        // The partner is the entity that is inviting the team member
+        const { entity: { id } } = req.user.user
         const { email } = req.body
 
         const transaction = await Database.transaction()
@@ -28,7 +29,7 @@ export default class TeamMemberProfileController {
 
         const teamMemberProfile = await TeamMemberProfileService.addTeamMemberProfile({
             id: entity.teamMemberProfileId,
-            partnerId: partner.id,
+            partnerId: entity.id,
             entityId: entity.id
         }, transaction)
 
@@ -46,14 +47,19 @@ export default class TeamMemberProfileController {
         })
     }
 
-    static async getTeamMembers(req: Request, res: Response, next: NextFunction) {
-        const { partner } = (req as any).user
+    static async getTeamMembers(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        const { entity: { id } } = req.user.user
 
-        const _partner = await PartnerService.viewSinglePartner(partner.id)
-        if (!_partner) {
-            throw new BadRequestError('Partner not found')
+        const entity = await EntityService.viewSingleEntity(id)
+        if (!entity) {
+            throw new BadRequestError('Entity not found')
         }
 
+        const partner = await PartnerService.viewSinglePartner(entity.id)
+        if (!partner) {
+            throw new BadRequestError('Partner not found')
+        }
+        
         const teamMembers = await TeamMemberProfileService.viewTeamMembersWithCustomQuery({
             where: { partnerId: partner.id },
             include: [{ model: Entity, as: 'entity' }]
