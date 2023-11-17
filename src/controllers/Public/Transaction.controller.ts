@@ -12,6 +12,9 @@ import ResponseTrimmer from "../../utils/ResponseTrimmer";
 import { randomUUID } from "crypto";
 import Meter from "../../models/Meter.model";
 import VendorService from "../../services/Vendor.service";
+import { AuthenticatedRequest } from "../../utils/Interface";
+import EntityService from "../../services/Entity/Entity.service";
+import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
 
 interface getTransactionInfoRequestBody {
     bankRefId: string
@@ -76,7 +79,7 @@ export default class TransactionController {
         })
     }
 
-    static async requeryTimedOutTransaction(req: Request, res: Response) {
+    static async requeryTimedOutTransaction(req: AuthenticatedRequest, res: Response) {
         const { bankRefId }: { bankRefId: string } = req.query as any
 
         let transactionRecord = await TransactionService.viewSingleTransactionByBankRefID(bankRefId)
@@ -97,7 +100,7 @@ export default class TransactionController {
             if (transactionFailed) await TransactionService.updateSingleTransaction(transactionRecord.id, { status: Status.FAILED })
             else if (transactionIsPending) await TransactionService.updateSingleTransaction(transactionRecord.id, { status: Status.PENDING })
 
-            return res.status(200).json({
+            res.status(200).json({
                 status: 'success',
                 message: 'Requery request successful',
                 data: {
@@ -106,6 +109,8 @@ export default class TransactionController {
                     transaction: ResponseTrimmer.trimTransaction(transactionRecord),
                 }
             })
+
+            return
         }
 
         await TransactionService.updateSingleTransaction(transactionRecord.id, { status: Status.COMPLETE })
@@ -170,9 +175,14 @@ export default class TransactionController {
         })
     }
 
-    static async getYesterdaysTransactions(req: Request, res: Response) {
+    static async getYesterdaysTransactions(req: AuthenticatedRequest, res: Response) {
         const { status } = req.query as any as { status: 'COMPLETED' | 'FAILED' | 'PENDING' }
-        const { partner } = (req as any).user
+        const { profile: { id } } = req.user.user
+
+        const  partner = await PartnerService.viewSinglePartner(id)
+        if (!partner) {
+            throw new InternalServerError('Authenticated partner not found')
+        }
 
         const transactions = status
             ? await TransactionService.viewTransactionsForYesterdayByStatus(partner.id, status.toUpperCase() as typeof status)

@@ -1,4 +1,7 @@
+import { string } from "zod"
 import { ITransaction } from "../models/Transaction.model"
+import { DecodedTokenData } from "./Auth/Token"
+import { Request as ExpressApiRequest, NextFunction, Response } from "express"
 
 export interface IVendToken {
     transactionId: string
@@ -125,4 +128,23 @@ export interface IReceiptEmailTemplateProps {
     transaction: ITransaction,
     meterNumber: string,
     token: string
+}
+
+export type AuthOptions = 'authenticated' | 'none';
+
+export interface AuthenticatedRequest extends ExpressApiRequest {
+    headers: {
+        authorization: string;
+        signature?: string;
+        Signature?: string;
+    }
+    user: DecodedTokenData;
+}
+
+export type AuthenticatedAsyncController = (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<void>;
+
+export function AuthenticatedController(controller: AuthenticatedAsyncController) {
+    return async (req: ExpressApiRequest, res: Response, next: NextFunction) => {
+        return controller(req as AuthenticatedRequest, res, next)
+    }
 }
