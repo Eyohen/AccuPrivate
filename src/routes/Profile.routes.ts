@@ -14,7 +14,7 @@ router
         AuthenticatedController(ProfileController.updateProfile)
     )
     .patch(
-        '/data',
+        '/email',
         AuthenticatedController(ProfileController.updateProfileData)
     )
 
