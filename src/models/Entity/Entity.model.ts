@@ -1,5 +1,5 @@
 // Import necessary modules and dependencies
-import { Table, Column, Model, DataType, IsUUID, PrimaryKey, HasOne, ForeignKey, BelongsTo, NotEmpty, IsIn, BeforeValidate } from "sequelize-typescript";
+import { Table, Column, Model, DataType, IsUUID, PrimaryKey, HasOne, ForeignKey, BelongsTo, NotEmpty, IsIn, BeforeValidate, Unique } from "sequelize-typescript";
 import Password from "../Password.model";
 import Role from "../Role.model";
 import PartnerProfile from "./Profiles/PartnerProfile.model";
@@ -15,6 +15,7 @@ export default class Entity extends Model<Entity | IEntity> {
     id: string;
 
     // Define a column for the Entity's email (string type, not nullable)
+    @Unique
     @Column({ type: DataType.STRING, allowNull: false })
     email: string;
 

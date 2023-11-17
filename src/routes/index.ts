@@ -8,6 +8,7 @@ import authRoute from './Auth.routes'
 import apikeyRoute from './Apikey.routes'
 import profileRoute from './Profile.routes'
 import roleRoute from './Role.routes'
+import teamMemberRoute from './TeamMember.routes'
 
 const router = Router()
 
@@ -21,6 +22,7 @@ router
     .use('/key', apikeyRoute)
     .use('/profile', profileRoute)
     .use('/role', roleRoute)
+    .use('/team', teamMemberRoute)
 
 export default router
 

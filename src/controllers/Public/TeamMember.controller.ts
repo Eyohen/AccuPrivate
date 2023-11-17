@@ -12,37 +12,36 @@ import { AuthenticatedRequest } from "../../utils/Interface";
 export default class TeamMemberProfileController {
     static async inviteTeamMember(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         // The partner is the entity that is inviting the team member
-        const { entity: { id } } = req.user.user
+        const { entity: { id }, profile } = req.user.user
         const { email } = req.body
 
         const transaction = await Database.transaction()
+        const teamMemberProfile = await TeamMemberProfileService.addTeamMemberProfile({
+            id: uuidv4(),
+            partnerId: profile.id,
+        }, transaction)
+
         const entity = await EntityService.addEntity({
             id: uuidv4(),
-            teamMemberProfileId: uuidv4(),
             email: email,
             status: {
                 activated: false,
                 emailVerified: false
             },
-            role: RoleEnum.TeamMember
+            role: RoleEnum.TeamMember,
+            teamMemberProfileId: teamMemberProfile.id
         }, transaction)
 
-        const teamMemberProfile = await TeamMemberProfileService.addTeamMemberProfile({
-            id: entity.teamMemberProfileId,
-            partnerId: entity.id,
-            entityId: entity.id
-        }, transaction)
 
         // Commit transaction
         await transaction.commit()
 
         // Generate token for team member
-
         res.status(200).json({
             status: 'success',
             message: 'Team member invited successfully',
             data: {
-                teamMember: teamMemberProfile
+                teamMember: { ...teamMemberProfile.dataValues, entity: entity.dataValues },
             }
         })
     }
@@ -70,6 +69,24 @@ export default class TeamMemberProfileController {
             message: 'Team members fetched successfully',
             data: {
                 teamMembers: teamMembers
+            }
+        })
+    }
+
+    static async getTeamMemberInfo(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        const { entity: { id } } = req.user.user
+        const { email } = req.query as Record<string, string>
+
+        const teamMemberProfile = await TeamMemberProfileService.viewSingleTeamMemberByEmail(email)
+        if (!teamMemberProfile) {
+            throw new BadRequestError('Team member not found')
+        }
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Team members fetched successfully',
+            data: {
+                teamMember: teamMemberProfile.dataValues
             }
         })
     }

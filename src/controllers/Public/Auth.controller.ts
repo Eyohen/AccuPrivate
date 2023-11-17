@@ -349,11 +349,16 @@ export default class AuthController {
             throw new InternalServerError('Partner not found')
         }
 
+        const entity = await partner.$get('entity')
+        if (!entity) {
+            throw new InternalServerError('Entity not found for authenticated user')
+        }
+
         res.status(200).json({
             status: 'success',
             message: 'Partner data retrieved successfully',
             data: {
-                partner: ResponseTrimmer.trimPartner(partner),
+                partner: ResponseTrimmer.trimPartner({ ...partner.dataValues, entity }),
             }
         })
     }
