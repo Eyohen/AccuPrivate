@@ -70,7 +70,8 @@ export interface DecodedTokenData {
         profile: IPartnerProfile | ITeamMemberProfile,
         entity: IEntity & { role: RoleEnum }
     },
-    misc: Record<string, any>
+    misc: Record<string, any>,
+    token: string
 }
 
 class AuthUtil {

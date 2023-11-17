@@ -1,10 +1,10 @@
-import { AuthToken, TokenUtil } from "../utils/Auth/Token";
+import { AuthToken, DecodedTokenData, TokenUtil } from "../utils/Auth/Token";
 import { Request, Response, NextFunction } from "express";
 import jwt from 'jsonwebtoken'
 import { JWT_SECRET } from "../utils/Constants";
-import { IPartner } from "../models/Entity/Profiles/PartnerProfile.model";
 import { UnauthenticatedError } from "../utils/Errors";
 import Cypher from "../utils/Cypher";
+import { AuthenticatedRequest } from "../utils/Interface";
 
 export const basicAuth = function (tokenType: AuthToken) {
     return async (req: Request, res: Response, next: NextFunction) => {
@@ -15,24 +15,20 @@ export const basicAuth = function (tokenType: AuthToken) {
         const jwtToken = authHeader.split(' ')[1];
         const payload = jwt.verify(jwtToken, JWT_SECRET) as string;
 
-        const tokenData = payload as unknown as {
-            partner: IPartner,
-            misc: Record<string, any>,
-            token: string
-        }
+        const tokenData = payload as unknown as DecodedTokenData
         tokenData.token = jwtToken
 
         if (tokenData.misc.tokenType !== tokenType) {
             return next(new UnauthenticatedError('Invalid authentication'))
         }
 
-        const key = `${tokenType}_token:${tokenData.partner.id}`;
+        const key = `${tokenType}_token:${tokenData.user.entity.id}`;
         const token = await TokenUtil.getTokenFromCache(key);
         if (token !== jwtToken) {
             return next(new UnauthenticatedError('Invalid authentication'))
         }
 
-        (req as any).user = tokenData
+        (req as AuthenticatedRequest).user = tokenData
 
         next()
     }
