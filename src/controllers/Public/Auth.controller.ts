@@ -1,28 +1,21 @@
 import { NextFunction, Request, Response } from "express";
-import TransactionService from "../../services/Transaction.service";
-import Transaction, { PaymentType, Status } from "../../models/Transaction.model";
 import { v4 as uuidv4 } from 'uuid';
-import UserService from "../../services/User.service";
-import MeterService from "../../services/Meter.service";
-import User from "../../models/User.model";
-import Meter from "../../models/Meter.model";
-import VendorService from "../../services/Vendor.service";
-import PowerUnit from "../../models/PowerUnit.model";
-import PowerUnitService from "../../services/PowerUnit.service";
-import { DEFAULT_ELECTRICITY_PROVIDER, NODE_ENV } from "../../utils/Constants";
-import { BadRequestError, GateWayTimeoutError, InternalServerError, NotFoundError } from "../../utils/Errors";
-import { generateRandomToken } from "../../utils/Helper";
+import { BadRequestError, InternalServerError } from "../../utils/Errors";
 import EmailService, { EmailTemplate } from "../../utils/Email";
-import ResponseTrimmer from '../../utils/ResponseTrimmer'
-import Partner from "../../models/Partner.model";
-import PartnerService from "../../services/Partner.service";
-import { Database, Sequelize } from "../../models/index";
+import ResponseTrimmer from '../../utils/ResponseTrimmer';
+import Partner from "../../models/Entity/Profiles/PartnerProfile.model";
+import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
+import { Database } from "../../models/index";
 import PasswordService from "../../services/Password.service";
-import { AuthUtil, TokenUtil } from "../../utils/Auth/token";
+import { AuthUtil, TokenUtil } from "../../utils/Auth/Token";
 import Validator from "../../utils/Validators";
 import logger from "../../utils/Logger";
 import Cypher from "../../utils/Cypher";
 import ApiKeyService from "../../services/ApiKey.service ";
+import EntityService from "../../services/Entity/Entity.service";
+import Role, { RoleEnum } from "../../models/Role.model";
+import { AuthenticatedRequest } from "../../utils/Interface";
+import TeamMemberProfileService from "../../services/Entity/Profiles/TeamMemberProfile.service";
 
 export default class AuthController {
 
@@ -48,13 +41,21 @@ export default class AuthController {
         }
 
         const transaction = await Database.transaction()
+
         const newPartner = await PartnerService.addPartner({
+            id: uuidv4(),
+            email,
+        }, transaction)
+
+        const entity = await EntityService.addEntity({
             id: uuidv4(),
             email,
             status: {
                 activated: false,
-                emailVerified: false,
+                emailVerified: false
             },
+            partnerProfileId: newPartner.id,
+            role: RoleEnum.Partner
         }, transaction)
 
         const apiKey = await ApiKeyService.addApiKey({
@@ -70,13 +71,13 @@ export default class AuthController {
 
         const partnerPassword = await PasswordService.addPassword({
             id: uuidv4(),
-            partnerId: newPartner.id,
+            entityId: entity.id,
             password
         }, transaction)
 
-        await newPartner.update({ status: { ...newPartner.status, emailVerified: true } })
-        const accessToken = await AuthUtil.generateToken({ type: 'emailverification', partner: newPartner.dataValues, expiry: 60 * 10 })
-        const otpCode = await AuthUtil.generateCode({ type: 'emailverification', partner: newPartner.dataValues, expiry: 60 * 10 })
+        await entity.update({ status: { ...entity.status, emailVerified: true } })
+        const accessToken = await AuthUtil.generateToken({ type: 'emailverification', entity, profile: newPartner, expiry: 60 * 10 })
+        const otpCode = await AuthUtil.generateCode({ type: 'emailverification', entity, expiry: 60 * 10 })
         await transaction.commit()
 
         logger.info(otpCode)
@@ -90,36 +91,38 @@ export default class AuthController {
             status: 'success',
             message: 'Partner created successfully',
             data: {
-                partner: ResponseTrimmer.trimPartner(newPartner),
+                partner: ResponseTrimmer.trimPartner({ ...newPartner.dataValues, entity }),
                 accessToken,
             }
         })
     }
 
-    static async verifyEmail(req: Request, res: Response, next: NextFunction) {
+    static async verifyEmail(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         const { otpCode }: { otpCode: string } = req.body
 
-        const partner = await PartnerService.viewSinglePartner((req as any).user.partner.id)
-        if (!partner) {
-            throw new InternalServerError('Partner not found')
+        const { entity: { id } } = req.user.user
+        const entity = await EntityService.viewSingleEntity(id)
+        if (!entity) {
+            throw new InternalServerError('Entity not found')
         }
 
-        await partner.update({ status: { ...partner.status, emailVerified: true } })
-        if (partner.status.emailVerified) {
+        if (entity.status.emailVerified) {
             throw new BadRequestError('Email already verified')
         }
 
-        const validCode = await AuthUtil.compareCode({ partner: partner.dataValues, tokenType: 'emailverification', token: otpCode })
+        await entity.update({ status: { ...entity.status, emailVerified: true } })
+
+        const validCode = await AuthUtil.compareCode({ entity, tokenType: 'emailverification', token: otpCode })
         if (!validCode) {
             throw new BadRequestError('Invalid otp code')
         }
 
-        await AuthUtil.deleteToken({ partner, tokenType: 'emailverification', tokenClass: 'token' })
+        await AuthUtil.deleteToken({ entity, tokenType: 'emailverification', tokenClass: 'token' })
 
         await EmailService.sendEmail({
-            to: partner.email,
+            to: entity.email,
             subject: 'Succesful Email Verification',
-            html: await new EmailTemplate().awaitActivation(partner.email)
+            html: await new EmailTemplate().awaitActivation(entity.email)
         })
 
         res.status(200).json({
@@ -137,11 +140,16 @@ export default class AuthController {
             throw new InternalServerError('Authenticate partner record not found')
         }
 
-        if (newPartner.status.emailVerified) {
+        const entity = await newPartner.$get('entity')
+        if (!entity) {
+            throw new InternalServerError('Partner entity not found')
+        }
+
+        if (entity.status.emailVerified) {
             throw new BadRequestError('Email already verified')
         }
 
-        const otpCode = await AuthUtil.generateCode({ type: 'emailverification', partner: newPartner.dataValues, expiry: 60 * 10 })
+        const otpCode = await AuthUtil.generateCode({ type: 'emailverification', entity, expiry: 60 * 10 })
 
         EmailService.sendEmail({
             to: newPartner.email,
@@ -164,13 +172,19 @@ export default class AuthController {
     static async forgotPassword(req: Request, res: Response) {
         const { email } = req.body
 
-        const partner = await PartnerService.viewSinglePartnerByEmail(email)
-        if (!partner) {
+        const entity = await EntityService.viewSingleEntityByEmail(email)
+        if (!entity) {
             throw new BadRequestError('No account exist for this email')
         }
 
-        const accessToken = await AuthUtil.generateToken({ type: 'passwordreset', partner: partner.dataValues, expiry: 60 * 10 })
-        const otpCode = await AuthUtil.generateCode({ type: 'passwordreset', partner: partner.dataValues, expiry: 60 * 10 })
+        const profile = await EntityService.getAssociatedProfile(entity)
+        if (!profile) {
+            throw new InternalServerError('Partner profile not found')
+        }
+
+        const accessToken = await AuthUtil.generateToken({ type: 'passwordreset', entity, profile, expiry: 60 * 10 })
+        const otpCode = await AuthUtil.generateCode({ type: 'passwordreset', entity, expiry: 60 * 10 })
+        console.log(otpCode)
         EmailService.sendEmail({
             to: email,
             subject: 'Forgot password',
@@ -186,7 +200,9 @@ export default class AuthController {
         })
     }
 
-    static async resetPassword(req: Request, res: Response) {
+    static async resetPassword(req: AuthenticatedRequest, res: Response) {
+        const { entity: { id } } = req.user.user
+
         const { otpCode, newPassword }: { otpCode: string, newPassword: string } = req.body
 
         const validPassword = Validator.validatePassword(newPassword)
@@ -194,28 +210,28 @@ export default class AuthController {
             throw new BadRequestError('Invalid password')
         }
 
-        const partner = await PartnerService.viewSinglePartner((req as any).user.partner.id)
-        if (!partner) {
-            throw new InternalServerError('Partner not found')
+        const entity = await EntityService.viewSingleEntity(id)
+        if (!entity) {
+            throw new InternalServerError('Partner entity not found')
         }
 
-        const validCode = await AuthUtil.compareCode({ partner: partner.dataValues, tokenType: 'passwordreset', token: otpCode })
+        const validCode = await AuthUtil.compareCode({ entity, tokenType: 'passwordreset', token: otpCode })
         if (!validCode) {
             throw new BadRequestError('Invalid otp code')
         }
 
-        const password = await partner.$get('password')
+        const password = await entity.$get('password')
         if (!password) {
             throw new InternalServerError('No password found for authneticate partner')
         }
 
-        await PasswordService.updatePassword(partner.id, newPassword)
-        await AuthUtil.deleteToken({ partner, tokenType: 'passwordreset', tokenClass: 'token' })
+        await PasswordService.updatePassword(entity.id, newPassword)
+        await AuthUtil.deleteToken({ entity, tokenType: 'passwordreset', tokenClass: 'token' })
 
         await EmailService.sendEmail({
-            to: partner.email,
+            to: entity.email,
             subject: 'Succesful Email Verification',
-            html: await new EmailTemplate().awaitActivation(partner.email)
+            html: await new EmailTemplate().awaitActivation(entity.email)
         })
 
         res.status(200).json({
@@ -225,7 +241,7 @@ export default class AuthController {
         })
     }
 
-    static async changePassword(req: Request, res: Response) {
+    static async changePassword(req: AuthenticatedRequest, res: Response) {
         const { oldPassword, newPassword }: { oldPassword: string, newPassword: string } = req.body
 
         const validPassword = Validator.validatePassword(newPassword)
@@ -233,14 +249,20 @@ export default class AuthController {
             throw new BadRequestError('Invalid password')
         }
 
-        const partner = await PartnerService.viewSinglePartner((req as any).user.partner.id)
-        if (!partner) {
-            throw new InternalServerError('Partner not found')
+        const { entity: { id } } = req.user.user
+        const entity = await EntityService.viewSingleEntity(id)
+        if (!entity) {
+            throw new InternalServerError('Entity not found')
         }
 
-        const password = await partner.$get('password')
+        const profile = await EntityService.getAssociatedProfile(entity)
+        if (!profile) {
+            throw new InternalServerError('Profile not found')
+        }
+
+        const password = await entity.$get('password')
         if (!password) {
-            throw new InternalServerError('No password found for authneticate partner')
+            throw new InternalServerError('No password found for authneticate entity')
         }
 
         const validOldPassword = await PasswordService.comparePassword(oldPassword, password.password)
@@ -248,7 +270,7 @@ export default class AuthController {
             throw new BadRequestError('Invalid old password')
         }
 
-        await PasswordService.updatePassword(partner.id, newPassword)
+        await PasswordService.updatePassword(entity.id, newPassword)
 
         res.status(200).json({
             status: 'success',
@@ -256,51 +278,58 @@ export default class AuthController {
             data: null
         })
     }
-    
+
     static async login(req: Request, res: Response) {
         const { email, password } = req.body
 
-        const partner = await PartnerService.viewSinglePartnerByEmail(email)
-        if (!partner) {
+        const entity = await EntityService.viewSingleEntityByEmail(email)
+        if (!entity) {
             throw new BadRequestError('Invalid Email or password')
         }
 
-        const partnerPassword = await partner.$get('password')
-        if (!partnerPassword) {
-            throw new BadRequestError('Invalid Email or password')
+        const entityPassword = await entity.$get('password')
+        if (!entityPassword) {
+            throw new InternalServerError('No password found for authneticate entity')
         }
 
-        const validPassword = await PasswordService.comparePassword(password, partnerPassword.password)
+        const validPassword = await PasswordService.comparePassword(password, entityPassword.password)
         if (!validPassword) {
             throw new BadRequestError('Invalid Email or password')
         }
 
-        if (!partner.status.activated) {
+        if (!entity.status.activated) {
             throw new BadRequestError('Account not activated')
         }
 
-        const accessToken = await AuthUtil.generateToken({ type: 'access', partner: partner.dataValues, expiry: 60 * 60 * 60 * 60 })
-        const refreshToken = await AuthUtil.generateToken({ type: 'refresh', partner: partner.dataValues, expiry: 60 * 60 * 24 * 30 })
+        const profile = await EntityService.getAssociatedProfile(entity)
+        if (!profile) {
+            throw new InternalServerError('Profile not found')
+        }
+
+        const accessToken = await AuthUtil.generateToken({ type: 'access', entity, profile, expiry: 60 * 60 * 60 * 60 })
+        const refreshToken = await AuthUtil.generateToken({ type: 'refresh', entity, profile, expiry: 60 * 60 * 24 * 30 })
 
         res.status(200).json({
             status: 'success',
             message: 'Login successful',
             data: {
-                partner: ResponseTrimmer.trimPartner(partner),
+                entity: entity.dataValues,
                 accessToken,
                 refreshToken
             }
         })
     }
 
-    static async logout(req: Request, res: Response) {
-        const partner = await PartnerService.viewSinglePartner((req as any).user.partner.id)
-        if (!partner) {
-            throw new InternalServerError('Partner not found')
+    static async logout(req: AuthenticatedRequest, res: Response) {
+        const { entity: { id } } = req.user.user
+        const entity = await EntityService.viewSingleEntity(id)
+
+        if (!entity) {
+            throw new InternalServerError('Entity not found')
         }
 
-        await AuthUtil.deleteToken({ partner, tokenType: 'access', tokenClass: 'token' })
-        await AuthUtil.deleteToken({ partner, tokenType: 'refresh', tokenClass: 'token' })
+        await AuthUtil.deleteToken({ entity, tokenType: 'access', tokenClass: 'token' })
+        await AuthUtil.deleteToken({ entity, tokenType: 'refresh', tokenClass: 'token' })
 
         res.status(200).json({
             status: 'success',
@@ -308,18 +337,23 @@ export default class AuthController {
             data: null
         })
     }
-    
-    static async getLoggedUserData(req: Request, res: Response) {
-        const partner = await PartnerService.viewSinglePartner((req as any).user.partner.id)
+
+    static async getLoggedUserData(req: AuthenticatedRequest, res: Response) {
+        const partner = await PartnerService.viewSinglePartner(req.user.user.profile.id)
         if (!partner) {
             throw new InternalServerError('Partner not found')
+        }
+
+        const entity = await partner.$get('entity')
+        if (!entity) {
+            throw new InternalServerError('Entity not found for authenticated user')
         }
 
         res.status(200).json({
             status: 'success',
             message: 'Partner data retrieved successfully',
             data: {
-                partner: ResponseTrimmer.trimPartner(partner),
+                partner: ResponseTrimmer.trimPartner({ ...partner.dataValues, entity }),
             }
         })
     }

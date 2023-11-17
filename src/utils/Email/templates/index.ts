@@ -28,6 +28,9 @@ class EmailTemplate {
     accountActivation = async (email: string) => {
         return container(await ejs.renderFile(__dirname + '/accountactivation.ejs', { email }))
     }
+    inviteTeamMember = async (email: string) => {
+        return container(await ejs.renderFile(__dirname + '/teaminvitation.ejs', { email }))
+    }
 }
 
 export default EmailTemplate

@@ -10,7 +10,7 @@ import VendorService from "../../services/Vendor.service";
 import PowerUnit from "../../models/PowerUnit.model";
 import PowerUnitService from "../../services/PowerUnit.service";
 import { DEFAULT_ELECTRICITY_PROVIDER, DISCO_LOGO, NODE_ENV } from "../../utils/Constants";
-import { BadRequestError, GateWayTimeoutError, InternalServerError, NotFoundError } from "../../utils/Errors";
+import { BadRequestError, GateWayTimeoutError, InternalServerError } from "../../utils/Errors";
 import { generateRandomToken } from "../../utils/Helper";
 import EmailService, { EmailTemplate } from "../../utils/Email";
 import ResponseTrimmer from '../../utils/ResponseTrimmer'
@@ -24,7 +24,6 @@ interface valideMeterRequestBody {
     partnerName: string
     email: string
 }
-
 
 interface vendTokenRequestBody {
     meterNumber: string

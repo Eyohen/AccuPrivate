@@ -5,7 +5,7 @@ import errorHandler from "./middlewares/ErrorHandler";
 import { Database, initiateDB } from "./models";
 import bodyParser from "body-parser";
 import cors from 'cors';
-import router from "./routes/Routes";
+import router from "./routes";
 import { BAXI_TOKEN } from "./utils/Constants";
 import morgan from 'morgan'
 import logger from "./utils/Logger";
@@ -47,7 +47,7 @@ async function startServer(): Promise<void> {
         await initiateDB(Database);
 
         // Synchronize the database (you may want to add options like force: true to reset the database)
-        await Database.sync();
+        await Database.sync({ alter: true });
 
         // Start the server and listen on port 3000
         app.listen(process.env.PORT || 3000, () => {
@@ -56,7 +56,7 @@ async function startServer(): Promise<void> {
     } catch (err) {
         console.error(err)
         // Log any errors that occur during server startup
-        logger.error(err);
+        logger.error(err); 5
         // Exit the process with a non-zero status code to indicate an error
         process.exit(1);
     }
