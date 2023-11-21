@@ -11,6 +11,7 @@ import { AuthenticatedRequest } from "../../utils/Interface";
 import PasswordService from "../../services/Password.service";
 import EmailService, { EmailTemplate } from "../../utils/Email";
 import RoleService from "../../services/Role.service";
+import { PRIMARY_ROLES } from "../../utils/Constants";
 
 export default class TeamMemberProfileController {
     static async inviteTeamMember(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -21,6 +22,10 @@ export default class TeamMemberProfileController {
         const role = await RoleService.viewRoleById(roleId)
         if (!role) {
             throw new BadRequestError('Role not found')
+        }
+
+        if (PRIMARY_ROLES.includes(role.name)) {
+            throw new BadRequestError('Invalid role')
         }
 
         const transaction = await Database.transaction()
