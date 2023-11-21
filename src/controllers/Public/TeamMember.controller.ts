@@ -10,12 +10,18 @@ import Entity from "../../models/Entity/Entity.model";
 import { AuthenticatedRequest } from "../../utils/Interface";
 import PasswordService from "../../services/Password.service";
 import EmailService, { EmailTemplate } from "../../utils/Email";
+import RoleService from "../../services/Role.service";
 
 export default class TeamMemberProfileController {
     static async inviteTeamMember(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         // The partner is the entity that is inviting the team member
         const { entity: { id }, profile } = req.user.user
-        const { email, name } = req.body
+        const { email, name, roleId } = req.body
+
+        const role = await RoleService.viewRoleById(roleId)
+        if (!role) {
+            throw new BadRequestError('Role not found')
+        }
 
         const transaction = await Database.transaction()
         const teamMemberProfile = await TeamMemberProfileService.addTeamMemberProfile({
@@ -31,7 +37,7 @@ export default class TeamMemberProfileController {
                 activated: true,
                 emailVerified: false
             },
-            role: RoleEnum.TeamMember,
+            role: role.name,
             teamMemberProfileId: teamMemberProfile.id
         }, transaction)
 
