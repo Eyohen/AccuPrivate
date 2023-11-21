@@ -58,3 +58,5 @@ export const DB_CONFIG = {
     HOST: process.env.DB_HOST as string,
     URL: process.env.DB_URL as string,
 }
+
+export const PRIMARY_ROLES = ['Admin', 'Partner', 'TeamMember']
