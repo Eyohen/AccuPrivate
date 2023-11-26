@@ -1,9 +1,10 @@
 // Import necessary modules and dependencies
-import { Table, Column, Model, DataType, IsUUID, PrimaryKey, HasOne, ForeignKey, BelongsTo, NotEmpty, IsIn, BeforeValidate, Unique } from "sequelize-typescript";
+import { Table, Column, Model, DataType, IsUUID, PrimaryKey, HasOne, ForeignKey, BelongsTo, NotEmpty, IsIn, BeforeValidate, Unique, HasMany } from "sequelize-typescript";
 import Password from "../Password.model";
 import Role from "../Role.model";
 import PartnerProfile from "./Profiles/PartnerProfile.model";
 import TeamMember from "./Profiles/TeamMemberProfile.model";
+import Notification from "../Notification.model";
 
 // Define the "Entity" table model
 @Table({ tableName: 'Entities' })
@@ -61,6 +62,9 @@ export default class Entity extends Model<Entity | IEntity> {
     @BelongsTo(() => TeamMember)
     teamMemberProfile: TeamMember | null;
 
+    @HasMany(() => Notification)
+    notifications: Notification[];
+    
     // Relation to partner profile
     @BeforeValidate
     static ensureProfileIdIsSet(instance: Entity) {

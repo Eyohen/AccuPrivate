@@ -2,6 +2,7 @@ import { string } from "zod"
 import { ITransaction } from "../models/Transaction.model"
 import { DecodedTokenData } from "./Auth/Token"
 import { Request as ExpressApiRequest, NextFunction, Response } from "express"
+import { UUID } from "crypto"
 
 export interface IVendToken {
     transactionId: string
@@ -128,6 +129,14 @@ export interface IReceiptEmailTemplateProps {
     transaction: ITransaction,
     meterNumber: string,
     token: string
+}
+
+export interface INotification {
+    title: string;
+    message: string;
+    heading?: string;
+    entityId: string;
+    eventId?: string;
 }
 
 export type AuthOptions = 'authenticated' | 'none';
