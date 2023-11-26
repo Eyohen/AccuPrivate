@@ -19,7 +19,7 @@ export default class NotificationController {
         })
     }
 
-    static async getNotification(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    static async getNotificationInfo(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         const { notificationId } = req.query as Record<string, string>
 
         const notification = await NotificationService.viewSingleNotificationById(notificationId)
@@ -37,36 +37,16 @@ export default class NotificationController {
     }
 
     static async sendNotification(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { notificationId } = req.body 
+        const { notificationId, userId }: { notificationId: string, userId?: string } = req.body
 
         const notification = await NotificationService.viewSingleNotificationById(notificationId)
         if (!notification) {
             throw new NotFoundError('Notification not found')
         }
 
-        const notificationResult = await NotificationService.sendNotification(notification)
-        if (!notificationResult) {
-            throw new NotFoundError('Notification not found')
-        }
-
-        res.status(200).json({
-            status: 'success',
-            message: 'Notification sent successfully',
-            data: {
-                notification
-            }
-        })
-    }
-
-    static async sendNotificationToUser(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { userId, notificationId } = req.body as Record<string, string>
-
-        const notification = await NotificationService.viewSingleNotificationById(notificationId)
-        if (!notification) {
-            throw new NotFoundError('Notification not found')
-        }
-
-        const notificationResult = await NotificationUtil.sendNotificationToUser(userId, notification)
+        const notificationResult = userId
+            ? await NotificationUtil.sendNotificationToUser(userId, notification)
+            : await NotificationService.sendNotification(notification)
         if (!notificationResult) {
             throw new NotFoundError('Notification not found')
         }
