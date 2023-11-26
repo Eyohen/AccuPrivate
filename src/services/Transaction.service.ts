@@ -38,7 +38,8 @@ export default class TransactionService {
 
     static async viewTransactionsWithCustomQuery(query: any): Promise<Transaction[]> {
         // Retrieve all transactions from the database
-        const transactions: Transaction[] = await Transaction.findAll({ ...query, include: [PowerUnit, Partner, User, Meter] });
+        // Sort from latest 
+        const transactions: Transaction[] = (await Transaction.findAll({ ...query, include: [PowerUnit, Partner, User, Meter] })).sort((a, b) => { return b.transactionTimestamp.getTime() - a.transactionTimestamp.getTime() });
         return transactions;
     }
 
