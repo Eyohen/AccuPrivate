@@ -5,7 +5,7 @@ import NotificationService from "../../services/Notification.service"
 import { NotFoundError } from "../../utils/Errors"
 
 export default class NotificationController {
-    static async getNotifications(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    static async getNotifications(req: AuthenticatedRequest, res: Response, _next: NextFunction) {
         const { entity: { id } } = req.user.user
 
         const notifications = await NotificationService.viewNotificationByEntityId(id)
@@ -19,7 +19,7 @@ export default class NotificationController {
         })
     }
 
-    static async getNotificationInfo(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    static async getNotificationInfo(req: AuthenticatedRequest, res: Response, _next: NextFunction) {
         const { notificationId } = req.query as Record<string, string>
 
         const notification = await NotificationService.viewSingleNotificationById(notificationId)
@@ -36,7 +36,7 @@ export default class NotificationController {
         })
     }
 
-    static async sendNotification(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    static async sendNotification(req: AuthenticatedRequest, res: Response, _next: NextFunction) {
         const { notificationId, userId }: { notificationId: string, userId?: string } = req.body
 
         const notification = await NotificationService.viewSingleNotificationById(notificationId)
