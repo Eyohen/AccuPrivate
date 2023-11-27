@@ -12,7 +12,7 @@ export default class Notification extends Model<INotification | Notification> {
     @Column({ type: DataType.STRING, allowNull: false })
     title: string;
 
-    @Column({ type: DataType.STRING, allowNull: false })
+    @Column({ type: DataType.TEXT, allowNull: false })
     message: string;
 
     @Column({ type: DataType.STRING, allowNull: false })

@@ -4,6 +4,8 @@ import NotificationUtil from "../utils/Notification"
 export default class NotificationService {
     static async addNotification(notificationData: ICreateNotification): Promise<Notification> {
         const notification = Notification.build(notificationData)
+        await Notification.create(notificationData)
+
         return notification
     }
 
@@ -12,8 +14,10 @@ export default class NotificationService {
         return notifications
     }
 
-    static async viewNotificationByEntityId(entityId: string): Promise<Notification[]> {
-        const notifications = await Notification.findAll({ where: { entityId } })
+    static async viewNotificationByEntityId(entityId: string, page?: number, limit?: number): Promise<Notification[]> {
+        const query = page && limit ? { where: { entityId }, limit, offset: (page - 1) * limit } : { where: { entityId } } 
+        const notifications = await Notification.findAll(query)
+
         return notifications
     }
 

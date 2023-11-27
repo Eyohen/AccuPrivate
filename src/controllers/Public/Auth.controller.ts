@@ -17,6 +17,8 @@ import { RoleEnum } from "../../models/Role.model";
 import { AuthenticatedRequest } from "../../utils/Interface";
 import { TeamMemberProfile } from "../../models/Entity/Profiles";
 import NotificationUtil from "../../utils/Notification";
+import { NODE_ENV } from "../../utils/Constants";
+import NotificationService from "../../services/Notification.service";
 
 export default class AuthController {
     static async signup(req: Request, res: Response, next: NextFunction) {
@@ -181,6 +183,7 @@ export default class AuthController {
 
         const accessToken = await AuthUtil.generateToken({ type: 'passwordreset', entity, profile, expiry: 60 * 10 })
         const otpCode = await AuthUtil.generateCode({ type: 'passwordreset', entity, expiry: 60 * 10 })
+        NODE_ENV === 'development' && logger.info(otpCode)
         EmailService.sendEmail({
             to: email,
             subject: 'Forgot password',
@@ -317,7 +320,8 @@ export default class AuthController {
                 throw new InternalServerError('Partner entity not found')
             }
 
-            await NotificationUtil.sendNotificationToUser(entity.id, {
+            const notification = await NotificationService.addNotification({
+                id: uuidv4(),
                 title: 'New Login',
                 message: `
                     A new login was detected on a member account at ${new Date().toLocaleString()}
@@ -331,6 +335,8 @@ export default class AuthController {
                 heading: 'New Login Detected',
                 entityId: entity.id
             })
+            console.log(notification)
+            await NotificationUtil.sendNotificationToUser(entity.id, notification)
         }
 
         res.status(200).json({

@@ -13,7 +13,7 @@ router
     .get('/info', PublicRoleController.getRoleInfo)
 
     // Admin routes
-    .use(basicAuth('access'))
+    // .use(basicAuth('access'))
     .patch('/', AuthenticatedController(AdminRoleController.updateRole))
     .post('/new', AuthenticatedController(AdminRoleController.createRole))
 

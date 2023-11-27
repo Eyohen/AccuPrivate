@@ -7,8 +7,14 @@ import { NotFoundError } from "../../utils/Errors"
 export default class NotificationController {
     static async getNotifications(req: AuthenticatedRequest, res: Response, _next: NextFunction) {
         const { entity: { id } } = req.user.user
+        const { page, limit } = req.query as Record<string, string>
 
-        const notifications = await NotificationService.viewNotificationByEntityId(id)
+        const _page = parseInt(page) || 1
+        const _limit = limit ? parseInt(limit) : 0
+
+        const notifications = page && limit
+            ? await NotificationService.viewNotificationByEntityId(id, _page, _limit)
+            : await NotificationService.viewNotificationByEntityId(id)
 
         res.status(200).json({
             status: 'success',
