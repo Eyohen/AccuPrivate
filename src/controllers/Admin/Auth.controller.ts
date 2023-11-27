@@ -1,12 +1,17 @@
 import { NextFunction, Response } from "express";
-import { v4 as uuidv4 } from 'uuid';
-import { BadRequestError, InternalServerError } from "../../utils/Errors";
+import { BadRequestError } from "../../utils/Errors";
 import EmailService, { EmailTemplate } from "../../utils/Email";
-import Partner from "../../models/Entity/Profiles/PartnerProfile.model";
-import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
 import Validator from "../../utils/Validators";
 import { AuthenticatedRequest } from "../../utils/Interface";
 import EntityService from "../../services/Entity/Entity.service";
+
+class AuthControllerValidator {
+    static async activatePartner() {
+        
+    }
+
+
+}
 
 export default class AuthController {
     static async activatePartner(req: AuthenticatedRequest, res: Response, next: NextFunction) {

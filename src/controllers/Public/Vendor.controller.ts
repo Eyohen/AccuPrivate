@@ -16,6 +16,7 @@ import EmailService, { EmailTemplate } from "../../utils/Email";
 import ResponseTrimmer from '../../utils/ResponseTrimmer'
 import NotificationUtil from "../../utils/Notification";
 import Entity from "../../models/Entity/Entity.model";
+import NotificationService from "../../services/Notification.service";
 
 interface valideMeterRequestBody {
     meterNumber: string
@@ -40,6 +41,7 @@ interface RequestTokenValidatorParams {
     bankRefId: string
     transactionId: string
 }
+
 interface RequestTokenValidatorResponse {
     user: User
     meter: Meter
@@ -47,6 +49,7 @@ interface RequestTokenValidatorResponse {
     partnerEntity: Entity
 }
 
+// Validate request parameters for each controller
 class VendorControllerValdator {
     static validateMeter() {
 
@@ -210,18 +213,25 @@ export default class VendorController {
 
             await TransactionService.updateSingleTransaction(transactionId, { status: Status.PENDING, bankComment, bankRefId })
 
-            await NotificationUtil.sendNotificationToUser(partnerEntity.id, {
+            const notification = await NotificationService.addNotification({
+                id: uuidv4(),
                 title: 'Failed transaction',
-                message: `
-                        Failed transaction for ${meter.meterNumber} with amount ${amount}
-
-                        Bank Ref: ${bankRefId}
-                        Bank Comment: ${bankComment}
-                        Transaction Id: ${transactionId}                    
-                        `,
                 heading: 'Failed transaction',
-                entityId: partnerEntity.id
+                message: `
+                    Failed transaction for ${meter.meterNumber} with amount ${amount}
+
+                    Bank Ref: ${bankRefId}
+                    Bank Comment: ${bankComment}
+                    Transaction Id: ${transactionId}                    
+                    `,
+                entityId: partnerEntity.id,
+                read: false,
             })
+
+            // Check if partner wants to receive notifications for failed transactions
+            if (partnerEntity.notificationSettings.failedTransactions) {
+                await NotificationUtil.sendNotificationToUser(partnerEntity.id, notification)
+            }
 
             throw new GateWayTimeoutError('Transaction timeout')
         }
@@ -257,7 +267,6 @@ export default class VendorController {
             })
         })
 
-        //return PowerUnit
         res.status(200).json({
             status: 'success',
             message: 'Token retrieved successfully',

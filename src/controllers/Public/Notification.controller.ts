@@ -3,6 +3,9 @@ import { AuthenticatedRequest } from "../../utils/Interface"
 import NotificationUtil from "../../utils/Notification"
 import NotificationService from "../../services/Notification.service"
 import { NotFoundError } from "../../utils/Errors"
+import Notification from "../../models/Notification.model"
+import EntityService from "../../services/Entity/Entity.service"
+import { Op } from "sequelize"
 
 export default class NotificationController {
     static async getNotifications(req: AuthenticatedRequest, res: Response, _next: NextFunction) {
@@ -63,6 +66,52 @@ export default class NotificationController {
             data: {
                 notification
             }
+        })
+    }
+
+    static async updateNotificationPreference(req: AuthenticatedRequest, res: Response, _next: NextFunction) {
+        const { preference }: {
+            preference: {
+                login: boolean,
+                logout: boolean,
+                failedTransactions: boolean,
+            }
+        } = req.body
+
+        const { entity } = req.user.user
+        const entityRecord = await EntityService.viewSingleEntity(entity.id)
+        if (!entityRecord) {
+            throw new NotFoundError('Entity not found')
+        }
+
+        const updatedEntity = await EntityService.updateEntity(entityRecord, { notificationSettings: { ...entity.notificationSettings, ...preference } })
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Notification preference updated successfully',
+            data: {
+                preference: updatedEntity.notificationSettings
+            }
+        })
+    }
+
+    static async markNotificationsAsRead(req: AuthenticatedRequest, res: Response, _next: NextFunction) {
+        const { entity: { id } } = req.user.user
+        const { notificationIds }: { notificationIds: string[] } = req.body
+
+        // Find all notifications where thier id is in the notificationIds array and their entityId is the same as the id of the user
+        const notifications = await Notification.findAll({ where: { id: { [Op.in]: notificationIds }, entityId: id } })
+        const allNotificationsExist = notifications.length === notificationIds.length
+        if (!allNotificationsExist) {
+            throw new NotFoundError('One or more notifications not found')
+        }
+
+        await Notification.update({ read: true }, { where: { id: { [Op.in]: notificationIds }, entityId: id } })
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Notifications marked as read successfully',
+            data: null
         })
     }
 }

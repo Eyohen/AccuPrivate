@@ -10,5 +10,7 @@ router
     .get('/', AuthenticatedController(NotificationController.getNotifications))
     .get('/info', AuthenticatedController(NotificationController.getNotificationInfo))
     .post('/send', AuthenticatedController(NotificationController.sendNotification))
+    .post('/markread', AuthenticatedController(NotificationController.markNotificationsAsRead))
+    .patch('/preference', AuthenticatedController(NotificationController.updateNotificationPreference))
 
 export default router

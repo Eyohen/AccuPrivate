@@ -54,7 +54,12 @@ export default class AuthController {
                 emailVerified: false
             },
             partnerProfileId: newPartner.id,
-            role: RoleEnum.Partner
+            role: RoleEnum.Partner,
+            notificationSettings: {
+                login: true,
+                failedTransactions: true,
+                logout: true
+            }
         }, transaction)
 
         const apiKey = await ApiKeyService.addApiKey({
@@ -163,7 +168,7 @@ export default class AuthController {
             status: 'success',
             message: 'Verification code sent successfully',
             data: {
-                partner: ResponseTrimmer.trimPartner(newPartner),
+                partner: ResponseTrimmer.trimPartner({ ...newPartner.dataValues, entity: entity.dataValues }),
             }
         })
     }
@@ -315,8 +320,8 @@ export default class AuthController {
                 throw new InternalServerError('Partner profile not found')
             }
 
-            const entity = await partnerProfile.$get('entity')
-            if (!entity) {
+            const partnerEntity = await partnerProfile.$get('entity')
+            if (!partnerEntity) {
                 throw new InternalServerError('Partner entity not found')
             }
 
@@ -333,10 +338,11 @@ export default class AuthController {
                     If this was not you, please contact your administrator immediately.
                     `,
                 heading: 'New Login Detected',
-                entityId: entity.id
+                entityId: partnerEntity.id,
+                read: false
             })
-            console.log(notification)
-            await NotificationUtil.sendNotificationToUser(entity.id, notification)
+
+            entity.notificationSettings.login && await NotificationUtil.sendNotificationToUser(entity.id, notification)
         }
 
         res.status(200).json({
