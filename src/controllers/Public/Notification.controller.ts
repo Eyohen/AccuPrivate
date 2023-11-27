@@ -10,14 +10,24 @@ import { Op } from "sequelize"
 export default class NotificationController {
     static async getNotifications(req: AuthenticatedRequest, res: Response, _next: NextFunction) {
         const { entity: { id } } = req.user.user
-        const { page, limit } = req.query as Record<string, string>
-
+        const { page, limit, status } = req.query as { page: `${number}`, limit: `${number}`, status: 'read' | 'unread' }
         const _page = parseInt(page) || 1
         const _limit = limit ? parseInt(limit) : 0
 
-        const notifications = page && limit
-            ? await NotificationService.viewNotificationByEntityId(id, _page, _limit)
-            : await NotificationService.viewNotificationByEntityId(id)
+        const query: {
+            read?: boolean,
+            offset?: number,
+            limit?: number,
+            entityId: string,
+        } = status === 'read' ? { read: true, entityId: id } : status === 'unread' ? { read: false, entityId: id } : { entityId: id }
+
+        if (page && limit) {
+            query['offset'] = (_page - 1) * _limit
+            query['limit'] = _limit
+        }
+
+        console.log(query)
+        const notifications = await NotificationService.viewNotificationWithCustomQuery({ where: query })
 
         res.status(200).json({
             status: 'success',
@@ -99,7 +109,6 @@ export default class NotificationController {
         const { entity: { id } } = req.user.user
         const { notificationIds }: { notificationIds: string[] } = req.body
 
-        // Find all notifications where thier id is in the notificationIds array and their entityId is the same as the id of the user
         const notifications = await Notification.findAll({ where: { id: { [Op.in]: notificationIds }, entityId: id } })
         const allNotificationsExist = notifications.length === notificationIds.length
         if (!allNotificationsExist) {

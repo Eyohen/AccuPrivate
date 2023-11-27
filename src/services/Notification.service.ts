@@ -26,6 +26,11 @@ export default class NotificationService {
         return notification
     }
 
+    static async viewNotificationWithCustomQuery(query: Record<any, any>): Promise<Notification[]> {
+        const notifications = await Notification.findAll(query)
+        return notifications
+    }
+
     static async updateSingleNotification(id: string, data: IUpdateNotification): Promise<Notification | null> {
         const notification = await this.viewSingleNotificationById(id)
         if (!notification) return null
