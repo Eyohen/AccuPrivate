@@ -18,6 +18,9 @@ export default class Notification extends Model<INotification | Notification> {
     @Column({ type: DataType.STRING, allowNull: false })
     heading: string;
 
+    @Column({ type: DataType.BOOLEAN, allowNull: false, defaultValue: false })
+    read: boolean;
+
     @ForeignKey(() => Event)
     @IsUUID(4)
     @Column({ type: DataType.STRING, allowNull: true })
@@ -35,11 +38,19 @@ export default class Notification extends Model<INotification | Notification> {
     entity: Entity
 }
 
+enum NotificationType {
+    LOGIN = 'LOGIN',
+    LOGOUT = 'LOGOUT',
+    FAILED_TRANSACTION = 'FAILED_TRANSACTION',
+    NEW_MEMBER_ACCOUNT = 'NEW_MEMBER_ACCOUNT'
+}
+
 export interface  INotification {
     id: string;
     title: string;
     message: string;
     heading: string;
+    read: boolean;
     eventId?: string;
     entityId: string;
 }
