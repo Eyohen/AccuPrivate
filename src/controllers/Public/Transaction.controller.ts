@@ -34,9 +34,11 @@ interface getTransactionsRequestBody extends ITransaction {
 
 export default class TransactionController {
     static async getTransactionInfo(req: Request, res: Response) {
-        const { bankRefId } = req.query as Record<string, string>
+        const { bankRefId, transactionId } = req.query as Record<string, string>
 
-        const transaction: Transaction | null = await TransactionService.viewSingleTransactionByBankRefID(bankRefId)
+        const transaction: Transaction | null = bankRefId 
+            ? await TransactionService.viewSingleTransactionByBankRefID(bankRefId)
+            : await TransactionService.viewSingleTransaction(transactionId)
         if (!transaction) {
             throw new NotFoundError('Transaction not found')
         }
