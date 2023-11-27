@@ -7,13 +7,11 @@ import EmailService, { EmailTemplate } from "../../utils/Email";
 import { generateRandomToken } from "../../utils/Helper";
 import { DISCO_LOGO, NODE_ENV } from "../../utils/Constants";
 import PowerUnitService from "../../services/PowerUnit.service";
-import { UUIDV4 } from "sequelize";
 import ResponseTrimmer from "../../utils/ResponseTrimmer";
 import { randomUUID } from "crypto";
 import Meter from "../../models/Meter.model";
 import VendorService from "../../services/Vendor.service";
 import { AuthenticatedRequest } from "../../utils/Interface";
-import EntityService from "../../services/Entity/Entity.service";
 import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
 
 interface getTransactionInfoRequestBody {

@@ -14,6 +14,7 @@ import { BadRequestError, GateWayTimeoutError, InternalServerError } from "../..
 import { generateRandomToken } from "../../utils/Helper";
 import EmailService, { EmailTemplate } from "../../utils/Email";
 import ResponseTrimmer from '../../utils/ResponseTrimmer'
+import NotificationUtil from "../../utils/Notification";
 
 interface valideMeterRequestBody {
     meterNumber: string
@@ -167,12 +168,30 @@ export default class VendorController {
             vendType: vendType as 'PREPAID' | 'POSTPAID'
         }).catch(error => error)
         if (tokenInfo instanceof Error) {
-            if (tokenInfo.message === 'Transaction timeout') {
-                await TransactionService.updateSingleTransaction(transactionId, { status: Status.PENDING, bankComment, bankRefId })
-                throw new GateWayTimeoutError('Transaction timeout')
+            if (tokenInfo.message !== 'Transaction timeout') throw tokenInfo
+
+            await TransactionService.updateSingleTransaction(transactionId, { status: Status.PENDING, bankComment, bankRefId })
+
+            const partner = await transactionRecord.$get('partner')
+            const entity = await partner?.$get('entity')
+            if (!entity) {
+                throw new InternalServerError('Entity not found')
             }
 
-            throw tokenInfo
+            await NotificationUtil.sendNotificationToUser(entity.id, {
+                title: 'Failed transaction',
+                message: `
+                        Failed transaction for ${meter.meterNumber} with amount ${amount}
+
+                        Bank Ref: ${bankRefId}
+                        Bank Comment: ${bankComment}
+                        Transaction Id: ${transactionId}                    
+                        `,
+                heading: 'Failed transaction',
+                entityId: entity.id
+            })
+
+            throw new GateWayTimeoutError('Transaction timeout')
         }
 
         const discoLogo = DISCO_LOGO[disco.toLowerCase() as keyof typeof DISCO_LOGO]
