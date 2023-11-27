@@ -126,3 +126,14 @@ export interface ICreateTransaction extends ITransaction {
 export interface IUpdateTransaction {
     // Properties for updating a transaction can be added here.
 }
+
+type DateQuery = {
+    transactionTimestamp?: { $between: [Date, Date] } | Date;
+    createdAt: { $between: [Date, Date] } | Date,
+}
+export interface IQueryTransaction {
+    where: {
+        [K in keyof Omit<ITransaction, keyof DateQuery>]?: ITransaction[K];
+    } & DateQuery,
+    offset?: number, limit?: number
+}

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import Transaction, { ITransaction } from "../../models/Transaction.model";
+import Transaction, { IQueryTransaction, ITransaction } from "../../models/Transaction.model";
 import TransactionService from "../../services/Transaction.service";
 import { BadRequestError, InternalServerError, NotFoundError } from "../../utils/Errors";
 import { Status } from "../../models/Event.model";
@@ -34,7 +34,7 @@ export default class TransactionController {
     static async getTransactionInfo(req: Request, res: Response) {
         const { bankRefId, transactionId } = req.query as Record<string, string>
 
-        const transaction: Transaction | null = bankRefId 
+        const transaction: Transaction | null = bankRefId
             ? await TransactionService.viewSingleTransactionByBankRefID(bankRefId)
             : await TransactionService.viewSingleTransaction(transactionId)
         if (!transaction) {
@@ -50,22 +50,24 @@ export default class TransactionController {
         })
     }
 
-    static async getTransactions(req: Request, res: Response) {
+    static async getTransactions(req: AuthenticatedRequest, res: Response) {
         const {
             page, limit, status, startDate, endDate,
             userId, disco, superagent
         } = req.query as any as getTransactionsRequestBody
 
-        const query = { where: {} } as any
+        const query = { where: {} } as IQueryTransaction
+
         if (status) query.where.status = status
         if (startDate && endDate) query.where.transactionTimestamp = { $between: [startDate, endDate] }
         if (userId) query.where.userId = userId
         if (disco) query.where.disco = disco
         if (superagent) query.where.superagent = superagent
-        if (limit) query.limit = limit
+        if (limit) query.limit = parseInt(limit)
         if (page && page != '0' && limit) {
             query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit)
         }
+        query.where.partnerId = req.user.user.profile.id
 
         const transactions: Transaction[] = await TransactionService.viewTransactionsWithCustomQuery(query)
         if (!transactions) {
@@ -179,7 +181,7 @@ export default class TransactionController {
         const { status } = req.query as any as { status: 'COMPLETED' | 'FAILED' | 'PENDING' }
         const { profile: { id } } = req.user.user
 
-        const  partner = await PartnerService.viewSinglePartner(id)
+        const partner = await PartnerService.viewSinglePartner(id)
         if (!partner) {
             throw new InternalServerError('Authenticated partner not found')
         }
