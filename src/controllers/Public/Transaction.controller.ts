@@ -14,10 +14,6 @@ import VendorService from "../../services/Vendor.service";
 import { AuthenticatedRequest } from "../../utils/Interface";
 import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
 
-interface getTransactionInfoRequestBody {
-    bankRefId: string
-}
-
 interface getTransactionsRequestBody extends ITransaction {
     page: `${number}`
     limit: `${number}`
