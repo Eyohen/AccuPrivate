@@ -14,6 +14,9 @@ import { BadRequestError, GateWayTimeoutError, InternalServerError } from "../..
 import { generateRandomToken } from "../../utils/Helper";
 import EmailService, { EmailTemplate } from "../../utils/Email";
 import ResponseTrimmer from '../../utils/ResponseTrimmer'
+import NotificationUtil from "../../utils/Notification";
+import Entity from "../../models/Entity/Entity.model";
+import NotificationService from "../../services/Notification.service";
 
 interface valideMeterRequestBody {
     meterNumber: string
@@ -33,6 +36,78 @@ interface vendTokenRequestBody {
     partnerName: string
     email: string
 }
+
+interface RequestTokenValidatorParams {
+    bankRefId: string
+    transactionId: string
+}
+
+interface RequestTokenValidatorResponse {
+    user: User
+    meter: Meter
+    transaction: Transaction
+    partnerEntity: Entity
+}
+
+// Validate request parameters for each controller
+class VendorControllerValdator {
+    static validateMeter() {
+
+    }
+
+    static async requestToken({ bankRefId, transactionId }: RequestTokenValidatorParams): Promise<RequestTokenValidatorResponse> {
+        if (!bankRefId) throw new BadRequestError('Transaction reference is required')
+
+        const transactionRecord: Transaction | null = await TransactionService.viewSingleTransaction(transactionId)
+        if (!transactionRecord) {
+            throw new BadRequestError('Transaction does not exist')
+        }
+
+        // Check if Disco is Up
+        const checKDisco: boolean | Error = await VendorService.buyPowerCheckDiscoUp(transactionRecord.disco)
+        if (!checKDisco) throw new BadRequestError('Disco is currently down')
+
+        // Check if bankRefId has been used before
+        const existingTransaction: Transaction | null = await TransactionService.viewSingleTransactionByBankRefID(bankRefId)
+        if (existingTransaction instanceof Transaction) {
+            throw new BadRequestError('Bank reference has been used before')
+        }
+
+        const transactionHasCompleted = transactionRecord.status === Status.COMPLETE
+        if (transactionHasCompleted) {
+            throw new BadRequestError('Transaction has been completed before')
+        }
+
+        //  Get Meter 
+        const meter: Meter | null = await transactionRecord.$get('meter')
+        if (!meter) {
+            throw new InternalServerError(`Transaction ${transactionRecord.id} does not have a meter`)
+        }
+
+        const user = await transactionRecord.$get('user')
+        if (!user) {
+            throw new InternalServerError(`Transaction ${transactionRecord.id} does not have a user`)
+        }
+
+        const partner = await transactionRecord.$get('partner')
+        const entity = await partner?.$get('entity')
+        if (!entity) {
+            throw new InternalServerError('Entity not found')
+        }
+
+        return {
+            user,
+            meter,
+            transaction: transactionRecord,
+            partnerEntity: entity,
+        }
+    }
+
+    static getDiscos() { }
+
+    static checkDisco() { }
+}
+
 
 export default class VendorController {
 
@@ -122,70 +197,56 @@ export default class VendorController {
             vendType
         } = req.query as Record<string, any>
 
-        if (!bankRefId) throw new BadRequestError('Transaction reference is required')
-
-        const transactionRecord: Transaction | null = await TransactionService.viewSingleTransaction(transactionId)
-        if (!transactionRecord) {
-            throw new BadRequestError('Transaction does not exist')
-        }
-
-        const disco = transactionRecord.disco
-
-        // Check if Disco is Up
-        const checKDisco: boolean | Error = await VendorService.buyPowerCheckDiscoUp(disco)
-        if (!checKDisco) throw new BadRequestError('Disco is currently down')
-
-        // Check if bankRefId has been used before
-        const existingTransaction: Transaction | null = await TransactionService.viewSingleTransactionByBankRefID(bankRefId)
-        if (existingTransaction instanceof Transaction) {
-            throw new BadRequestError('Bank reference has been used before')
-        }
-
-        const transactionHasCompleted = transactionRecord.status === Status.COMPLETE
-        if (transactionHasCompleted) {
-            throw new BadRequestError('Transaction has been completed before')
-        }
-
-        //  Get Meter 
-        const meter: Meter | null = await transactionRecord.$get('meter')
-        if (!meter) {
-            throw new InternalServerError(`Transaction ${transactionRecord.id} does not have a meter`)
-        }
-
-        const user = await transactionRecord.$get('user')
-        if (!user) {
-            throw new InternalServerError(`Transaction ${transactionRecord.id} does not have a user`)
-        }
+        const { user, partnerEntity, transaction, meter } = await VendorControllerValdator.requestToken({ bankRefId, transactionId })
 
         // Initiate Purchase for token
         const tokenInfo = await VendorService.buyPowerVendToken({
             transactionId,
             meterNumber: meter.meterNumber,
-            disco,
+            disco: transaction.disco,
             amount: amount,
             phone: user.phoneNumber,
             vendType: vendType as 'PREPAID' | 'POSTPAID'
         }).catch(error => error)
         if (tokenInfo instanceof Error) {
-            if (tokenInfo.message === 'Transaction timeout') {
-                await TransactionService.updateSingleTransaction(transactionId, { status: Status.PENDING, bankComment, bankRefId })
-                throw new GateWayTimeoutError('Transaction timeout')
+            if (tokenInfo.message !== 'Transaction timeout') throw tokenInfo
+
+            await TransactionService.updateSingleTransaction(transactionId, { status: Status.PENDING, bankComment, bankRefId })
+
+            const notification = await NotificationService.addNotification({
+                id: uuidv4(),
+                title: 'Failed transaction',
+                heading: 'Failed transaction',
+                message: `
+                    Failed transaction for ${meter.meterNumber} with amount ${amount}
+
+                    Bank Ref: ${bankRefId}
+                    Bank Comment: ${bankComment}
+                    Transaction Id: ${transactionId}                    
+                    `,
+                entityId: partnerEntity.id,
+                read: false,
+            })
+
+            // Check if partner wants to receive notifications for failed transactions
+            if (partnerEntity.notificationSettings.failedTransactions) {
+                await NotificationUtil.sendNotificationToUser(partnerEntity.id, notification)
             }
 
-            throw tokenInfo
+            throw new GateWayTimeoutError('Transaction timeout')
         }
 
-        const discoLogo = DISCO_LOGO[disco.toLowerCase() as keyof typeof DISCO_LOGO]
+        const discoLogo = DISCO_LOGO[transaction.disco.toLowerCase() as keyof typeof DISCO_LOGO]
 
         // Add Power Unit to store token 
         const newPowerUnit: PowerUnit = await PowerUnitService.addPowerUnit({
             id: uuidv4(),
             transactionId: transactionId,
-            disco: disco,
+            disco: transaction.disco,
             discoLogo,
             amount: amount,
             meterId: meter.id,
-            superagent: transactionRecord.superagent,
+            superagent: transaction.superagent,
             address: meter.address,
             token: NODE_ENV === 'development' ? generateRandomToken() : tokenInfo.data.token,
             tokenNumber: tokenInfo.token,
@@ -200,13 +261,12 @@ export default class VendorController {
             to: user.email,
             subject: 'Token Purchase',
             html: await new EmailTemplate().receipt({
-                transaction: transactionRecord,
+                transaction: transaction,
                 meterNumber: meter?.meterNumber,
                 token: newPowerUnit.token
             })
         })
 
-        //return PowerUnit
         res.status(200).json({
             status: 'success',
             message: 'Token retrieved successfully',
@@ -230,6 +290,7 @@ export default class VendorController {
                 discos = []
                 break
         }
+
         res.status(200).json({
             status: 'success',
             message: 'Discos retrieved successfully',

@@ -1,7 +1,5 @@
 import { Request, Response } from "express";
-import { ITransaction } from "../../models/Transaction.model";
 import { NotFoundError } from "../../utils/Errors";
-import MeterService from "../../services/User.service";
 import User from "../../models/User.model";
 import UserService from "../../services/User.service";
 

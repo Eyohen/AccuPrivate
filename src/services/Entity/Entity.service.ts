@@ -34,7 +34,7 @@ export default class EntityService {
     }
 
     static async viewSingleEntityByEmail(email: string): Promise<Entity | null> {
-        const entity: Entity | null = await Entity.findOne({ where: { email } })
+        const entity: Entity | null = await Entity.findOne({ where: { email }, include: [Role] })
 
         if (!entity) {
             return null

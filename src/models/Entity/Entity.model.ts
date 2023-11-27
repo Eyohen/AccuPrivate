@@ -1,9 +1,10 @@
 // Import necessary modules and dependencies
-import { Table, Column, Model, DataType, IsUUID, PrimaryKey, HasOne, ForeignKey, BelongsTo, NotEmpty, IsIn, BeforeValidate, Unique } from "sequelize-typescript";
+import { Table, Column, Model, DataType, IsUUID, PrimaryKey, HasOne, ForeignKey, BelongsTo, NotEmpty, IsIn, BeforeValidate, Unique, HasMany } from "sequelize-typescript";
 import Password from "../Password.model";
 import Role from "../Role.model";
 import PartnerProfile from "./Profiles/PartnerProfile.model";
 import TeamMember from "./Profiles/TeamMemberProfile.model";
+import Notification from "../Notification.model";
 
 // Define the "Entity" table model
 @Table({ tableName: 'Entities' })
@@ -37,23 +38,27 @@ export default class Entity extends Model<Entity | IEntity> {
     @Column({ type: DataType.STRING })
     roleId: string;
 
-    @BelongsTo(() => Role)
-    role: Role;
-
     @ForeignKey(() => TeamMember)
     @IsUUID(4)
-    // @NotEmpty
-    // @IsIn([['teamMemberProfileId', 'partnerProfileId']])
     @Column({ type: DataType.STRING, allowNull: true })
     teamMemberProfileId: string;
 
     @ForeignKey(() => PartnerProfile)
     @IsUUID(4)
-    // @NotEmpty
-    // @IsIn([['teamMemberProfileId', 'partnerProfileId']])
     @Column({ type: DataType.STRING, allowNull: true })
     partnerProfileId: string;
 
+    @Column({ type: DataType.JSONB, allowNull: false, defaultValue: { login: true, logout: true, failedTransactions: true } })
+    notificationSettings: {
+        login: boolean;
+        logout: boolean;
+        failedTransactions: boolean;
+    }
+
+    @BelongsTo(() => Role)
+    role: Role;
+
+    // Relation to partner profile
     @BelongsTo(() => PartnerProfile)
     partnerProfile: PartnerProfile | null;
 
@@ -61,7 +66,9 @@ export default class Entity extends Model<Entity | IEntity> {
     @BelongsTo(() => TeamMember)
     teamMemberProfile: TeamMember | null;
 
-    // Relation to partner profile
+    @HasMany(() => Notification)
+    notifications: Notification[];
+
     @BeforeValidate
     static ensureProfileIdIsSet(instance: Entity) {
         if (!instance.teamMemberProfileId && !instance.partnerProfileId) {
@@ -82,6 +89,11 @@ export interface IEntity {
     roleId: string;
     partnerProfileId?: string;
     teamMemberProfileId?: string;
+    notificationSettings: {
+        login: boolean;
+        logout: boolean;
+        failedTransactions: boolean;
+    }
 }
 
 // Interface representing the structure for creating a new Entity (inherits from IEntity)
@@ -91,6 +103,16 @@ export interface ICreateEntity extends IEntity {
 
 // Interface for updating an existing Entity
 export interface IUpdateEntity {
+    notificationSettings?: {
+        login: boolean;
+        logout: boolean;
+        failedTransactions: boolean;
+    },
+    profilePicture?: string;
+    status?: {
+        activated: boolean;
+        emailVerified: boolean;
+    };
     // You can define specific properties here that are updatable for a Entity
     // This interface is intentionally left empty for flexibility
 }

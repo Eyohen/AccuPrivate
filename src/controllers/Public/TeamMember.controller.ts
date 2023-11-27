@@ -43,7 +43,12 @@ export default class TeamMemberProfileController {
                 emailVerified: false
             },
             role: role.name,
-            teamMemberProfileId: teamMemberProfile.id
+            teamMemberProfileId: teamMemberProfile.id,
+            notificationSettings: {
+                login: false,
+                logout: false,
+                failedTransactions: false
+            }
         }, transaction)
 
         const entityPasswrod = await PasswordService.addPassword({

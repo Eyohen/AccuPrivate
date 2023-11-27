@@ -13,17 +13,16 @@ import logger from "../../utils/Logger";
 import Cypher from "../../utils/Cypher";
 import ApiKeyService from "../../services/ApiKey.service ";
 import EntityService from "../../services/Entity/Entity.service";
-import Role, { RoleEnum } from "../../models/Role.model";
+import { RoleEnum } from "../../models/Role.model";
 import { AuthenticatedRequest } from "../../utils/Interface";
-import TeamMemberProfileService from "../../services/Entity/Profiles/TeamMemberProfile.service";
+import { TeamMemberProfile } from "../../models/Entity/Profiles";
+import NotificationUtil from "../../utils/Notification";
+import { NODE_ENV } from "../../utils/Constants";
+import NotificationService from "../../services/Notification.service";
 
 export default class AuthController {
-
     static async signup(req: Request, res: Response, next: NextFunction) {
-        const {
-            email,
-            password,
-        } = req.body
+        const { email, password } = req.body
 
         const validEmail = Validator.validateEmail(email)
         if (!validEmail) {
@@ -55,7 +54,12 @@ export default class AuthController {
                 emailVerified: false
             },
             partnerProfileId: newPartner.id,
-            role: RoleEnum.Partner
+            role: RoleEnum.Partner,
+            notificationSettings: {
+                login: true,
+                failedTransactions: true,
+                logout: true
+            }
         }, transaction)
 
         const apiKey = await ApiKeyService.addApiKey({
@@ -164,7 +168,7 @@ export default class AuthController {
             status: 'success',
             message: 'Verification code sent successfully',
             data: {
-                partner: ResponseTrimmer.trimPartner(newPartner),
+                partner: ResponseTrimmer.trimPartner({ ...newPartner.dataValues, entity: entity.dataValues }),
             }
         })
     }
@@ -184,6 +188,7 @@ export default class AuthController {
 
         const accessToken = await AuthUtil.generateToken({ type: 'passwordreset', entity, profile, expiry: 60 * 10 })
         const otpCode = await AuthUtil.generateCode({ type: 'passwordreset', entity, expiry: 60 * 10 })
+        NODE_ENV === 'development' && logger.info(otpCode)
         EmailService.sendEmail({
             to: email,
             subject: 'Forgot password',
@@ -307,6 +312,38 @@ export default class AuthController {
 
         const accessToken = await AuthUtil.generateToken({ type: 'access', entity, profile, expiry: 60 * 60 * 60 * 60 })
         const refreshToken = await AuthUtil.generateToken({ type: 'refresh', entity, profile, expiry: 60 * 60 * 24 * 30 })
+
+        if ([RoleEnum.TeamMember].includes(entity.role.name)) {
+            const memberProfile = profile as TeamMemberProfile
+            const partnerProfile = await memberProfile.$get('partner')
+            if (!partnerProfile) {
+                throw new InternalServerError('Partner profile not found')
+            }
+
+            const partnerEntity = await partnerProfile.$get('entity')
+            if (!partnerEntity) {
+                throw new InternalServerError('Partner entity not found')
+            }
+
+            const notification = await NotificationService.addNotification({
+                id: uuidv4(),
+                title: 'New Login',
+                message: `
+                    A new login was detected on a member account at ${new Date().toLocaleString()}
+                    
+                    Member: ${memberProfile.name}
+                    Email: ${entity.email}
+                    Location: ${req.headers['x-forwarded-for'] || req.connection.remoteAddress}
+
+                    If this was not you, please contact your administrator immediately.
+                    `,
+                heading: 'New Login Detected',
+                entityId: partnerEntity.id,
+                read: false
+            })
+
+            entity.notificationSettings.login && await NotificationUtil.sendNotificationToUser(entity.id, notification)
+        }
 
         res.status(200).json({
             status: 'success',

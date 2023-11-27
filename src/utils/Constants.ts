@@ -33,6 +33,8 @@ export const CRYPTO_PASSWORD = process.env.CRYPTO_PASSWORD as string;
 export const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME as string
 export const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY as string
 export const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET as string
+export const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY as string
+export const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID as string
 
 export const DISCO_LOGO = {
     abuja: 'https://res.cloudinary.com/richiepersonaldev/image/upload/v1699947957/dpijlhj08ard76zao2uk.jpg',

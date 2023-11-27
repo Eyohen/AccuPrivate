@@ -7,13 +7,13 @@ import { AuthenticatedController } from "../utils/Interface";
 const router: Router = express.Router()
 
 router
-    // .use(basicAuth('access'))
 
     // Public routes
     .get('/', PublicRoleController.getRoles)
     .get('/info', PublicRoleController.getRoleInfo)
 
     // Admin routes
+    // .use(basicAuth('access'))
     .patch('/', AuthenticatedController(AdminRoleController.updateRole))
     .post('/new', AuthenticatedController(AdminRoleController.createRole))
 

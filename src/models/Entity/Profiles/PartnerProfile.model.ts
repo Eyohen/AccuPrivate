@@ -19,7 +19,7 @@ export default class PartnerProfile extends Model<PartnerProfile | IPartnerProfi
     email: string;
 
     @HasOne(() => Entity)
-    entity: Entity;
+    entity?: Entity;
 
     // Establish a "HasMany" association with the "Transaction" model
     @HasMany(() => Transaction)
