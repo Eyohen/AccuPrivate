@@ -350,6 +350,7 @@ export default class AuthController {
             message: 'Login successful',
             data: {
                 entity: entity.dataValues,
+                unreadNotificationsCount: (await NotificationService.getUnreadNotifications(entity.id)).length,
                 accessToken,
                 refreshToken
             }
@@ -390,6 +391,7 @@ export default class AuthController {
             message: 'Partner data retrieved successfully',
             data: {
                 partner: ResponseTrimmer.trimPartner({ ...partner.dataValues, entity }),
+                unreadNotificationsCount: (await NotificationService.getUnreadNotifications(entity.id)).length,
             }
         })
     }

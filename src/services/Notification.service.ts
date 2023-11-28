@@ -48,4 +48,9 @@ export default class NotificationService {
 
         return notificationResult
     }
+
+    static async getUnreadNotifications(entityId: string): Promise<Notification[]> {
+        const notifications = await Notification.findAll({ where: { entityId, read: false } })
+        return notifications
+    }
 }

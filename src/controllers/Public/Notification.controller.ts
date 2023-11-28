@@ -123,4 +123,21 @@ export default class NotificationController {
             data: null
         })
     }
+
+    static async getNotificationPreference(req: AuthenticatedRequest, res: Response, _next: NextFunction) {
+        const { entity: { id } } = req.user.user
+
+        const entity = await EntityService.viewSingleEntity(id)
+        if (!entity) {
+            throw new NotFoundError('Entity not found')
+        }
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Notification preference fetched successfully',
+            data: {
+                preference: entity.notificationSettings
+            }
+        })
+    }
 }
