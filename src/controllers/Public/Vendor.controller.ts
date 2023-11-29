@@ -18,6 +18,8 @@ import NotificationUtil from "../../utils/Notification";
 import Entity from "../../models/Entity/Entity.model";
 import NotificationService from "../../services/Notification.service";
 import EventService from "../../services/Event.service";
+import { AuthenticatedRequest } from "../../utils/Interface";
+import { DataType, DataTypes, JSONB } from "sequelize";
 
 interface valideMeterRequestBody {
     meterNumber: string
@@ -328,6 +330,19 @@ export default class VendorController {
                 meterNumber: meter?.meterNumber,
                 token: newPowerUnit.token
             })
+        }).then(async (r) => {
+            await EventService.addEvent({
+                id: uuidv4(),
+                eventTimestamp: new Date(),
+                status: Status.COMPLETE,
+                eventType: 'TOKEN_SENT',
+                eventText: 'Sent token',
+                source: 'API',
+                eventData: JSON.stringify({
+                    userEmail: user.email
+                }),
+                transactionId: transactionId,
+            })
         })
 
         res.status(200).json({
@@ -385,5 +400,9 @@ export default class VendorController {
                 discAvailable: result
             }
         })
+    }
+
+    static async confirmPayment(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+
     }
 }
