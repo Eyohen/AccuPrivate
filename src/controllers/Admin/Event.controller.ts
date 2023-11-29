@@ -18,7 +18,7 @@ export default class EventController {
     }
 
     static async getEvents(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { transactionId } = req.query as { transactionId: string }
+        const { transactionId, page, limit } = req.query as { transactionId: string, page?: `${number}`, limit?: `${number}` }
 
         const events = await EventService.viewEventsForTransaction(transactionId)
 
