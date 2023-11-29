@@ -152,6 +152,7 @@ export interface AuthenticatedRequest extends ExpressApiRequest {
 
 export type AuthenticatedAsyncController = (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<void>;
 
+// TODO: Add option to specify if authentication type is through API Key or JWT
 export function AuthenticatedController(controller: AuthenticatedAsyncController) {
     return async (req: ExpressApiRequest, res: Response, next: NextFunction) => {
         return controller(req as AuthenticatedRequest, res, next)

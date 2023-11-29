@@ -10,13 +10,17 @@ import VendorService from "../../services/Vendor.service";
 import PowerUnit from "../../models/PowerUnit.model";
 import PowerUnitService from "../../services/PowerUnit.service";
 import { DEFAULT_ELECTRICITY_PROVIDER, DISCO_LOGO, NODE_ENV } from "../../utils/Constants";
-import { BadRequestError, GateWayTimeoutError, InternalServerError } from "../../utils/Errors";
+import { BadRequestError, GateWayTimeoutError, InternalServerError, NotFoundError } from "../../utils/Errors";
 import { generateRandomToken } from "../../utils/Helper";
 import EmailService, { EmailTemplate } from "../../utils/Email";
 import ResponseTrimmer from '../../utils/ResponseTrimmer'
 import NotificationUtil from "../../utils/Notification";
 import Entity from "../../models/Entity/Entity.model";
 import NotificationService from "../../services/Notification.service";
+import EventService from "../../services/Event.service";
+import { AuthenticatedRequest } from "../../utils/Interface";
+import { DataType, DataTypes, JSONB } from "sequelize";
+import Event from "../../models/Event.model";
 
 interface valideMeterRequestBody {
     meterNumber: string
@@ -155,6 +159,45 @@ export default class VendorController {
             partnerId: partnerId,
         })
 
+        await EventService.addEvent({
+            id: uuidv4(),
+            eventTimestamp: new Date(),
+            status: Status.COMPLETE,
+            eventType: 'VALIDATE_METER',
+            eventText: 'Validate meter',
+            source: 'API',
+            eventData: JSON.stringify({}),
+            transactionId: transactionId,
+        })
+
+
+        // Check if disco is up, and add event for it
+        const discoUp = superagent === 'BUYPOWERNG'
+            ? await VendorService.buyPowerCheckDiscoUp(disco).catch(e => e)
+            : await VendorService.baxiCheckDiscoUp(disco).catch(e => e)
+
+        discoUp instanceof Error
+            ? await EventService.addEvent({
+                id: uuidv4(),
+                eventTimestamp: new Date(),
+                status: Status.FAILED,
+                eventType: 'DISCO_UP',
+                eventText: 'Disco up',
+                source: 'API',
+                eventData: JSON.stringify({ disco }),
+                transactionId: transactionId,
+            })
+            : await EventService.addEvent({
+                id: uuidv4(),
+                eventTimestamp: new Date(),
+                status: Status.COMPLETE,
+                eventType: 'DISCO_UP',
+                eventText: 'Disco up',
+                source: 'API',
+                eventData: JSON.stringify({ disco }),
+                transactionId: transactionId,
+            })
+
         const meter: Meter = await MeterService.addMeter({
             id: uuidv4(),
             address: response.address,
@@ -211,6 +254,18 @@ export default class VendorController {
         if (tokenInfo instanceof Error) {
             if (tokenInfo.message !== 'Transaction timeout') throw tokenInfo
 
+            await EventService.addEvent({
+                id: uuidv4(),
+                eventTimestamp: new Date(),
+                status: Status.FAILED,
+                eventType: 'REQUEST_TOKEN',
+                eventText: 'Request token',
+                source: 'API',
+                eventData: JSON.stringify({
+                    reason: 'TRANSACTION_TIMEOUT'
+                }),
+                transactionId: transactionId,
+            })
             await TransactionService.updateSingleTransaction(transactionId, { status: Status.PENDING, bankComment, bankRefId })
 
             const notification = await NotificationService.addNotification({
@@ -255,6 +310,17 @@ export default class VendorController {
 
         // Update Transaction
         // TODO: Add request token event to transaction
+        await EventService.addEvent({
+            id: uuidv4(),
+            eventTimestamp: new Date(),
+            status: Status.COMPLETE,
+            eventType: 'REQUEST_TOKEN',
+            eventText: 'Request token',
+            source: 'API',
+            eventData: JSON.stringify({}),
+            transactionId: transactionId,
+        })
+
         await TransactionService.updateSingleTransaction(transactionId, { amount, bankRefId, bankComment, status: Status.COMPLETE })
 
         EmailService.sendEmail({
@@ -264,6 +330,19 @@ export default class VendorController {
                 transaction: transaction,
                 meterNumber: meter?.meterNumber,
                 token: newPowerUnit.token
+            })
+        }).then(async (r) => {
+            await EventService.addEvent({
+                id: uuidv4(),
+                eventTimestamp: new Date(),
+                status: Status.COMPLETE,
+                eventType: 'TOKEN_SENT',
+                eventText: 'Sent token',
+                source: 'API',
+                eventData: JSON.stringify({
+                    userEmail: user.email
+                }),
+                transactionId: transactionId,
             })
         })
 
@@ -320,6 +399,59 @@ export default class VendorController {
             message: 'Disco check successful',
             data: {
                 discAvailable: result
+            }
+        })
+    }
+
+    static async confirmPayment(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        const { bankRefId } = req.body
+
+        const transaction = await TransactionService.viewSingleTransactionByBankRefID(bankRefId)
+        if (!transaction) throw new NotFoundError('Transaction not found')
+
+        const meter = await transaction.$get('meter')
+        if (!meter) throw new InternalServerError('Transaction does not have a meter')
+
+        const partner = await transaction.$get('partner')
+        const entity = await partner?.$get('entity')
+        if (!entity) throw new InternalServerError('Entity not found')
+
+        // Check event for request token
+        const requestTokenEvent = await Event.findOne({
+            where: { transactionId: transaction.id, eventType: 'REQUEST_TOKEN' }
+        })
+
+        if (!requestTokenEvent) {
+            throw new BadRequestError('Request token event not found')
+        }
+
+        await EventService.addEvent({
+            id: uuidv4(),
+            eventTimestamp: new Date(),
+            status: Status.COMPLETE,
+            eventType: 'CONFIRM_PAYMENT',
+            eventText: 'Confirm payment',
+            source: 'API',
+            eventData: JSON.stringify({}),
+            transactionId: transaction.id,
+        })
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Payment confirmed successfully',
+            data: {
+                transaction: {
+                    transactionId: transaction.id,
+                    status: transaction.status,
+                },
+                meter: {
+                    disco: meter.disco,
+                    number: meter.meterNumber,
+                    address: meter.address,
+                    phone: meter.userId,
+                    vendType: meter.vendType,
+                    name: meter.userId,
+                }
             }
         })
     }

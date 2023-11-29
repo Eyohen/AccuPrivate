@@ -52,9 +52,6 @@ export default class Event extends Model<Event | IEvent> {
     // Belongs to a Transaction
     @BelongsTo(() => Transaction)
     transaction: Transaction;
-
-    @HasMany(() => Notification)
-    notifications: Notification[];
 }
 
 // Define an interface representing an event (IEvent) with various properties.
