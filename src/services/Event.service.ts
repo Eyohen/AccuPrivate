@@ -7,12 +7,12 @@ import logger from "../utils/Logger";
 export default class EventService {
 
     // Method for adding a new event to the database
-    async addEvent(event: ICreateEvent): Promise<Event | void> {
+    static async addEvent(event: ICreateEvent): Promise<Event | void> {
         try {
             // Create a new event using the Event model
             // const newEvent: Event = await Event.create(event);
             const newEvent: Event = await Event.build(event);
-            newEvent.save();
+            await newEvent.save();
             return newEvent;
         } catch (err) {
             logger.info('Error Logging Event');
@@ -20,7 +20,7 @@ export default class EventService {
     }
 
     // Method for viewing a single event by its UUID
-    async viewSingleEvent(uuid: string): Promise<Event | void | null> {
+    static async viewSingleEvent(uuid: string): Promise<Event | void | null> {
         try {
             // Find and retrieve an event by its UUID
             const event: Event | null = await Event.findByPk(uuid);
@@ -30,11 +30,13 @@ export default class EventService {
         }
     }
 
-    // async updateSingleEvent(uuid: string , event: IEvent): Promise<Event>{
-
-    // }
-
-    // async viewEvents(): Promise<Array<IEvent>>{
-
-    // }
+    static async viewEventsForTransaction(transactionId: string): Promise<Event[] | void | null> {
+        try {
+            // Find and retrieve an event by its UUID
+            const events: Event[] | null = await Event.findAll({ where: { transactionId } });
+            return events;
+        } catch (err) {
+            logger.info('Error reading Event');
+        }
+    }
 }

@@ -17,6 +17,7 @@ import ResponseTrimmer from '../../utils/ResponseTrimmer'
 import NotificationUtil from "../../utils/Notification";
 import Entity from "../../models/Entity/Entity.model";
 import NotificationService from "../../services/Notification.service";
+import EventService from "../../services/Event.service";
 
 interface valideMeterRequestBody {
     meterNumber: string
@@ -155,6 +156,17 @@ export default class VendorController {
             partnerId: partnerId,
         })
 
+        await EventService.addEvent({
+            id: uuidv4(),
+            eventTimestamp: new Date(),
+            status: Status.PENDING,
+            eventType: 'VALIDATE_METER',
+            eventText: 'Validate meter',
+            source: 'API',
+            eventData: JSON.stringify({}),
+            transactionId: transactionId,
+        })
+
         const meter: Meter = await MeterService.addMeter({
             id: uuidv4(),
             address: response.address,
@@ -211,6 +223,16 @@ export default class VendorController {
         if (tokenInfo instanceof Error) {
             if (tokenInfo.message !== 'Transaction timeout') throw tokenInfo
 
+            await EventService.addEvent({
+                id: uuidv4(),
+                eventTimestamp: new Date(),
+                status: Status.FAILED,
+                eventType: 'REQUEST_TOKEN',
+                eventText: 'Request token',
+                source: 'API',
+                eventData: JSON.stringify({}),
+                transactionId: transactionId,
+            })
             await TransactionService.updateSingleTransaction(transactionId, { status: Status.PENDING, bankComment, bankRefId })
 
             const notification = await NotificationService.addNotification({
@@ -255,6 +277,17 @@ export default class VendorController {
 
         // Update Transaction
         // TODO: Add request token event to transaction
+        await EventService.addEvent({
+            id: uuidv4(),
+            eventTimestamp: new Date(),
+            status: Status.COMPLETE,
+            eventType: 'REQUEST_TOKEN',
+            eventText: 'Request token',
+            source: 'API',
+            eventData: JSON.stringify({}),
+            transactionId: transactionId,
+        })
+
         await TransactionService.updateSingleTransaction(transactionId, { amount, bankRefId, bankComment, status: Status.COMPLETE })
 
         EmailService.sendEmail({

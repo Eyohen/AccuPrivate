@@ -6,7 +6,7 @@ import { Database, initiateDB } from "./models";
 import bodyParser from "body-parser";
 import cors from 'cors';
 import router from "./routes";
-import { BAXI_TOKEN } from "./utils/Constants";
+import { BAXI_TOKEN, NODE_ENV } from "./utils/Constants";
 import morgan from 'morgan'
 import logger from "./utils/Logger";
 import helmet from 'helmet';
@@ -31,6 +31,7 @@ app.get('/healthcheck', async (req: Request, res: Response) => {
 
 app.use('/api/v0', router)
 
+console.log(NODE_ENV)
 app.use(errorHandler)
 app.use((req, res) => {
     res.status(404).json({

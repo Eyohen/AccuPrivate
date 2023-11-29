@@ -3,7 +3,7 @@ import Transaction from "../models/Transaction.model";
 import { ITransaction, ICreateTransaction, IUpdateTransaction } from "../models/Transaction.model";
 import EventService from "./Event.service";
 import { v4 as uuidv4 } from 'uuid';
-import { Status } from '../models/Event.model';
+import Event, { Status } from '../models/Event.model';
 import logger from "../utils/Logger";
 import PowerUnit from "../models/PowerUnit.model";
 import Partner from "../models/Entity/Profiles/PartnerProfile.model";
@@ -39,14 +39,14 @@ export default class TransactionService {
     static async viewTransactionsWithCustomQuery(query: any): Promise<Transaction[]> {
         // Retrieve all transactions from the database
         // Sort from latest 
-        const transactions: Transaction[] = (await Transaction.findAll({ ...query, include: [PowerUnit, Partner, User, Meter] })).sort((a, b) => { return b.transactionTimestamp.getTime() - a.transactionTimestamp.getTime() });
+        const transactions: Transaction[] = (await Transaction.findAll({ ...query, include: [PowerUnit, Event, Partner, User, Meter] })).sort((a, b) => { return b.transactionTimestamp.getTime() - a.transactionTimestamp.getTime() });
         return transactions;
     }
 
     // Static method for viewing a single transaction by UUID
     static async viewSingleTransaction(uuid: string): Promise<Transaction | null> {
         // Retrieve a single transaction by its UUID
-        const transaction: Transaction | null = await Transaction.findByPk(uuid, { include: [PowerUnit, Partner, User, Meter] });
+        const transaction: Transaction | null = await Transaction.findByPk(uuid, { include: [PowerUnit, Event, Partner, User, Meter] });
         return transaction;
     }
 

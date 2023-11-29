@@ -13,6 +13,7 @@ import Meter from "../../models/Meter.model";
 import VendorService from "../../services/Vendor.service";
 import { AuthenticatedRequest } from "../../utils/Interface";
 import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
+import EventService from "../../services/Event.service";
 
 interface getTransactionsRequestBody extends ITransaction {
     page: `${number}`
@@ -111,6 +112,17 @@ export default class TransactionController {
             return
         }
 
+        await EventService.addEvent({
+            id: randomUUID(),
+            transactionId: transactionRecord.id,
+            eventType: 'REQUERY',
+            eventText: 'Requery successful',
+            eventData: response as unknown as JSON,
+            eventTimestamp: new Date(),
+            source: 'BUYPOWERNG',
+            status: Status.COMPLETE
+        })
+        
         await TransactionService.updateSingleTransaction(transactionRecord.id, { status: Status.COMPLETE })
         const user = await transactionRecord.$get('user')
         if (!user) {
