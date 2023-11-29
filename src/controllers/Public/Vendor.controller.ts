@@ -230,7 +230,9 @@ export default class VendorController {
                 eventType: 'REQUEST_TOKEN',
                 eventText: 'Request token',
                 source: 'API',
-                eventData: JSON.stringify({}),
+                eventData: JSON.stringify({
+                    reason: 'TRANSACTION_TIMEOUT'
+                }),
                 transactionId: transactionId,
             })
             await TransactionService.updateSingleTransaction(transactionId, { status: Status.PENDING, bankComment, bankRefId })
