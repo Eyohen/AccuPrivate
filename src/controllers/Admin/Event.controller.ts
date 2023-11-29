@@ -1,13 +1,11 @@
 import { NextFunction, Request, Response } from "express";
 import EventService from "../../services/Event.service";
+import { AuthenticatedRequest } from "../../utils/Interface";
 
 export default class EventController {
 
-    static async getEventInfo(req: Request, res: Response, next: NextFunction) {
-        const {
-           eventId
-        } = req.body
-        
+    static async getEventInfo(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        const { eventId } = req.query as { eventId: string }
 
         const event = await EventService.viewSingleEvent(eventId)
 
@@ -19,10 +17,8 @@ export default class EventController {
         })
     }
 
-    static async getEventsForTransaction(req: Request, res: Response, next: NextFunction) {
-        const {
-            transactionId
-        } = req.body
+    static async getEvents(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        const { transactionId } = req.query as { transactionId: string }
 
         const events = await EventService.viewEventsForTransaction(transactionId)
 

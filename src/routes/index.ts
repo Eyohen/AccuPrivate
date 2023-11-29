@@ -10,6 +10,7 @@ import profileRoute from './Profile.routes'
 import roleRoute from './Role.routes'
 import teamMemberRoute from './TeamMember.routes'
 import notificationRoute from './Notification.routes'
+import eventRoute from './Event.routes'
 
 const router = Router()
 
@@ -25,6 +26,7 @@ router
     .use('/role', roleRoute)
     .use('/team', teamMemberRoute)
     .use('/notification', notificationRoute)
+    .use('/event', eventRoute)
 
 export default router
 

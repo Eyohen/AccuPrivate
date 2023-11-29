@@ -159,7 +159,7 @@ export default class VendorController {
         await EventService.addEvent({
             id: uuidv4(),
             eventTimestamp: new Date(),
-            status: Status.PENDING,
+            status: Status.COMPLETE,
             eventType: 'VALIDATE_METER',
             eventText: 'Validate meter',
             source: 'API',

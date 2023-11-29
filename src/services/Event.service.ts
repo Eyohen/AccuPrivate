@@ -1,6 +1,7 @@
 // Import necessary types and the Event model
 import { ICreateEvent, IEvent } from "../models/Event.model";
 import Event from "../models/Event.model";
+import Transaction from "../models/Transaction.model";
 import logger from "../utils/Logger";
 
 // EventService class for handling event-related operations
@@ -11,7 +12,7 @@ export default class EventService {
         try {
             // Create a new event using the Event model
             // const newEvent: Event = await Event.create(event);
-            const newEvent: Event = await Event.build(event);
+            const newEvent: Event = Event.build(event);
             await newEvent.save();
             return newEvent;
         } catch (err) {
@@ -23,7 +24,7 @@ export default class EventService {
     static async viewSingleEvent(uuid: string): Promise<Event | void | null> {
         try {
             // Find and retrieve an event by its UUID
-            const event: Event | null = await Event.findByPk(uuid);
+            const event: Event | null = await Event.findOne({ where: { id: uuid }, include: [Transaction] });
             return event;
         } catch (err) {
             logger.info('Error reading Event');
@@ -33,7 +34,7 @@ export default class EventService {
     static async viewEventsForTransaction(transactionId: string): Promise<Event[] | void | null> {
         try {
             // Find and retrieve an event by its UUID
-            const events: Event[] | null = await Event.findAll({ where: { transactionId } });
+            const events: Event[] | null = await Event.findAll({ where: { transactionId }, include: [Transaction] });
             return events;
         } catch (err) {
             logger.info('Error reading Event');
