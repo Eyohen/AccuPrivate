@@ -167,6 +167,34 @@ export default class VendorController {
             transactionId: transactionId,
         })
 
+
+        // Check if disco is up, and add event for it
+        const discoUp = superagent === 'BUYPOWERNG'
+            ? await VendorService.buyPowerCheckDiscoUp(disco).catch(e => e)
+            : await VendorService.baxiCheckDiscoUp(disco).catch(e => e)
+
+        discoUp instanceof Error
+            ? await EventService.addEvent({
+                id: uuidv4(),
+                eventTimestamp: new Date(),
+                status: Status.FAILED,
+                eventType: 'DISCO_UP',
+                eventText: 'Disco up',
+                source: 'API',
+                eventData: JSON.stringify({ disco }),
+                transactionId: transactionId,
+            })
+            : await EventService.addEvent({
+                id: uuidv4(),
+                eventTimestamp: new Date(),
+                status: Status.COMPLETE,
+                eventType: 'DISCO_UP',
+                eventText: 'Disco up',
+                source: 'API',
+                eventData: JSON.stringify({ disco }),
+                transactionId: transactionId,
+            })
+
         const meter: Meter = await MeterService.addMeter({
             id: uuidv4(),
             address: response.address,
