@@ -10,7 +10,7 @@ import VendorService from "../../services/Vendor.service";
 import PowerUnit from "../../models/PowerUnit.model";
 import PowerUnitService from "../../services/PowerUnit.service";
 import { DEFAULT_ELECTRICITY_PROVIDER, DISCO_LOGO, NODE_ENV } from "../../utils/Constants";
-import { BadRequestError, GateWayTimeoutError, InternalServerError } from "../../utils/Errors";
+import { BadRequestError, GateWayTimeoutError, InternalServerError, NotFoundError } from "../../utils/Errors";
 import { generateRandomToken } from "../../utils/Helper";
 import EmailService, { EmailTemplate } from "../../utils/Email";
 import ResponseTrimmer from '../../utils/ResponseTrimmer'
@@ -20,6 +20,7 @@ import NotificationService from "../../services/Notification.service";
 import EventService from "../../services/Event.service";
 import { AuthenticatedRequest } from "../../utils/Interface";
 import { DataType, DataTypes, JSONB } from "sequelize";
+import Event from "../../models/Event.model";
 
 interface valideMeterRequestBody {
     meterNumber: string
@@ -403,6 +404,55 @@ export default class VendorController {
     }
 
     static async confirmPayment(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        const { bankRefId } = req.body
 
+        const transaction = await TransactionService.viewSingleTransactionByBankRefID(bankRefId)
+        if (!transaction) throw new NotFoundError('Transaction not found')
+
+        const meter = await transaction.$get('meter')
+        if (!meter) throw new InternalServerError('Transaction does not have a meter')
+
+        const partner = await transaction.$get('partner')
+        const entity = await partner?.$get('entity')
+        if (!entity) throw new InternalServerError('Entity not found')
+
+        // Check event for request token
+        const requestTokenEvent = await Event.findOne({
+            where: { transactionId: transaction.id, eventType: 'REQUEST_TOKEN' }
+        })
+
+        if (!requestTokenEvent) {
+            throw new BadRequestError('Request token event not found')
+        }
+
+        await EventService.addEvent({
+            id: uuidv4(),
+            eventTimestamp: new Date(),
+            status: Status.COMPLETE,
+            eventType: 'CONFIRM_PAYMENT',
+            eventText: 'Confirm payment',
+            source: 'API',
+            eventData: JSON.stringify({}),
+            transactionId: transaction.id,
+        })
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Payment confirmed successfully',
+            data: {
+                transaction: {
+                    transactionId: transaction.id,
+                    status: transaction.status,
+                },
+                meter: {
+                    disco: meter.disco,
+                    number: meter.meterNumber,
+                    address: meter.address,
+                    phone: meter.userId,
+                    vendType: meter.vendType,
+                    name: meter.userId,
+                }
+            }
+        })
     }
 }
