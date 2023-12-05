@@ -1,7 +1,7 @@
 import { Message, ProducerBatch, TopicMessages } from 'kafkajs'
-import Kafka from './config'
-import logger from '../utils/Logger'
-import { TOPICS } from './Constants'
+import Kafka from '../config'
+import logger from '../../utils/Logger'
+import { TOPICS } from '../Constants'
 
 interface CustomMessageFormat { a: string }
 

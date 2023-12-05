@@ -1,20 +1,23 @@
-import { Consumer, ConsumerSubscribeTopics, EachBatchPayload, Kafka, EachMessagePayload } from 'kafkajs'
-import { TOPICS } from './Constants'
-import logger from '../utils/Logger'
+import { Consumer, ConsumerSubscribeTopics } from 'kafkajs'
+import { TOPICS } from '../Constants'
+import logger from '../../utils/Logger'
 import MessageProcessorFactory from './MessageProcessor'
+import Kafka from '../config'
 
 export default class ConsumerFactory {
     private kafkaConsumer: Consumer
     private messageProcessor: MessageProcessorFactory
+    private topics: string[]
 
-    public constructor(messageProcessor: MessageProcessorFactory) {
+    public constructor(messageProcessor: MessageProcessorFactory, topics: string[]) {
         this.messageProcessor = messageProcessor
+        this.topics = topics
         this.kafkaConsumer = this.createKafkaConsumer()
     }
 
     public async startConsumer(): Promise<void> {
         const topic: ConsumerSubscribeTopics = {
-            topics: ['example-topic'],
+            topics: this.topics,
             fromBeginning: false
         }
 
@@ -26,7 +29,7 @@ export default class ConsumerFactory {
                 eachMessage: this.messageProcessor.processEachMessage
             })
         } catch (error) {
-            logger.info(error)
+            console.error(error)
         }
     }
 
@@ -52,11 +55,7 @@ export default class ConsumerFactory {
     }
 
     private createKafkaConsumer(): Consumer {
-        const kafka = new Kafka({
-            clientId: 'client-id',
-            brokers: ['example.kafka.broker:9092']
-        })
-        const consumer = kafka.consumer({ groupId: 'consumer-group' })
+        const consumer = Kafka.consumer({ groupId: 'consumer-group' })
         return consumer
     }
 }

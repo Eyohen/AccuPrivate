@@ -1,7 +1,7 @@
-import MessageProcessorFactory from "../../MessageProcessor";
+import MessageProcessorFactory from "../../util/MessageProcessor";
 
 export default class MessageProcessor extends MessageProcessorFactory {
-    constructor () {
+    constructor() {
         super()
     }
 }   
