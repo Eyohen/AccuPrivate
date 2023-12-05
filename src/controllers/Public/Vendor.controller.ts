@@ -127,6 +127,21 @@ export default class VendorController {
         const transactionId = uuidv4()
         const partnerId = (req as any).key
 
+        await EventService.addEvent({
+            id: uuidv4(),
+            eventTimestamp: new Date(),
+            status: Status.COMPLETE,
+            eventType: 'METER_VALIDATION_REQUESTED',
+            eventText: 'Meter validation requested',
+            source: 'API',
+            eventData: JSON.stringify({
+                meterNumber,
+                disco,
+                vendType
+            }),
+            transactionId: transactionId,
+        })
+
         // We Check for Meter User *
         const response = superagent != 'BUYPOWERNG'
             ? await VendorService.buyPowerValidateMeter({
@@ -138,13 +153,67 @@ export default class VendorController {
             : await VendorService.baxiValidateMeter(disco, meterNumber, vendType)
                 .catch(e => { throw new BadRequestError('Meter validation failed') })
 
+        await EventService.addEvent({
+            id: uuidv4(),
+            eventTimestamp: new Date(),
+            status: Status.COMPLETE,
+            eventType: 'METER_VALIDATION_RECIEVED',
+            eventText: 'Meter Validation received',
+            source: superagent.toUpperCase(),
+            eventData: JSON.stringify({
+                meterNumber,
+                user: {
+                    name: response.name,
+                    address: response.address,
+                    email: email,
+                    phoneNumber: phoneNumber,
+                },
+                disco,
+                vendType
+            }),
+            transactionId: transactionId,
+        })
+
+        const userId = uuidv4()
+        await EventService.addEvent({
+            id: uuidv4(),
+            eventTimestamp: new Date(),
+            status: Status.COMPLETE,
+            eventType: 'CRM_USER_INITIATED',
+            eventText: 'CRM User initiated',
+            source: 'API',
+            eventData: JSON.stringify({
+                user: {
+                    id: userId,
+                    name: response.name,
+                    address: response.address,
+                    email: email,
+                    phoneNumber: phoneNumber,
+                },
+            }),
+            transactionId: transactionId,
+        })
+
         // Add User
         const user: User = await UserService.addUser({
-            id: uuidv4(),
+            id: userId,
             address: response.address,
             email: email,
             name: response.name,
             phoneNumber: phoneNumber,
+        })
+
+        await EventService.addEvent({
+            id: uuidv4(),
+            eventTimestamp: new Date(),
+            status: Status.COMPLETE,
+            eventType: 'CRM_USER_CONFIRMED',
+            eventText: 'CRM user confirmed',
+            source: 'API',
+            eventData: JSON.stringify({
+                user: user.dataValues,
+            }),
+            transactionId: transactionId,
         })
 
         const transaction: Transaction = await TransactionService.addTransaction({
@@ -158,18 +227,6 @@ export default class VendorController {
             userId: user.id,
             partnerId: partnerId,
         })
-
-        await EventService.addEvent({
-            id: uuidv4(),
-            eventTimestamp: new Date(),
-            status: Status.COMPLETE,
-            eventType: 'VALIDATE_METER',
-            eventText: 'Validate meter',
-            source: 'API',
-            eventData: JSON.stringify({}),
-            transactionId: transactionId,
-        })
-
 
         // Check if disco is up, and add event for it
         const discoUp = superagent === 'BUYPOWERNG'
@@ -229,6 +286,22 @@ export default class VendorController {
                 }
             }
         })
+
+        await EventService.addEvent({
+            id: uuidv4(),
+            eventTimestamp: new Date(),
+            status: Status.COMPLETE,
+            eventType: 'METER_VALIDATION_SENT',
+            eventText: 'Meter Validation sent',
+            source: 'API',
+            eventData: JSON.stringify({
+                meterNumber,
+                meterId: meter.id,
+                disco,
+                vendType
+            }),
+            transactionId: transactionId,
+        })
     }
 
     static async requestToken(req: Request, res: Response, next: NextFunction) {
@@ -239,10 +312,44 @@ export default class VendorController {
             amount,
             vendType
         } = req.query as Record<string, any>
-
+        
+        await EventService.addEvent({
+            id: uuidv4(),
+            eventTimestamp: new Date(),
+            status: Status.FAILED,
+            eventType: 'POWER_PURCHASE_INITIATED',
+            eventText: 'Initiated power puchase',
+            source: 'PARTNER',
+            eventData: JSON.stringify({
+                bankRefId,
+                amount,
+                transactionId,
+                vendType
+            }),
+            transactionId: transactionId,
+        })
         const { user, partnerEntity, transaction, meter } = await VendorControllerValdator.requestToken({ bankRefId, transactionId })
-
+        
         // Initiate Purchase for token
+        await EventService.addEvent({
+            id: uuidv4(),
+            eventTimestamp: new Date(),
+            status: Status.FAILED,
+            eventType: 'TOKEN_REQUESTED',
+            eventText: 'Request token from vendor',
+            source: 'API',
+            eventData: JSON.stringify({
+                superAgent: transaction.superagent,
+                bankRefId,
+                disco: transaction.disco,
+                amount,
+                transactionId,
+                phoneNumber: user.phoneNumber,
+                vendType
+            }),
+            transactionId: transactionId,
+        })
+
         const tokenInfo = await VendorService.buyPowerVendToken({
             transactionId,
             meterNumber: meter.meterNumber,
@@ -291,6 +398,24 @@ export default class VendorController {
             throw new GateWayTimeoutError('Transaction timeout')
         }
 
+        await EventService.addEvent({
+            id: uuidv4(),
+            eventTimestamp: new Date(),
+            status: Status.FAILED,
+            eventType: 'TOKEN_RECEIVED',
+            eventText: 'Token received from vendor',
+            source: 'API',
+            eventData: JSON.stringify({
+                superAgent: transaction.superagent,
+                bankRefId,
+                disco: transaction.disco,
+                amount,
+                transactionId,
+                phoneNumber: user.phoneNumber,
+                vendType
+            }),
+            transactionId: transactionId,
+        })
         const discoLogo = DISCO_LOGO[transaction.disco.toLowerCase() as keyof typeof DISCO_LOGO]
 
         // Add Power Unit to store token 
@@ -310,16 +435,7 @@ export default class VendorController {
 
         // Update Transaction
         // TODO: Add request token event to transaction
-        await EventService.addEvent({
-            id: uuidv4(),
-            eventTimestamp: new Date(),
-            status: Status.COMPLETE,
-            eventType: 'REQUEST_TOKEN',
-            eventText: 'Request token',
-            source: 'API',
-            eventData: JSON.stringify({}),
-            transactionId: transactionId,
-        })
+    
 
         await TransactionService.updateSingleTransaction(transactionId, { amount, bankRefId, bankComment, status: Status.COMPLETE })
 
@@ -335,12 +451,12 @@ export default class VendorController {
             await EventService.addEvent({
                 id: uuidv4(),
                 eventTimestamp: new Date(),
-                status: Status.COMPLETE,
-                eventType: 'TOKEN_SENT',
-                eventText: 'Sent token',
+                status: Status.FAILED,
+                eventType: 'TOKEN_SENT_TO_EMAIL',
+                eventText: 'Token sent to email',
                 source: 'API',
                 eventData: JSON.stringify({
-                    userEmail: user.email
+                    userEmail: user.email,
                 }),
                 transactionId: transactionId,
             })
@@ -352,6 +468,22 @@ export default class VendorController {
             data: {
                 newPowerUnit: ResponseTrimmer.trimPowerUnit(newPowerUnit)
             }
+        })
+
+        await EventService.addEvent({
+            id: uuidv4(),
+            eventTimestamp: new Date(),
+            status: Status.FAILED,
+            eventType: 'TOKEN_SENT_TO_PARTNER',
+            eventText: 'Token sent to partner',
+            source: 'API',
+            eventData: JSON.stringify({
+                partner: {
+                    email: partnerEntity.email,
+                    id: partnerEntity.id,
+                }
+            }),
+            transactionId: transactionId,
         })
     }
 
@@ -418,7 +550,7 @@ export default class VendorController {
 
         // Check event for request token
         const requestTokenEvent = await Event.findOne({
-            where: { transactionId: transaction.id, eventType: 'REQUEST_TOKEN' }
+            where: { transactionId: transaction.id, eventType: 'TOKEN_REQUESTED' }
         })
 
         if (!requestTokenEvent) {
@@ -429,8 +561,8 @@ export default class VendorController {
             id: uuidv4(),
             eventTimestamp: new Date(),
             status: Status.COMPLETE,
-            eventType: 'CONFIRM_PAYMENT',
-            eventText: 'Confirm payment',
+            eventType: 'PARTNER_TRANSACTION_COMPLETE',
+            eventText: 'Partner transaction complete',
             source: 'API',
             eventData: JSON.stringify({}),
             transactionId: transaction.id,
