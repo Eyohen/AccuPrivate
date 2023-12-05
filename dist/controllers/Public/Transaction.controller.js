@@ -47,6 +47,7 @@ const crypto_1 = require("crypto");
 const Vendor_service_1 = __importDefault(require("../../services/Vendor.service"));
 const PartnerProfile_service_1 = __importDefault(require("../../services/Entity/Profiles/PartnerProfile.service"));
 const Event_service_1 = __importDefault(require("../../services/Event.service"));
+const Role_model_1 = require("../../models/Role.model");
 class TransactionController {
     static getTransactionInfo(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -67,7 +68,7 @@ class TransactionController {
     }
     static getTransactions(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { page, limit, status, startDate, endDate, userId, disco, superagent } = req.query;
+            const { page, limit, status, startDate, endDate, userId, disco, superagent, partnerId } = req.query;
             const query = { where: {} };
             if (status)
                 query.where.status = status;
@@ -84,7 +85,12 @@ class TransactionController {
             if (page && page != '0' && limit) {
                 query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit);
             }
-            query.where.partnerId = req.user.user.profile.id;
+            if (partnerId)
+                query.where.partnerId = partnerId;
+            const requestWasMadeByAnAdmin = [Role_model_1.RoleEnum.Admin].includes(req.user.user.entity.role);
+            if (!requestWasMadeByAnAdmin) {
+                query.where.partnerId = req.user.user.profile.id;
+            }
             const transactions = yield Transaction_service_1.default.viewTransactionsWithCustomQuery(query);
             if (!transactions) {
                 throw new Errors_1.NotFoundError('Transactions not found');
