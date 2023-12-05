@@ -1,13 +1,13 @@
 import { Consumer, ConsumerSubscribeTopics, EachBatchPayload, Kafka, EachMessagePayload } from 'kafkajs'
 import { TOPICS } from './Constants'
 import logger from '../utils/Logger'
-import MessageProcessor from './MessageProcessor'
+import MessageProcessorFactory from './MessageProcessor'
 
 export default class ConsumerFactory {
     private kafkaConsumer: Consumer
-    private messageProcessor: MessageProcessor
+    private messageProcessor: MessageProcessorFactory
 
-    public constructor(messageProcessor: MessageProcessor) {
+    public constructor(messageProcessor: MessageProcessorFactory) {
         this.messageProcessor = messageProcessor
         this.kafkaConsumer = this.createKafkaConsumer()
     }

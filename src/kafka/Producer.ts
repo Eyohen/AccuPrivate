@@ -6,7 +6,7 @@ import { TOPICS } from './Constants'
 interface CustomMessageFormat { a: string }
 
 export default class ProducerFactory {
-    private static producer = Kafka.producer()
+    protected static producer = Kafka.producer()
 
     static async start(): Promise<void> {
         try {
@@ -39,4 +39,3 @@ export default class ProducerFactory {
         await this.producer.sendBatch(batch)
     }
 }
-// 
