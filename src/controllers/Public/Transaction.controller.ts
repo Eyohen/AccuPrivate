@@ -14,6 +14,7 @@ import VendorService from "../../services/Vendor.service";
 import { AuthenticatedRequest } from "../../utils/Interface";
 import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
 import EventService from "../../services/Event.service";
+import { RoleEnum } from "../../models/Role.model";
 
 interface getTransactionsRequestBody extends ITransaction {
     page: `${number}`
@@ -50,7 +51,7 @@ export default class TransactionController {
     static async getTransactions(req: AuthenticatedRequest, res: Response) {
         const {
             page, limit, status, startDate, endDate,
-            userId, disco, superagent
+            userId, disco, superagent, partnerId
         } = req.query as any as getTransactionsRequestBody
 
         const query = { where: {} } as IQueryTransaction
@@ -64,7 +65,12 @@ export default class TransactionController {
         if (page && page != '0' && limit) {
             query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit)
         }
-        query.where.partnerId = req.user.user.profile.id
+        if (partnerId) query.where.partnerId = partnerId
+        
+        const requestWasMadeByAnAdmin = [RoleEnum.Admin].includes(req.user.user.entity.role)
+        if (!requestWasMadeByAnAdmin) {
+            query.where.partnerId = req.user.user.profile.id
+        }
 
         const transactions: Transaction[] = await TransactionService.viewTransactionsWithCustomQuery(query)
         if (!transactions) {
