@@ -21,6 +21,7 @@ import EventService from "../../services/Event.service";
 import { AuthenticatedRequest } from "../../utils/Interface";
 import { DataType, DataTypes, JSONB } from "sequelize";
 import Event from "../../models/Event.model";
+import TransactionModule from "../../kafka/modules/transaction";
 
 interface valideMeterRequestBody {
     meterNumber: string
@@ -127,6 +128,17 @@ export default class VendorController {
         const transactionId = uuidv4()
         const partnerId = (req as any).key
 
+        const transaction: Transaction = await TransactionService.addTransactionWithoutValidatingUserRelationship({
+            id: transactionId,
+            amount: '0',
+            status: Status.PENDING,
+            superagent: superagent,
+            paymentType: PaymentType.PAYMENT,
+            transactionTimestamp: new Date(),
+            disco: disco,
+            partnerId: partnerId,
+        })
+
         await EventService.addEvent({
             id: uuidv4(),
             eventTimestamp: new Date(),
@@ -149,7 +161,9 @@ export default class VendorController {
                 meterNumber,
                 disco,
                 vendType
-            }).catch(e => { throw new BadRequestError('Meter validation failed') })
+            }).catch(e => {
+                throw new BadRequestError('Meter validation failed')
+            })
             : await VendorService.baxiValidateMeter(disco, meterNumber, vendType)
                 .catch(e => { throw new BadRequestError('Meter validation failed') })
 
@@ -195,13 +209,18 @@ export default class VendorController {
         })
 
         // Add User
-        const user: User = await UserService.addUser({
+        let user = await User.findOne({ where: { phoneNumber, email } })
+        user = user ?? await UserService.addUser({
             id: userId,
             address: response.address,
             email: email,
             name: response.name,
             phoneNumber: phoneNumber,
         })
+
+        await transaction.update({ userId: user.id })
+
+        await TransactionModule.producer.sendTransaction(transaction.dataValues)
 
         await EventService.addEvent({
             id: uuidv4(),
@@ -214,18 +233,6 @@ export default class VendorController {
                 user: user.dataValues,
             }),
             transactionId: transactionId,
-        })
-
-        const transaction: Transaction = await TransactionService.addTransaction({
-            id: transactionId,
-            amount: '0',
-            status: Status.PENDING,
-            superagent: superagent,
-            paymentType: PaymentType.PAYMENT,
-            transactionTimestamp: new Date(),
-            disco: disco,
-            userId: user.id,
-            partnerId: partnerId,
         })
 
         // Check if disco is up, and add event for it
@@ -312,7 +319,7 @@ export default class VendorController {
             amount,
             vendType
         } = req.query as Record<string, any>
-        
+
         await EventService.addEvent({
             id: uuidv4(),
             eventTimestamp: new Date(),
@@ -329,7 +336,7 @@ export default class VendorController {
             transactionId: transactionId,
         })
         const { user, partnerEntity, transaction, meter } = await VendorControllerValdator.requestToken({ bankRefId, transactionId })
-        
+
         // Initiate Purchase for token
         await EventService.addEvent({
             id: uuidv4(),
@@ -418,6 +425,7 @@ export default class VendorController {
         })
         const discoLogo = DISCO_LOGO[transaction.disco.toLowerCase() as keyof typeof DISCO_LOGO]
 
+
         // Add Power Unit to store token 
         const newPowerUnit: PowerUnit = await PowerUnitService.addPowerUnit({
             id: uuidv4(),
@@ -435,7 +443,7 @@ export default class VendorController {
 
         // Update Transaction
         // TODO: Add request token event to transaction
-    
+
 
         await TransactionService.updateSingleTransaction(transactionId, { amount, bankRefId, bankComment, status: Status.COMPLETE })
 

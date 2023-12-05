@@ -123,7 +123,7 @@ export default class TransactionController {
             transactionId: transactionRecord.id,
             eventType: 'REQUERY',
             eventText: 'Requery successful',
-            eventData: response as unknown as JSON,
+            eventData: JSON.stringify(response) ,
             eventTimestamp: new Date(),
             source: 'BUYPOWERNG',
             status: Status.COMPLETE
