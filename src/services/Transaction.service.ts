@@ -16,6 +16,11 @@ export default class TransactionService {
     // Create an instance of EventService for handling events
     private static eventService: EventService = new EventService();
 
+    static addTransactionWithoutValidatingUserRelationship(transaction: Omit<ICreateTransaction, 'userId'>): Promise<Transaction> {
+        const transactionData = Transaction.build(transaction as Transaction)
+        return transactionData.save({ validate: false })
+    }
+
     // Static method for adding a new transaction
     static async addTransaction(transaction: ICreateTransaction): Promise<Transaction> {
         // Build a new transaction object

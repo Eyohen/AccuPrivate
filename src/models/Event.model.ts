@@ -40,8 +40,8 @@ export default class Event extends Model<Event | IEvent> {
     source: string;
 
     // Data associated with the event (can be a string or JSON)
-    @Column({ type: DataType.STRING || DataType.JSON, allowNull: false })
-    eventData: string | JSON;
+    @Column({ type: DataType.TEXT, allowNull: false })
+    eventData: string;
 
     // Foreign key for the associated Transaction
     @ForeignKey(() => Transaction)
@@ -62,8 +62,8 @@ export interface IEvent {
     eventType: string; // Type of the event
     eventText: string; // Text associated with the event
     source: string; // Source of the event
-    eventData: string | JSON; // Data associated with the event (can be a string or JSON)
-    transactionId: string; // Identifier for the associated transaction
+    eventData: string; // Data associated with the event (can be a string or JSON)
+    transactionId?: string; // Identifier for the associated transaction
 }
 
 // Define an interface (ICreateEvent) that extends IEvent, typically used for creating new events.

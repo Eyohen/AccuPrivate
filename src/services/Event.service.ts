@@ -8,7 +8,7 @@ import logger from "../utils/Logger";
 export default class EventService {
 
     // Method for adding a new event to the database
-    static async addEvent(event: ICreateEvent): Promise<Event | void> {
+    static async addEvent(event: ICreateEvent): Promise<Event> {
         try {
             // Create a new event using the Event model
             // const newEvent: Event = await Event.create(event);
@@ -16,7 +16,9 @@ export default class EventService {
             await newEvent.save();
             return newEvent;
         } catch (err) {
+            console.error(err)
             logger.info('Error Logging Event');
+            throw err;
         }
     }
 
