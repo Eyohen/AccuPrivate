@@ -32,7 +32,6 @@ import NotificationService from "../../services/Notification.service";
 import EventService from "../../services/Event.service";
 import { AuthenticatedRequest } from "../../utils/Interface";
 import Event from "../../models/Event.model";
-import TransactionModule from "../../kafka/modules/transaction";
 
 interface valideMeterRequestBody {
     meterNumber: string;
@@ -159,8 +158,7 @@ export default class VendorController {
             });
 
         const transactionEventService = new EventService.transactionEventService(
-            transaction,
-            { meterNumber, disco, vendType, superagent, transactionId, partnerId }
+            transaction, { meterNumber, disco, vendType }
         );
 
         await transactionEventService.addMeterValidationRequestedEvent();
@@ -208,9 +206,6 @@ export default class VendorController {
 
         await transaction.update({ userId: user.id });
         await transactionEventService.addCRMUserConfirmedEvent({ user: userInfo });
-
-        // Send Transaction to Kafka
-        await TransactionModule.producer.sendTransaction(transaction.dataValues);
 
         // Check if disco is up
         const discoUp =

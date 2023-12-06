@@ -1,7 +1,7 @@
 import { ConsumerSubscribeTopics } from "kafkajs";
 import { TOPICS } from "../../Constants";
 
-export type Topic = keyof typeof TOPICS
+export type Topic = TOPICS
 
 export interface CustomMessageFormat {
     topic: Topic;
@@ -12,6 +12,8 @@ export interface CustomMessageFormat {
     headers: any;
 }
 
-export type MessageHandler = Record<Topic, (messageData: CustomMessageFormat) => Promise<void>>
+export type MessageHandler = {
+    [K in TOPICS]?: (messageData: CustomMessageFormat) => Promise<void>
+}
 
 export type KafkaTopics = Omit<ConsumerSubscribeTopics, 'topics'> & { topics: Topic[] } 

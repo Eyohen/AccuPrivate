@@ -1,4 +1,5 @@
 import { TOPICS } from "../kafka/Constants";
+import ProducerFactory from "../kafka/modules/util/Producer";
 import Event, { ICreateEvent, Status } from "../models/Event.model";
 import Transaction from "../models/Transaction.model";
 import EventService from "./Event.service";
@@ -43,7 +44,17 @@ export default class TransactionEventService {
             status: Status.COMPLETE,
         }
 
-        return EventService.addEvent(event);
+        const _event = EventService.addEvent(event);
+        await ProducerFactory.sendMessage(TOPICS.METER_VALIDATION_REQUESTED, {
+            meter: {
+                meterNumber: this.meterInfo.meterNumber,
+                disco: this.meterInfo.disco,
+                vendType: this.meterInfo.vendType,
+            },
+            transactionId: this.transaction.id
+        })
+
+        return _event
     }
 
     public async addMeterValidationResponseEvent(userInfo: IMeterValidationReceivedEventParams): Promise<Event> {

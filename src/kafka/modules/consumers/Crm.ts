@@ -7,7 +7,7 @@ export default class CrmConsumer extends ConsumerFactory {
     constructor() {
         const messageProcessor = new MessageProcessor()
 
-        const topics: Topic[] = [TOPICS.TOKEN_REQUESTED, TOPICS.TOKEN_RECEIVED]
+        const topics: Topic[] = [TOPICS.METER_VALIDATION_REQUESTED, TOPICS.TOKEN_RECEIVED]
         super(messageProcessor, topics)
     }
 }
