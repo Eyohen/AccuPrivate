@@ -232,42 +232,17 @@ export default class VendorController {
             vendType
         } = req.query as Record<string, any>
 
-        await EventService.addEvent({
-            id: uuidv4(),
-            eventTimestamp: new Date(),
-            status: Status.FAILED,
-            eventType: 'POWER_PURCHASE_INITIATED',
-            eventText: 'Initiated power puchase',
-            source: 'PARTNER',
-            eventData: JSON.stringify({
-                bankRefId,
-                amount,
-                transactionId,
-                vendType
-            }),
-            transactionId: transactionId,
-        })
-        const { user, partnerEntity, transaction, meter } = await VendorControllerValdator.requestToken({ bankRefId, transactionId })
+        const transaction: Transaction | null = await TransactionService.viewSingleTransaction(transactionId)
+        if (!transaction) {
+            throw new NotFoundError('Transaction not found')
+        }
 
-        // Initiate Purchase for token
-        await EventService.addEvent({
-            id: uuidv4(),
-            eventTimestamp: new Date(),
-            status: Status.FAILED,
-            eventType: 'TOKEN_REQUESTED',
-            eventText: 'Request token from vendor',
-            source: 'API',
-            eventData: JSON.stringify({
-                superAgent: transaction.superagent,
-                bankRefId,
-                disco: transaction.disco,
-                amount,
-                transactionId,
-                phoneNumber: user.phoneNumber,
-                vendType
-            }),
-            transactionId: transactionId,
-        })
+        const transactionEventService = new EventService.transactionEventService(transaction, { meterNumber: transaction.meter?.meterNumber, disco: transaction.disco, vendType })
+        await transactionEventService.addPowerPurchaseInitiatedEvent(bankRefId, amount)
+
+        const { user, partnerEntity, meter } = await VendorControllerValdator.requestToken({ bankRefId, transactionId })
+
+        await transactionEventService.addTokenRequestedEvent(bankRefId)
 
         const tokenInfo = await VendorService.buyPowerVendToken({
             transactionId,
@@ -280,18 +255,6 @@ export default class VendorController {
         if (tokenInfo instanceof Error) {
             if (tokenInfo.message !== 'Transaction timeout') throw tokenInfo
 
-            await EventService.addEvent({
-                id: uuidv4(),
-                eventTimestamp: new Date(),
-                status: Status.FAILED,
-                eventType: 'REQUEST_TOKEN',
-                eventText: 'Request token',
-                source: 'API',
-                eventData: JSON.stringify({
-                    reason: 'TRANSACTION_TIMEOUT'
-                }),
-                transactionId: transactionId,
-            })
             await TransactionService.updateSingleTransaction(transactionId, { status: Status.PENDING, bankComment, amount, bankRefId })
 
             const notification = await NotificationService.addNotification({
@@ -317,26 +280,8 @@ export default class VendorController {
             throw new GateWayTimeoutError('Transaction timeout')
         }
 
-        await EventService.addEvent({
-            id: uuidv4(),
-            eventTimestamp: new Date(),
-            status: Status.FAILED,
-            eventType: 'TOKEN_RECEIVED',
-            eventText: 'Token received from vendor',
-            source: 'API',
-            eventData: JSON.stringify({
-                superAgent: transaction.superagent,
-                bankRefId,
-                disco: transaction.disco,
-                amount,
-                transactionId,
-                phoneNumber: user.phoneNumber,
-                vendType
-            }),
-            transactionId: transactionId,
-        })
+        await transactionEventService.addTokenReceivedEvent(tokenInfo.token)
         const discoLogo = DISCO_LOGO[transaction.disco.toLowerCase() as keyof typeof DISCO_LOGO]
-
 
         // Add Power Unit to store token 
         const newPowerUnit: PowerUnit = await PowerUnitService.addPowerUnit({
@@ -353,10 +298,6 @@ export default class VendorController {
             tokenUnits: tokenInfo.units
         })
 
-        // Update Transaction
-        // TODO: Add request token event to transaction
-
-
         await TransactionService.updateSingleTransaction(transactionId, { amount, bankRefId, bankComment, status: Status.COMPLETE })
 
         EmailService.sendEmail({
@@ -367,20 +308,7 @@ export default class VendorController {
                 meterNumber: meter?.meterNumber,
                 token: newPowerUnit.token
             })
-        }).then(async (r) => {
-            await EventService.addEvent({
-                id: uuidv4(),
-                eventTimestamp: new Date(),
-                status: Status.FAILED,
-                eventType: 'TOKEN_SENT_TO_EMAIL',
-                eventText: 'Token sent to email',
-                source: 'API',
-                eventData: JSON.stringify({
-                    userEmail: user.email,
-                }),
-                transactionId: transactionId,
-            })
-        })
+        }).then(async () => await transactionEventService.addTokenSentToUserEmailEvent())
 
         res.status(200).json({
             status: 'success',
@@ -390,21 +318,7 @@ export default class VendorController {
             }
         })
 
-        await EventService.addEvent({
-            id: uuidv4(),
-            eventTimestamp: new Date(),
-            status: Status.FAILED,
-            eventType: 'TOKEN_SENT_TO_PARTNER',
-            eventText: 'Token sent to partner',
-            source: 'API',
-            eventData: JSON.stringify({
-                partner: {
-                    email: partnerEntity.email,
-                    id: partnerEntity.id,
-                }
-            }),
-            transactionId: transactionId,
-        })
+        await transactionEventService.addTokenSentToPartnerEvent()
     }
 
     static async getDiscos(req: Request, res: Response) {
