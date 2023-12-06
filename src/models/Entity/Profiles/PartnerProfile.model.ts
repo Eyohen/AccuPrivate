@@ -43,13 +43,14 @@ export default class PartnerProfile extends Model<PartnerProfile | IPartnerProfi
 export interface IPartnerProfile {
     id: string;              // Unique identifier for the Partner
     email: string;   // Phone number for contacting the Partner
-    key: string;
-    sec: string;
+    key?: string;
+    sec?: string;
+    
 }
 
 export interface IPartnerProfileAssociations extends IPartnerProfile {
     transactions: Transaction[];
-    entity: Entity;
+    entity?: Entity;
 }
 
 // Interface representing the structure for creating a new Partner (inherits from IPartner)
