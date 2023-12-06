@@ -279,13 +279,9 @@ export default class VendorController {
                 vendType,
             }
         );
-        await transactionEventService.addPowerPurchaseInitiatedEvent(
-            bankRefId,
-            amount
-        );
+        await transactionEventService.addPowerPurchaseInitiatedEvent(bankRefId, amount);
 
-        const { user, partnerEntity, meter } =
-            await VendorControllerValdator.requestToken({ bankRefId, transactionId });
+        const { user, partnerEntity, meter } = await VendorControllerValdator.requestToken({ bankRefId, transactionId });
 
         await transactionEventService.addTokenRequestedEvent(bankRefId);
 
@@ -334,8 +330,7 @@ export default class VendorController {
         }
 
         await transactionEventService.addTokenReceivedEvent(tokenInfo.token);
-        const discoLogo =
-            DISCO_LOGO[transaction.disco.toLowerCase() as keyof typeof DISCO_LOGO];
+        const discoLogo = DISCO_LOGO[transaction.disco.toLowerCase() as keyof typeof DISCO_LOGO];
 
         // Add Power Unit to store token
         const newPowerUnit: PowerUnit = await PowerUnitService.addPowerUnit({
@@ -347,10 +342,9 @@ export default class VendorController {
             meterId: meter.id,
             superagent: transaction.superagent,
             address: meter.address,
-            token:
-                NODE_ENV === "development"
-                    ? generateRandomToken()
-                    : tokenInfo.data.token,
+            token: NODE_ENV === "development"
+                ? generateRandomToken()
+                : tokenInfo.data.token,
             tokenNumber: tokenInfo.token,
             tokenUnits: tokenInfo.units,
         });
@@ -370,9 +364,7 @@ export default class VendorController {
                 meterNumber: meter?.meterNumber,
                 token: newPowerUnit.token,
             }),
-        }).then(
-            async () => await transactionEventService.addTokenSentToUserEmailEvent()
-        );
+        }).then(async () => await transactionEventService.addTokenSentToUserEmailEvent());
 
         res.status(200).json({
             status: "success",
