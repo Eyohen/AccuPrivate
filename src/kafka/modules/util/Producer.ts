@@ -21,7 +21,7 @@ export default class ProducerFactory {
         await this.producer.disconnect()
     }
 
-    static async sendMessage(topic: Topic, message: Record<string, any>) {
+    static async sendMessage({ topic, message }: { topic: Topic, message: Record<string, any> }) {
         await this.producer.send({
             topic: topic,
             messages: [

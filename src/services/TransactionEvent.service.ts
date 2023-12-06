@@ -1,9 +1,10 @@
 import { TOPICS } from "../kafka/Constants";
+import { VendorPublisher } from "../kafka/modules/publishers/Vendor";
 import ProducerFactory from "../kafka/modules/util/Producer";
 import Event, { ICreateEvent, Status } from "../models/Event.model";
 import Transaction from "../models/Transaction.model";
 import EventService from "./Event.service";
-import {v4 as uuidv4} from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 
 interface IMeterValidationReceivedEventParams {
     user: { name: string, email: string, address: string, phoneNumber: string };
@@ -45,7 +46,7 @@ export default class TransactionEventService {
         }
 
         const _event = EventService.addEvent(event);
-        await ProducerFactory.sendMessage(TOPICS.METER_VALIDATION_REQUESTED, {
+        await VendorPublisher.publishEventForMeterValidationRequested({
             meter: {
                 meterNumber: this.meterInfo.meterNumber,
                 disco: this.meterInfo.disco,
@@ -178,7 +179,7 @@ export default class TransactionEventService {
         return EventService.addEvent(event);
     }
 
-    public async addTokenRequestedEvent(bankRefId: string, ): Promise<Event> {
+    public async addTokenRequestedEvent(bankRefId: string,): Promise<Event> {
         const user = await this.transaction.$get('user');
         if (!user) {
             throw new Error('Transaction does not have a user');
@@ -253,7 +254,7 @@ export default class TransactionEventService {
 
         return await EventService.addEvent(event);
     }
-    
+
 
     public async addTokenSentToPartnerEvent(): Promise<Event> {
         const partner = await this.transaction.$get('partner');
@@ -279,7 +280,7 @@ export default class TransactionEventService {
 
         return EventService.addEvent(event);
     }
-    
+
     public async addPartnerTransactionCompleteEvent(): Promise<Event> {
         const partner = await this.transaction.$get('partner');
         if (!partner) {
