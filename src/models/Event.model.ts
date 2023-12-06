@@ -2,6 +2,7 @@
 import { Table, Column, Model, DataType, IsUUID, PrimaryKey, BelongsTo, ForeignKey, HasMany } from "sequelize-typescript";
 import Transaction  from "./Transaction.model";
 import Notification from "./Notification.model";
+import { TOPICS } from "../kafka/Constants";
 
 // Define an enum for the status of events
 export enum Status {
@@ -28,8 +29,8 @@ export default class Event extends Model<Event | IEvent> {
     status: Status;
 
     // Type of the event
-    @Column({ type: DataType.STRING, allowNull: false })
-    eventType: string;
+    @Column({ type: DataType.ENUM, values: Object.values(TOPICS), allowNull: false })
+    eventType: TOPICS;
 
     // Text for the event 
     @Column({ type: DataType.STRING, allowNull: false })
@@ -59,7 +60,7 @@ export interface IEvent {
     id: string; // Unique identifier for the event
     eventTimestamp: Date; // Timestamp of the event
     status: Status; // Status of the event (enum)
-    eventType: string; // Type of the event
+    eventType: TOPICS; // Type of the event
     eventText: string; // Text associated with the event
     source: string; // Source of the event
     eventData: string; // Data associated with the event (can be a string or JSON)

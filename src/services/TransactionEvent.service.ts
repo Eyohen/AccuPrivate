@@ -20,24 +20,33 @@ interface EventMeterInfo {
     vendType: 'PREPAID' | 'POSTPAID'
 }
 
+const EventAndPublishers = {
+    [TOPICS.TOKEN_REQUESTED]: VendorPublisher.publishEventForTokenRequest,
+    [TOPICS.TOKEN_RECEIVED]: VendorPublisher.publishEventForReceivedToken,
+    [TOPICS.METER_VALIDATION_REQUESTED]: VendorPublisher.publishEventForMeterValidationRequested,
+    [TOPICS.METER_VALIDATION_RECIEVED]: VendorPublisher.publishEventForMeterValidationReceived,
+} as Record<TOPICS, (...args: any[]) => Promise<void>>;
+
 class EventPublisher {
     private event: Event;
     private publisher: (...args: any[]) => Promise<void>;
     private args: any[];
 
-    constructor(event: Event, publisher: (...args: any[]) => Promise<void>, ...args: any[]) {
-        this.event = event;
-        this.publisher = publisher;
-        this.args = args;
-    }
+    constructor({ event, params }: { event: Event, params: any[]
+}) {
+    this.event = event;
+    event.eventType
+    this.publisher = EventAndPublishers[event.eventType];
+    this.args = params;
+}
 
     public async publish() {
-        await this.publisher(...this.args)
-    }
+    await this.publisher(...this.args)
+}
 
     public getEvent() {
-        return this.event;
-    }
+    return this.event;
+}
 }
 
 export default class TransactionEventService {
@@ -49,7 +58,7 @@ export default class TransactionEventService {
         this.meterInfo = meterInfo;
     }
 
-    public async addMeterValidationRequestedEvent(): Promise<EventPublisher> {
+    public async addMeterValidationRequestedEvent(): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
             eventType: TOPICS.METER_VALIDATION_REQUESTED,
@@ -65,17 +74,7 @@ export default class TransactionEventService {
             status: Status.COMPLETE,
         }
 
-        const _event = await EventService.addEvent(event);
-        const publisher = new EventPublisher(_event, VendorPublisher.publishEventForMeterValidationRequested, {
-            meter: {
-                meterNumber: this.meterInfo.meterNumber,
-                disco: this.meterInfo.disco,
-                vendType: this.meterInfo.vendType,
-            },
-            transactionId: this.transaction.id
-        })
-
-        return publisher
+        return await EventService.addEvent(event);
     }
 
     public async addMeterValidationResponseEvent(userInfo: IMeterValidationReceivedEventParams): Promise<Event> {

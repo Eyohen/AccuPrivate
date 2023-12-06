@@ -33,6 +33,7 @@ import EventService from "../../services/Event.service";
 import { AuthenticatedRequest } from "../../utils/Interface";
 import Event from "../../models/Event.model";
 import { VendorPublisher } from "../../kafka/modules/publishers/Vendor";
+import { CRMPublisher } from "../../kafka/modules/publishers/Crm";
 
 interface valideMeterRequestBody {
     meterNumber: string;
@@ -162,8 +163,11 @@ export default class VendorController {
             transaction, { meterNumber, disco, vendType }
         );
 
-        const event = await transactionEventService.addMeterValidationRequestedEvent();
-        await event.publish()
+        await transactionEventService.addMeterValidationRequestedEvent();
+        await VendorPublisher.publishEventForMeterValidationRequested({
+            meter: { meterNumber, disco, vendType },
+            transactionId: transaction.id,
+        });
 
         // We Check for Meter User *
         const response =
@@ -192,7 +196,7 @@ export default class VendorController {
             id: uuidv4(),
         };
 
-        await transactionEventService.addMeterValidationResponseEvent({user: userInfo});
+        await transactionEventService.addMeterValidationResponseEvent({ user: userInfo });
         await VendorPublisher.publishEventForMeterValidationReceived({
             meter: { meterNumber, disco, vendType },
             transactionId: transaction.id,
@@ -200,6 +204,10 @@ export default class VendorController {
         });
 
         await transactionEventService.addCRMUserInitiatedEvent({ user: userInfo });
+        await CRMPublisher.publishEventForInitiatedUser({
+            user: userInfo,
+            transactionId: transaction.id,
+        })
 
         // Add User if no record of user in db
         const user = await UserService.addUserIfNotExists({
@@ -212,6 +220,10 @@ export default class VendorController {
 
         await transaction.update({ userId: user.id });
         await transactionEventService.addCRMUserConfirmedEvent({ user: userInfo });
+        await CRMPublisher.publishEventForConfirmedUser({
+            user: userInfo,
+            transactionId: transaction.id,
+        })
 
         // Check if disco is up
         const discoUp =
@@ -221,6 +233,7 @@ export default class VendorController {
 
         discoUp instanceof Boolean &&
             (await transactionEventService.addDiscoUpEvent());
+        // TODO: Publish event for disco up to kafka
 
         const meter: Meter = await MeterService.addMeter({
             id: uuidv4(),
@@ -279,12 +292,46 @@ export default class VendorController {
                 vendType,
             }
         );
-        await transactionEventService.addPowerPurchaseInitiatedEvent(bankRefId, amount);
 
-        const { user, partnerEntity, meter } = await VendorControllerValdator.requestToken({ bankRefId, transactionId });
+        const meter = await transaction.$get("meter");
+        if (!meter) {
+            throw new InternalServerError("Transaction does not have a meter");
+        }
+
+        await transactionEventService.addPowerPurchaseInitiatedEvent(bankRefId, amount);
+        await VendorPublisher.publishEventForInitiatedPowerPurchase({
+            transactionId: transaction.id,
+            meter: {
+                id: meter.id as string,
+                meterNumber: meter.meterNumber as string,
+                disco: transaction.disco as string,
+                vendType: meter.vendType,
+            },
+        })
+
+        const { user, partnerEntity } = await VendorControllerValdator.requestToken({ bankRefId, transactionId });
 
         await transactionEventService.addTokenRequestedEvent(bankRefId);
+        await VendorPublisher.publishEventForTokenRequest({
+            transactionId: transaction.id,
+            user: {
+                name: user.name as string,
+                email: user.email,
+                address: user.address,
+                phoneNumber: user.phoneNumber,
+            },
+            partner: {
+                email: partnerEntity.email,
+            },
+            meter: {
+                id: meter.id,
+                meterNumber: meter.meterNumber,
+                disco: transaction.disco,
+                vendType: meter.vendType,
+            },
+        })
 
+        // TODO: Move to event
         const tokenInfo = await VendorService.buyPowerVendToken({
             transactionId,
             meterNumber: meter.meterNumber,
@@ -330,6 +377,25 @@ export default class VendorController {
         }
 
         await transactionEventService.addTokenReceivedEvent(tokenInfo.token);
+        await VendorPublisher.publishEventForReceivedToken({
+            transactionId: transaction.id,
+            user: {
+                name: user.name as string,
+                email: user.email,
+                address: user.address,
+                phoneNumber: user.phoneNumber,
+            },
+            partner: {
+                email: partnerEntity.email,
+            },
+            meter: {
+                id: meter.id,
+                meterNumber: meter.meterNumber,
+                disco: transaction.disco,
+                vendType: meter.vendType,
+                token: tokenInfo.token,
+            },
+        })
         const discoLogo = DISCO_LOGO[transaction.disco.toLowerCase() as keyof typeof DISCO_LOGO];
 
         // Add Power Unit to store token
@@ -353,9 +419,10 @@ export default class VendorController {
             amount,
             bankRefId,
             bankComment,
-            status: Status.COMPLETE,
+            status: Status.PENDING,
         });
 
+        // TODO: Move to event
         EmailService.sendEmail({
             to: user.email,
             subject: "Token Purchase",
@@ -364,7 +431,9 @@ export default class VendorController {
                 meterNumber: meter?.meterNumber,
                 token: newPowerUnit.token,
             }),
-        }).then(async () => await transactionEventService.addTokenSentToUserEmailEvent());
+        }).then(async () => {
+            await transactionEventService.addTokenSentToUserEmailEvent()
+        });
 
         res.status(200).json({
             status: "success",
