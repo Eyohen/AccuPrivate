@@ -125,11 +125,10 @@ export default class VendorController {
             vendType
         }: valideMeterRequestBody = req.body
         const superagent = DEFAULT_ELECTRICITY_PROVIDER // BUYPOWERNG or BAXI
-        const transactionId = uuidv4()
         const partnerId = (req as any).key
 
         const transaction: Transaction = await TransactionService.addTransactionWithoutValidatingUserRelationship({
-            id: transactionId,
+            id: uuidv4(),
             amount: '0',
             status: Status.PENDING,
             superagent: superagent,
@@ -139,25 +138,14 @@ export default class VendorController {
             partnerId: partnerId,
         })
 
-        await EventService.addEvent({
-            id: uuidv4(),
-            eventTimestamp: new Date(),
-            status: Status.COMPLETE,
-            eventType: 'METER_VALIDATION_REQUESTED',
-            eventText: 'Meter validation requested',
-            source: 'API',
-            eventData: JSON.stringify({
-                meterNumber,
-                disco,
-                vendType
-            }),
-            transactionId: transactionId,
-        })
+        const transactionEventService = new EventService.transactionEventService(transaction, { meterNumber, disco, vendType, superagent, transactionId, partnerId })
+
+        await transactionEventService.addMeterValidationRequestedEvent()
 
         // We Check for Meter User *
         const response = superagent != 'BUYPOWERNG'
             ? await VendorService.buyPowerValidateMeter({
-                transactionId,
+                transactionId: transaction.id,
                 meterNumber,
                 disco,
                 vendType
@@ -167,100 +155,38 @@ export default class VendorController {
             : await VendorService.baxiValidateMeter(disco, meterNumber, vendType)
                 .catch(e => { throw new BadRequestError('Meter validation failed') })
 
-        await EventService.addEvent({
-            id: uuidv4(),
-            eventTimestamp: new Date(),
-            status: Status.COMPLETE,
-            eventType: 'METER_VALIDATION_RECIEVED',
-            eventText: 'Meter Validation received',
-            source: superagent.toUpperCase(),
-            eventData: JSON.stringify({
-                meterNumber,
-                user: {
-                    name: response.name,
-                    address: response.address,
-                    email: email,
-                    phoneNumber: phoneNumber,
-                },
-                disco,
-                vendType
-            }),
-            transactionId: transactionId,
-        })
+        const userInfo = {
+            name: response.name,
+            email: email,
+            address: response.address,
+            phoneNumber: phoneNumber,
+            id: uuidv4()
+        }
 
-        const userId = uuidv4()
-        await EventService.addEvent({
-            id: uuidv4(),
-            eventTimestamp: new Date(),
-            status: Status.COMPLETE,
-            eventType: 'CRM_USER_INITIATED',
-            eventText: 'CRM User initiated',
-            source: 'API',
-            eventData: JSON.stringify({
-                user: {
-                    id: userId,
-                    name: response.name,
-                    address: response.address,
-                    email: email,
-                    phoneNumber: phoneNumber,
-                },
-            }),
-            transactionId: transactionId,
-        })
+        await transactionEventService.addMeterValidationResponseEvent({ user: userInfo })
+        await transactionEventService.addCRMUserInitiatedEvent({ user: userInfo })
 
-        // Add User
-        let user = await User.findOne({ where: { phoneNumber, email } })
-        user = user ?? await UserService.addUser({
-            id: userId,
+        // Add User if no record of user in db
+        const user = await UserService.addUserIfNotExists({
+            id: userInfo.id,
             address: response.address,
             email: email,
             name: response.name,
             phoneNumber: phoneNumber,
         })
-
+        
         await transaction.update({ userId: user.id })
+        await transactionEventService.addCRMUserConfirmedEvent({ user: userInfo })
 
+        // Send Transaction to Kafka
         await TransactionModule.producer.sendTransaction(transaction.dataValues)
 
-        await EventService.addEvent({
-            id: uuidv4(),
-            eventTimestamp: new Date(),
-            status: Status.COMPLETE,
-            eventType: 'CRM_USER_CONFIRMED',
-            eventText: 'CRM user confirmed',
-            source: 'API',
-            eventData: JSON.stringify({
-                user: user.dataValues,
-            }),
-            transactionId: transactionId,
-        })
-
-        // Check if disco is up, and add event for it
+        // Check if disco is up
         const discoUp = superagent === 'BUYPOWERNG'
             ? await VendorService.buyPowerCheckDiscoUp(disco).catch(e => e)
             : await VendorService.baxiCheckDiscoUp(disco).catch(e => e)
 
-        discoUp instanceof Error
-            ? await EventService.addEvent({
-                id: uuidv4(),
-                eventTimestamp: new Date(),
-                status: Status.FAILED,
-                eventType: 'DISCO_UP',
-                eventText: 'Disco up',
-                source: 'API',
-                eventData: JSON.stringify({ disco }),
-                transactionId: transactionId,
-            })
-            : await EventService.addEvent({
-                id: uuidv4(),
-                eventTimestamp: new Date(),
-                status: Status.COMPLETE,
-                eventType: 'DISCO_UP',
-                eventText: 'Disco up',
-                source: 'API',
-                eventData: JSON.stringify({ disco }),
-                transactionId: transactionId,
-            })
+        discoUp instanceof Boolean && await transactionEventService.addDiscoUpEvent() 
 
         const meter: Meter = await MeterService.addMeter({
             id: uuidv4(),
@@ -294,21 +220,7 @@ export default class VendorController {
             }
         })
 
-        await EventService.addEvent({
-            id: uuidv4(),
-            eventTimestamp: new Date(),
-            status: Status.COMPLETE,
-            eventType: 'METER_VALIDATION_SENT',
-            eventText: 'Meter Validation sent',
-            source: 'API',
-            eventData: JSON.stringify({
-                meterNumber,
-                meterId: meter.id,
-                disco,
-                vendType
-            }),
-            transactionId: transactionId,
-        })
+        await transactionEventService.addMeterValidationSentEvent(meter.id)
     }
 
     static async requestToken(req: Request, res: Response, next: NextFunction) {
@@ -380,7 +292,7 @@ export default class VendorController {
                 }),
                 transactionId: transactionId,
             })
-            await TransactionService.updateSingleTransaction(transactionId, { status: Status.PENDING, bankComment, bankRefId })
+            await TransactionService.updateSingleTransaction(transactionId, { status: Status.PENDING, bankComment, amount, bankRefId })
 
             const notification = await NotificationService.addNotification({
                 id: uuidv4(),
