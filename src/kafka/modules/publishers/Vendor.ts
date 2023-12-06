@@ -1,43 +1,23 @@
 import { TOPICS } from "../../Constants";
+import { PublisherEventAndParameters } from "../util/Interface";
 import ProducerFactory from "../util/Producer";
 
-interface MeterInfo {
-    meterNumber: string,
-    disco: string,
-    vendType: 'PREPAID' | 'POSTPAID'
-}
-
-interface User {
-    name: string,
-    address: string,
-    phoneNumber: string,
-    email: string
-}
-
-interface MeterValidationRequested {
-    user: User,
-    meter: MeterInfo,
-    transactionId: string
-}
-
-interface Partner {
-    email: string,
-}
-
 export class VendorPublisher extends ProducerFactory {
-    static async publishEventForMeterValidationRequested(data: { meter: MeterInfo, transactionId: string }) {
+    static async publishEventForMeterValidationRequested(data: PublisherEventAndParameters[TOPICS.METER_VALIDATION_REQUESTED]) {
         await ProducerFactory.sendMessage({
             topic: TOPICS.METER_VALIDATION_REQUESTED,
             message: {
-                meterNumber: data.meter.meterNumber,
-                disco: data.meter,
-                vendType: data.meter.vendType,
+                meter: {
+                    meterNumber: data.meter.meterNumber,
+                    disco: data.meter.disco,
+                    vendType: data.meter.vendType,
+                },
                 transactionId: data.transactionId
             }
         })
     }
 
-    static async publishEventForMeterValidationReceived(data: MeterValidationRequested) {
+    static async publishEventForMeterValidationReceived(data: PublisherEventAndParameters[TOPICS.METER_VALIDATION_RECIEVED]) {
         await ProducerFactory.sendMessage({
             topic: TOPICS.METER_VALIDATION_RECIEVED,
             message: {
@@ -57,7 +37,7 @@ export class VendorPublisher extends ProducerFactory {
         })
     }
 
-    static async publishEventForInitiatedPowerPurchase(data: { transactionId: string, meter: MeterInfo & { id: string } }) {
+    static async publishEventForInitiatedPowerPurchase(data: PublisherEventAndParameters[TOPICS.POWER_PURCHASE_INITIATED]) {
         await ProducerFactory.sendMessage({
             topic: TOPICS.POWER_PURCHASE_INITIATED,
             message: {
@@ -72,7 +52,7 @@ export class VendorPublisher extends ProducerFactory {
         })
     }
 
-    static async publishEventForTokenRequest(data: { transactionId: string, user: User, partner: Partner, meter: MeterInfo & { id: string } }) {
+    static async publishEventForTokenRequest(data: PublisherEventAndParameters[TOPICS.TOKEN_REQUESTED]) {
         await ProducerFactory.sendMessage({
             topic: TOPICS.TOKEN_REQUESTED,
             message: {
@@ -96,7 +76,7 @@ export class VendorPublisher extends ProducerFactory {
         })
     }
 
-    static async publishEventForReceivedToken(data: { transactionId: string, user: User, partner: Partner, meter: MeterInfo & { id: string, token: string } }) {
+    static async publishEventForReceivedToken(data: PublisherEventAndParameters[TOPICS.TOKEN_RECEIVED]) {
         await ProducerFactory.sendMessage({
             topic: TOPICS.TOKEN_RECEIVED,
             message: {
@@ -121,7 +101,7 @@ export class VendorPublisher extends ProducerFactory {
         })
     }
 
-    static async publishEventForCompletedPowerPurchase(data: { transactionId: string, meter: MeterInfo & { id: string }, partner: Partner }) {
+    static async publishEventForCompletedPowerPurchase(data: PublisherEventAndParameters[TOPICS.PARTNER_TRANSACTION_COMPLETE]) {
         await ProducerFactory.sendMessage({
             topic: TOPICS.POWER_PURCHASE_INITIATED,
             message: {
@@ -130,9 +110,6 @@ export class VendorPublisher extends ProducerFactory {
                     disco: data.meter.disco,
                     vendType: data.meter.vendType,
                     id: data.meter.id,
-                },
-                partner: {
-                    email: data.partner.email
                 },
                 transactionId: data.transactionId
             }

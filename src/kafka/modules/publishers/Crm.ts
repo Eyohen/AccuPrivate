@@ -1,4 +1,5 @@
 import { TOPICS } from "../../Constants";
+import { PublisherEventAndParameters } from "../util/Interface";
 import ProducerFactory from "../util/Producer";
 
 interface User {
@@ -10,7 +11,7 @@ interface User {
 }
 
 export class CRMPublisher extends ProducerFactory {
-    static async publishEventForInitiatedUser(data: { user: User, transactionId: string }) {
+    static async publishEventForInitiatedUser(data: PublisherEventAndParameters[TOPICS.CRM_USER_INITIATED]) {
         await ProducerFactory.sendMessage({
             topic: TOPICS.CRM_USER_INITIATED,
             message: {
@@ -20,11 +21,12 @@ export class CRMPublisher extends ProducerFactory {
                     address: data.user.address,
                     phoneNumber: data.user.phoneNumber
                 },
+                transactionId: data.transactionId
             }
         })
     }
 
-    static async publishEventForConfirmedUser(data: { user: User, transactionId: string }) {
+    static async publishEventForConfirmedUser(data: PublisherEventAndParameters[TOPICS.CRM_USER_CONFIRMED]) {
         await ProducerFactory.sendMessage({
             topic: TOPICS.CRM_USER_CONFIRMED,
             message: {

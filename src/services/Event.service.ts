@@ -1,4 +1,5 @@
 // Import necessary types and the Event model
+import { TOPICS } from "../kafka/Constants";
 import { ICreateEvent, IEvent, Status } from "../models/Event.model";
 import Event from "../models/Event.model";
 import Transaction from "../models/Transaction.model";
@@ -42,6 +43,11 @@ export default class EventService {
         } catch (err) {
             logger.info('Error reading Event');
         }
+    }
+
+    static async viewSingleEventByTransactionIdAndType(transactionId: string, eventType: IEvent['eventType']): Promise<Event | void | null> {
+        const event: Event | null = await Event.findOne({ where: { transactionId, eventType }, include: [Transaction] });
+        return event;
     }
 
     static transactionEventService = TransactionEventService;

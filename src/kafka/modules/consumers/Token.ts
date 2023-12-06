@@ -1,33 +1,92 @@
 import { Status } from "../../../models/Event.model";
 import Meter from "../../../models/Meter.model";
 import Transaction from "../../../models/Transaction.model";
-import NotificationService from "../../../services/Notification.service";
+import EventService from "../../../services/Event.service";
+import PowerUnitService from "../../../services/PowerUnit.service";
 import TransactionService from "../../../services/Transaction.service";
 import VendorService from "../../../services/Vendor.service";
+import { DISCO_LOGO, NODE_ENV } from "../../../utils/Constants";
 import logger from "../../../utils/Logger";
 import { TOPICS } from "../../Constants";
 import { VendorPublisher } from "../publishers/Vendor";
 import ConsumerFactory from "../util/Consumer";
-import { Registry, Topic } from "../util/Interface";
+import { PublisherEventAndParameters, Registry, Topic } from "../util/Interface";
 import MessageProcessor from "../util/MessageProcessor";
+import { v4 as uuidv4 } from 'uuid';
 
 class TokenHandler extends Registry {
-    private static async handleTokenRequest(data: {
-        transactionId: string, meter: {
-            meterNumber: string, disco: Transaction['disco'],
-            vendType: Meter['vendType'],
-        },
-        phoneNumber: string;
-        amount: string,
-    }) {
+    private static async handleTokenRequest(data: PublisherEventAndParameters[TOPICS.TOKEN_REQUESTED]) {
+        const transaction = await TransactionService.viewSingleTransaction(data.transactionId)
+        if (!transaction) {
+            logger.error(`Error fetching transaction with id ${data.transactionId}`)
+            return
+        }
+        const { user, meter, partner } = transaction
+
+        // Purchase token from vendor
         const tokenInfo = await VendorService.buyPowerVendToken({
             transactionId: data.transactionId,
             meterNumber: data.meter.meterNumber,
             disco: data.meter.disco,
             vendType: data.meter.vendType,
-            amount: data.amount,
-            phone: data.phoneNumber
+            amount: transaction.amount,
+            phone: user.phoneNumber
         }).catch(e => e)
+
+
+        // Check if error occured while purchasing token
+        if (tokenInfo instanceof Error) {
+            // If error is due to timeout, trigger event to requery transaction later
+            if (tokenInfo.message === 'Transaction timeout') {
+                // TODO: Emit event to notify partner of failed transaction (webhook)
+                // TODO: Trigger event to requery transaction later
+                return
+            }
+
+            // TODO: Emit event to notify partner of failed transaction (webhook)
+            return
+        }
+
+        // Token purchase was successful
+        // Add and publish token received event
+        const transactionEventService = new EventService.transactionEventService(transaction, {
+            meterNumber: meter.meterNumber,
+            disco: meter.disco,
+            vendType: meter.vendType,
+        })
+        await transactionEventService.addTokenReceivedEvent(tokenInfo.token);
+        await VendorPublisher.publishEventForReceivedToken({
+            transactionId: transaction.id,
+            user: {
+                name: user.name as string,
+                email: user.email,
+                address: user.address,
+                phoneNumber: user.phoneNumber,
+            },
+            partner: {
+                email: partner.email,
+            },
+            meter: {
+                id: meter.id,
+                meterNumber: meter.meterNumber,
+                disco: transaction.disco,
+                vendType: meter.vendType,
+                token: tokenInfo.token,
+            },
+        })
+
+        return
+    }
+
+    private static async handleTokenReceived(data: PublisherEventAndParameters[TOPICS.TOKEN_RECEIVED]) {
+        // Requery transaction from provider and update transaction status
+        const requeryResult = await VendorService.buyPowerRequeryTransaction({ transactionId: data.transactionId })
+
+        const transactionSuccess = requeryResult.responseCode === 200
+        if (!transactionSuccess) {
+            logger.error(`Error requerying transaction with id ${data.transactionId}`)
+            return
+        }
 
         const transaction = await TransactionService.viewSingleTransaction(data.transactionId)
         if (!transaction) {
@@ -35,62 +94,31 @@ class TokenHandler extends Registry {
             return
         }
 
-        const meter = await Meter.findOne({ where: { meterNumber: data.meter.meterNumber } })
-        if (!meter) {
-            logger.error(`Error fetching meter with meter number ${data.meter.meterNumber}`)
-            return
-        }
-
-        const user = await transaction.$get('user')
-        if (!user) {
-            logger.error(`Error fetching user with id ${transaction.userId}`)
-            return
-        }
-
-        const partnerEntity = await transaction.$get('partner')
-        if (!partnerEntity) {
-            logger.error(`Error fetching partner with id ${transaction.partnerId}`)
-            return
-        }
-        
-        if (!(tokenInfo instanceof Error)) {
-            await VendorPublisher.publishEventForMeterValidationReceived({
-                transactionId: transaction.id,
-                user: {
-                    name: user.name as string,
-                    email: user.email,
-                    address: user.address,
-                    phoneNumber: user.phoneNumber,
-                },
-                partner: {
-                    email: partnerEntity.email,
-                },
-                meter: {
-                    id: meter.id,
-                    meterNumber: meter.meterNumber,
-                    disco: transaction.disco,
-                    vendType: meter.vendType,
-                    token: tokenInfo.token,
-                },
-            })
+        // If successful, check if a power unit exists for the transaction, if none exists, create one
+        let powerUnit = await PowerUnitService.viewSinglePowerUnitByTransactionId(data.transactionId)
+        powerUnit = powerUnit ?? await PowerUnitService.addPowerUnit({
+            id: uuidv4(),
+            transactionId: data.transactionId,
+            disco: data.meter.disco,
+            discoLogo: DISCO_LOGO[data.meter.disco as keyof typeof DISCO_LOGO],
+            amount: '0',
+            meterId: data.meter.id,
+            superagent: 'BUYPOWERNG',
+            token: requeryResult.data.token,
+            tokenNumber: 0,
+            tokenUnits: '0',
+            address: transaction.meter.address
         })
+
+        await TransactionService.updateSingleTransaction(data.transactionId, { status: Status.COMPLETE })
+
         return
     }
 
-    if(tokenInfo.message === 'Transaction timeout') {
-    // TODO: Trigger event to requery transaction later
-    return
-}
-
-await TransactionService.updateSingleTransaction(data.transactionId, { status: Status.FAILED })
-
-        // TODO: Emit event to notify user of failed transaction
-
-    }
-
     static registry = {
-    [TOPICS.TOKEN_REQUESTED]: this.handleTokenRequest
-}
+        [TOPICS.TOKEN_REQUESTED]: this.handleTokenRequest,
+        [TOPICS.TOKEN_RECEIVED]: this.handleTokenReceived,
+    }
 }
 
 export default class TokenConsumer extends ConsumerFactory {

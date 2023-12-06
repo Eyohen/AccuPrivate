@@ -312,6 +312,15 @@ export default class VendorController {
         const { user, partnerEntity } = await VendorControllerValdator.requestToken({ bankRefId, transactionId });
 
         await transactionEventService.addTokenRequestedEvent(bankRefId);
+        await TransactionService.updateSingleTransaction(
+            transactionId,
+            {
+                bankRefId,
+                bankComment,
+                amount,
+                status: Status.PENDING,
+            });
+
         await VendorPublisher.publishEventForTokenRequest({
             transactionId: transaction.id,
             user: {
@@ -331,124 +340,11 @@ export default class VendorController {
             },
         })
 
-        await TransactionService.updateSingleTransaction(
-            transactionId,
-            {
-                bankRefId,
-                bankComment,
-                amount,
-                status: Status.PENDING,
-            });
-            
-        // TODO: Move to event
-        const tokenInfo = await VendorService.buyPowerVendToken({
-            transactionId,
-            meterNumber: meter.meterNumber,
-            disco: transaction.disco,
-            amount: amount,
-            phone: user.phoneNumber,
-            vendType: vendType as "PREPAID" | "POSTPAID",
-        }).catch((error) => error);
-        if (tokenInfo instanceof Error) {
-            if (tokenInfo.message !== "Transaction timeout") throw tokenInfo;
-
-            await TransactionService.updateSingleTransaction(transactionId, {
-                status: Status.PENDING,
-                bankComment,
-                amount,
-                bankRefId,
-            });
-
-            const notification = await NotificationService.addNotification({
-                id: uuidv4(),
-                title: "Failed transaction",
-                heading: "Failed transaction",
-                message: `
-                    Failed transaction for ${meter.meterNumber} with amount ${amount}
-
-                    Bank Ref: ${bankRefId}
-                    Bank Comment: ${bankComment}
-                    Transaction Id: ${transactionId}                    
-                    `,
-                entityId: partnerEntity.id,
-                read: false,
-            });
-
-            // Check if partner wants to receive notifications for failed transactions
-            if (partnerEntity.notificationSettings.failedTransactions) {
-                await NotificationUtil.sendNotificationToUser(
-                    partnerEntity.id,
-                    notification
-                );
-            }
-
-            throw new GateWayTimeoutError("Transaction timeout");
-        }
-
-        await transactionEventService.addTokenReceivedEvent(tokenInfo.token);
-        await VendorPublisher.publishEventForReceivedToken({
-            transactionId: transaction.id,
-            user: {
-                name: user.name as string,
-                email: user.email,
-                address: user.address,
-                phoneNumber: user.phoneNumber,
-            },
-            partner: {
-                email: partnerEntity.email,
-            },
-            meter: {
-                id: meter.id,
-                meterNumber: meter.meterNumber,
-                disco: transaction.disco,
-                vendType: meter.vendType,
-                token: tokenInfo.token,
-            },
-        })
-        const discoLogo = DISCO_LOGO[transaction.disco.toLowerCase() as keyof typeof DISCO_LOGO];
-
-        // Add Power Unit to store token
-        const newPowerUnit: PowerUnit = await PowerUnitService.addPowerUnit({
-            id: uuidv4(),
-            transactionId: transactionId,
-            disco: transaction.disco,
-            discoLogo,
-            amount: amount,
-            meterId: meter.id,
-            superagent: transaction.superagent,
-            address: meter.address,
-            token: NODE_ENV === "development"
-                ? generateRandomToken()
-                : tokenInfo.data.token,
-            tokenNumber: tokenInfo.token,
-            tokenUnits: tokenInfo.units,
-        });
-
-        await TransactionService.updateSingleTransaction(transactionId, {
-            amount,
-            bankRefId,
-            bankComment,
-            status: Status.PENDING,
-        });
-
-        // TODO: Move to event
-        EmailService.sendEmail({
-            to: user.email,
-            subject: "Token Purchase",
-            html: await new EmailTemplate().receipt({
-                transaction: transaction,
-                meterNumber: meter?.meterNumber,
-                token: newPowerUnit.token,
-            }),
-        }).then(async () => {
-            await transactionEventService.addTokenSentToUserEmailEvent()
-        });
-
         res.status(200).json({
             status: "success",
-            message: "Token retrieved successfully",
+            message: "Token purchase initiated successfully",
             data: {
-                newPowerUnit: ResponseTrimmer.trimPowerUnit(newPowerUnit),
+                transaction: transaction,
             },
         });
 

@@ -28,6 +28,11 @@ export default class PowerUnitService {
         return powerUnit
     }
 
+    static async viewSinglePowerUnitByTransactionId(transactionId: string): Promise<PowerUnit | void | null> {
+        const powerUnit: PowerUnit | null = await PowerUnit.findOne({ where: { transactionId } })
+        return powerUnit
+    }
+
     static async updateSinglePowerUnit() {
 
     }
