@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import UserService from "../../services/User.service";
 import MeterService from "../../services/Meter.service";
 import User from "../../models/User.model";
-import Meter from "../../models/Meter.model";
+import Meter, { IMeter } from "../../models/Meter.model";
 import VendorService from "../../services/Vendor.service";
 import PowerUnit from "../../models/PowerUnit.model";
 import PowerUnitService from "../../services/PowerUnit.service";
@@ -174,7 +174,7 @@ export default class VendorController {
             name: response.name,
             phoneNumber: phoneNumber,
         })
-        
+
         await transaction.update({ userId: user.id })
         await transactionEventService.addCRMUserConfirmedEvent({ user: userInfo })
 
@@ -186,7 +186,7 @@ export default class VendorController {
             ? await VendorService.buyPowerCheckDiscoUp(disco).catch(e => e)
             : await VendorService.baxiCheckDiscoUp(disco).catch(e => e)
 
-        discoUp instanceof Boolean && await transactionEventService.addDiscoUpEvent() 
+        discoUp instanceof Boolean && await transactionEventService.addDiscoUpEvent()
 
         const meter: Meter = await MeterService.addMeter({
             id: uuidv4(),
@@ -391,16 +391,7 @@ export default class VendorController {
             throw new BadRequestError('Request token event not found')
         }
 
-        await EventService.addEvent({
-            id: uuidv4(),
-            eventTimestamp: new Date(),
-            status: Status.COMPLETE,
-            eventType: 'PARTNER_TRANSACTION_COMPLETE',
-            eventText: 'Partner transaction complete',
-            source: 'API',
-            eventData: JSON.stringify({}),
-            transactionId: transaction.id,
-        })
+        new EventService.transactionEventService(transaction, { meterNumber: meter.meterNumber, disco: transaction.disco, vendType: meter.vendType as IMeter['vendType'] }).addPartnerTransactionCompleteEvent()
 
         res.status(200).json({
             status: 'success',

@@ -268,4 +268,29 @@ export default class TransactionEventService {
 
         return EventService.addEvent(event);
     }
+    
+    public async addPartnerTransactionCompleteEvent(): Promise<Event> {
+        const partner = await this.transaction.$get('partner');
+        if (!partner) {
+            throw new Error('Transaction does not have a partner');
+        }
+
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.PARTNER_TRANSACTION_COMPLETE,
+            eventText: TOPICS.PARTNER_TRANSACTION_COMPLETE,
+            eventData: JSON.stringify({
+                partner: {
+                    email: partner.email,
+                    id: partner.id,
+                }
+            }),
+            source: this.transaction.superagent.toUpperCase(),
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.COMPLETE,
+        }
+
+        return EventService.addEvent(event);
+    }
 }
