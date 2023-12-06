@@ -1,9 +1,9 @@
 import { TOPICS } from "../../Constants";
-import ConsumerFactory from "../../util/Consumer";
-import { Topic } from "../../util/Interface";
-import MessageProcessor from "./MessageProcessor";
+import ConsumerFactory from "../util/Consumer";
+import { Topic } from "../util/Interface";
+import MessageProcessor from "../util/MessageProcessor";
 
-export default class Consumer extends ConsumerFactory {
+export default class VendorConsumer extends ConsumerFactory {
     constructor() {
         const messageProcessor = new MessageProcessor()
 
@@ -11,5 +11,3 @@ export default class Consumer extends ConsumerFactory {
         super(messageProcessor, topics)
     }
 }
-
-new Consumer().startConsumer()

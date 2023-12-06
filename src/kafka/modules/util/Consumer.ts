@@ -1,7 +1,7 @@
 import { Consumer, ConsumerSubscribeTopics, EachMessageHandler } from 'kafkajs'
-import logger from '../../utils/Logger'
+import logger from '../../../utils/Logger'
 import MessageProcessorFactory from './MessageProcessor'
-import Kafka from '../config'
+import Kafka from '../../config'
 import { KafkaTopics, Topic } from './Interface'
 
 export default class ConsumerFactory {
@@ -15,7 +15,7 @@ export default class ConsumerFactory {
         this.kafkaConsumer = this.createKafkaConsumer()
     }
 
-    public async startConsumer(): Promise<void> {
+    public async start(): Promise<void> {
         const topic: KafkaTopics = {
             topics: this.topics,
             fromBeginning: false

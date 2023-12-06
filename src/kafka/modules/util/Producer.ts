@@ -1,7 +1,8 @@
 import { Message, ProducerBatch, TopicMessages } from 'kafkajs'
-import Kafka from '../config'
-import logger from '../../utils/Logger'
-import { TOPICS } from '../Constants'
+import Kafka from '../../config'
+import logger from '../../../utils/Logger'
+import { TOPICS } from '../../Constants'
+import { Topic } from './Interface'
 
 interface CustomMessageFormat { a: string }
 
@@ -18,6 +19,15 @@ export default class ProducerFactory {
 
     static async shutdown(): Promise<void> {
         await this.producer.disconnect()
+    }
+
+    static async sendMessage(topic: Topic, message: Record<string, any>) {
+        await this.producer.send({
+            topic: topic,
+            messages: [
+                { value: JSON.stringify(message) }
+            ]
+        })
     }
 
     static async sendBatch({ messages, topic }: { messages: Array<CustomMessageFormat>, topic: keyof typeof TOPICS }): Promise<void> {

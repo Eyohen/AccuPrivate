@@ -1,13 +1,9 @@
-import ProducerFactory from "./util/Producer";
-import { VendorConsumer } from "./modules/user";
+import ConsumerRouter from "./modules/consumers";
+import ProducerFactory from "./modules/util/Producer";
 
 export default class KafkaService {
-    private static async startConsumers() {
-        await new VendorConsumer().startConsumer()
-    }
-
     static async start() {
         await ProducerFactory.start()
-        await this.startConsumers()
+        await ConsumerRouter.init()
     }
 }

@@ -1,5 +1,5 @@
 import { ConsumerSubscribeTopics } from "kafkajs";
-import { TOPICS } from "../Constants";
+import { TOPICS } from "../../Constants";
 
 export type Topic = keyof typeof TOPICS
 

@@ -31,7 +31,6 @@ import Entity from "../../models/Entity/Entity.model";
 import NotificationService from "../../services/Notification.service";
 import EventService from "../../services/Event.service";
 import { AuthenticatedRequest } from "../../utils/Interface";
-import { DataType, DataTypes, JSONB } from "sequelize";
 import Event from "../../models/Event.model";
 import TransactionModule from "../../kafka/modules/transaction";
 

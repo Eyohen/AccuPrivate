@@ -1,8 +1,6 @@
 import { EachBatchPayload, EachMessagePayload, Message } from "kafkajs";
-import logger from "../../utils/Logger";
+import logger from "../../../utils/Logger";
 import { CustomMessageFormat, MessageHandler, Topic } from "./Interface";
-
-
 
 export default class MessageProcessorFactory {
     private handlers: MessageHandler
