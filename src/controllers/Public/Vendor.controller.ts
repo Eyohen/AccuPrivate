@@ -331,6 +331,15 @@ export default class VendorController {
             },
         })
 
+        await TransactionService.updateSingleTransaction(
+            transactionId,
+            {
+                bankRefId,
+                bankComment,
+                amount,
+                status: Status.PENDING,
+            });
+            
         // TODO: Move to event
         const tokenInfo = await VendorService.buyPowerVendToken({
             transactionId,
