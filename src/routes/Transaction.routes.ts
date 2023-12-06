@@ -13,3 +13,4 @@ router
     .get('/requery-transaction', AuthenticatedController(TransactionController.requeryTimedOutTransaction))
 
 export default router
+
