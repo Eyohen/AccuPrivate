@@ -20,6 +20,26 @@ interface EventMeterInfo {
     vendType: 'PREPAID' | 'POSTPAID'
 }
 
+class EventPublisher {
+    private event: Event;
+    private publisher: (...args: any[]) => Promise<void>;
+    private args: any[];
+
+    constructor(event: Event, publisher: (...args: any[]) => Promise<void>, ...args: any[]) {
+        this.event = event;
+        this.publisher = publisher;
+        this.args = args;
+    }
+
+    public async publish() {
+        await this.publisher(...this.args)
+    }
+
+    public getEvent() {
+        return this.event;
+    }
+}
+
 export default class TransactionEventService {
     private transaction: Transaction;
     private meterInfo: EventMeterInfo
@@ -29,7 +49,7 @@ export default class TransactionEventService {
         this.meterInfo = meterInfo;
     }
 
-    public async addMeterValidationRequestedEvent(): Promise<Event> {
+    public async addMeterValidationRequestedEvent(): Promise<EventPublisher> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
             eventType: TOPICS.METER_VALIDATION_REQUESTED,
@@ -45,8 +65,8 @@ export default class TransactionEventService {
             status: Status.COMPLETE,
         }
 
-        const _event = EventService.addEvent(event);
-        await VendorPublisher.publishEventForMeterValidationRequested({
+        const _event = await EventService.addEvent(event);
+        const publisher = new EventPublisher(_event, VendorPublisher.publishEventForMeterValidationRequested, {
             meter: {
                 meterNumber: this.meterInfo.meterNumber,
                 disco: this.meterInfo.disco,
@@ -55,7 +75,7 @@ export default class TransactionEventService {
             transactionId: this.transaction.id
         })
 
-        return _event
+        return publisher
     }
 
     public async addMeterValidationResponseEvent(userInfo: IMeterValidationReceivedEventParams): Promise<Event> {
@@ -79,6 +99,7 @@ export default class TransactionEventService {
             id: uuidv4(),
             status: Status.COMPLETE,
         }
+
         return EventService.addEvent(event);
     }
 

@@ -23,7 +23,7 @@ export default class MessageProcessorFactory {
         const { topic, partition, message } = messagePayload;
 
         const prefix = `${topic}[${partition} | ${message.offset}] / ${message.timestamp}`;
-        logger.info('Received message: ' + prefix + ' ' + message.value?.toString())
+        logger.info('Received message: ' + prefix)
 
         const data: CustomMessageFormat = {
             topic,

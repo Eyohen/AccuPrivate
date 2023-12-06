@@ -32,6 +32,7 @@ import NotificationService from "../../services/Notification.service";
 import EventService from "../../services/Event.service";
 import { AuthenticatedRequest } from "../../utils/Interface";
 import Event from "../../models/Event.model";
+import { VendorPublisher } from "../../kafka/modules/publishers/Vendor";
 
 interface valideMeterRequestBody {
     meterNumber: string;
@@ -161,7 +162,8 @@ export default class VendorController {
             transaction, { meterNumber, disco, vendType }
         );
 
-        await transactionEventService.addMeterValidationRequestedEvent();
+        const event = await transactionEventService.addMeterValidationRequestedEvent();
+        await event.publish()
 
         // We Check for Meter User *
         const response =
@@ -190,9 +192,13 @@ export default class VendorController {
             id: uuidv4(),
         };
 
-        await transactionEventService.addMeterValidationResponseEvent({
+        await transactionEventService.addMeterValidationResponseEvent({user: userInfo});
+        await VendorPublisher.publishEventForMeterValidationReceived({
+            meter: { meterNumber, disco, vendType },
+            transactionId: transaction.id,
             user: userInfo,
         });
+
         await transactionEventService.addCRMUserInitiatedEvent({ user: userInfo });
 
         // Add User if no record of user in db

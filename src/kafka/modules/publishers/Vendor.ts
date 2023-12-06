@@ -57,7 +57,7 @@ export class VendorPublisher extends ProducerFactory {
         })
     }
 
-    static async publicEventForInitiatedPowerPurchase(data: { transactionId: string, meter: MeterInfo & { id: string } }) {
+    static async publishEventForInitiatedPowerPurchase(data: { transactionId: string, meter: MeterInfo & { id: string } }) {
         await ProducerFactory.sendMessage({
             topic: TOPICS.POWER_PURCHASE_INITIATED,
             message: {
@@ -72,7 +72,7 @@ export class VendorPublisher extends ProducerFactory {
         })
     }
 
-    static async publicEventForTokenRequest(data: { transactionId: string, user: User, partner: Partner, meter: MeterInfo & { id: string } }) {
+    static async publishEventForTokenRequest(data: { transactionId: string, user: User, partner: Partner, meter: MeterInfo & { id: string } }) {
         await ProducerFactory.sendMessage({
             topic: TOPICS.TOKEN_REQUESTED,
             message: {
@@ -96,7 +96,7 @@ export class VendorPublisher extends ProducerFactory {
         })
     }
 
-    static async publicEventForReceivedToken(data: { transactionId: string, user: User, partner: Partner, meter: MeterInfo & { id: string, token: string } }) {
+    static async publishEventForReceivedToken(data: { transactionId: string, user: User, partner: Partner, meter: MeterInfo & { id: string, token: string } }) {
         await ProducerFactory.sendMessage({
             topic: TOPICS.TOKEN_RECEIVED,
             message: {
