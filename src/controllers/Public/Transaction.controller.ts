@@ -85,7 +85,7 @@ export default class TransactionController {
         }
 
         const response = {
-            transactions: transactions.map(transaction => ResponseTrimmer.trimTransaction(transaction)),
+            transactions: transactions
         } as any
 
         if (page && page != '0' && limit) {
