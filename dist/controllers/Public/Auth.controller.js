@@ -52,10 +52,11 @@ const Role_model_1 = require("../../models/Role.model");
 const Notification_1 = __importDefault(require("../../utils/Notification"));
 const Constants_1 = require("../../utils/Constants");
 const Notification_service_1 = __importDefault(require("../../services/Notification.service"));
+const Role_service_1 = __importDefault(require("../../services/Role.service"));
 class AuthController {
     static signup(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { email, password } = req.body;
+            const { email, password, roleId } = req.body;
             const validEmail = Validators_1.default.validateEmail(email);
             if (!validEmail) {
                 throw new Errors_1.BadRequestError('Invalid email');
@@ -117,6 +118,61 @@ class AuthController {
                 message: 'Partner created successfully',
                 data: {
                     partner: ResponseTrimmer_1.default.trimPartner(Object.assign(Object.assign({}, newPartner.dataValues), { entity })),
+                    accessToken,
+                }
+            });
+        });
+    }
+    static otherSignup(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { email, password, roleId } = req.body;
+            const role = yield Role_service_1.default.viewRoleById(roleId);
+            if (!role) {
+                throw new Errors_1.BadRequestError('Invalid role');
+            }
+            const validEmail = Validators_1.default.validateEmail(email);
+            if (!validEmail) {
+                throw new Errors_1.BadRequestError('Invalid email');
+            }
+            const validPassword = Validators_1.default.validatePassword(password);
+            if (!validPassword) {
+                throw new Errors_1.BadRequestError('Invalid password');
+            }
+            const transaction = yield index_1.Database.transaction();
+            const entity = yield Entity_service_1.default.addEntity({
+                id: (0, uuid_1.v4)(),
+                email,
+                status: {
+                    activated: false,
+                    emailVerified: false
+                },
+                role: role.name,
+                notificationSettings: {
+                    login: true,
+                    failedTransactions: true,
+                    logout: true
+                }
+            }, transaction);
+            const entityPassword = yield Password_service_1.default.addPassword({
+                id: (0, uuid_1.v4)(),
+                entityId: entity.id,
+                password
+            }, transaction);
+            yield entity.update({ status: Object.assign(Object.assign({}, entity.status), { emailVerified: true }) });
+            const accessToken = yield Token_1.AuthUtil.generateToken({ type: 'emailverification', entity, profile: entity, expiry: 60 * 10 });
+            const otpCode = yield Token_1.AuthUtil.generateCode({ type: 'emailverification', entity, expiry: 60 * 10 });
+            yield transaction.commit();
+            Logger_1.default.info(otpCode);
+            yield Email_1.default.sendEmail({
+                to: entity.email,
+                subject: 'Succesful Email Verification',
+                html: yield new Email_1.EmailTemplate().awaitActivation(entity.email)
+            });
+            res.status(201).json({
+                status: 'success',
+                message: 'Partner created successfully',
+                data: {
+                    entity: entity.dataValues,
                     accessToken,
                 }
             });
@@ -295,12 +351,13 @@ class AuthController {
             if (!entity.status.activated) {
                 throw new Errors_1.BadRequestError('Account not activated');
             }
+            // Only partners and team members have a profile
             const profile = yield Entity_service_1.default.getAssociatedProfile(entity);
-            if (!profile) {
+            if (!profile && [Role_model_1.RoleEnum.Partner, Role_model_1.RoleEnum.TeamMember].includes(entity.role.name)) {
                 throw new Errors_1.InternalServerError('Profile not found');
             }
-            const accessToken = yield Token_1.AuthUtil.generateToken({ type: 'access', entity, profile, expiry: 60 * 60 * 60 * 60 });
-            const refreshToken = yield Token_1.AuthUtil.generateToken({ type: 'refresh', entity, profile, expiry: 60 * 60 * 24 * 30 });
+            const accessToken = yield Token_1.AuthUtil.generateToken({ type: 'access', entity, profile: profile !== null && profile !== void 0 ? profile : entity, expiry: 60 * 60 * 60 * 60 });
+            const refreshToken = yield Token_1.AuthUtil.generateToken({ type: 'refresh', entity, profile: profile !== null && profile !== void 0 ? profile : entity, expiry: 60 * 60 * 24 * 30 });
             if ([Role_model_1.RoleEnum.TeamMember].includes(entity.role.name)) {
                 const memberProfile = profile;
                 const partnerProfile = yield memberProfile.$get('partner');
@@ -359,21 +416,22 @@ class AuthController {
     }
     static getLoggedUserData(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            const partner = yield PartnerProfile_service_1.default.viewSinglePartner(req.user.user.profile.id);
-            if (!partner) {
+            const entity = yield Entity_service_1.default.viewSingleEntityByEmail(req.user.user.entity.email);
+            if (!entity) {
+                throw new Errors_1.InternalServerError('Entity not found');
+            }
+            const partner = yield entity.$get('partnerProfile');
+            const role = entity.role.name;
+            if (partner === null && role === 'PARTNER') {
                 throw new Errors_1.InternalServerError('Partner not found');
             }
-            const entity = yield partner.$get('entity');
-            if (!entity) {
-                throw new Errors_1.InternalServerError('Entity not found for authenticated user');
-            }
+            const returnData = role === 'PARTNER'
+                ? { partner: ResponseTrimmer_1.default.trimPartner(Object.assign(Object.assign({}, partner.dataValues), { entity })) }
+                : { entity: entity.dataValues };
             res.status(200).json({
                 status: 'success',
-                message: 'Partner data retrieved successfully',
-                data: {
-                    partner: ResponseTrimmer_1.default.trimPartner(Object.assign(Object.assign({}, partner.dataValues), { entity })),
-                    unreadNotificationsCount: (yield Notification_service_1.default.getUnreadNotifications(entity.id)).length,
-                }
+                message: 'Entity data retrieved successfully',
+                data: returnData
             });
         });
     }

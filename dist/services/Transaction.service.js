@@ -101,8 +101,6 @@ class TransactionService {
         return __awaiter(this, void 0, void 0, function* () {
             const yesterdayDate = new Date();
             yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-            console.log(yesterdayDate);
-            console.log(new Date());
             const transactions = yield Transaction_model_1.default.findAll({
                 where: {
                     partnerId: partnerId,

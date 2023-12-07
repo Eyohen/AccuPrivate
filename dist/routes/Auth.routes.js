@@ -11,6 +11,7 @@ const Interface_1 = require("../utils/Interface");
 const router = express_1.default.Router();
 router
     .post('/signup', Auth_controller_1.default.signup)
+    .post('/signup/acc', Auth_controller_1.default.otherSignup)
     .post('/verifyemail', (0, Auth_1.basicAuth)('emailverification'), (0, Interface_1.AuthenticatedController)(Auth_controller_1.default.verifyEmail))
     .get('/verifyemail', Auth_controller_1.default.resendVerificationEmail)
     .post('/forgotpassword', Auth_controller_1.default.forgotPassword)

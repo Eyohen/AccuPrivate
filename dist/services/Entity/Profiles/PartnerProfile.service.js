@@ -67,7 +67,9 @@ class PartnerProfileService {
     }
     static viewSinglePartner(uuid) {
         return __awaiter(this, void 0, void 0, function* () {
-            const partner = yield PartnerProfile_model_1.default.findByPk(uuid);
+            const partner = yield PartnerProfile_model_1.default.findByPk(uuid, {
+                include: [Entity_model_1.default]
+            });
             return partner;
         });
     }
@@ -86,7 +88,7 @@ class PartnerProfileService {
     }
     static viewPartnersWithCustomQuery(query) {
         return __awaiter(this, void 0, void 0, function* () {
-            const partners = yield PartnerProfile_model_1.default.findAll(query);
+            const partners = yield PartnerProfile_model_1.default.findAll(Object.assign(Object.assign({}, query), { include: [Entity_model_1.default] }));
             return partners;
         });
     }

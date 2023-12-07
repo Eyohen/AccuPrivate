@@ -45,6 +45,7 @@ function initiateDB(db) {
     });
 }
 exports.initiateDB = initiateDB;
+console.log(Constants_1.REDIS_PASSWORD, Constants_1.REDIS_PORT, Constants_1.REDIS_HOST, Constants_1.DB_CONFIG.PORT);
 const redisClient = new ioredis_1.default({
     username: 'default',
     password: Constants_1.REDIS_PASSWORD,
