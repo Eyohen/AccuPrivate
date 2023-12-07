@@ -66,7 +66,7 @@ export default class TransactionController {
             query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit)
         }
         if (partnerId) query.where.partnerId = partnerId
-        
+
         const requestWasMadeByAnAdmin = [RoleEnum.Admin].includes(req.user.user.entity.role)
         if (!requestWasMadeByAnAdmin) {
             query.where.partnerId = req.user.user.profile.id
@@ -77,10 +77,25 @@ export default class TransactionController {
             throw new NotFoundError('Transactions not found')
         }
 
+        const paginationData = {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            totalCount: transactions.length,
+            totalPages: Math.ceil(transactions.length / parseInt(limit))
+        }
+
+        const response = {
+            transactions: transactions.map(transaction => ResponseTrimmer.trimTransaction(transaction)),
+        } as any
+
+        if (page && page != '0' && limit) {
+            response['pagination'] = paginationData
+        }
+
         res.status(200).json({
             status: 'success',
             message: 'Transactions retrieved successfully',
-            data: { transactions }
+            data: response
         })
     }
 
@@ -128,7 +143,7 @@ export default class TransactionController {
             source: 'BUYPOWERNG',
             status: Status.COMPLETE
         })
-        
+
         await TransactionService.updateSingleTransaction(transactionRecord.id, { status: Status.COMPLETE })
         const user = await transactionRecord.$get('user')
         if (!user) {

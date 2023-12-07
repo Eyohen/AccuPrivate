@@ -8,8 +8,8 @@ import { IPartnerProfile } from "../../models/Entity/Profiles/PartnerProfile.mod
 export default class PartnerController {
     static async getSinglePartner(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         const { partnerId } = req.query as any
-        const partner : IPartnerProfile | null = await PartnerProfileService.viewSinglePartner(partnerId);
-        if(!partner){
+        const partner: IPartnerProfile | null = await PartnerProfileService.viewSinglePartner(partnerId);
+        if (!partner) {
             throw new InternalServerError("Partner Not found")
         }
 
@@ -24,7 +24,7 @@ export default class PartnerController {
         })
     }
 
-    static async getAllPartners(req: AuthenticatedRequest, res: Response, next: NextFunction){
+    static async getAllPartners(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         const {
             page, limit,
         } = req.query as any
@@ -33,26 +33,40 @@ export default class PartnerController {
         else query.limit = 10
         if (page && page != '0' && limit) {
             query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit)
-        }else{
+        } else {
             query.offset = 0
         }
-        const _partners : IPartnerProfile [] | void = await PartnerProfileService.viewPartnersWithCustomQuery(query);
-        if(!_partners){
+        const _partners: IPartnerProfile[] | void = await PartnerProfileService.viewPartnersWithCustomQuery(query);
+        if (!_partners) {
             throw new InternalServerError("Partners Not found")
         }
-        const partners: IPartnerProfile [] = _partners.map(item => {
+        const partners: IPartnerProfile[] = _partners.map(item => {
             delete item.key
             delete item.sec
             return item
         })
+
+        const pagination = {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            totalCount: partners.length,
+            totalPages: Math.ceil(partners.length / parseInt(limit))
+        }
+
+        const response = {
+            partners
+        } as any
+
+        if (page && page != '0' && limit) {
+            response['paginationData'] = pagination
+        }
+
         res.status(200).json({
             status: 'success',
             message: 'Partners data retrieved successfully',
-            data: {
-                partners
-            }
+            data: response
         })
 
-        
+
     }
 }
