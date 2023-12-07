@@ -13,7 +13,7 @@ export default class NotificationController {
         const { entity: { id } } = req.user.user
         const { page, limit, status } = req.query as { page: `${number}`, limit: `${number}`, status: 'read' | 'unread' }
 
-        const query = {} as {
+        const query = { where: {} } as {
             where: {
                 read?: boolean,
                 entityId: string,
@@ -26,7 +26,7 @@ export default class NotificationController {
         const requestWasMadeByAnAdmin = [RoleEnum.Admin].includes(role)
 
         if (!requestWasMadeByAnAdmin) {
-            query.where.entityId = id
+            query.where['entityId'] = id
         }
         query.where = status === 'read' ? { ...query.where, read: true } : status === 'unread' ? { read: false, ...query.where } : query.where
 
@@ -35,7 +35,7 @@ export default class NotificationController {
             query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit)
         }
 
-        const notifications = await NotificationService.viewNotificationWithCustomQuery(query)
+        const notifications = await NotificationService.viewNotifications()
 
         res.status(200).json({
             status: 'success',
