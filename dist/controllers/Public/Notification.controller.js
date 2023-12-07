@@ -24,11 +24,11 @@ class NotificationController {
         return __awaiter(this, void 0, void 0, function* () {
             const { entity: { id } } = req.user.user;
             const { page, limit, status } = req.query;
-            const query = {};
+            const query = { where: {} };
             const role = req.user.user.entity.role;
             const requestWasMadeByAnAdmin = [Role_model_1.RoleEnum.Admin].includes(role);
             if (!requestWasMadeByAnAdmin) {
-                query.where.entityId = id;
+                query.where['entityId'] = id;
             }
             query.where = status === 'read' ? Object.assign(Object.assign({}, query.where), { read: true }) : status === 'unread' ? Object.assign({ read: false }, query.where) : query.where;
             if (limit)
@@ -36,7 +36,7 @@ class NotificationController {
             if (page && page != '0' && limit) {
                 query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit);
             }
-            const notifications = yield Notification_service_1.default.viewNotificationWithCustomQuery(query);
+            const notifications = yield Notification_service_1.default.viewNotifications();
             res.status(200).json({
                 status: 'success',
                 message: 'Notifications fetched successfully',
