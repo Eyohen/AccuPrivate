@@ -3,6 +3,7 @@ import { ITransaction } from "../models/Transaction.model"
 import { DecodedTokenData } from "./Auth/Token"
 import { Request as ExpressApiRequest, NextFunction, Response } from "express"
 import { UUID } from "crypto"
+import { RoleEnum } from "../models/Role.model"
 
 export interface IVendToken {
     transactionId: string
@@ -141,13 +142,13 @@ export interface INotification {
 
 export type AuthOptions = 'authenticated' | 'none';
 
-export interface AuthenticatedRequest extends ExpressApiRequest {
+export interface AuthenticatedRequest<T extends RoleEnum = RoleEnum.Partner> extends ExpressApiRequest {
     headers: {
         authorization: string;
         signature?: string;
         Signature?: string;
     }
-    user: DecodedTokenData;
+    user: DecodedTokenData<T>;
 }
 
 export type AuthenticatedAsyncController = (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<void>;

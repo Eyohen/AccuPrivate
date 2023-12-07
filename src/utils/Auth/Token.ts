@@ -6,6 +6,7 @@ import { ITeamMemberProfile } from "../../models/Entity/Profiles/TeamMemberProfi
 import Entity, { IEntity } from "../../models/Entity/Entity.model";
 import Role, { RoleEnum } from "../../models/Role.model";
 import RoleService from "../../services/Role.service";
+import { extensions } from "sequelize/types/utils/validator-extras";
 
 interface SaveTokenToCache {
     key: string,
@@ -65,9 +66,15 @@ interface DeleteToken {
     entity: IEntity
 }
 
-export interface DecodedTokenData {
+interface RoleProfileEnum extends Record<RoleEnum, any> {
+    Partner: IPartnerProfile,
+    TeamMember: ITeamMemberProfile
+    Admin: Entity
+}
+
+export interface DecodedTokenData<T extends RoleEnum = RoleEnum.Partner> {
     user: {
-        profile: IPartnerProfile | ITeamMemberProfile,
+        profile: RoleProfileEnum[T]
         entity: IEntity & { role: RoleEnum }
     },
     misc: Record<string, any>,
