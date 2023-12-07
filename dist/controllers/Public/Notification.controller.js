@@ -18,20 +18,25 @@ const Errors_1 = require("../../utils/Errors");
 const Notification_model_1 = __importDefault(require("../../models/Notification.model"));
 const Entity_service_1 = __importDefault(require("../../services/Entity/Entity.service"));
 const sequelize_1 = require("sequelize");
+const Role_model_1 = require("../../models/Role.model");
 class NotificationController {
     static getNotifications(req, res, _next) {
         return __awaiter(this, void 0, void 0, function* () {
             const { entity: { id } } = req.user.user;
             const { page, limit, status } = req.query;
-            const _page = parseInt(page) || 1;
-            const _limit = limit ? parseInt(limit) : 0;
-            const query = status === 'read' ? { read: true, entityId: id } : status === 'unread' ? { read: false, entityId: id } : { entityId: id };
-            if (page && limit) {
-                query['offset'] = (_page - 1) * _limit;
-                query['limit'] = _limit;
+            const query = {};
+            const role = req.user.user.entity.role;
+            const requestWasMadeByAnAdmin = [Role_model_1.RoleEnum.Admin].includes(role);
+            if (!requestWasMadeByAnAdmin) {
+                query.where.entityId = id;
             }
-            console.log(query);
-            const notifications = yield Notification_service_1.default.viewNotificationWithCustomQuery({ where: query });
+            query.where = status === 'read' ? Object.assign(Object.assign({}, query.where), { read: true }) : status === 'unread' ? Object.assign({ read: false }, query.where) : query.where;
+            if (limit)
+                query.limit = parseInt(limit);
+            if (page && page != '0' && limit) {
+                query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit);
+            }
+            const notifications = yield Notification_service_1.default.viewNotificationWithCustomQuery(query);
             res.status(200).json({
                 status: 'success',
                 message: 'Notifications fetched successfully',
