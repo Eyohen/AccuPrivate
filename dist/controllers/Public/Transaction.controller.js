@@ -102,7 +102,7 @@ class TransactionController {
                 totalPages: Math.ceil(transactions.length / parseInt(limit))
             };
             const response = {
-                transactions: transactions.map(transaction => ResponseTrimmer_1.default.trimTransaction(transaction)),
+                transactions: transactions
             };
             if (page && page != '0' && limit) {
                 response['pagination'] = paginationData;
