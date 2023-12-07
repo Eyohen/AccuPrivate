@@ -14,7 +14,7 @@ import RoleService from "../../services/Role.service";
 import { PRIMARY_ROLES } from "../../utils/Constants";
 
 export default class TeamMemberProfileController {
-    static async inviteTeamMember(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    static async inviteTeamMember(req: AuthenticatedRequest<RoleEnum.Partner>, res: Response, next: NextFunction) {
         // The partner is the entity that is inviting the team member
         const { entity: { id }, profile } = req.user.user
         const { email, name, roleId } = req.body

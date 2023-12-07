@@ -1,6 +1,4 @@
 import express, { Router } from "express";
-import MeterController from "../controllers/Public/Meter.controller";
-import { validateApiKey } from "../middlewares/Auth";
 import { AuthenticatedController } from "../utils/Interface";
 import EventController from "../controllers/Admin/Event.controller";
 

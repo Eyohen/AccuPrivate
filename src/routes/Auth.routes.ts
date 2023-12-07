@@ -8,6 +8,7 @@ const router: Router = express.Router()
 
 router
     .post('/signup', PublicAuthController.signup)
+    .post('/signup/acc', PublicAuthController.otherSignup)
     .post('/verifyemail', basicAuth('emailverification'), AuthenticatedController(PublicAuthController.verifyEmail))
     .get('/verifyemail', PublicAuthController.resendVerificationEmail)
     .post('/forgotpassword', PublicAuthController.forgotPassword)
