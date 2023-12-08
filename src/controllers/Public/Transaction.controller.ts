@@ -15,6 +15,8 @@ import { AuthenticatedRequest } from "../../utils/Interface";
 import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
 import EventService from "../../services/Event.service";
 import { RoleEnum } from "../../models/Role.model";
+import TransactionEventService from "../../services/TransactionEvent.service";
+import { VendorPublisher } from "../../kafka/modules/publishers/Vendor";
 
 interface getTransactionsRequestBody extends ITransaction {
     page: `${number}`
@@ -118,65 +120,26 @@ export default class TransactionController {
             return
         }
 
-        await EventService.addEvent({
-            id: randomUUID(),
-            transactionId: transactionRecord.id,
-            eventType: 'REQUERY',
-            eventText: 'Requery successful',
-            eventData: JSON.stringify(response) ,
-            eventTimestamp: new Date(),
-            source: 'BUYPOWERNG',
-            status: Status.COMPLETE
-        })
-        
-        await TransactionService.updateSingleTransaction(transactionRecord.id, { status: Status.COMPLETE })
-        const user = await transactionRecord.$get('user')
-        if (!user) {
-            throw new InternalServerError(`Transaction ${transactionRecord.id} does not have a user`)
-        }
-
-        if (!transactionRecord.userId) {
-            throw new InternalServerError(`Timedout transaction ${transactionRecord.id} does not have a user`)
-        }
-
-        const meter: Meter | null = await transactionRecord.$get('meter')
-        if (!meter) {
-            throw new InternalServerError(`Timedout transaction ${transactionRecord.id} does not have a meter`)
-        }
-
-        // Power unit will only be created if the transaction has been completed or if a sucessful requery has been don
-        const transactionHasBeenAccountedFor = !!powerUnit
-
-        // Add Power Unit to store token if transcation has not been accounted for 
-        powerUnit = powerUnit
-            ? powerUnit
-            : await PowerUnitService.addPowerUnit({
-                id: randomUUID(),
-                transactionId: transactionRecord.id,
+        const transactionEventService = new TransactionEventService(transactionRecord, { meterNumber: transactionRecord.meter.meterNumber, disco: transactionRecord.disco, vendType: transactionRecord.meter.vendType})
+        await transactionEventService.addTokenReceivedEvent(response.data.token)
+        await VendorPublisher.publishEventForReceivedToken({
+            meter: {
+                id: transactionRecord.meter.id,
+                meterNumber: transactionRecord.meter.meterNumber,
                 disco: transactionRecord.disco,
-                discoLogo: DISCO_LOGO[transactionRecord.disco.toLowerCase() as keyof typeof DISCO_LOGO],
-                amount: transactionRecord.amount,
-                meterId: meter.id,
-                superagent: transactionRecord.superagent,
-                address: meter.address,
-                token: NODE_ENV === 'development' ? generateRandomToken() : response.data.token,
-                tokenNumber: 0,
-                tokenUnits: response.data.token
-            })
-
-        // Update Transaction if transaction has not been accounted for
-        // TODO: Add request token event to transaction
-        transactionRecord = transactionHasBeenAccountedFor ? transactionRecord : await transactionRecord.update({ amount: transactionRecord.amount, status: Status.COMPLETE })
-
-        // TODO: Only send email if transaction has not been completed before
-        !transactionHasBeenAccountedFor && EmailService.sendEmail({
-            to: user.email,
-            subject: 'Token Purchase',
-            html: await new EmailTemplate().receipt({
-                transaction: transactionRecord,
-                meterNumber: meter.meterNumber,
-                token: powerUnit.token
-            })
+                vendType: transactionRecord.meter.vendType,
+                token: response.data.token,
+            },
+            user: {
+                name: transactionRecord.user.name as string,
+                email: transactionRecord.user.email,
+                address: transactionRecord.user.address,
+                phoneNumber: transactionRecord.user.phoneNumber,
+            },
+            partner: {
+                email: transactionRecord.partner.email,
+            },
+            transactionId: transactionRecord.id
         })
 
         res.status(200).json({
@@ -186,7 +149,6 @@ export default class TransactionController {
                 requeryStatusCode: 200,
                 requeryStatusMessage: 'Transaction successful',
                 transaction: ResponseTrimmer.trimTransaction(transactionRecord),
-                powerUnit: ResponseTrimmer.trimPowerUnit(powerUnit)
             }
         })
     }
