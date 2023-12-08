@@ -5,9 +5,7 @@ import MessageProcessor from "../util/MessageProcessor";
 
 export default class CrmConsumer extends ConsumerFactory {
     constructor() {
-        const messageProcessor = new MessageProcessor()
-
-        const topics: Topic[] = [TOPICS.METER_VALIDATION_REQUESTED, TOPICS.TOKEN_RECEIVED]
-        super(messageProcessor, topics)
+        const messageProcessor = new MessageProcessor({}, 'CRM_CONSUMER')
+        super(messageProcessor)
     }
 }

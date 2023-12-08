@@ -3,14 +3,16 @@ import logger from "../../../utils/Logger";
 import { CustomMessageFormat, MessageHandler, Topic } from "./Interface";
 
 export default class MessageProcessorFactory {
-    private handlers: MessageHandler
+    private handlers: () => MessageHandler
+    private consumerName: string
 
-    constructor(handlers?: MessageHandler) {
-        this.handlers = handlers ?? {} as MessageHandler
+    constructor(handlers: MessageHandler, consumerName: string) {
+        this.handlers = () => handlers ?? {} as MessageHandler
+        this.consumerName = consumerName
     }
 
     private async processMessage(messageData: CustomMessageFormat) {
-        const handler = this.handlers[messageData.topic]
+        const handler = this.handlers()[messageData.topic]
         if (!handler) {
             logger.error(`No handler for topic ${messageData.topic}`)
             return
@@ -21,9 +23,8 @@ export default class MessageProcessorFactory {
 
     public async processEachMessage(messagePayload: Omit<EachMessagePayload, 'topic'> & { topic: Topic }): Promise<void> {
         const { topic, partition, message } = messagePayload;
-
-        const prefix = `${topic}[${partition} | ${message.offset}] / ${message.timestamp}`;
-        logger.info('Received message: ' + prefix)
+        const prefix = `[${topic}][${partition} | ${message.offset}] / ${message.timestamp}`;
+        logger.info(`Received message => [${this.consumerName}]: ` + prefix)
 
         const data: CustomMessageFormat = {
             topic,
@@ -34,7 +35,7 @@ export default class MessageProcessorFactory {
             headers: message.headers,
         }
 
-        await this.processMessage(data)
+        return await this.processMessage(data)
     }
 
     public async processEachBatch(eachBatchPayload: EachBatchPayload): Promise<void> {
@@ -43,5 +44,13 @@ export default class MessageProcessorFactory {
             const prefix = `${batch.topic}[${batch.partition} | ${message.offset}] / ${message.timestamp}`;
             logger.info(`- ${prefix} ${message.key}#${message.value}`);
         }
+    }
+
+    public getTopics(): Topic[] {
+        return Object.keys(this.handlers()) as Topic[]
+    }
+
+    public getConsumerName(): string {
+        return this.consumerName
     }
 }

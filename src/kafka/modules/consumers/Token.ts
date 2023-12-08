@@ -79,37 +79,48 @@ class TokenHandler extends Registry {
     }
 
     private static async handleTokenReceived(data: PublisherEventAndParameters[TOPICS.TOKEN_RECEIVED]) {
-        // Requery transaction from provider and update transaction status
-        const requeryResult = await VendorService.buyPowerRequeryTransaction({ transactionId: data.transactionId })
-
-        const transactionSuccess = requeryResult.responseCode === 200
-        if (!transactionSuccess) {
-            logger.error(`Error requerying transaction with id ${data.transactionId}`)
-            return
-        }
-
+        logger.info('inside token handler')
         const transaction = await TransactionService.viewSingleTransaction(data.transactionId)
         if (!transaction) {
             logger.error(`Error fetching transaction with id ${data.transactionId}`)
             return
         }
 
+        // Check if transaction is already complete
+        if (transaction.status === Status.COMPLETE) {
+            logger.error(`Transaction with id ${data.transactionId} is already complete`)
+            return
+        }
+
+        // Requery transaction from provider and update transaction status
+        const requeryResult = await VendorService.buyPowerRequeryTransaction({ transactionId: data.transactionId })
+        const transactionSuccess = requeryResult.responseCode === 200
+        if (!transactionSuccess) {
+            logger.error(`Error requerying transaction with id ${data.transactionId}`)
+            return
+        }
+
         // If successful, check if a power unit exists for the transaction, if none exists, create one
         let powerUnit = await PowerUnitService.viewSinglePowerUnitByTransactionId(data.transactionId)
-        powerUnit = powerUnit ?? await PowerUnitService.addPowerUnit({
-            id: uuidv4(),
-            transactionId: data.transactionId,
-            disco: data.meter.disco,
-            discoLogo: DISCO_LOGO[data.meter.disco as keyof typeof DISCO_LOGO],
-            amount: '0',
-            meterId: data.meter.id,
-            superagent: 'BUYPOWERNG',
-            token: requeryResult.data.token,
-            tokenNumber: 0,
-            tokenUnits: '0',
-            address: transaction.meter.address
-        })
+        powerUnit = powerUnit
+            ? await PowerUnitService.updateSinglePowerUnit(powerUnit.id, {
+                token: requeryResult.data.token,
+            })
+            : await PowerUnitService.addPowerUnit({
+                id: uuidv4(),
+                transactionId: data.transactionId,
+                disco: data.meter.disco,
+                discoLogo: DISCO_LOGO[data.meter.disco as keyof typeof DISCO_LOGO],
+                amount: transaction.amount,
+                meterId: data.meter.id,
+                superagent: 'BUYPOWERNG',
+                token: requeryResult.data.token,
+                tokenNumber: 0,
+                tokenUnits: '0',
+                address: transaction.meter.address
+            })
 
+        console.log(powerUnit)
         await TransactionService.updateSingleTransaction(data.transactionId, { status: Status.COMPLETE })
 
         return
@@ -123,9 +134,7 @@ class TokenHandler extends Registry {
 
 export default class TokenConsumer extends ConsumerFactory {
     constructor() {
-        const messageProcessor = new MessageProcessor(TokenHandler.registry)
-
-        const topics: Topic[] = [TOPICS.TOKEN_REQUESTED, TOPICS.TOKEN_RECEIVED]
-        super(messageProcessor, topics)
+        const messageProcessor = new MessageProcessor(TokenHandler.registry, 'TOKEN_CONSUMER')
+        super(messageProcessor)
     }
 }

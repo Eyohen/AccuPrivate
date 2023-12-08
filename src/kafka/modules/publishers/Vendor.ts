@@ -1,10 +1,11 @@
+import logger from "../../../utils/Logger";
 import { TOPICS } from "../../Constants";
 import { PublisherEventAndParameters } from "../util/Interface";
 import ProducerFactory from "../util/Producer";
 
 export class VendorPublisher extends ProducerFactory {
     static async publishEventForMeterValidationRequested(data: PublisherEventAndParameters[TOPICS.METER_VALIDATION_REQUESTED]) {
-        await ProducerFactory.sendMessage({
+        return ProducerFactory.sendMessage({
             topic: TOPICS.METER_VALIDATION_REQUESTED,
             message: {
                 meter: {
@@ -14,11 +15,13 @@ export class VendorPublisher extends ProducerFactory {
                 },
                 transactionId: data.transactionId
             }
+        }).catch((e) => {
+            logger.error(`An error occured while publishing ${TOPICS.METER_VALIDATION_REQUESTED} event for transaction` + data.transactionId)
         })
     }
 
     static async publishEventForMeterValidationReceived(data: PublisherEventAndParameters[TOPICS.METER_VALIDATION_RECIEVED]) {
-        await ProducerFactory.sendMessage({
+        return ProducerFactory.sendMessage({
             topic: TOPICS.METER_VALIDATION_RECIEVED,
             message: {
                 user: {
@@ -34,11 +37,13 @@ export class VendorPublisher extends ProducerFactory {
                 },
                 transactionId: data.transactionId
             }
+        }).catch((e) => {
+            logger.error(`An error occured while publishing ${TOPICS.METER_VALIDATION_RECIEVED} event for transaction` + data.transactionId)
         })
     }
 
     static async publishEventForInitiatedPowerPurchase(data: PublisherEventAndParameters[TOPICS.POWER_PURCHASE_INITIATED]) {
-        await ProducerFactory.sendMessage({
+        return ProducerFactory.sendMessage({
             topic: TOPICS.POWER_PURCHASE_INITIATED,
             message: {
                 meter: {
@@ -49,11 +54,13 @@ export class VendorPublisher extends ProducerFactory {
                 },
                 transactionId: data.transactionId
             }
+        }).catch((e) => {
+            logger.error(`An error occured while publishing ${TOPICS.POWER_PURCHASE_INITIATED} event for transaction` + data.transactionId)
         })
     }
 
     static async publishEventForTokenRequest(data: PublisherEventAndParameters[TOPICS.TOKEN_REQUESTED]) {
-        await ProducerFactory.sendMessage({
+        return ProducerFactory.sendMessage({
             topic: TOPICS.TOKEN_REQUESTED,
             message: {
                 meter: {
@@ -73,11 +80,13 @@ export class VendorPublisher extends ProducerFactory {
                 },
                 transactionId: data.transactionId
             }
+        }).catch((e) => {
+            logger.error(`An error occured while publishing ${TOPICS.TOKEN_REQUESTED} event for transaction` + data.transactionId)
         })
     }
 
     static async publishEventForReceivedToken(data: PublisherEventAndParameters[TOPICS.TOKEN_RECEIVED]) {
-        await ProducerFactory.sendMessage({
+        return ProducerFactory.sendMessage({
             topic: TOPICS.TOKEN_RECEIVED,
             message: {
                 meter: {
@@ -98,11 +107,13 @@ export class VendorPublisher extends ProducerFactory {
                 },
                 transactionId: data.transactionId
             }
+        }).catch((e) => {
+            logger.error(`An error occured while publishing ${TOPICS.TOKEN_RECEIVED} event for transaction` + data.transactionId)
         })
     }
 
     static async publishEventForCompletedPowerPurchase(data: PublisherEventAndParameters[TOPICS.PARTNER_TRANSACTION_COMPLETE]) {
-        await ProducerFactory.sendMessage({
+        return ProducerFactory.sendMessage({
             topic: TOPICS.POWER_PURCHASE_INITIATED,
             message: {
                 meter: {
@@ -113,6 +124,8 @@ export class VendorPublisher extends ProducerFactory {
                 },
                 transactionId: data.transactionId
             }
+        }).catch((e) => {
+            logger.error(`An error occured while publishing  ${TOPICS.PARTNER_TRANSACTION_COMPLETE} event for transaction` + data.transactionId)
         })
     }
 }

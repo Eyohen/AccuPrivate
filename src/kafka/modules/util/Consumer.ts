@@ -1,32 +1,43 @@
-import { Consumer, ConsumerSubscribeTopics, EachMessageHandler } from 'kafkajs'
+import { Consumer, ConsumerSubscribeTopics, EachMessageHandler, EachMessagePayload } from 'kafkajs'
 import logger from '../../../utils/Logger'
 import MessageProcessorFactory from './MessageProcessor'
 import Kafka from '../../config'
-import { KafkaTopics, Topic } from './Interface'
+import { KafkaTopics, MessagePayload, Topic } from './Interface'
+import { v4 as uuid} from 'uuid'
+import { TOPICS } from '../../Constants'
+
+class PartitionHandler {
+    private static currentPartition: number = 0
+
+    static getPartition(): number[] {
+        const newPartition = this.currentPartition + 1
+        this.currentPartition = newPartition
+        return [newPartition]
+    }
+}
+const groupId = uuid()
 
 export default class ConsumerFactory {
     private kafkaConsumer: Consumer
     private messageProcessor: MessageProcessorFactory
-    private topics: Topic[]
 
-    public constructor(messageProcessor: MessageProcessorFactory, topics: Topic[]) {
+    public constructor(messageProcessor: MessageProcessorFactory) {
         this.messageProcessor = messageProcessor
-        this.topics = topics
         this.kafkaConsumer = this.createKafkaConsumer()
     }
 
     public async start(): Promise<void> {
-        const topic: KafkaTopics = {
-            topics: this.topics,
-            fromBeginning: false
+        const subscription: KafkaTopics = {
+            topics: this.messageProcessor.getTopics(),
+            fromBeginning: false,
         }
 
         try {
             await this.kafkaConsumer.connect()
-            await this.kafkaConsumer.subscribe(topic)
+            await this.kafkaConsumer.subscribe(subscription)
 
             await this.kafkaConsumer.run({
-                eachMessage: this.messageProcessor.processEachMessage as EachMessageHandler
+                eachMessage: (messagePayload) => this.messageProcessor.processEachMessage(messagePayload as MessagePayload)
             })
         } catch (error) {
             console.error(error)
@@ -36,14 +47,15 @@ export default class ConsumerFactory {
     public async startBatchConsumer(_topic: Topic): Promise<void> {
         const topic: KafkaTopics = {
             topics: [_topic],
-            fromBeginning: false
+            fromBeginning: false,
+            
         }
 
         try {
             await this.kafkaConsumer.connect()
             await this.kafkaConsumer.subscribe(topic)
             await this.kafkaConsumer.run({
-                eachBatch: this.messageProcessor.processEachBatch
+                eachBatch: (messagePayload) => this.messageProcessor.processEachBatch(messagePayload)
             })
         } catch (error) {
             logger.info(error)
@@ -55,7 +67,7 @@ export default class ConsumerFactory {
     }
 
     private createKafkaConsumer(): Consumer {
-        const consumer = Kafka.consumer({ groupId: 'consumer-group' })
+        const consumer = Kafka.consumer({ groupId: this.messageProcessor.getConsumerName() })
         return consumer
     }
 }

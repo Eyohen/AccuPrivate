@@ -5,9 +5,7 @@ import MessageProcessor from "../util/MessageProcessor";
 
 export default class UserConsumer extends ConsumerFactory {
     constructor() {
-        const messageProcessor = new MessageProcessor()
-
-        const topics: Topic[] = [TOPICS.METER_VALIDATION_REQUESTED, TOPICS.TOKEN_RECEIVED]
-        super(messageProcessor, topics)
+        const messageProcessor = new MessageProcessor({}, 'USER_CONSUMER')
+        super(messageProcessor)
     }
 }

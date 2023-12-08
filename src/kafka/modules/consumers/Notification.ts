@@ -14,6 +14,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 class NotificationHandler extends Registry {
     private static async handleReceivedToken(data: PublisherEventAndParameters[TOPICS.TOKEN_RECEIVED]) {
+        logger.info('Inside notification handler')
         const transaction = await TransactionService.viewSingleTransaction(data.transactionId)
         if (!transaction) {
             logger.error(`Error fetching transaction with id ${data.transactionId}`)
@@ -85,9 +86,7 @@ class NotificationHandler extends Registry {
 
 export default class NotificationConsumer extends ConsumerFactory {
     constructor() {
-        const messageProcessor = new MessageProcessor(NotificationHandler.registry)
-
-        const topics: Topic[] = [TOPICS.TOKEN_REQUESTED, TOPICS.TOKEN_RECEIVED]
-        super(messageProcessor, topics)
+        const messageProcessor = new MessageProcessor(NotificationHandler.registry, 'NOTIFICATION_CONSUMER')
+        super(messageProcessor)
     }
 }

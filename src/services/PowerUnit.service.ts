@@ -33,7 +33,13 @@ export default class PowerUnitService {
         return powerUnit
     }
 
-    static async updateSinglePowerUnit() {
+    static async updateSinglePowerUnit(powerUnitId: string, update: Partial<ICreatePowerUnit>): Promise<PowerUnit | void | null> {
+        const powerUnit: PowerUnit | null = await PowerUnit.findByPk(powerUnitId)
+        if (!powerUnit) throw new Error('PowerUnit not found')
+        await powerUnit.update(update)
 
+        const updatedPowerUnit: PowerUnit | null = await PowerUnit.findByPk(powerUnitId)
+
+        return updatedPowerUnit
     }
 }

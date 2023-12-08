@@ -1,4 +1,4 @@
-import { ConsumerSubscribeTopics } from "kafkajs";
+import { ConsumerSubscribeTopics, EachMessagePayload } from "kafkajs";
 import { TOPICS } from "../../Constants";
 
 export type Topic = TOPICS
@@ -99,3 +99,5 @@ export type KafkaTopics = Omit<ConsumerSubscribeTopics, 'topics'> & { topics: To
 export abstract class Registry {
     static registry: MessageHandler = {}
 }
+
+export type MessagePayload = EachMessagePayload & { topic: TOPICS }

@@ -164,7 +164,7 @@ export default class VendorController {
         );
 
         await transactionEventService.addMeterValidationRequestedEvent();
-        await VendorPublisher.publishEventForMeterValidationRequested({
+        VendorPublisher.publishEventForMeterValidationRequested({
             meter: { meterNumber, disco, vendType },
             transactionId: transaction.id,
         });
@@ -197,14 +197,14 @@ export default class VendorController {
         };
 
         await transactionEventService.addMeterValidationResponseEvent({ user: userInfo });
-        await VendorPublisher.publishEventForMeterValidationReceived({
+        VendorPublisher.publishEventForMeterValidationReceived({
             meter: { meterNumber, disco, vendType },
             transactionId: transaction.id,
             user: userInfo,
         });
 
         await transactionEventService.addCRMUserInitiatedEvent({ user: userInfo });
-        await CRMPublisher.publishEventForInitiatedUser({
+        CRMPublisher.publishEventForInitiatedUser({
             user: userInfo,
             transactionId: transaction.id,
         })
@@ -220,7 +220,7 @@ export default class VendorController {
 
         await transaction.update({ userId: user.id });
         await transactionEventService.addCRMUserConfirmedEvent({ user: userInfo });
-        await CRMPublisher.publishEventForConfirmedUser({
+        CRMPublisher.publishEventForConfirmedUser({
             user: userInfo,
             transactionId: transaction.id,
         })
@@ -299,7 +299,7 @@ export default class VendorController {
         }
 
         await transactionEventService.addPowerPurchaseInitiatedEvent(bankRefId, amount);
-        await VendorPublisher.publishEventForInitiatedPowerPurchase({
+        VendorPublisher.publishEventForInitiatedPowerPurchase({
             transactionId: transaction.id,
             meter: {
                 id: meter.id as string,
@@ -312,7 +312,7 @@ export default class VendorController {
         const { user, partnerEntity } = await VendorControllerValdator.requestToken({ bankRefId, transactionId });
 
         await transactionEventService.addTokenRequestedEvent(bankRefId);
-        await TransactionService.updateSingleTransaction(
+        const txn = await TransactionService.updateSingleTransaction(
             transactionId,
             {
                 bankRefId,
@@ -321,7 +321,7 @@ export default class VendorController {
                 status: Status.PENDING,
             });
 
-        await VendorPublisher.publishEventForTokenRequest({
+        VendorPublisher.publishEventForTokenRequest({
             transactionId: transaction.id,
             user: {
                 name: user.name as string,

@@ -4,8 +4,6 @@ import logger from '../../../utils/Logger'
 import { TOPICS } from '../../Constants'
 import { PublisherEventAndParameters, PublisherParamsUnion, Topic } from './Interface'
 
-type ValueOf<T> = T[keyof T]
-
 interface CustomMessageFormat { a: string }
 
 export default class ProducerFactory {
@@ -25,6 +23,8 @@ export default class ProducerFactory {
 
 
     static async sendMessage({ topic, message }: PublisherParamsUnion) {
+        logger.info('Sending message to topic: ' + topic)
+        logger.info('Message: '+ JSON.stringify(message))   
         await this.producer.send({
             topic: topic,
             messages: [
