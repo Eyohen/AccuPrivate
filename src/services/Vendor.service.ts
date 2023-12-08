@@ -4,13 +4,14 @@ import { IBaxiGetProviderResponse, IBaxiPurchaseResponse, IBaxiValidateMeterResp
 import querystring from "querystring";
 import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL, NODE_ENV } from "../utils/Constants";
 import logger from "../utils/Logger";
+import { v4 as UUIDV4 } from 'uuid'
 
 interface _RequeryBuypowerSuccessResponse {
     result: {
         status: true,
         data: {
             id: number,
-            amountGenerated: number,
+            amountGenerated: `${number}`,
             disco: string,
             orderId: string,
             receiptNo: string,
@@ -48,6 +49,18 @@ type BuypowerRequeryResponse = _RequeryBuypowerSuccessResponse | InprogressRespo
 
 // Define the VendorService class for handling provider-related operations
 export default class VendorService {
+    private static generateToken(): string {
+        // format 1234-1234-1234-1234-1234
+        let token = ''
+        for (let i = 0; i < 5; i++) {
+            for (let j = 0; j < 4; j++) {
+                token += Math.floor(Math.random() * 10).toString()
+            }
+            token += '-'
+        }
+
+        return token
+    }
 
     // Static method for obtaining a Baxi vending token
     static async baxiVendToken(body: IVendToken) {
@@ -200,7 +213,43 @@ export default class VendorService {
 
     static async buyPowerRequeryTransaction({ transactionId }: { transactionId: string }) {
         try {
+            console.log(NODE_ENV)
+            // Buypower requery has been returning 500 error on dev mode
+            if (NODE_ENV === 'development') {
+                return {
+                    "status": true,
+                    "message": "Transaction succesful",
+                    'responseCode': 200,
+                    "data": {
+                        "id": 80142232,
+                        "amountGenerated": "16600.00",
+                        "tariff": null,
+                        "disco": "DSTV",
+                        "debtAmount": "0.00",
+                        "debtRemaining": "0.00",
+                        "orderId": transactionId,
+                        "receiptNo": "4234234234",
+                        "tax": "0.00",
+                        "vendTime": new Date(),
+                        "token": this.generateToken(),
+                        "totalAmountPaid": 16600,
+                        "units": "1",
+                        "vendAmount": "16600",
+                        "vendRef": "sfasdfa2432323",
+                        "responseCode": 100,
+                        "responseMessage": "Request successful",
+                        "address": "7036722631",
+                        "name": "7036722631",
+                        "phoneNo": null,
+                        "charges": "0.00",
+                        "tariffIndex": null,
+                        "parcels": [],
+                    }
+                } as SuccessResponseForBuyPowerRequery
+            }
+
             const response = await this.buyPowerAxios().get<BuypowerRequeryResponse>(`/transaction/${transactionId}`)
+
 
             const successResponse = response.data as _RequeryBuypowerSuccessResponse
             if (successResponse.result.status === true) {

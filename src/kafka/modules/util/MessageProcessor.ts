@@ -18,7 +18,11 @@ export default class MessageProcessorFactory {
             return
         }
 
-        await handler(messageData.value)
+        try {
+            await handler(messageData.value)
+        } catch (error) {
+            console.error(error)
+        }
     }
 
     public async processEachMessage(messagePayload: Omit<EachMessagePayload, 'topic'> & { topic: Topic }): Promise<void> {

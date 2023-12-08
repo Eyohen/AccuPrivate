@@ -25,7 +25,7 @@ class TokenHandler extends Registry {
 
         // Purchase token from vendor
         const tokenInfo = await VendorService.buyPowerVendToken({
-            transactionId: data.transactionId,
+            transactionId: transaction.reference,
             meterNumber: data.meter.meterNumber,
             disco: data.meter.disco,
             vendType: data.meter.vendType,
@@ -79,7 +79,6 @@ class TokenHandler extends Registry {
     }
 
     private static async handleTokenReceived(data: PublisherEventAndParameters[TOPICS.TOKEN_RECEIVED]) {
-        logger.info('inside token handler')
         const transaction = await TransactionService.viewSingleTransaction(data.transactionId)
         if (!transaction) {
             logger.error(`Error fetching transaction with id ${data.transactionId}`)
@@ -93,7 +92,7 @@ class TokenHandler extends Registry {
         }
 
         // Requery transaction from provider and update transaction status
-        const requeryResult = await VendorService.buyPowerRequeryTransaction({ transactionId: data.transactionId })
+        const requeryResult = await VendorService.buyPowerRequeryTransaction({ transactionId: transaction.reference })
         const transactionSuccess = requeryResult.responseCode === 200
         if (!transactionSuccess) {
             logger.error(`Error requerying transaction with id ${data.transactionId}`)
@@ -102,27 +101,28 @@ class TokenHandler extends Registry {
 
         // If successful, check if a power unit exists for the transaction, if none exists, create one
         let powerUnit = await PowerUnitService.viewSinglePowerUnitByTransactionId(data.transactionId)
+        
+        const discoLogo = DISCO_LOGO[data.meter.disco as keyof typeof DISCO_LOGO]
         powerUnit = powerUnit
             ? await PowerUnitService.updateSinglePowerUnit(powerUnit.id, {
                 token: requeryResult.data.token,
+                transactionId: data.transactionId,
             })
             : await PowerUnitService.addPowerUnit({
                 id: uuidv4(),
                 transactionId: data.transactionId,
                 disco: data.meter.disco,
-                discoLogo: DISCO_LOGO[data.meter.disco as keyof typeof DISCO_LOGO],
+                discoLogo,
                 amount: transaction.amount,
                 meterId: data.meter.id,
                 superagent: 'BUYPOWERNG',
                 token: requeryResult.data.token,
                 tokenNumber: 0,
                 tokenUnits: '0',
-                address: transaction.meter.address
+                address: transaction.meter.address,
             })
 
-        console.log(powerUnit)
-        await TransactionService.updateSingleTransaction(data.transactionId, { status: Status.COMPLETE })
-
+        await TransactionService.updateSingleTransaction(data.transactionId, { status: Status.COMPLETE, powerUnitId: powerUnit.id })
         return
     }
 

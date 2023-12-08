@@ -10,14 +10,15 @@ import Partner from "../models/Entity/Profiles/PartnerProfile.model";
 import User from "../models/User.model";
 import Meter from "../models/Meter.model";
 import { Op } from "sequelize";
+import { generateRandomString } from "../utils/Helper";
 
 // Define the TransactionService class for handling transaction-related operations
 export default class TransactionService {
     // Create an instance of EventService for handling events
     private static eventService: EventService = new EventService();
 
-    static addTransactionWithoutValidatingUserRelationship(transaction: Omit<ICreateTransaction, 'userId'>): Promise<Transaction> {
-        const transactionData = Transaction.build(transaction as Transaction)
+    static addTransactionWithoutValidatingUserRelationship(transaction: Omit<ICreateTransaction, 'userId' | 'reference'>): Promise<Transaction> {
+        const transactionData = Transaction.build({...transaction, reference: generateRandomString(10)} as Transaction)
         return transactionData.save({ validate: false })
     }
 

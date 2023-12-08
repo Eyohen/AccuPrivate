@@ -94,7 +94,8 @@ export default class TransactionController {
             throw new NotFoundError('Transaction record not found')
         }
 
-        if (transactionRecord.superagent === 'BUYPOWERNG') {
+        console.log(transactionRecord.superagent)
+        if (transactionRecord.superagent !== 'BUYPOWERNG') {
             throw new BadRequestError('Transaction cannot be requery for this superagent')
         }
 

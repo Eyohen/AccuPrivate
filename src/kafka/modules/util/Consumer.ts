@@ -6,17 +6,6 @@ import { KafkaTopics, MessagePayload, Topic } from './Interface'
 import { v4 as uuid} from 'uuid'
 import { TOPICS } from '../../Constants'
 
-class PartitionHandler {
-    private static currentPartition: number = 0
-
-    static getPartition(): number[] {
-        const newPartition = this.currentPartition + 1
-        this.currentPartition = newPartition
-        return [newPartition]
-    }
-}
-const groupId = uuid()
-
 export default class ConsumerFactory {
     private kafkaConsumer: Consumer
     private messageProcessor: MessageProcessorFactory
