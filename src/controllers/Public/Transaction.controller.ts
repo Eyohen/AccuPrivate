@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import Transaction, { ITransaction } from "../../models/Transaction.model";
+import Transaction, { IQueryTransaction, ITransaction } from "../../models/Transaction.model";
 import TransactionService from "../../services/Transaction.service";
 import { BadRequestError, InternalServerError, NotFoundError } from "../../utils/Errors";
 import { Status } from "../../models/Event.model";
@@ -7,15 +7,14 @@ import EmailService, { EmailTemplate } from "../../utils/Email";
 import { generateRandomToken } from "../../utils/Helper";
 import { DISCO_LOGO, NODE_ENV } from "../../utils/Constants";
 import PowerUnitService from "../../services/PowerUnit.service";
-import { UUIDV4 } from "sequelize";
 import ResponseTrimmer from "../../utils/ResponseTrimmer";
 import { randomUUID } from "crypto";
 import Meter from "../../models/Meter.model";
 import VendorService from "../../services/Vendor.service";
-
-interface getTransactionInfoRequestBody {
-    bankRefId: string
-}
+import { AuthenticatedRequest } from "../../utils/Interface";
+import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
+import EventService from "../../services/Event.service";
+import { RoleEnum } from "../../models/Role.model";
 
 interface getTransactionsRequestBody extends ITransaction {
     page: `${number}`
@@ -31,9 +30,11 @@ interface getTransactionsRequestBody extends ITransaction {
 
 export default class TransactionController {
     static async getTransactionInfo(req: Request, res: Response) {
-        const { bankRefId } = req.query as Record<string, string>
+        const { bankRefId, transactionId } = req.query as Record<string, string>
 
-        const transaction: Transaction | null = await TransactionService.viewSingleTransactionByBankRefID(bankRefId)
+        const transaction: Transaction | null = bankRefId
+            ? await TransactionService.viewSingleTransactionByBankRefID(bankRefId)
+            : await TransactionService.viewSingleTransaction(transactionId)
         if (!transaction) {
             throw new NotFoundError('Transaction not found')
         }
@@ -47,21 +48,28 @@ export default class TransactionController {
         })
     }
 
-    static async getTransactions(req: Request, res: Response) {
+    static async getTransactions(req: AuthenticatedRequest, res: Response) {
         const {
             page, limit, status, startDate, endDate,
-            userId, disco, superagent
+            userId, disco, superagent, partnerId
         } = req.query as any as getTransactionsRequestBody
 
-        const query = { where: {} } as any
+        const query = { where: {} } as IQueryTransaction
+
         if (status) query.where.status = status
         if (startDate && endDate) query.where.transactionTimestamp = { $between: [startDate, endDate] }
         if (userId) query.where.userId = userId
         if (disco) query.where.disco = disco
         if (superagent) query.where.superagent = superagent
-        if (limit) query.limit = limit
+        if (limit) query.limit = parseInt(limit)
         if (page && page != '0' && limit) {
             query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit)
+        }
+        if (partnerId) query.where.partnerId = partnerId
+
+        const requestWasMadeByAnAdmin = [RoleEnum.Admin].includes(req.user.user.entity.role)
+        if (!requestWasMadeByAnAdmin) {
+            query.where.partnerId = req.user.user.profile.id
         }
 
         const transactions: Transaction[] = await TransactionService.viewTransactionsWithCustomQuery(query)
@@ -69,14 +77,29 @@ export default class TransactionController {
             throw new NotFoundError('Transactions not found')
         }
 
+        const paginationData = {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            totalCount: transactions.length,
+            totalPages: Math.ceil(transactions.length / parseInt(limit))
+        }
+
+        const response = {
+            transactions: transactions
+        } as any
+
+        if (page && page != '0' && limit) {
+            response['pagination'] = paginationData
+        }
+
         res.status(200).json({
             status: 'success',
             message: 'Transactions retrieved successfully',
-            data: { transactions }
+            data: response
         })
     }
 
-    static async requeryTimedOutTransaction(req: Request, res: Response) {
+    static async requeryTimedOutTransaction(req: AuthenticatedRequest, res: Response) {
         const { bankRefId }: { bankRefId: string } = req.query as any
 
         let transactionRecord = await TransactionService.viewSingleTransactionByBankRefID(bankRefId)
@@ -97,7 +120,7 @@ export default class TransactionController {
             if (transactionFailed) await TransactionService.updateSingleTransaction(transactionRecord.id, { status: Status.FAILED })
             else if (transactionIsPending) await TransactionService.updateSingleTransaction(transactionRecord.id, { status: Status.PENDING })
 
-            return res.status(200).json({
+            res.status(200).json({
                 status: 'success',
                 message: 'Requery request successful',
                 data: {
@@ -106,7 +129,20 @@ export default class TransactionController {
                     transaction: ResponseTrimmer.trimTransaction(transactionRecord),
                 }
             })
+
+            return
         }
+
+        await EventService.addEvent({
+            id: randomUUID(),
+            transactionId: transactionRecord.id,
+            eventType: 'REQUERY',
+            eventText: 'Requery successful',
+            eventData: response as unknown as JSON,
+            eventTimestamp: new Date(),
+            source: 'BUYPOWERNG',
+            status: Status.COMPLETE
+        })
 
         await TransactionService.updateSingleTransaction(transactionRecord.id, { status: Status.COMPLETE })
         const user = await transactionRecord.$get('user')
@@ -170,9 +206,14 @@ export default class TransactionController {
         })
     }
 
-    static async getYesterdaysTransactions(req: Request, res: Response) {
+    static async getYesterdaysTransactions(req: AuthenticatedRequest, res: Response) {
         const { status } = req.query as any as { status: 'COMPLETED' | 'FAILED' | 'PENDING' }
-        const { partner } = (req as any).user
+        const { profile: { id } } = req.user.user
+
+        const partner = await PartnerService.viewSinglePartner(id)
+        if (!partner) {
+            throw new InternalServerError('Authenticated partner not found')
+        }
 
         const transactions = status
             ? await TransactionService.viewTransactionsForYesterdayByStatus(partner.id, status.toUpperCase() as typeof status)

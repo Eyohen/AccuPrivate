@@ -3,10 +3,10 @@ import Transaction from "../models/Transaction.model";
 import { ITransaction, ICreateTransaction, IUpdateTransaction } from "../models/Transaction.model";
 import EventService from "./Event.service";
 import { v4 as uuidv4 } from 'uuid';
-import { Status } from '../models/Event.model';
+import Event, { Status } from '../models/Event.model';
 import logger from "../utils/Logger";
 import PowerUnit from "../models/PowerUnit.model";
-import Partner from "../models/Partner.model";
+import Partner from "../models/Entity/Profiles/PartnerProfile.model";
 import User from "../models/User.model";
 import Meter from "../models/Meter.model";
 import { Op } from "sequelize";
@@ -38,14 +38,15 @@ export default class TransactionService {
 
     static async viewTransactionsWithCustomQuery(query: any): Promise<Transaction[]> {
         // Retrieve all transactions from the database
-        const transactions: Transaction[] = await Transaction.findAll({ ...query, include: [PowerUnit, Partner, User, Meter] });
+        // Sort from latest 
+        const transactions: Transaction[] = (await Transaction.findAll({ ...query, include: [PowerUnit, Event, Partner, User, Meter] })).sort((a, b) => { return b.transactionTimestamp.getTime() - a.transactionTimestamp.getTime() });
         return transactions;
     }
 
     // Static method for viewing a single transaction by UUID
     static async viewSingleTransaction(uuid: string): Promise<Transaction | null> {
         // Retrieve a single transaction by its UUID
-        const transaction: Transaction | null = await Transaction.findByPk(uuid, { include: [PowerUnit, Partner, User, Meter] });
+        const transaction: Transaction | null = await Transaction.findByPk(uuid, { include: [PowerUnit, Event, Partner, User, Meter] });
         return transaction;
     }
 
@@ -68,9 +69,6 @@ export default class TransactionService {
         const yesterdayDate = new Date()
         yesterdayDate.setDate(yesterdayDate.getDate() - 5)
         const currentDate = new Date()
-        console.log(yesterdayDate)
-        console.log(new Date())
-        console.log(partnerId)
         const transactions: Transaction[] = await Transaction.findAll({
             where: {
                 // partnerId: partnerId,
@@ -79,7 +77,6 @@ export default class TransactionService {
                 }
             }
         })
-        // console.log(transactions)
 
         return transactions
     }
@@ -87,8 +84,6 @@ export default class TransactionService {
     static async viewTransactionsForYesterdayByStatus(partnerId: string, status: 'COMPLETED' | 'PENDING' | 'FAILED'): Promise<Transaction[]> {
         const yesterdayDate = new Date()
         yesterdayDate.setDate(yesterdayDate.getDate() - 1)
-        console.log(yesterdayDate)
-        console.log(new Date())
 
         const transactions: Transaction[] = await Transaction.findAll({
             where: {

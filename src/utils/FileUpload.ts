@@ -6,7 +6,8 @@ import {
     CLOUDINARY_API_SECRET
 } from './Constants';
 import { randomUUID } from 'crypto';
-import Partner from '../models/Partner.model';
+import Partner from '../models/Entity/Profiles/PartnerProfile.model';
+import Entity from '../models/Entity/Entity.model';
 
 interface ICloudinaryFileOptions {
     path: string;
@@ -48,10 +49,10 @@ class FileUploadService {
         return data.secure_url
     }
 
-    static async uploadProfilePicture({ filePath, partner }: { filePath: string, partner: Partner }): Promise<string> {
+    static async uploadProfilePicture({ filePath, entity }: { filePath: string, entity: Entity }): Promise<string> {
         const path = filePath,
             fileName = `${randomUUID()}.jpg`,
-            destinationPath = `profilepictueres/${partner.id}`
+            destinationPath = `profilepictueres/${entity.id}`
 
         const secureUrl = await this.uploadToCloudinary({
             path,

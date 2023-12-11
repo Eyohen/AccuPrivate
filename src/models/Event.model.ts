@@ -1,6 +1,7 @@
 // Import necessary modules and dependencies
-import { Table, Column, Model, DataType, IsUUID, PrimaryKey, BelongsTo, ForeignKey } from "sequelize-typescript";
+import { Table, Column, Model, DataType, IsUUID, PrimaryKey, BelongsTo, ForeignKey, HasMany } from "sequelize-typescript";
 import Transaction  from "./Transaction.model";
+import Notification from "./Notification.model";
 
 // Define an enum for the status of events
 export enum Status {

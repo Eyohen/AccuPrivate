@@ -1,28 +1,26 @@
 import { NextFunction, Request, Response } from "express";
-import { v4 as uuidv4 } from 'uuid';
-import { BadRequestError, InternalServerError } from "../../utils/Errors";
-import EmailService, { EmailTemplate } from "../../utils/Email";
-import ResponseTrimmer from '../../utils/ResponseTrimmer'
-import Partner, { IPartner } from "../../models/Partner.model";
-import PartnerService from "../../services/Partner.service";
-import { Database } from "../../models/index";
-import PasswordService from "../../services/Password.service";
-import { AuthUtil, TokenUtil } from "../../utils/Auth/token";
-import Validator from "../../utils/Validators";
-import logger from "../../utils/Logger";
+import { BadRequestError, ForbiddenError, InternalServerError } from "../../utils/Errors";
+import Partner, { IPartnerProfile } from "../../models/Entity/Profiles/PartnerProfile.model";
+import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
+import { TokenUtil } from "../../utils/Auth/Token";
 import ApiKeyService from "../../services/ApiKey.service ";
 import Cypher from "../../utils/Cypher";
+import { AuthenticatedRequest } from "../../utils/Interface";
 
 export default class ApiController {
-    static async getActiveAPIKey(req: Request, res: Response, next: NextFunction) {
-        const { partner }: { partner: IPartner } = (req as any).user
+    static async getActiveAPIKey(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        const { entity, profile } = req.user.user
 
-        const partner_ = await PartnerService.viewSinglePartnerByEmail(partner.email)
+        if (entity.role !== 'PARTNER') {
+            throw new ForbiddenError('Only partners can access this resource')
+        }
+
+        const partner_ = await PartnerService.viewSinglePartnerByEmail(entity.email)
         if (!partner_) {
             throw new InternalServerError('Authenticated partner not found')
         }
 
-        const apiKey = await ApiKeyService.viewActiveApiKeyByPartnerId(partner.id)
+        const apiKey = await ApiKeyService.viewActiveApiKeyByPartnerId(profile.id)
         if (!apiKey) {
             throw new BadRequestError('API Key not found')
         }
@@ -40,8 +38,8 @@ export default class ApiController {
         })
     }
 
-    static async generateApiKeys(req: Request, res: Response, next: NextFunction) {
-        const { email } = (req as any).user.partner
+    static async generateApiKeys(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        const { email } = req.user.user.entity
 
         const partner: Partner | null = await PartnerService.viewSinglePartnerByEmail(email)
         if (!partner) {

@@ -22,12 +22,18 @@ async function initiateDB(db: Sequelize): Promise<void> {
         // Log a success message when the connection is established
         logger.info('Connection has been established successfully.');
     } catch (error) {
+        console.log(error)
         // Handle errors if unable to connect to the database
         logger.error('Unable to connect to the database:', error);
     }
 }
 
-const redisClient = new Redis(REDIS_URL)
+const redisClient = new Redis({
+    username: 'default',
+    password: REDIS_PASSWORD,
+    port: REDIS_PORT,
+    host: REDIS_HOST,
+})
 
 redisClient.on('error', (error) => {
     logger.info('An error occured while connecting to REDIS')

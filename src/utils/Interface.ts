@@ -1,4 +1,9 @@
+import { string } from "zod"
 import { ITransaction } from "../models/Transaction.model"
+import { DecodedTokenData } from "./Auth/Token"
+import { Request as ExpressApiRequest, NextFunction, Response } from "express"
+import { UUID } from "crypto"
+import { RoleEnum } from "../models/Role.model"
 
 export interface IVendToken {
     transactionId: string
@@ -125,4 +130,32 @@ export interface IReceiptEmailTemplateProps {
     transaction: ITransaction,
     meterNumber: string,
     token: string
+}
+
+export interface INotification {
+    title: string;
+    message: string;
+    heading?: string;
+    entityId: string;
+    eventId?: string;
+}
+
+export type AuthOptions = 'authenticated' | 'none';
+
+export interface AuthenticatedRequest<T extends RoleEnum = RoleEnum.Partner> extends ExpressApiRequest {
+    headers: {
+        authorization: string;
+        signature?: string;
+        Signature?: string;
+    }
+    user: DecodedTokenData<T>;
+}
+
+export type AuthenticatedAsyncController = (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<void>;
+
+// TODO: Add option to specify if authentication type is through API Key or JWT
+export function AuthenticatedController(controller: AuthenticatedAsyncController) {
+    return async (req: ExpressApiRequest, res: Response, next: NextFunction) => {
+        return controller(req as AuthenticatedRequest, res, next)
+    }
 }

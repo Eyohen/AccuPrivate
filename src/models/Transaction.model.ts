@@ -1,7 +1,7 @@
 // Import necessary modules and dependencies
 import { Table, Column, Model, DataType, IsUUID, PrimaryKey, ForeignKey, BelongsTo, HasMany, HasOne } from "sequelize-typescript";
 import User from "./User.model";
-import Partner from "./Partner.model";
+import Partner from "./Entity/Profiles/PartnerProfile.model";
 import Event from "./Event.model";
 import PowerUnit from "./PowerUnit.model";
 import Meter from "./Meter.model";
@@ -125,4 +125,15 @@ export interface ICreateTransaction extends ITransaction {
 // This interface does not include any specific properties, but it can be extended as needed.
 export interface IUpdateTransaction {
     // Properties for updating a transaction can be added here.
+}
+
+type DateQuery = {
+    transactionTimestamp?: { $between: [Date, Date] } | Date;
+    createdAt: { $between: [Date, Date] } | Date,
+}
+export interface IQueryTransaction {
+    where: {
+        [K in keyof Omit<ITransaction, keyof DateQuery>]?: ITransaction[K];
+    } & DateQuery,
+    offset?: number, limit?: number
 }

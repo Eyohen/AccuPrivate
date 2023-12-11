@@ -1,18 +1,20 @@
-import { NextFunction, Request, Response } from "express";
-import { v4 as uuidv4 } from 'uuid';
-import { BadRequestError, InternalServerError } from "../../utils/Errors";
+import { NextFunction, Response } from "express";
+import { BadRequestError } from "../../utils/Errors";
 import EmailService, { EmailTemplate } from "../../utils/Email";
-import ResponseTrimmer from '../../utils/ResponseTrimmer'
-import Partner from "../../models/Partner.model";
-import PartnerService from "../../services/Partner.service";
-import { Database } from "../../models/index";
-import PasswordService from "../../services/Password.service";
-import { AuthUtil } from "../../utils/Auth/token";
 import Validator from "../../utils/Validators";
-import logger from "../../utils/Logger";
+import { AuthenticatedRequest } from "../../utils/Interface";
+import EntityService from "../../services/Entity/Entity.service";
+
+class AuthControllerValidator {
+    static async activatePartner() {
+        
+    }
+
+
+}
 
 export default class AuthController {
-    static async activatePartner(req: Request, res: Response, next: NextFunction) {
+    static async activatePartner(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         const { email } = req.body
 
         const validEmail = Validator.validateEmail(email)
@@ -20,27 +22,27 @@ export default class AuthController {
             throw new BadRequestError('Invalid email')
         }
 
-        const partner: Partner | null = await PartnerService.viewSinglePartnerByEmail(email)
-        if (!partner) {
-            throw new BadRequestError('Partner not found')
+        const entity = await EntityService.viewSingleEntityByEmail(email)
+        if (!entity) {
+            throw new BadRequestError('Entity not found')
         }
 
-        await partner.update({ status: { ...partner.status, activated: true } })
-        
+        await entity.update({ status: { ...entity.status, activated: true } })
+
         await EmailService.sendEmail({
-            to: partner.email,
+            to: entity.email,
             subject: 'Account Activation',
-            html: await new EmailTemplate().accountActivation(partner.email)
+            html: await new EmailTemplate().accountActivation(entity.email)
         })
 
         res.status(200).json({
             status: 'success',
-            message: 'Activated partner successfully',
+            message: 'Activated user successfully',
             data: null
         })
     }
-    
-    static async deactivatePartner(req: Request, res: Response, next: NextFunction) {
+
+    static async deactivatePartner(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         const { email } = req.body
 
         const validEmail = Validator.validateEmail(email)
@@ -48,22 +50,22 @@ export default class AuthController {
             throw new BadRequestError('Invalid email')
         }
 
-        const partner: Partner | null = await PartnerService.viewSinglePartnerByEmail(email)
-        if (!partner) {
-            throw new BadRequestError('Partner not found')
+        const entity = await EntityService.viewSingleEntityByEmail(email)
+        if (!entity) {
+            throw new BadRequestError('Entity not found')
         }
 
-        await partner.update({ status: { ...partner.status, activated: false } })
-        
+        await entity.update({ status: { ...entity.status, activated: true } })
+
         await EmailService.sendEmail({
-            to: partner.email,
+            to: entity.email,
             subject: 'Account Activation',
-            html: await new EmailTemplate().accountActivation(partner.email)
+            html: await new EmailTemplate().accountActivation(entity.email)
         })
 
         res.status(200).json({
             status: 'success',
-            message: 'Deactivated partner successfully',
+            message: 'Deactivated user successfully',
             data: null
         })
     }
