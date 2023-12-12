@@ -1,3 +1,4 @@
+require('newrelic');
 import 'express-async-errors'
 // Import required modules and dependencies
 import express, { Request, Response } from "express";

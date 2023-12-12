@@ -15,6 +15,7 @@ import { AuthenticatedRequest } from "../../utils/Interface";
 import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
 import EventService from "../../services/Event.service";
 import { RoleEnum } from "../../models/Role.model";
+const newrelic= require('newrelic')
 
 interface getTransactionsRequestBody extends ITransaction {
     page: `${number}`
@@ -30,6 +31,7 @@ interface getTransactionsRequestBody extends ITransaction {
 
 export default class TransactionController {
     static async getTransactionInfo(req: Request, res: Response) {
+        newrelic.setTransactionName('Transaction/Get Transaction Info')
         const { bankRefId, transactionId } = req.query as Record<string, string>
 
         const transaction: Transaction | null = bankRefId
@@ -49,6 +51,7 @@ export default class TransactionController {
     }
 
     static async getTransactions(req: AuthenticatedRequest, res: Response) {
+        newrelic.setTransactionName('Transaction/Get Transaction Info')
         const {
             page, limit, status, startDate, endDate,
             userId, disco, superagent, partnerId
@@ -100,6 +103,7 @@ export default class TransactionController {
     }
 
     static async requeryTimedOutTransaction(req: AuthenticatedRequest, res: Response) {
+        newrelic.setTransactionName('Transaction/Requery Transaction Name')
         const { bankRefId }: { bankRefId: string } = req.query as any
 
         let transactionRecord = await TransactionService.viewSingleTransactionByBankRefID(bankRefId)

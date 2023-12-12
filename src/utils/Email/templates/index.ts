@@ -2,6 +2,7 @@ import ejs from 'ejs';
 import fs from 'fs';
 import { LOGO_URL } from '../../Constants';
 import { IReceiptEmailTemplateProps } from '../../Interface';
+const newrelic = require('newrelic');
 
 const containerTemplate = fs.readFileSync(__dirname + '/container.ejs', 'utf8')
 

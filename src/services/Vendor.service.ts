@@ -4,6 +4,7 @@ import { IBaxiGetProviderResponse, IBaxiPurchaseResponse, IBaxiValidateMeterResp
 import querystring from "querystring";
 import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL, NODE_ENV } from "../utils/Constants";
 import logger from "../utils/Logger";
+const newrelic = require('newrelic');
 
 interface _RequeryBuypowerSuccessResponse {
     result: {

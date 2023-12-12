@@ -20,9 +20,11 @@ import NotificationUtil from "../../utils/Notification";
 import { NODE_ENV } from "../../utils/Constants";
 import NotificationService from "../../services/Notification.service";
 import RoleService from "../../services/Role.service";
+const newrelic = require('newrelic');
 
 export default class AuthController {
     static async signup(req: Request, res: Response, next: NextFunction) {
+        newrelic.setTransactionName('Auth/Sign up')
         const { email, password, roleId } = req.body
 
         const validEmail = Validator.validateEmail(email)
@@ -103,6 +105,7 @@ export default class AuthController {
     }
 
     static async otherSignup(req: Request, res: Response, next: NextFunction) {
+
         const { email, password, roleId } = req.body
 
 
@@ -349,6 +352,7 @@ export default class AuthController {
     }
     
     static async login(req: Request, res: Response) {
+        newrelic.setTransactionName('Auth/login')
         const { email, password } = req.body
 
         const entity = await EntityService.viewSingleEntityByEmail(email)
@@ -424,6 +428,7 @@ export default class AuthController {
     }
 
     static async logout(req: AuthenticatedRequest, res: Response) {
+        newrelic.setTransactionName('Auth/logout')
         const { entity: { id } } = req.user.user
         const entity = await EntityService.viewSingleEntity(id)
 
