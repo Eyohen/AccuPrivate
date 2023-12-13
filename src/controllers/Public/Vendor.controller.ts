@@ -420,7 +420,7 @@ export default class VendorController {
 
         // Check event for request token
         const requestTokenEvent = await Event.findOne({
-            where: { transactionId: transaction.id, eventType: "TOKEN_REQUESTED" },
+            where: { transactionId: transaction.id, eventType: "TOKEN_REQUESTED_FROM_VENDOR" },
         });
 
         if (!requestTokenEvent) {

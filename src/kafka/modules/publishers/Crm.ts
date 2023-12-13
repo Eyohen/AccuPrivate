@@ -11,9 +11,9 @@ interface User {
 }
 
 export class CRMPublisher extends ProducerFactory {
-    static async publishEventForInitiatedUser(data: PublisherEventAndParameters[TOPICS.CRM_USER_INITIATED]) {
+    static async publishEventForInitiatedUser(data: PublisherEventAndParameters[TOPICS.CREATE_USER_INITIATED]) {
         await ProducerFactory.sendMessage({
-            topic: TOPICS.CRM_USER_INITIATED,
+            topic: TOPICS.CREATE_USER_INITIATED,
             message: {
                 user: {
                     name: data.user.name,
@@ -26,9 +26,9 @@ export class CRMPublisher extends ProducerFactory {
         })
     }
 
-    static async publishEventForConfirmedUser(data: PublisherEventAndParameters[TOPICS.CRM_USER_CONFIRMED]) {
+    static async publishEventForConfirmedUser(data: PublisherEventAndParameters[TOPICS.CREATE_USER_CONFIRMED]) {
         await ProducerFactory.sendMessage({
-            topic: TOPICS.CRM_USER_CONFIRMED,
+            topic: TOPICS.CREATE_USER_CONFIRMED,
             message: {
                 user: {
                     name: data.user.name,

@@ -4,9 +4,9 @@ import { PublisherEventAndParameters } from "../util/Interface";
 import ProducerFactory from "../util/Producer";
 
 export class VendorPublisher extends ProducerFactory {
-    static async publishEventForMeterValidationRequested(data: PublisherEventAndParameters[TOPICS.METER_VALIDATION_REQUESTED]) {
+    static async publishEventForMeterValidationRequested(data: PublisherEventAndParameters[TOPICS.METER_VALIDATION_REQUESTED_TO_VENDOR]) {
         return ProducerFactory.sendMessage({
-            topic: TOPICS.METER_VALIDATION_REQUESTED,
+            topic: TOPICS.METER_VALIDATION_REQUESTED_TO_VENDOR,
             message: {
                 meter: {
                     meterNumber: data.meter.meterNumber,
@@ -16,13 +16,13 @@ export class VendorPublisher extends ProducerFactory {
                 transactionId: data.transactionId
             }
         }).catch((e) => {
-            logger.error(`An error occured while publishing ${TOPICS.METER_VALIDATION_REQUESTED} event for transaction` + data.transactionId)
+            logger.error(`An error occured while publishing ${TOPICS.METER_VALIDATION_REQUESTED_TO_VENDOR} event for transaction` + data.transactionId)
         })
     }
 
-    static async publishEventForMeterValidationReceived(data: PublisherEventAndParameters[TOPICS.METER_VALIDATION_RECIEVED]) {
+    static async publishEventForMeterValidationReceived(data: PublisherEventAndParameters[TOPICS.METER_VALIDATION_RECIEVED_FROM_VENDOR]) {
         return ProducerFactory.sendMessage({
-            topic: TOPICS.METER_VALIDATION_RECIEVED,
+            topic: TOPICS.METER_VALIDATION_RECIEVED_FROM_VENDOR,
             message: {
                 user: {
                     name: data.user.name,
@@ -38,13 +38,13 @@ export class VendorPublisher extends ProducerFactory {
                 transactionId: data.transactionId
             }
         }).catch((e) => {
-            logger.error(`An error occured while publishing ${TOPICS.METER_VALIDATION_RECIEVED} event for transaction` + data.transactionId)
+            logger.error(`An error occured while publishing ${TOPICS.METER_VALIDATION_RECIEVED_FROM_VENDOR} event for transaction` + data.transactionId)
         })
     }
 
-    static async publishEventForInitiatedPowerPurchase(data: PublisherEventAndParameters[TOPICS.POWER_PURCHASE_INITIATED]) {
+    static async publishEventForInitiatedPowerPurchase(data: PublisherEventAndParameters[TOPICS.POWER_PURCHASE_INITIATED_FROM_PARTNER]) {
         return ProducerFactory.sendMessage({
-            topic: TOPICS.POWER_PURCHASE_INITIATED,
+            topic: TOPICS.POWER_PURCHASE_INITIATED_FROM_PARTNER,
             message: {
                 meter: {
                     meterNumber: data.meter.meterNumber,
@@ -55,13 +55,13 @@ export class VendorPublisher extends ProducerFactory {
                 transactionId: data.transactionId
             }
         }).catch((e) => {
-            logger.error(`An error occured while publishing ${TOPICS.POWER_PURCHASE_INITIATED} event for transaction` + data.transactionId)
+            logger.error(`An error occured while publishing ${TOPICS.POWER_PURCHASE_INITIATED_FROM_PARTNER} event for transaction` + data.transactionId)
         })
     }
 
-    static async publishEventForTokenRequest(data: PublisherEventAndParameters[TOPICS.TOKEN_REQUESTED]) {
+    static async publishEventForTokenRequest(data: PublisherEventAndParameters[TOPICS.TOKEN_REQUESTED_FROM_VENDOR]) {
         return ProducerFactory.sendMessage({
-            topic: TOPICS.TOKEN_REQUESTED,
+            topic: TOPICS.TOKEN_REQUESTED_FROM_VENDOR,
             message: {
                 meter: {
                     meterNumber: data.meter.meterNumber,
@@ -81,13 +81,13 @@ export class VendorPublisher extends ProducerFactory {
                 transactionId: data.transactionId
             }
         }).catch((e) => {
-            logger.error(`An error occured while publishing ${TOPICS.TOKEN_REQUESTED} event for transaction` + data.transactionId)
+            logger.error(`An error occured while publishing ${TOPICS.TOKEN_REQUESTED_FROM_VENDOR} event for transaction` + data.transactionId)
         })
     }
 
-    static async publishEventForReceivedToken(data: PublisherEventAndParameters[TOPICS.TOKEN_RECEIVED]) {
+    static async publishEventForReceivedToken(data: PublisherEventAndParameters[TOPICS.TOKEN_RECIEVED_FROM_VENDOR]) {
         return ProducerFactory.sendMessage({
-            topic: TOPICS.TOKEN_RECEIVED,
+            topic: TOPICS.TOKEN_RECIEVED_FROM_VENDOR,
             message: {
                 meter: {
                     meterNumber: data.meter.meterNumber,
@@ -108,13 +108,13 @@ export class VendorPublisher extends ProducerFactory {
                 transactionId: data.transactionId
             }
         }).catch((e) => {
-            logger.error(`An error occured while publishing ${TOPICS.TOKEN_RECEIVED} event for transaction` + data.transactionId)
+            logger.error(`An error occured while publishing ${TOPICS.TOKEN_RECIEVED_FROM_VENDOR} event for transaction` + data.transactionId)
         })
     }
 
     static async publishEventForCompletedPowerPurchase(data: PublisherEventAndParameters[TOPICS.PARTNER_TRANSACTION_COMPLETE]) {
         return ProducerFactory.sendMessage({
-            topic: TOPICS.POWER_PURCHASE_INITIATED,
+            topic: TOPICS.POWER_PURCHASE_INITIATED_FROM_PARTNER,
             message: {
                 meter: {
                     meterNumber: data.meter.meterNumber,

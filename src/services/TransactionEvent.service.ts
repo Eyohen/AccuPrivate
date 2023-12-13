@@ -21,10 +21,10 @@ interface EventMeterInfo {
 }
 
 const EventAndPublishers = {
-    [TOPICS.TOKEN_REQUESTED]: VendorPublisher.publishEventForTokenRequest,
-    [TOPICS.TOKEN_RECEIVED]: VendorPublisher.publishEventForReceivedToken,
-    [TOPICS.METER_VALIDATION_REQUESTED]: VendorPublisher.publishEventForMeterValidationRequested,
-    [TOPICS.METER_VALIDATION_RECIEVED]: VendorPublisher.publishEventForMeterValidationReceived,
+    [TOPICS.TOKEN_REQUESTED_FROM_VENDOR]: VendorPublisher.publishEventForTokenRequest,
+    [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: VendorPublisher.publishEventForReceivedToken,
+    [TOPICS.METER_VALIDATION_REQUESTED_TO_VENDOR]: VendorPublisher.publishEventForMeterValidationRequested,
+    [TOPICS.METER_VALIDATION_RECIEVED_FROM_VENDOR]: VendorPublisher.publishEventForMeterValidationReceived,
 } as Record<TOPICS, (...args: any[]) => Promise<void>>;
 
 class EventPublisher {
@@ -32,21 +32,22 @@ class EventPublisher {
     private publisher: (...args: any[]) => Promise<void>;
     private args: any[];
 
-    constructor({ event, params }: { event: Event, params: any[]
-}) {
-    this.event = event;
-    event.eventType
-    this.publisher = EventAndPublishers[event.eventType];
-    this.args = params;
-}
+    constructor({ event, params }: {
+        event: Event, params: any[]
+    }) {
+        this.event = event;
+        event.eventType
+        this.publisher = EventAndPublishers[event.eventType];
+        this.args = params;
+    }
 
     public async publish() {
-    await this.publisher(...this.args)
-}
+        await this.publisher(...this.args)
+    }
 
     public getEvent() {
-    return this.event;
-}
+        return this.event;
+    }
 }
 
 export default class TransactionEventService {
@@ -61,8 +62,8 @@ export default class TransactionEventService {
     public async addMeterValidationRequestedEvent(): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
-            eventType: TOPICS.METER_VALIDATION_REQUESTED,
-            eventText: TOPICS.METER_VALIDATION_REQUESTED,
+            eventType: TOPICS.METER_VALIDATION_REQUESTED_TO_VENDOR,
+            eventText: TOPICS.METER_VALIDATION_REQUESTED_TO_VENDOR,
             eventData: JSON.stringify({
                 meterNumber: this.meterInfo.meterNumber,
                 disco: this.meterInfo.disco,
@@ -80,8 +81,8 @@ export default class TransactionEventService {
     public async addMeterValidationResponseEvent(userInfo: IMeterValidationReceivedEventParams): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
-            eventType: TOPICS.METER_VALIDATION_RECIEVED,
-            eventText: TOPICS.METER_VALIDATION_RECIEVED,
+            eventType: TOPICS.METER_VALIDATION_RECIEVED_FROM_VENDOR,
+            eventText: TOPICS.METER_VALIDATION_RECIEVED_FROM_VENDOR,
             eventData: JSON.stringify({
                 user: {
                     name: userInfo.user.name,
@@ -105,8 +106,8 @@ export default class TransactionEventService {
     public async addMeterValidationSentEvent(meterId: string): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
-            eventType: TOPICS.METER_VALIDATION_SENT,
-            eventText: TOPICS.METER_VALIDATION_SENT,
+            eventType: TOPICS.METER_VALIDATION_SENT_PARTNER,
+            eventText: TOPICS.METER_VALIDATION_SENT_PARTNER,
             eventData: JSON.stringify({
                 merterId: meterId,
                 meterNumber: this.meterInfo.meterNumber,
@@ -124,8 +125,8 @@ export default class TransactionEventService {
     public async addCRMUserInitiatedEvent(info: ICRMUserInitiatedEventParams): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
-            eventType: TOPICS.CRM_USER_INITIATED,
-            eventText: TOPICS.CRM_USER_INITIATED,
+            eventType: TOPICS.CREATE_USER_INITIATED,
+            eventText: TOPICS.CREATE_USER_INITIATED,
             eventData: JSON.stringify({
                 user: {
                     id: info.user.id,
@@ -146,8 +147,8 @@ export default class TransactionEventService {
     public async addCRMUserConfirmedEvent(info: ICRMUserInitiatedEventParams): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
-            eventType: TOPICS.CRM_USER_CONFIRMED,
-            eventText: TOPICS.CRM_USER_CONFIRMED,
+            eventType: TOPICS.CREATE_USER_CONFIRMED,
+            eventText: TOPICS.CREATE_USER_CONFIRMED,
             eventData: JSON.stringify({
                 user: {
                     id: info.user.id,
@@ -184,8 +185,8 @@ export default class TransactionEventService {
     public addPowerPurchaseInitiatedEvent(bankRefId: string, amount: string): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
-            eventType: TOPICS.POWER_PURCHASE_INITIATED,
-            eventText: TOPICS.POWER_PURCHASE_INITIATED,
+            eventType: TOPICS.POWER_PURCHASE_INITIATED_FROM_PARTNER,
+            eventText: TOPICS.POWER_PURCHASE_INITIATED_FROM_PARTNER,
             eventData: JSON.stringify({
                 bankRefId,
                 amount,
@@ -207,8 +208,8 @@ export default class TransactionEventService {
 
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
-            eventType: TOPICS.TOKEN_REQUESTED,
-            eventText: TOPICS.TOKEN_REQUESTED,
+            eventType: TOPICS.TOKEN_REQUESTED_FROM_VENDOR,
+            eventText: TOPICS.TOKEN_REQUESTED_FROM_VENDOR,
             eventData: JSON.stringify({
                 bankRefId,
                 transactionId: this.transaction.id,
@@ -232,8 +233,8 @@ export default class TransactionEventService {
     public async addTokenReceivedEvent(token: string): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
-            eventType: TOPICS.TOKEN_RECEIVED,
-            eventText: TOPICS.TOKEN_RECEIVED,
+            eventType: TOPICS.TOKEN_RECIEVED_FROM_VENDOR,
+            eventText: TOPICS.TOKEN_RECIEVED_FROM_VENDOR,
             eventData: JSON.stringify({
                 token,
                 transactionId: this.transaction.id,

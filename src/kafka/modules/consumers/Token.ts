@@ -15,7 +15,7 @@ import MessageProcessor from "../util/MessageProcessor";
 import { v4 as uuidv4 } from 'uuid';
 
 class TokenHandler extends Registry {
-    private static async handleTokenRequest(data: PublisherEventAndParameters[TOPICS.TOKEN_REQUESTED]) {
+    private static async handleTokenRequest(data: PublisherEventAndParameters[TOPICS.TOKEN_REQUESTED_FROM_VENDOR]) {
         const transaction = await TransactionService.viewSingleTransaction(data.transactionId)
         if (!transaction) {
             logger.error(`Error fetching transaction with id ${data.transactionId}`)
@@ -78,7 +78,7 @@ class TokenHandler extends Registry {
         return
     }
 
-    private static async handleTokenReceived(data: PublisherEventAndParameters[TOPICS.TOKEN_RECEIVED]) {
+    private static async handleTokenReceived(data: PublisherEventAndParameters[TOPICS.TOKEN_RECIEVED_FROM_VENDOR]) {
         const transaction = await TransactionService.viewSingleTransaction(data.transactionId)
         if (!transaction) {
             logger.error(`Error fetching transaction with id ${data.transactionId}`)
@@ -101,7 +101,7 @@ class TokenHandler extends Registry {
 
         // If successful, check if a power unit exists for the transaction, if none exists, create one
         let powerUnit = await PowerUnitService.viewSinglePowerUnitByTransactionId(data.transactionId)
-        
+
         const discoLogo = DISCO_LOGO[data.meter.disco as keyof typeof DISCO_LOGO]
         powerUnit = powerUnit
             ? await PowerUnitService.updateSinglePowerUnit(powerUnit.id, {
@@ -127,8 +127,8 @@ class TokenHandler extends Registry {
     }
 
     static registry = {
-        [TOPICS.TOKEN_REQUESTED]: this.handleTokenRequest,
-        [TOPICS.TOKEN_RECEIVED]: this.handleTokenReceived,
+        [TOPICS.TOKEN_REQUESTED_FROM_VENDOR]: this.handleTokenRequest,
+        [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: this.handleTokenReceived,
     }
 }
 

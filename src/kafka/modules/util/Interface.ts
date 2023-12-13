@@ -37,22 +37,22 @@ interface Partner {
 }
 
 export interface PublisherEventAndParameters extends Record<TOPICS, any> {
-    [TOPICS.METER_VALIDATION_REQUESTED]: {
+    [TOPICS.METER_VALIDATION_REQUESTED_TO_VENDOR]: {
         meter: MeterInfo,
         transactionId: string
     },
-    [TOPICS.METER_VALIDATION_RECIEVED]: MeterValidationRequested,
-    [TOPICS.POWER_PURCHASE_INITIATED]: {
+    [TOPICS.METER_VALIDATION_RECIEVED_FROM_VENDOR]: MeterValidationRequested,
+    [TOPICS.POWER_PURCHASE_INITIATED_FROM_PARTNER]: {
         meter: MeterInfo & { id: string },
         transactionId: string
     },
-    [TOPICS.TOKEN_REQUESTED]: {
+    [TOPICS.TOKEN_REQUESTED_FROM_VENDOR]: {
         meter: MeterInfo & { id: string },
         user: User,
         partner: Partner,
         transactionId: string
     },
-    [TOPICS.TOKEN_RECEIVED]: {
+    [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: {
         meter: MeterInfo & { id: string, token: string },
         user: User,
         partner: Partner,
@@ -73,15 +73,15 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
         user: User & { id: string },
         transactionId: string
     },
-    [TOPICS.CRM_USER_INITIATED]: {
+    [TOPICS.CREATE_USER_INITIATED]: {
         user: User,
         transactionId: string
     },
-    [TOPICS.CRM_USER_CONFIRMED]: {
+    [TOPICS.CREATE_USER_CONFIRMED]: {
         user: User & { id: string },
         transactionId: string
     },
-} 
+}
 
 export type PublisherParamsUnion = {
     [K in keyof PublisherEventAndParameters]: {

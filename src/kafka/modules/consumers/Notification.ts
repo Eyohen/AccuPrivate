@@ -13,7 +13,7 @@ import MessageProcessor from "../util/MessageProcessor";
 import { v4 as uuidv4 } from 'uuid';
 
 class NotificationHandler extends Registry {
-    private static async handleReceivedToken(data: PublisherEventAndParameters[TOPICS.TOKEN_RECEIVED]) {
+    private static async handleReceivedToken(data: PublisherEventAndParameters[TOPICS.TOKEN_RECIEVED_FROM_VENDOR]) {
         logger.info('Inside notification handler')
         const transaction = await TransactionService.viewSingleTransaction(data.transactionId)
         if (!transaction) {
@@ -62,7 +62,7 @@ class NotificationHandler extends Registry {
             );
             await transactionEventService.addTokenSentToPartnerEvent()
         }
-    
+
         // If you've not notified the user before, notify them
         if (!notifyUserEvent) {
             await EmailService.sendEmail({
@@ -80,7 +80,7 @@ class NotificationHandler extends Registry {
     }
 
     static registry = {
-        [TOPICS.TOKEN_RECEIVED]: this.handleReceivedToken
+        [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: this.handleReceivedToken
     }
 }
 
