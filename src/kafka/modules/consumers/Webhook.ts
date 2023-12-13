@@ -13,7 +13,7 @@ import { PartnerProfile } from "../../../models/Entity/Profiles";
 import { PartnerProfileService } from "../../../services/Entity/Profiles";
 
 class WebhookHandler extends Registry {
-    private static async handleWebhookRequest(data: PublisherEventAndParameters[TOPICS.WEBHOOK_NOTIFICATION_SENT_TO_PARTNER]) {
+    private static async handleWebhookRequest(data: PublisherEventAndParameters[TOPICS.TOKEN_RECIEVED_FROM_VENDOR]) {
         const transaction = await TransactionService.viewSingleTransaction(data.transactionId)
         if (!transaction) {
             logger.error(`Error fetching transaction with id ${data.transactionId}`)
@@ -38,20 +38,22 @@ class WebhookHandler extends Registry {
             return
         }
 
+        const powerUnit = await transaction.$get('powerUnit')
+
         // TODO: Add webhook case for failed transaction
         const transactionNotificationData = {
             status: 'SUCCESS',
-            transaction: {
-                reference: transaction.bankRefId,
-                comment: transaction.bankComment,
-                amount: transaction.amount,
-                date: transaction.createdAt,
-                powerUnit: transaction.powerUnit,
-                meter: transaction.meter,
-                user: {
-                    email: transaction.user.email,
-                    name: transaction.user.name,
-                }
+            data: {
+                transaction: {
+                    reference: transaction.bankRefId,
+                    comment: transaction.bankComment,
+                    amount: transaction.amount,
+                    date: transaction.createdAt,
+                    powerUnit: powerUnit,
+                    meter: data.meter,
+                    user: data.user
+                },
+                token: data.meter.token
             }
         }
         const response = await WebhookService.sendWebhookNotification(webhook, transactionNotificationData).catch(e => e)

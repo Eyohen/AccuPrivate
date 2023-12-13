@@ -88,7 +88,7 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
     [TOPICS.TOKEN_REQUEST_TIMEDOUT]: {
         transactionId: string,
         meter: MeterInfo 
-    }
+    },
 }
 
 export type PublisherParamsUnion = {
