@@ -6,6 +6,56 @@ import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL, NODE_ENV } from "..
 import logger from "../utils/Logger";
 import { v4 as UUIDV4 } from 'uuid'
 
+
+export interface PurchaseResponse {
+    status: string;
+    statusCode: string;
+    responseCode: 200,
+    responseMessage: string,
+    message: string;
+    data: {
+        id: number;
+        amountGenerated: number;
+        tariff: null | string;
+        debtAmount: number;
+        debtRemaining: number;
+        disco: string;
+        freeUnits: number;
+        orderId: string;
+        receiptNo: number;
+        tax: number;
+        vendTime: string;
+        token: string;
+        totalAmountPaid: number;
+        units: string;
+        vendAmount: number;
+        vendRef: number;
+        responseCode: 200;
+        responseMessage: string;
+        address: string;
+        name: string;
+        phoneNo: string;
+        charges: number;
+        tariffIndex: null | string;
+        parcels: {
+            type: string;
+            content: string;
+        }[];
+        demandCategory: string;
+        assetProvider: string;
+    };
+}
+
+interface TimedOutResponse {
+    data: {
+        status: false,
+        error: true,
+        responseCode: 202,
+        message: 'Transaction is still in progress. Please requery in 20 seconds',
+        delay: [20, 20, 20, 20, 20, 20]
+    }
+}
+
 interface _RequeryBuypowerSuccessResponse {
     result: {
         status: true,
@@ -176,7 +226,7 @@ export default class VendorService {
     }
 
     // Static method for vending a token with BuyPower
-    static async buyPowerVendToken(body: IVendToken) {
+    static async buyPowerVendToken(body: IVendToken): Promise<PurchaseResponse | TimedOutResponse> {
         // Define data to be sent in the POST request
         const postData = {
             orderId: body.transactionId,
@@ -195,7 +245,7 @@ export default class VendorService {
 
         try {
             // Make a POST request using the BuyPower Axios instance
-            const response = await this.buyPowerAxios().post(`/vend?strict=0`, postData);
+            const response = await this.buyPowerAxios().post<PurchaseResponse | TimedOutResponse>(`/vend?strict=0`, postData);
             return response.data;
         } catch (error: any) {
             if (error instanceof AxiosError) {
