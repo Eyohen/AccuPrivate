@@ -105,6 +105,22 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     // Has one associated Meter
     @BelongsTo(() => Meter)
     meter: Meter;
+
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: false,
+    defaultValue: new NigerianDate().getCurrentNigerianDate(),
+  })
+  createdAt: Date;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: false,
+    defaultValue: new NigerianDate().getCurrentNigerianDate(),
+  })
+  updatedAt: Date;
+
 }
 
 
