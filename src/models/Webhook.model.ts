@@ -1,6 +1,5 @@
 // Import necessary modules and dependencies
 import { Table, Column, Model, DataType, IsUUID, PrimaryKey, BelongsTo, ForeignKey } from "sequelize-typescript";
-import Entity from "./Entity/Entity.model";
 import PartnerProfile from "./Entity/Profiles/PartnerProfile.model";
 
 // Define the "Partner" table model
@@ -12,16 +11,16 @@ export default class WebHook extends Model<WebHook | IWebHook> {
     @Column
     id: string;
 
-    @Column({ type: DataType.STRING, allowNull: false })
+    @Column({ type: DataType.STRING, allowNull: true })
     url: string;
 
     @IsUUID(4)
-    @ForeignKey(() => Entity)
-    @Column
+    @ForeignKey(() => PartnerProfile)
+    @Column({ type: DataType.STRING, allowNull: false })
     partnerId: string;
 
     // Define a column for the Partner's email (string type, not nullable)
-    @BelongsTo(() => Entity)
+    @BelongsTo(() => PartnerProfile)
     partner: PartnerProfile;
 }
 
@@ -29,7 +28,7 @@ export default class WebHook extends Model<WebHook | IWebHook> {
 // Interface representing the structure of a Partner entity
 export interface IWebHook {
     id: string;              // Unique identifier for the Partner
-    url: string;
+    url?: string;
     partnerId: string;
 }
 

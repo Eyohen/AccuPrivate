@@ -1,9 +1,10 @@
+import { Transaction } from "sequelize";
 import WebHook, { IUpdateWebHook, IWebHook } from "../models/Webhook.model";
 
 export default class WebhookService {
-    static async addWebhook(data: IWebHook): Promise<WebHook> {
+    static async addWebhook(data: IWebHook, transaction: Transaction): Promise<WebHook> {
         const webhook = WebHook.build(data);
-        await webhook.save();
+        transaction ? await webhook.save({ transaction }) : await webhook.save();
         return webhook;
     }
 

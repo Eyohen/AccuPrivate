@@ -6,7 +6,7 @@ import { AuthenticatedController } from "../utils/Interface";
 const router: Router = express.Router()
 
 router
-    .patch('/update', basicAuth('access'), AuthenticatedController(WebhookController.updateWebhook))
+    .patch('/', basicAuth('access'), AuthenticatedController(WebhookController.updateWebhook))
     .get('/info', basicAuth('access'), AuthenticatedController(WebhookController.viewWebhookByPartnerId))
     .get('/', basicAuth('access'), AuthenticatedController(WebhookController.viewAllWebhooks)) // Admin only
 

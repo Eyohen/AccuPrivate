@@ -169,8 +169,8 @@ export default class TransactionEventService {
     public async addDiscoUpEvent(): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
-            eventType: TOPICS.DISCO_UP,
-            eventText: TOPICS.DISCO_UP,
+            eventType: TOPICS.CHECK_DISCO_UP_CONFIRMED_FROM_VENDOR,
+            eventText: TOPICS.CHECK_DISCO_UP_CONFIRMED_FROM_VENDOR,
             eventData: JSON.stringify({
                 disco: this.meterInfo.disco,
             }),

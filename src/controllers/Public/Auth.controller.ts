@@ -19,6 +19,7 @@ import { TeamMemberProfile } from "../../models/Entity/Profiles";
 import NotificationUtil from "../../utils/Notification";
 import { NODE_ENV } from "../../utils/Constants";
 import NotificationService from "../../services/Notification.service";
+import WebhookService from "../../services/Webhook.service";
 
 export default class AuthController {
     static async signup(req: Request, res: Response, next: NextFunction) {
@@ -77,6 +78,11 @@ export default class AuthController {
             id: uuidv4(),
             entityId: entity.id,
             password
+        }, transaction)
+
+        await WebhookService.addWebhook({
+            id: uuidv4(),
+            partnerId: newPartner.id,
         }, transaction)
 
         await entity.update({ status: { ...entity.status, emailVerified: true } })

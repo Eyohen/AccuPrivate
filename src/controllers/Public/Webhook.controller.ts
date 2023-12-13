@@ -5,6 +5,7 @@ import { BadRequestError, ForbiddenError, InternalServerError } from "../../util
 import { AuthenticatedRequest } from "../../utils/Interface";
 import Validator from "../../utils/Validators";
 import { PartnerProfileService } from "../../services/Entity/Profiles";
+import { RoleEnum } from "../../models/Role.model";
 
 export default class WebhookController {
     static async updateWebhook(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -16,14 +17,14 @@ export default class WebhookController {
             throw new BadRequestError('Invalid url');
         }
 
-        const partnerProfile = await EntityService.viewSingleEntityByEmail(partner.id);
+        const partnerProfile = await PartnerProfileService.viewSinglePartner(partner.id);
         if (!partnerProfile) {
             throw new InternalServerError('Partner record for Authenticated partner not found')
         }
 
         const webhook = await WebhookService.viewWebhookByPartnerId(partnerProfile.id);
         if (!webhook) {
-            throw new BadRequestError('Webhook already exists');
+            throw new InternalServerError('Webhook not found for authenticated partner') 
         }
 
         const updatedWebhook = await WebhookService.updateWebhook(webhook, { url });
@@ -39,13 +40,21 @@ export default class WebhookController {
 
     static async viewWebhookByPartnerId(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         const { partnerId } = req.query as Record<string, string>;
+        
+        const partnerIdProvidedAndNotAdmin = partnerId && ![RoleEnum.Admin].includes(req.user.user.entity.role)
+        const partnerIsNotAuthenticatedUser = partnerId !== req.user.user.profile.id
+        if (partnerIdProvidedAndNotAdmin && partnerIsNotAuthenticatedUser) {
+            throw new ForbiddenError('Unauthorized');
+        }
 
-        const partner = await PartnerProfileService.viewSinglePartner(partnerId);
+        const id = partnerId || req.user.user.profile.id
+        
+        const partner = await PartnerProfileService.viewSinglePartner(id)
         if (!partner) {
             throw new BadRequestError('Partner not found');
         }
 
-        const webhook = await WebhookService.viewWebhookByPartnerId(partnerId);
+        const webhook = await WebhookService.viewWebhookByPartnerId(id);
         if (!webhook) {
             throw new BadRequestError('Webhook not found');
         }
@@ -60,9 +69,25 @@ export default class WebhookController {
     }
 
     static async viewWebhookById(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { id } = req.query as Record<string, string>;
+        const { webhookId } = req.query as Record<string, string>;
 
-        const webhook = await WebhookService.viewWebhookById(id);
+
+        const entity = await EntityService.viewSingleEntity(req.user.user.entity.id);
+        if (!entity) {
+            throw new InternalServerError('Entity not found');
+        }
+
+        const role = await entity.$get('role')
+        if (!role) {
+            throw new InternalServerError('Role not found');
+        }
+
+        const requestMadeByAdmin = ['Admin', 'SuperAdmin'].includes(role.name)
+        if (!requestMadeByAdmin && webhookId) {
+            throw new ForbiddenError('Unauthorized');
+        }
+
+        const webhook = await WebhookService.viewWebhookById(webhookId);
         if (!webhook) {
             throw new BadRequestError('Webhook not found');
         }
@@ -75,7 +100,6 @@ export default class WebhookController {
         }
 
         // Only admin should be able to view webhooks that do not belong to them
-        const requestMadeByAdmin = ['Admin', 'SuperAdmin'].includes(partnerProfile.role.name)
         const webhookBelongsToUser = webhook.partnerId === partnerProfile.id
         if (!requestMadeByAdmin && !webhookBelongsToUser) {
             throw new ForbiddenError('Unauthorized');

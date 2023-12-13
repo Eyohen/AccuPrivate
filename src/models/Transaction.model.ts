@@ -6,6 +6,7 @@ import Event from "./Event.model";
 import PowerUnit from "./PowerUnit.model";
 import Meter from "./Meter.model";
 import { generateRandomString } from "../utils/Helper";
+import { NigerianDate } from "../utils/Date";
 
 // Define enums for status and payment type
 export enum Status {
@@ -78,7 +79,7 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     @IsUUID(4)
     @Column
     partnerId?: string;
-    
+
     @ForeignKey(() => Partner)
     @IsUUID(4)
     @Column
@@ -106,20 +107,19 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     @BelongsTo(() => Meter)
     meter: Meter;
 
+    @Column({
+        type: DataType.DATE,
+        allowNull: false,
+        defaultValue: new NigerianDate().getCurrentNigerianDate(),
+    })
+    createdAt: Date;
 
-  @Column({
-    type: DataType.DATE,
-    allowNull: false,
-    defaultValue: new NigerianDate().getCurrentNigerianDate(),
-  })
-  createdAt: Date;
-
-  @Column({
-    type: DataType.DATE,
-    allowNull: false,
-    defaultValue: new NigerianDate().getCurrentNigerianDate(),
-  })
-  updatedAt: Date;
+    @Column({
+        type: DataType.DATE,
+        allowNull: false,
+        defaultValue: new NigerianDate().getCurrentNigerianDate(),
+    })
+    updatedAt: Date;
 
 }
 
