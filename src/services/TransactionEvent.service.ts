@@ -64,7 +64,7 @@ export default class TransactionEventService {
             transactionId: this.transaction.id,
             eventType: TOPICS.METER_VALIDATION_REQUESTED_TO_VENDOR,
             eventText: TOPICS.METER_VALIDATION_REQUESTED_TO_VENDOR,
-            eventData: JSON.stringify({
+            payload: JSON.stringify({
                 meterNumber: this.meterInfo.meterNumber,
                 disco: this.meterInfo.disco,
                 vendType: this.meterInfo.vendType,
@@ -78,12 +78,12 @@ export default class TransactionEventService {
         return await EventService.addEvent(event);
     }
 
-    public async addMeterValidationResponseEvent(userInfo: IMeterValidationReceivedEventParams): Promise<Event> {
+    public async addMeterValidationReceivedEvent(userInfo: IMeterValidationReceivedEventParams): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
             eventType: TOPICS.METER_VALIDATION_RECIEVED_FROM_VENDOR,
             eventText: TOPICS.METER_VALIDATION_RECIEVED_FROM_VENDOR,
-            eventData: JSON.stringify({
+            payload: JSON.stringify({
                 user: {
                     name: userInfo.user.name,
                     email: userInfo.user.email,
@@ -108,7 +108,7 @@ export default class TransactionEventService {
             transactionId: this.transaction.id,
             eventType: TOPICS.METER_VALIDATION_SENT_PARTNER,
             eventText: TOPICS.METER_VALIDATION_SENT_PARTNER,
-            eventData: JSON.stringify({
+            payload: JSON.stringify({
                 merterId: meterId,
                 meterNumber: this.meterInfo.meterNumber,
                 disco: this.meterInfo.disco,
@@ -127,7 +127,7 @@ export default class TransactionEventService {
             transactionId: this.transaction.id,
             eventType: TOPICS.CREATE_USER_INITIATED,
             eventText: TOPICS.CREATE_USER_INITIATED,
-            eventData: JSON.stringify({
+            payload: JSON.stringify({
                 user: {
                     id: info.user.id,
                     name: info.user.name,
@@ -149,7 +149,7 @@ export default class TransactionEventService {
             transactionId: this.transaction.id,
             eventType: TOPICS.CREATE_USER_CONFIRMED,
             eventText: TOPICS.CREATE_USER_CONFIRMED,
-            eventData: JSON.stringify({
+            payload: JSON.stringify({
                 user: {
                     id: info.user.id,
                     name: info.user.name,
@@ -171,7 +171,7 @@ export default class TransactionEventService {
             transactionId: this.transaction.id,
             eventType: TOPICS.CHECK_DISCO_UP_CONFIRMED_FROM_VENDOR,
             eventText: TOPICS.CHECK_DISCO_UP_CONFIRMED_FROM_VENDOR,
-            eventData: JSON.stringify({
+            payload: JSON.stringify({
                 disco: this.meterInfo.disco,
             }),
             source: 'API',
@@ -187,7 +187,7 @@ export default class TransactionEventService {
             transactionId: this.transaction.id,
             eventType: TOPICS.POWER_PURCHASE_INITIATED_FROM_PARTNER,
             eventText: TOPICS.POWER_PURCHASE_INITIATED_FROM_PARTNER,
-            eventData: JSON.stringify({
+            payload: JSON.stringify({
                 bankRefId,
                 amount,
                 transactionId: this.transaction.id
@@ -210,7 +210,7 @@ export default class TransactionEventService {
             transactionId: this.transaction.id,
             eventType: TOPICS.TOKEN_REQUESTED_FROM_VENDOR,
             eventText: TOPICS.TOKEN_REQUESTED_FROM_VENDOR,
-            eventData: JSON.stringify({
+            payload: JSON.stringify({
                 bankRefId,
                 transactionId: this.transaction.id,
                 superAgent: this.transaction.superagent,
@@ -235,7 +235,7 @@ export default class TransactionEventService {
             transactionId: this.transaction.id,
             eventType: TOPICS.TOKEN_RECIEVED_FROM_VENDOR,
             eventText: TOPICS.TOKEN_RECIEVED_FROM_VENDOR,
-            eventData: JSON.stringify({
+            payload: JSON.stringify({
                 token,
                 transactionId: this.transaction.id,
                 superAgent: this.transaction.superagent,
@@ -264,7 +264,7 @@ export default class TransactionEventService {
             transactionId: this.transaction.id,
             eventType: TOPICS.TOKEN_SENT_TO_EMAIL,
             eventText: TOPICS.TOKEN_SENT_TO_EMAIL,
-            eventData: JSON.stringify({
+            payload: JSON.stringify({
                 email: user.email,
             }),
             source: this.transaction.superagent.toUpperCase(),
@@ -287,7 +287,7 @@ export default class TransactionEventService {
             transactionId: this.transaction.id,
             eventType: TOPICS.TOKEN_SENT_TO_PARTNER,
             eventText: TOPICS.TOKEN_SENT_TO_PARTNER,
-            eventData: JSON.stringify({
+            payload: JSON.stringify({
                 partner: {
                     email: partner.email,
                     id: partner.id,
@@ -312,7 +312,7 @@ export default class TransactionEventService {
             transactionId: this.transaction.id,
             eventType: TOPICS.PARTNER_TRANSACTION_COMPLETE,
             eventText: TOPICS.PARTNER_TRANSACTION_COMPLETE,
-            eventData: JSON.stringify({
+            payload: JSON.stringify({
                 partner: {
                     email: partner.email,
                     id: partner.id,

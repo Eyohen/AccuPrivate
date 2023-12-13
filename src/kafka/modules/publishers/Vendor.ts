@@ -42,6 +42,40 @@ export class VendorPublisher extends ProducerFactory {
         })
     }
 
+    static async publishEventForDiscoUpdate(data: PublisherEventAndParameters[TOPICS.CHECK_DISCO_UP_INITIATED_TO_VENDOR]) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.CHECK_DISCO_UP_INITIATED_TO_VENDOR,
+            message: {
+                meter: {
+                    meterNumber: data.meter.meterNumber,
+                    disco: data.meter.disco,
+                    vendType: data.meter.vendType,
+                    id: data.meter.id
+                },
+                transactionId: data.transactionId
+            }
+        }).catch((e) => {
+            logger.error(`An error occured while publishing ${TOPICS.CHECK_DISCO_UP_INITIATED_TO_VENDOR} event for transaction` + data.transactionId)
+        })
+    }
+
+    static async publishEventForMeterValidationSentToPartner(data: PublisherEventAndParameters[TOPICS.METER_VALIDATION_SENT_PARTNER]) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.METER_VALIDATION_SENT_PARTNER,
+            message: {
+                meter: {
+                    meterNumber: data.meter.meterNumber,
+                    disco: data.meter.disco,
+                    vendType: data.meter.vendType,
+                    id: data.meter.id
+                },
+                transactionId: data.transactionId
+            }
+        }).catch((e) => {
+            logger.error(`An error occured while publishing ${TOPICS.METER_VALIDATION_SENT_PARTNER} event for transaction` + data.transactionId)
+        })
+    }
+    
     static async publishEventForInitiatedPowerPurchase(data: PublisherEventAndParameters[TOPICS.POWER_PURCHASE_INITIATED_FROM_PARTNER]) {
         return ProducerFactory.sendMessage({
             topic: TOPICS.POWER_PURCHASE_INITIATED_FROM_PARTNER,

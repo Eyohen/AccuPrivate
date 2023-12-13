@@ -1,6 +1,6 @@
 // Import necessary modules and dependencies
 import { Table, Column, Model, DataType, IsUUID, PrimaryKey, BelongsTo, ForeignKey } from "sequelize-typescript";
-import Transaction  from "./Transaction.model";
+import Transaction from "./Transaction.model";
 import { TOPICS } from "../kafka/Constants";
 
 // Define an enum for the status of events
@@ -41,7 +41,7 @@ export default class Event extends Model<Event | IEvent> {
 
     // Data associated with the event (can be a string or JSON)
     @Column({ type: DataType.TEXT, allowNull: false })
-    eventData: string;
+    payload: string;
 
     // Foreign key for the associated Transaction
     @ForeignKey(() => Transaction)
@@ -62,7 +62,7 @@ export interface IEvent {
     eventType: TOPICS; // Type of the event
     eventText: string; // Text associated with the event
     source: string; // Source of the event
-    eventData: string; // Data associated with the event (can be a string or JSON)
+    payload: string; // Data associated with the event (can be a string or JSON)
     transactionId?: string; // Identifier for the associated transaction
 }
 

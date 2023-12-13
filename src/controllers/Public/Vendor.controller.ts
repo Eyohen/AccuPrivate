@@ -196,7 +196,7 @@ export default class VendorController {
             id: uuidv4(),
         };
 
-        await transactionEventService.addMeterValidationResponseEvent({ user: userInfo });
+        await transactionEventService.addMeterValidationReceivedEvent({ user: userInfo });
         VendorPublisher.publishEventForMeterValidationReceived({
             meter: { meterNumber, disco, vendType },
             transactionId: transaction.id,
@@ -231,8 +231,12 @@ export default class VendorController {
                 ? await VendorService.buyPowerCheckDiscoUp(disco).catch((e) => e)
                 : await VendorService.baxiCheckDiscoUp(disco).catch((e) => e);
 
-        discoUp instanceof Boolean &&
-            (await transactionEventService.addDiscoUpEvent());
+        const discoUpEvent = discoUp instanceof Boolean ? await transactionEventService.addDiscoUpEvent() : false
+        discoUpEvent && VendorPublisher.publishEventForDiscoUpdate({
+            transactionId: transaction.id,
+            meter: { meterNumber, disco, vendType },
+        })
+
         // TODO: Publish event for disco up to kafka
 
         const meter: Meter = await MeterService.addMeter({
@@ -272,6 +276,10 @@ export default class VendorController {
         });
 
         await transactionEventService.addMeterValidationSentEvent(meter.id);
+        VendorPublisher.publishEventForMeterValidationSentToPartner({
+            transactionId: transaction.id,
+            meter: { meterNumber, disco, vendType, id: meter.id },
+        })
     }
 
     static async requestToken(req: Request, res: Response, next: NextFunction) {
