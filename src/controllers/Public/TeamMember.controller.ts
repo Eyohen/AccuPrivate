@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { v4 as uuidv4 } from 'uuid';
-import { BadRequestError } from "../../utils/Errors";
+import { BadRequestError, ForbiddenError } from "../../utils/Errors";
 import Role, { RoleEnum } from "../../models/Role.model";
 import { Database } from "../../models";
 import TeamMemberProfileService from "../../services/Entity/Profiles/TeamMemberProfile.service";
@@ -123,6 +123,40 @@ export default class TeamMemberProfileController {
             message: 'Team members fetched successfully',
             data: {
                 teamMember: { ...teamMemberProfile.dataValues, entity: fullProfile.dataValues }
+            }
+        })
+    }
+
+    static async deleteTeamMember(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        const { profile: { id } } = req.user.user
+        const { email } = req.query as Record<string, string>
+
+        const teamMemberProfile = await TeamMemberProfileService.viewSingleTeamMemberByEmail(email)
+        if (!teamMemberProfile) {
+            throw new BadRequestError('Team member not found')
+        }
+
+        // Check if current partner is the owner of the teammember
+        const currPartnerIsOwner = teamMemberProfile.partnerId === id
+        if (!currPartnerIsOwner) {
+            throw new ForbiddenError("Team member doesn't belong to partner")
+        }
+
+        const entity = await EntityService.viewEntityByTeamMemberProfileId(teamMemberProfile.id)
+        if (!entity) {
+            throw new BadRequestError('Entity not found')
+        }
+
+        const transaction = await Database.transaction()
+        await EntityService.deleteEntity(entity, transaction)
+        await TeamMemberProfileService.deleteTeamMember(teamMemberProfile, transaction)
+        await transaction.commit()
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Team member deleted successfully',
+            data: {
+                teamMember: teamMemberProfile
             }
         })
     }
