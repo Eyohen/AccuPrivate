@@ -12,7 +12,7 @@ import teamMemberRoute from './TeamMember.routes'
 import notificationRoute from './Notification.routes'
 import eventRoute from './Event.routes'
 import partnerRoute from './Partner.routes'
-
+import complainRoute from './complaint.routes'
 const router = Router()
 
 router
@@ -29,6 +29,7 @@ router
     .use('/notification', notificationRoute)
     .use('/event', eventRoute)
     .use('/partner',partnerRoute)
+    .use('/complaints', complainRoute )
 
 export default router
 
