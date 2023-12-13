@@ -152,6 +152,74 @@ export class VendorPublisher extends ProducerFactory {
             return e
         })
     }
+    
+    static async publishEventForTimedOutTokenRequest(data: PublisherEventAndParameters[TOPICS.TOKEN_REQUEST_TIMEDOUT]) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.TOKEN_REQUEST_TIMEDOUT,
+            message: {
+                meter: {
+                    meterNumber: data.meter.meterNumber,
+                    disco: data.meter.disco,
+                    vendType: data.meter.vendType,
+                },
+                transactionId: data.transactionId
+            }
+        }).catch((e) => {
+            logger.error(`An error occured while publishing ${TOPICS.TOKEN_REQUEST_TIMEDOUT} event for transaction` + data.transactionId)
+            return e
+        })
+    }
+
+        static async publishEventForTransactionRequery(data: PublisherEventAndParameters[TOPICS.TOKEN_REQUESTED_FROM_VENDOR_REQUERY]) {
+            return ProducerFactory.sendMessage({
+                topic: TOPICS.TOKEN_REQUESTED_FROM_VENDOR_REQUERY,
+                message: {
+                    meter: {
+                        meterNumber: data.meter.meterNumber,
+                        disco: data.meter.disco,
+                        vendType: data.meter.vendType,
+                    },
+                    transactionId: data.transactionId
+                }
+            }).catch((e) => {
+                logger.error(`An error occured while publishing ${TOPICS.TOKEN_REQUESTED_FROM_VENDOR_REQUERY} event for transaction` + data.transactionId)
+                return e
+            })
+        }
+
+    static async publishEventForSuccessfulTokenRequestWithNoToken(data: PublisherEventAndParameters[TOPICS.TOKEN_REQUEST_SUCCESS_WITH_NO_TOKEN]) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.TOKEN_REQUEST_SUCCESS_WITH_NO_TOKEN,
+            message: {
+                meter: {
+                    meterNumber: data.meter.meterNumber,
+                    disco: data.meter.disco,
+                    vendType: data.meter.vendType,
+                },
+                transactionId: data.transactionId
+            }
+        }).catch((e) => {
+            logger.error(`An error occured while publishing ${TOPICS.TOKEN_REQUEST_SUCCESS_WITH_NO_TOKEN} event for transaction` + data.transactionId)
+            return e
+        })
+    }
+    
+    static async publishEventForFailedTokenRequest(data: PublisherEventAndParameters[TOPICS.TOKEN_REQUEST_FAILED]) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.TOKEN_REQUEST_FAILED,
+            message: {
+                meter: {
+                    meterNumber: data.meter.meterNumber,
+                    disco: data.meter.disco,
+                    vendType: data.meter.vendType,
+                },
+                transactionId: data.transactionId
+            }
+        }).catch((e) => {
+            logger.error(`An error occured while publishing ${TOPICS.TOKEN_REQUEST_FAILED} event for transaction` + data.transactionId)
+            return e
+        })
+    }
 
     static async publishEventForCompletedPowerPurchase(data: PublisherEventAndParameters[TOPICS.PARTNER_TRANSACTION_COMPLETE]) {
         return ProducerFactory.sendMessage({
