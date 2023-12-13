@@ -101,7 +101,7 @@ class VendorTokenHandler extends Registry {
     }
 }
 
-class VendorTokenConsumer extends ConsumerFactory {
+class VendorTokenReceivedSubscriber extends ConsumerFactory {
     private tokenHandler: VendorTokenHandler
     constructor(response: Response, transaction: Transaction) {
         const tokenHandler = new VendorTokenHandler(transaction, response)
@@ -341,34 +341,27 @@ export default class VendorController {
             throw new NotFoundError("Transaction not found");
         }
 
-        const transactionEventService = new EventService.transactionEventService(
-            transaction,
-            {
-                meterNumber: transaction.meter?.meterNumber,
-                disco: transaction.disco,
-                vendType,
-            }
-        );
-
         const meter = await transaction.$get("meter");
         if (!meter) {
             throw new InternalServerError("Transaction does not have a meter");
         }
 
+        const meterInfo = {
+            meterNumber: meter.meterNumber,
+            disco: transaction.disco,
+            vendType: meter.vendType,
+            id: meter.id,
+        }
+        const transactionEventService = new EventService.transactionEventService(transaction, meterInfo);
+
         await transactionEventService.addPowerPurchaseInitiatedEvent(bankRefId, amount);
         VendorPublisher.publishEventForInitiatedPowerPurchase({
-            transactionId: transaction.id,
-            meter: {
-                id: meter.id as string,
-                meterNumber: meter.meterNumber as string,
-                disco: transaction.disco as string,
-                vendType: meter.vendType,
-            },
+            transactionId: transaction.id, meter: meterInfo,
         })
 
         const { user, partnerEntity } = await VendorControllerValdator.requestToken({ bankRefId, transactionId });
         await transactionEventService.addTokenRequestedEvent(bankRefId);
-        const txn = await TransactionService.updateSingleTransaction(
+        await TransactionService.updateSingleTransaction(
             transactionId,
             {
                 bankRefId,
@@ -377,7 +370,8 @@ export default class VendorController {
                 status: Status.PENDING,
             });
 
-        const vendorTokenConsumer = new VendorTokenConsumer(res, transaction)
+        
+        const vendorTokenConsumer = new VendorTokenReceivedSubscriber(res, transaction)
         try {
             const response = await VendorPublisher.publishEventForTokenRequest({
                 transactionId: transaction.id,
@@ -390,12 +384,7 @@ export default class VendorController {
                 partner: {
                     email: partnerEntity.email,
                 },
-                meter: {
-                    id: meter.id,
-                    meterNumber: meter.meterNumber,
-                    disco: transaction.disco,
-                    vendType: meter.vendType,
-                },
+                meter: meterInfo
             })
 
             if (response instanceof Error) {
