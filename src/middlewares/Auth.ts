@@ -60,6 +60,8 @@ export const validateApiKey = async (req: Request, res: Response, next: NextFunc
         return next(new UnauthenticatedError('Invalid API key'))
     }
 
+    // console.log(currentActiveApiKey)
+
     // TODO: Disallow api key if user is not yet active
     if (Cypher.decryptString(currentActiveApiKey) !== apiKey) {
         return next(new UnauthenticatedError('Invalid API key'))

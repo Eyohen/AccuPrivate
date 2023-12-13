@@ -250,7 +250,7 @@ class TokenHandler extends Registry {
 
 export default class TokenConsumer extends ConsumerFactory {
     constructor() {
-        const messageProcessor = new MessageProcessor(TokenHandler.registry, 'TOKEN_ONSUMER')
+        const messageProcessor = new MessageProcessor(TokenHandler.registry, 'TOKEN_CONSUMER')
         super(messageProcessor)
     }
 }

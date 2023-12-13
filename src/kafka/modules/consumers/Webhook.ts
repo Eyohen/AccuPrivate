@@ -9,6 +9,8 @@ import { TOPICS } from "../../Constants";
 import ConsumerFactory from "../util/Consumer";
 import { PublisherEventAndParameters, Registry, Topic } from "../util/Interface";
 import MessageProcessor from "../util/MessageProcessor";
+import { PartnerProfile } from "../../../models/Entity/Profiles";
+import { PartnerProfileService } from "../../../services/Entity/Profiles";
 
 class WebhookHandler extends Registry {
     private static async handleWebhookRequest(data: PublisherEventAndParameters[TOPICS.WEBHOOK_NOTIFICATION_SENT_TO_PARTNER]) {
@@ -18,15 +20,15 @@ class WebhookHandler extends Registry {
             return
         }
 
-        const partnerEntity = await EntityService.viewSingleEntityByEmail(transaction.partner.email)
-        if (!partnerEntity) {
+        const partnerProfile = await PartnerProfileService.viewSinglePartnerByEmail(transaction.partner.email)
+        if (!partnerProfile) {
             logger.error(`Error fetching partner with email ${transaction.partner.email}`)
             return
         }
 
-        const webhook = await WebhookService.viewWebhookByPartnerId(partnerEntity.id)
+        const webhook = await WebhookService.viewWebhookByPartnerId(partnerProfile.id)
         if (!webhook) {
-            logger.error(`Error fetching webhook for partner with id ${partnerEntity.id}`)
+            logger.error(`Error fetching webhook for partner with id ${partnerProfile.id}`)
             return
         }
 

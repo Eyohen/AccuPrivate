@@ -73,19 +73,13 @@ interface RequestTokenValidatorResponse {
     transaction: Transaction;
     partnerEntity: Entity;
 }
-
-class VendorTokenHandler extends Registry {
-    public tokenSent = false
+class VendorTokenHandler implements Registry {
+    private tokenSent = false
     private transaction: Transaction
-    private response: Response
+    private response: () => Response
 
-    constructor(transaction: Transaction, response: Response) {
-        super()
-        this.transaction = transaction
-        this.response = response
-    }
     private async handleTokenReceived(data: PublisherEventAndParameters[TOPICS.TOKEN_RECIEVED_FROM_VENDOR]) {
-        this.response.status(200).send({
+        this.response().status(200).send({
             status: 'success',
             message: 'Token purchase initiated successfully',
             data: {
@@ -98,14 +92,26 @@ class VendorTokenHandler extends Registry {
         this.tokenSent = true
     }
 
+    constructor (transaction: Transaction, response: Response) {
+        this.transaction = transaction
+        this.response = () => response
+        return this
+    }
+
+    public getTokenState() {
+        return this.tokenSent
+    }
+
     public registry = {
-        [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: this.handleTokenReceived
+        [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: this.handleTokenReceived.bind(this)
     }
 }
 
+
 class VendorTokenReceivedSubscriber extends ConsumerFactory {
     private tokenHandler: VendorTokenHandler
-    constructor(response: Response, transaction: Transaction) {
+
+    constructor(transaction: Transaction, response: Response) {
         const tokenHandler = new VendorTokenHandler(transaction, response)
         const messageProcessor = new MessageProcessorFactory(tokenHandler.registry, randomUUID())
         super(messageProcessor)
@@ -113,7 +119,7 @@ class VendorTokenReceivedSubscriber extends ConsumerFactory {
     }
 
     public getTokenSentState() {
-        return this.tokenHandler.tokenSent
+        return this.tokenHandler.getTokenState()
     }
 }
 
@@ -372,8 +378,8 @@ export default class VendorController {
                 status: Status.PENDING,
             });
 
-        
-        const vendorTokenConsumer = new VendorTokenReceivedSubscriber(res, transaction)
+        const vendorTokenConsumer = new VendorTokenReceivedSubscriber(transaction, res)
+        await vendorTokenConsumer.start()
         try {
             const response = await VendorPublisher.publishEventForTokenRequest({
                 transactionId: transaction.id,

@@ -24,7 +24,7 @@ export default class ProducerFactory {
 
     static async sendMessage({ topic, message }: PublisherParamsUnion) {
         logger.info('Sending message to topic: ' + topic)
-        logger.info('Message: '+ JSON.stringify(message))   
+        // logger.info('Message: '+ JSON.stringify(message))   
         await this.producer.send({
             topic: topic,
             messages: [
