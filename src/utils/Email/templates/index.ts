@@ -35,6 +35,9 @@ class EmailTemplate {
     inviteTeamMember = async ({ email, password }: { email: string, password: string }) => {
         return container(await ejs.renderFile(__dirname + '/teaminvitation.ejs', { email, password }))
     }
+    invitePartner = async ({ email, password }: { email: string, password: string }) => {
+        return container(await ejs.renderFile(__dirname + '/partnerinvitation.ejs', { email, password }))
+    }
 }
 
 export default EmailTemplate
