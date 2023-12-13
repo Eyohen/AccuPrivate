@@ -89,7 +89,9 @@ class VendorTokenHandler extends Registry {
             status: 'success',
             message: 'Token purchase initiated successfully',
             data: {
-                transaction: this.transaction
+                transaction: this.transaction,
+                meter: data.meter,
+                token: data.meter.token
             }
         })
 
