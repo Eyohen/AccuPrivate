@@ -302,6 +302,56 @@ export default class TransactionEventService {
         return EventService.addEvent(event);
     }
 
+    public async addWebHookNotificationSentEvent(): Promise<Event> {
+        const partner = await this.transaction.$get('partner')
+        if (!partner) {
+            throw new Error('Transaction does not have a partner')
+        }
+
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.WEBHOOK_NOTIFICATION_SENT_TO_PARTNER,
+            eventText: TOPICS.WEBHOOK_NOTIFICATION_SENT_TO_PARTNER,
+            payload: JSON.stringify({
+                partner: {
+                    email: partner.email,
+                    id: partner.id,
+                }
+            }),
+            source: this.transaction.superagent.toUpperCase(),
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.COMPLETE,
+        }
+
+        return EventService.addEvent(event);
+    }
+    
+    public async addWebHookNotificationConfirmedEvent(): Promise<Event> {
+        const partner = await this.transaction.$get('partner')
+        if (!partner) {
+            throw new Error('Transaction does not have a partner')
+        }
+
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.WEBHOOK_NOTIFICATION_CONFIRMED_FROM_PARTNER,
+            eventText: TOPICS.WEBHOOK_NOTIFICATION_SENT_TO_PARTNER,
+            payload: JSON.stringify({
+                partner: {
+                    email: partner.email,
+                    id: partner.id,
+                },
+            }),
+            source: this.transaction.superagent.toUpperCase(),
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.COMPLETE,
+        }
+
+        return EventService.addEvent(event);
+    }
+
     public async addPartnerTransactionCompleteEvent(): Promise<Event> {
         const partner = await this.transaction.$get('partner');
         if (!partner) {

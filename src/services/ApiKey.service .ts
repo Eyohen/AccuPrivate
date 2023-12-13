@@ -10,7 +10,6 @@ import Cypher from "../utils/Cypher";
 
 // EventService class for handling event-related operations
 export default class ApiKeyService {
-
     // Method for adding a new event to the database
     static async addApiKey(data: IApiKey, transaction?: Transaction): Promise<ApiKey> {
         const apiKey = ApiKey.build(data);

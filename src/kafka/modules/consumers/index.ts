@@ -6,6 +6,7 @@ import TokenConsumer from "./Token";
 import TransactionConsumer from "./Transaction";
 import UserConsumer from "./User";
 import VendorConsumer from "./Vendor";
+import WebhookConsumer from "./Webhook";
 
 export default class ConsumerRouter {
     static async init() {
@@ -17,5 +18,6 @@ export default class ConsumerRouter {
         new TransactionConsumer().start()
         new UserConsumer().start()
         new VendorConsumer().start()
+        new WebhookConsumer().start()
     }
 }
