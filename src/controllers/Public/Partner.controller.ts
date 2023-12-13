@@ -1,6 +1,6 @@
-import { NextFunction, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { v4 as uuidv4 } from 'uuid';
-import { BadRequestError } from "../../utils/Errors";
+import { BadRequestError, InternalServerError, NotFoundError } from "../../utils/Errors";
 import { RoleEnum } from "../../models/Role.model";
 import { Database } from "../../models";
 import EntityService from "../../services/Entity/Entity.service";
@@ -15,8 +15,10 @@ import ApiKeyService from "../../services/ApiKey.service ";
 import WebhookService from "../../services/Webhook.service";
 import { PartnerProfile } from "../../models/Entity/Profiles";
 import ResponseTrimmer from "../../utils/ResponseTrimmer";
+import Entity from "../../models/Entity/Entity.model";
+import { NOT } from "sequelize/types/deferrable";
 
-export default class TeamMemberProfileController {
+export default class PartnerProfileController {
     static async invitePartner(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         // The partner is the entity that is inviting the team member
         const { email } = req.body
@@ -26,8 +28,8 @@ export default class TeamMemberProfileController {
             throw new BadRequestError('Role not found')
         }
 
-        const existingPartner: PartnerProfile | null = await PartnerService.viewSinglePartnerByEmail(email)
-        if (existingPartner) {
+        const partnerEntity: Entity | null = await EntityService.viewSingleEntityByEmail(email)
+        if (partnerEntity) {
             throw new BadRequestError('Email has been used before')
         }
 
@@ -76,6 +78,8 @@ export default class TeamMemberProfileController {
             id: uuidv4(),
             partnerId: newPartner.id,
         }, transaction)
+        
+        await transaction.commit()
 
         await entity.update({ status: { ...entity.status, emailVerified: true } })
 
@@ -94,18 +98,17 @@ export default class TeamMemberProfileController {
         })
     }
 
-    static async getPartnerInfo(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { entity: { id } } = req.user.user
+    static async getPartnerInfo(req: Request, res: Response, next: NextFunction) {
         const { email } = req.query as Record<string, string>
 
         const partnerProfile = await PartnerService.viewSinglePartnerByEmail(email)
         if (!partnerProfile) {
-            throw new BadRequestError('Team member not found')
+            throw new NotFoundError('Partner not found')
         }
 
         const entity = await partnerProfile.$get('entity')
         if (!entity) {
-            throw new BadRequestError('Entity not found')
+            throw new InternalServerError('Entity not found')
         }
 
         res.status(200).json({

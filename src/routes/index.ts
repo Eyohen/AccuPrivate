@@ -12,6 +12,7 @@ import teamMemberRoute from './TeamMember.routes'
 import notificationRoute from './Notification.routes'
 import eventRoute from './Event.routes'
 import webhookRoute from './Webhook.routes'
+import partnerRoute from './Partner.routes'
 
 const router = Router()
 
@@ -29,6 +30,7 @@ router
     .use('/notification', notificationRoute)
     .use('/event', eventRoute)
     .use('/webhook', webhookRoute)
+    .use('/partner', partnerRoute)
 
 export default router
 
