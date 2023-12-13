@@ -14,8 +14,8 @@ interface EmailVerificationProps {
 }
 
 class EmailTemplate {
-    failedTransaction = async({ transaction }: { transaction: Transaction }) => {
-        return container(await ejs.renderFile(__dirname + '/failedtxn.ejs', { transaction}))
+    failedTransaction = async ({ transaction }: { transaction: Transaction }) => {
+        return container(await ejs.renderFile(__dirname + '/failedtxn.ejs', { transaction }))
     }
     receipt = async ({ transaction, meterNumber, token }: IReceiptEmailTemplateProps) => {
         return container(await ejs.renderFile(__dirname + '/receipt.ejs', { transaction, meterNumber, token }))
@@ -32,8 +32,8 @@ class EmailTemplate {
     accountActivation = async (email: string) => {
         return container(await ejs.renderFile(__dirname + '/accountactivation.ejs', { email }))
     }
-    inviteTeamMember = async (email: string) => {
-        return container(await ejs.renderFile(__dirname + '/teaminvitation.ejs', { email }))
+    inviteTeamMember = async ({ email, password }: { email: string, password: string }) => {
+        return container(await ejs.renderFile(__dirname + '/teaminvitation.ejs', { email, password }))
     }
 }
 

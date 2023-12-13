@@ -51,16 +51,17 @@ export default class TeamMemberProfileController {
             }
         }, transaction)
 
+        const password = uuidv4()
         const entityPasswrod = await PasswordService.addPassword({
             id: uuidv4(),
-            password: uuidv4(),
+            password,
             entityId: entity.id
         }, transaction)
 
         EmailService.sendEmail({
             to: email,
             subject: 'Team Invitation',
-            html: await new EmailTemplate().inviteTeamMember(email)
+            html: await new EmailTemplate().inviteTeamMember({ email, password })
         })
 
         // Commit transaction
