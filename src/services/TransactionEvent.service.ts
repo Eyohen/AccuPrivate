@@ -230,6 +230,75 @@ export default class TransactionEventService {
         return await EventService.addEvent(event);
     }
 
+    public async addTokenRequestTimedOutEvent(): Promise<Event> {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.TOKEN_REQUEST_TIMEDOUT,
+            eventText: TOPICS.TOKEN_REQUEST_TIMEDOUT,
+            payload: JSON.stringify({
+                transactionId: this.transaction.id,
+                superAgent: this.transaction.superagent,
+                amount: this.transaction.amount,
+                disco: this.transaction.disco,
+                meterId: this.transaction.meterId,
+                meterNumber: this.meterInfo.meterNumber,
+                vendType: this.meterInfo.vendType,
+            }),
+            source: this.transaction.superagent.toUpperCase(),
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.COMPLETE,
+        }
+
+        return await EventService.addEvent(event);
+    }
+    
+    public async addTokenRequeryEvent(): Promise<Event> {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.TOKEN_REQUESTED_FROM_VENDOR_REQUERY,
+            eventText: TOPICS.TOKEN_REQUESTED_FROM_VENDOR_REQUERY,
+            payload: JSON.stringify({
+                transactionId: this.transaction.id,
+                superAgent: this.transaction.superagent,
+                amount: this.transaction.amount,
+                disco: this.transaction.disco,
+                meterId: this.transaction.meterId,
+                meterNumber: this.meterInfo.meterNumber,
+                vendType: this.meterInfo.vendType,
+            }),
+            source: this.transaction.superagent.toUpperCase(),
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.COMPLETE,
+        }
+
+        return await EventService.addEvent(event);
+    }
+    
+    public async addTokenRequestSuccessfulWithNoTokenEvent(): Promise<Event> {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.TOKEN_REQUEST_TIMEDOUT,
+            eventText: TOPICS.TOKEN_REQUEST_TIMEDOUT,
+            payload: JSON.stringify({
+                transactionId: this.transaction.id,
+                superAgent: this.transaction.superagent,
+                amount: this.transaction.amount,
+                disco: this.transaction.disco,
+                meterId: this.transaction.meterId,
+                meterNumber: this.meterInfo.meterNumber,
+                vendType: this.meterInfo.vendType,
+            }),
+            source: this.transaction.superagent.toUpperCase(),
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.COMPLETE,
+        }
+
+        return await EventService.addEvent(event);
+    }
+    
     public async addTokenReceivedEvent(token: string): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
@@ -287,6 +356,31 @@ export default class TransactionEventService {
             transactionId: this.transaction.id,
             eventType: TOPICS.TOKEN_SENT_TO_PARTNER,
             eventText: TOPICS.TOKEN_SENT_TO_PARTNER,
+            payload: JSON.stringify({
+                partner: {
+                    email: partner.email,
+                    id: partner.id,
+                }
+            }),
+            source: this.transaction.superagent.toUpperCase(),
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.COMPLETE,
+        }
+
+        return EventService.addEvent(event);
+    }
+   
+    public async addTokenRequestFailedNotificationToPartnerEvent(): Promise<Event> {
+        const partner = await this.transaction.$get('partner');
+        if (!partner) {
+            throw new Error('Transaction does not have a partner');
+        }
+
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.TOKEN_REQUEST_FAILED,
+            eventText: TOPICS.TOKEN_REQUEST_FAILED,
             payload: JSON.stringify({
                 partner: {
                     email: partner.email,
