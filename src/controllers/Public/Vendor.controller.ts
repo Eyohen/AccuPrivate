@@ -34,6 +34,14 @@ import { AuthenticatedRequest } from "../../utils/Interface";
 import Event from "../../models/Event.model";
 import { VendorPublisher } from "../../kafka/modules/publishers/Vendor";
 import { CRMPublisher } from "../../kafka/modules/publishers/Crm";
+import TokenConsumer from "../../kafka/modules/consumers/Token";
+import { TOPICS } from "../../kafka/Constants";
+import { PublisherEventAndParameters, Registry } from "../../kafka/modules/util/Interface";
+import { randomUUID } from "crypto";
+import ConsumerFactory from "../../kafka/modules/util/Consumer";
+import MessageProcessorFactory from "../../kafka/modules/util/MessageProcessor";
+import logger from "../../utils/Logger";
+import { error } from "console";
 
 interface valideMeterRequestBody {
     meterNumber: string;
@@ -64,6 +72,47 @@ interface RequestTokenValidatorResponse {
     meter: Meter;
     transaction: Transaction;
     partnerEntity: Entity;
+}
+
+class VendorTokenHandler extends Registry {
+    public tokenSent = false
+    private transaction: Transaction
+    private response: Response
+
+    constructor(transaction: Transaction, response: Response) {
+        super()
+        this.transaction = transaction
+        this.response = response
+    }
+    private async handleTokenReceived(data: PublisherEventAndParameters[TOPICS.TOKEN_RECIEVED_FROM_VENDOR]) {
+        this.response.status(200).send({
+            status: 'success',
+            message: 'Token purchase initiated successfully',
+            data: {
+                transaction: this.transaction
+            }
+        })
+
+        this.tokenSent = true
+    }
+
+    public registry = {
+        [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: this.handleTokenReceived
+    }
+}
+
+class VendorTokenConsumer extends ConsumerFactory {
+    private tokenHandler: VendorTokenHandler
+    constructor(response: Response, transaction: Transaction) {
+        const tokenHandler = new VendorTokenHandler(transaction, response)
+        const messageProcessor = new MessageProcessorFactory(tokenHandler.registry, randomUUID())
+        super(messageProcessor)
+        this.tokenHandler = tokenHandler
+    }
+
+    public getTokenSentState() {
+        return this.tokenHandler.tokenSent
+    }
 }
 
 // Validate request parameters for each controller
@@ -318,7 +367,6 @@ export default class VendorController {
         })
 
         const { user, partnerEntity } = await VendorControllerValdator.requestToken({ bankRefId, transactionId });
-
         await transactionEventService.addTokenRequestedEvent(bankRefId);
         const txn = await TransactionService.updateSingleTransaction(
             transactionId,
@@ -329,34 +377,49 @@ export default class VendorController {
                 status: Status.PENDING,
             });
 
-        VendorPublisher.publishEventForTokenRequest({
-            transactionId: transaction.id,
-            user: {
-                name: user.name as string,
-                email: user.email,
-                address: user.address,
-                phoneNumber: user.phoneNumber,
-            },
-            partner: {
-                email: partnerEntity.email,
-            },
-            meter: {
-                id: meter.id,
-                meterNumber: meter.meterNumber,
-                disco: transaction.disco,
-                vendType: meter.vendType,
-            },
-        })
+        const vendorTokenConsumer = new VendorTokenConsumer(res, transaction)
+        try {
+            const response = await VendorPublisher.publishEventForTokenRequest({
+                transactionId: transaction.id,
+                user: {
+                    name: user.name as string,
+                    email: user.email,
+                    address: user.address,
+                    phoneNumber: user.phoneNumber,
+                },
+                partner: {
+                    email: partnerEntity.email,
+                },
+                meter: {
+                    id: meter.id,
+                    meterNumber: meter.meterNumber,
+                    disco: transaction.disco,
+                    vendType: meter.vendType,
+                },
+            })
 
-        res.status(200).json({
-            status: "success",
-            message: "Token purchase initiated successfully",
-            data: {
-                transaction: transaction,
-            },
-        });
+            if (response instanceof Error) {
+                throw error
+            }
 
-        await transactionEventService.addTokenSentToPartnerEvent();
+            const tokenHasBeenSentFromVendorConsumer = vendorTokenConsumer.getTokenSentState()
+            if (!tokenHasBeenSentFromVendorConsumer) {
+                res.status(200).json({
+                    status: "success",
+                    message: "Token purchase initiated successfully",
+                    data: {
+                        transaction: transaction,
+                    },
+                });
+            }
+
+            await transactionEventService.addTokenSentToPartnerEvent();
+
+            return
+        } catch (error) {
+            logger.error('SuttingDown vendor token consumer of id')
+            await vendorTokenConsumer.shutdown()
+        }
     }
 
     static async getDiscos(req: Request, res: Response) {

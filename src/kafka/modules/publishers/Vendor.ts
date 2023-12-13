@@ -17,6 +17,7 @@ export class VendorPublisher extends ProducerFactory {
             }
         }).catch((e) => {
             logger.error(`An error occured while publishing ${TOPICS.METER_VALIDATION_REQUESTED_TO_VENDOR} event for transaction` + data.transactionId)
+            return e
         })
     }
 
@@ -39,6 +40,7 @@ export class VendorPublisher extends ProducerFactory {
             }
         }).catch((e) => {
             logger.error(`An error occured while publishing ${TOPICS.METER_VALIDATION_RECIEVED_FROM_VENDOR} event for transaction` + data.transactionId)
+            return e
         })
     }
 
@@ -56,6 +58,7 @@ export class VendorPublisher extends ProducerFactory {
             }
         }).catch((e) => {
             logger.error(`An error occured while publishing ${TOPICS.CHECK_DISCO_UP_INITIATED_TO_VENDOR} event for transaction` + data.transactionId)
+            return e
         })
     }
 
@@ -73,9 +76,10 @@ export class VendorPublisher extends ProducerFactory {
             }
         }).catch((e) => {
             logger.error(`An error occured while publishing ${TOPICS.METER_VALIDATION_SENT_PARTNER} event for transaction` + data.transactionId)
+            return e
         })
     }
-    
+
     static async publishEventForInitiatedPowerPurchase(data: PublisherEventAndParameters[TOPICS.POWER_PURCHASE_INITIATED_FROM_PARTNER]) {
         return ProducerFactory.sendMessage({
             topic: TOPICS.POWER_PURCHASE_INITIATED_FROM_PARTNER,
@@ -90,6 +94,7 @@ export class VendorPublisher extends ProducerFactory {
             }
         }).catch((e) => {
             logger.error(`An error occured while publishing ${TOPICS.POWER_PURCHASE_INITIATED_FROM_PARTNER} event for transaction` + data.transactionId)
+            return e
         })
     }
 
@@ -116,6 +121,7 @@ export class VendorPublisher extends ProducerFactory {
             }
         }).catch((e) => {
             logger.error(`An error occured while publishing ${TOPICS.TOKEN_REQUESTED_FROM_VENDOR} event for transaction` + data.transactionId)
+            return e
         })
     }
 
@@ -143,6 +149,7 @@ export class VendorPublisher extends ProducerFactory {
             }
         }).catch((e) => {
             logger.error(`An error occured while publishing ${TOPICS.TOKEN_RECIEVED_FROM_VENDOR} event for transaction` + data.transactionId)
+            return e
         })
     }
 
@@ -160,6 +167,7 @@ export class VendorPublisher extends ProducerFactory {
             }
         }).catch((e) => {
             logger.error(`An error occured while publishing  ${TOPICS.PARTNER_TRANSACTION_COMPLETE} event for transaction` + data.transactionId)
+            return e
         })
     }
 }

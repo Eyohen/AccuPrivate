@@ -36,6 +36,7 @@ class WebhookHandler extends Registry {
             return
         }
 
+        // TODO: Add webhook case for failed transaction
         const transactionNotificationData = {
             status: 'SUCCESS',
             transaction: {
