@@ -52,7 +52,7 @@ export default class TransactionService {
 
     static async viewSingleTransactionByBankRefID(bankRefId: string): Promise<Transaction | null> {
         // Retrieve a single transaction by its UUID
-        const transaction: Transaction | null = await Transaction.findOne({ where: { bankRefId: bankRefId }, include: [Partner, Meter, User] },);
+        const transaction: Transaction | null = await Transaction.findOne({ where: { bankRefId: bankRefId }, include: [PowerUnit, Event, Partner, User, Meter] },);
         return transaction;
     }
 
