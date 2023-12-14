@@ -2,6 +2,7 @@ import ejs from 'ejs';
 import fs from 'fs';
 import { LOGO_URL } from '../../Constants';
 import { IReceiptEmailTemplateProps } from '../../Interface';
+import Transaction from '../../../models/Transaction.model';
 
 const containerTemplate = fs.readFileSync(__dirname + '/container.ejs', 'utf8')
 
@@ -13,6 +14,9 @@ interface EmailVerificationProps {
 }
 
 class EmailTemplate {
+    failedTransaction = async ({ transaction }: { transaction: Transaction }) => {
+        return container(await ejs.renderFile(__dirname + '/failedtxn.ejs', { transaction }))
+    }
     receipt = async ({ transaction, meterNumber, token }: IReceiptEmailTemplateProps) => {
         return container(await ejs.renderFile(__dirname + '/receipt.ejs', { transaction, meterNumber, token }))
     }
@@ -22,14 +26,14 @@ class EmailTemplate {
     awaitActivation = async (partnerEmail: string) => {
         return container(await ejs.renderFile(__dirname + '/awaitactivation.ejs', { partnerEmail }))
     }
-    forgotPassword = async ({ email, otpCode}: { email: string, otpCode: string}) => {
+    forgotPassword = async ({ email, otpCode }: { email: string, otpCode: string }) => {
         return container(await ejs.renderFile(__dirname + '/forgotpassword.ejs', { email, otpCode }))
     }
     accountActivation = async (email: string) => {
         return container(await ejs.renderFile(__dirname + '/accountactivation.ejs', { email }))
     }
-    inviteTeamMember = async (email: string) => {
-        return container(await ejs.renderFile(__dirname + '/teaminvitation.ejs', { email }))
+    inviteTeamMember = async ({ email, password }: { email: string, password: string }) => {
+        return container(await ejs.renderFile(__dirname + '/teaminvitation.ejs', { email, password }))
     }
     invitePartner = async ({ email, password }: { email: string, password: string }) => {
         return container(await ejs.renderFile(__dirname + '/partnerinvitation.ejs', { email, password }))
