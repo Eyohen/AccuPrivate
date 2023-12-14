@@ -63,7 +63,7 @@ class TransactionService {
     static viewSingleTransactionByBankRefID(bankRefId) {
         return __awaiter(this, void 0, void 0, function* () {
             // Retrieve a single transaction by its UUID
-            const transaction = yield Transaction_model_1.default.findOne({ where: { bankRefId: bankRefId }, include: [PartnerProfile_model_1.default, Meter_model_1.default, User_model_1.default] });
+            const transaction = yield Transaction_model_1.default.findOne({ where: { bankRefId: bankRefId }, include: [PowerUnit_model_1.default, Event_model_1.default, PartnerProfile_model_1.default, User_model_1.default, Meter_model_1.default] });
             return transaction;
         });
     }
