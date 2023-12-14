@@ -61,5 +61,10 @@ class TeamMemberProfileService {
             return teamMembers;
         });
     }
+    static deleteTeamMember(teamMember, transaction) {
+        return __awaiter(this, void 0, void 0, function* () {
+            transaction ? yield teamMember.destroy({ transaction }) : yield teamMember.destroy();
+        });
+    }
 }
 exports.default = TeamMemberProfileService;

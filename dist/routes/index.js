@@ -17,6 +17,7 @@ const TeamMember_routes_1 = __importDefault(require("./TeamMember.routes"));
 const Notification_routes_1 = __importDefault(require("./Notification.routes"));
 const Event_routes_1 = __importDefault(require("./Event.routes"));
 const Partner_routes_1 = __importDefault(require("./Partner.routes"));
+const complaint_routes_1 = __importDefault(require("./complaint.routes"));
 const router = (0, express_1.Router)();
 router
     .use('/transaction', Transaction_routes_1.default)
@@ -31,5 +32,6 @@ router
     .use('/team', TeamMember_routes_1.default)
     .use('/notification', Notification_routes_1.default)
     .use('/event', Event_routes_1.default)
-    .use('/partner', Partner_routes_1.default);
+    .use('/partner', Partner_routes_1.default)
+    .use('/complaints', complaint_routes_1.default);
 exports.default = router;

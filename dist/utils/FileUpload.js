@@ -47,6 +47,17 @@ class FileUploadService {
             return secureUrl;
         });
     }
+    static uploadComplainPicture({ filePath }) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const path = filePath, fileName = `${(0, crypto_1.randomUUID)()}.jpg`, destinationPath = `complainImages/`;
+            const secureUrl = yield this.uploadToCloudinary({
+                path,
+                fileName,
+                destinationPath
+            });
+            return secureUrl;
+        });
+    }
 }
 FileUploadService.multerUpload = (0, multer_1.default)({
     storage: multer_1.default.diskStorage({

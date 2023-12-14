@@ -42,6 +42,7 @@ const Role_model_1 = __importStar(require("../Role.model"));
 const PartnerProfile_model_1 = __importDefault(require("./Profiles/PartnerProfile.model"));
 const TeamMemberProfile_model_1 = __importDefault(require("./Profiles/TeamMemberProfile.model"));
 const Notification_model_1 = __importDefault(require("../Notification.model"));
+const Complaint_model_1 = __importDefault(require("../Complaint.model"));
 // Define the "Entity" table model
 let Entity = class Entity extends sequelize_typescript_1.Model {
     static ensureProfileIdIsSet(instance) {
@@ -113,6 +114,10 @@ __decorate([
     (0, sequelize_typescript_1.HasMany)(() => Notification_model_1.default),
     __metadata("design:type", Array)
 ], Entity.prototype, "notifications", void 0);
+__decorate([
+    (0, sequelize_typescript_1.HasMany)(() => Complaint_model_1.default),
+    __metadata("design:type", Array)
+], Entity.prototype, "complaints", void 0);
 __decorate([
     sequelize_typescript_1.BeforeValidate,
     __metadata("design:type", Function),

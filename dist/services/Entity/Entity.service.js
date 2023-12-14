@@ -74,5 +74,19 @@ class EntityService {
             return partnerProfile || teamMemberProfile;
         });
     }
+    static viewEntityByTeamMemberProfileId(teamMemberProfileId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const entity = yield Entity_model_1.default.findOne({ where: { teamMemberProfileId } });
+            if (!entity) {
+                return null;
+            }
+            return entity;
+        });
+    }
+    static deleteEntity(entity, transaction) {
+        return __awaiter(this, void 0, void 0, function* () {
+            transaction ? yield entity.destroy({ transaction }) : yield entity.destroy();
+        });
+    }
 }
 exports.default = EntityService;

@@ -10,6 +10,6 @@ const Interface_1 = require("../utils/Interface");
 const router = express_1.default.Router();
 router
     .use((0, Auth_1.basicAuth)('access'))
-    .get('/all', (0, Interface_1.AuthenticatedController)(Partner_controller_1.default.getAllPartners))
-    .get('/info', (0, Interface_1.AuthenticatedController)(Partner_controller_1.default.getSinglePartner));
+    .get('/info', (0, Interface_1.AuthenticatedController)(Partner_controller_1.default.getPartnerInfo))
+    .post('/invite', (0, Interface_1.AuthenticatedController)(Partner_controller_1.default.invitePartner));
 exports.default = router;

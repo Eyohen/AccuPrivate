@@ -24,6 +24,7 @@ class ResponseTrimmer {
         return {
             email: partner.email,
             profilePicture: partner.entity.profilePicture,
+            entityId: partner.entity.id
         };
     }
 }

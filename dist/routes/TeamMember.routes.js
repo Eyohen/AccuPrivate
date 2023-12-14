@@ -12,5 +12,6 @@ router
     .use((0, Auth_1.basicAuth)('access'))
     .post('/member/new', (0, Interface_1.AuthenticatedController)(TeamMember_controller_1.default.inviteTeamMember))
     .get('/member/', (0, Interface_1.AuthenticatedController)(TeamMember_controller_1.default.getTeamMembers))
-    .get('/member/info', (0, Interface_1.AuthenticatedController)(TeamMember_controller_1.default.getTeamMemberInfo));
+    .get('/member/info', (0, Interface_1.AuthenticatedController)(TeamMember_controller_1.default.getTeamMemberInfo))
+    .delete('/member', (0, Interface_1.AuthenticatedController)(TeamMember_controller_1.default.deleteTeamMember));
 exports.default = router;

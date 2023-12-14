@@ -81,15 +81,16 @@ class TeamMemberProfileController {
                     failedTransactions: false
                 }
             }, transaction);
+            const password = (0, uuid_1.v4)();
             const entityPasswrod = yield Password_service_1.default.addPassword({
                 id: (0, uuid_1.v4)(),
-                password: (0, uuid_1.v4)(),
+                password,
                 entityId: entity.id
             }, transaction);
             Email_1.default.sendEmail({
                 to: email,
                 subject: 'Team Invitation',
-                html: yield new Email_1.EmailTemplate().inviteTeamMember(email)
+                html: yield new Email_1.EmailTemplate().inviteTeamMember({ email, password })
             });
             // Commit transaction
             yield transaction.commit();
@@ -144,6 +145,36 @@ class TeamMemberProfileController {
                 message: 'Team members fetched successfully',
                 data: {
                     teamMember: Object.assign(Object.assign({}, teamMemberProfile.dataValues), { entity: fullProfile.dataValues })
+                }
+            });
+        });
+    }
+    static deleteTeamMember(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { profile: { id } } = req.user.user;
+            const { email } = req.query;
+            const teamMemberProfile = yield TeamMemberProfile_service_1.default.viewSingleTeamMemberByEmail(email);
+            if (!teamMemberProfile) {
+                throw new Errors_1.BadRequestError('Team member not found');
+            }
+            // Check if current partner is the owner of the teammember
+            const currPartnerIsOwner = teamMemberProfile.partnerId === id;
+            if (!currPartnerIsOwner) {
+                throw new Errors_1.ForbiddenError("Team member doesn't belong to partner");
+            }
+            const entity = yield Entity_service_1.default.viewEntityByTeamMemberProfileId(teamMemberProfile.id);
+            if (!entity) {
+                throw new Errors_1.BadRequestError('Entity not found');
+            }
+            const transaction = yield models_1.Database.transaction();
+            yield Entity_service_1.default.deleteEntity(entity, transaction);
+            yield TeamMemberProfile_service_1.default.deleteTeamMember(teamMemberProfile, transaction);
+            yield transaction.commit();
+            res.status(200).json({
+                status: 'success',
+                message: 'Team member deleted successfully',
+                data: {
+                    teamMember: teamMemberProfile
                 }
             });
         });

@@ -19,6 +19,9 @@ const containerTemplate = fs_1.default.readFileSync(__dirname + '/container.ejs'
 const container = (contentTemplate) => ejs_1.default.render(containerTemplate, { contentTemplate, LOGO_URL: Constants_1.LOGO_URL });
 class EmailTemplate {
     constructor() {
+        this.failedTransaction = ({ transaction }) => __awaiter(this, void 0, void 0, function* () {
+            return container(yield ejs_1.default.renderFile(__dirname + '/failedtxn.ejs', { transaction }));
+        });
         this.receipt = ({ transaction, meterNumber, token }) => __awaiter(this, void 0, void 0, function* () {
             return container(yield ejs_1.default.renderFile(__dirname + '/receipt.ejs', { transaction, meterNumber, token }));
         });
@@ -34,8 +37,11 @@ class EmailTemplate {
         this.accountActivation = (email) => __awaiter(this, void 0, void 0, function* () {
             return container(yield ejs_1.default.renderFile(__dirname + '/accountactivation.ejs', { email }));
         });
-        this.inviteTeamMember = (email) => __awaiter(this, void 0, void 0, function* () {
-            return container(yield ejs_1.default.renderFile(__dirname + '/teaminvitation.ejs', { email }));
+        this.inviteTeamMember = ({ email, password }) => __awaiter(this, void 0, void 0, function* () {
+            return container(yield ejs_1.default.renderFile(__dirname + '/teaminvitation.ejs', { email, password }));
+        });
+        this.invitePartner = ({ email, password }) => __awaiter(this, void 0, void 0, function* () {
+            return container(yield ejs_1.default.renderFile(__dirname + '/partnerinvitation.ejs', { email, password }));
         });
     }
 }
