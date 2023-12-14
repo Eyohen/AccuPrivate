@@ -48,6 +48,7 @@ const Vendor_service_1 = __importDefault(require("../../services/Vendor.service"
 const PartnerProfile_service_1 = __importDefault(require("../../services/Entity/Profiles/PartnerProfile.service"));
 const Event_service_1 = __importDefault(require("../../services/Event.service"));
 const Role_model_1 = require("../../models/Role.model");
+const sequelize_1 = require("sequelize");
 class TransactionController {
     static getTransactionInfo(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -73,7 +74,7 @@ class TransactionController {
             if (status)
                 query.where.status = status;
             if (startDate && endDate)
-                query.where.transactionTimestamp = { $between: [startDate, endDate] };
+                query.where.transactionTimestamp = { [sequelize_1.Op.between]: [new Date(startDate), new Date(endDate)] };
             if (userId)
                 query.where.userId = userId;
             if (disco)
