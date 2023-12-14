@@ -15,6 +15,7 @@ import { AuthenticatedRequest } from "../../utils/Interface";
 import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
 import EventService from "../../services/Event.service";
 import { RoleEnum } from "../../models/Role.model";
+import { Op } from "sequelize";
 
 interface getTransactionsRequestBody extends ITransaction {
     page: `${number}`
@@ -54,10 +55,10 @@ export default class TransactionController {
             userId, disco, superagent, partnerId
         } = req.query as any as getTransactionsRequestBody
 
-        const query = { where: {} } as IQueryTransaction
+        const query = { where: {} } as any
 
         if (status) query.where.status = status
-        if (startDate && endDate) query.where.transactionTimestamp = { $between: [startDate, endDate] }
+        if (startDate && endDate) query.where.transactionTimestamp = { [Op.between]: [new Date(startDate), new Date(endDate)] }
         if (userId) query.where.userId = userId
         if (disco) query.where.disco = disco
         if (superagent) query.where.superagent = superagent
