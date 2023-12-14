@@ -45,4 +45,8 @@ export default class TeamMemberProfileService {
         const teamMembers: TeamMemberProfile[] = await TeamMemberProfile.findAll(query)
         return teamMembers
     }
+
+    static async deleteTeamMember(teamMember: TeamMemberProfile, transaction?: Transaction): Promise<void> {
+        transaction ? await teamMember.destroy({ transaction }) : await teamMember.destroy()
+    }
 }
