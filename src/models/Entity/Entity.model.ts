@@ -5,6 +5,7 @@ import Role, { RoleEnum } from "../Role.model";
 import PartnerProfile from "./Profiles/PartnerProfile.model";
 import TeamMember from "./Profiles/TeamMemberProfile.model";
 import Notification from "../Notification.model";
+import Complaint from "../Complaint.model";
 
 // Define the "Entity" table model
 @Table({ tableName: 'Entities' })
@@ -69,6 +70,10 @@ export default class Entity extends Model<Entity | IEntity> {
     @HasMany(() => Notification)
     notifications: Notification[];
 
+    @HasMany(()=>Complaint)
+    complaints: Complaint[];
+
+
     @BeforeValidate
     static ensureProfileIdIsSet(instance: Entity) {
         if ([RoleEnum.Partner, RoleEnum.TeamMember].includes(instance.roleId as RoleEnum)) {
@@ -97,6 +102,7 @@ export interface IEntity {
         logout: boolean;
         failedTransactions: boolean;
     }
+    complaints?: Complaint[]
 }
 
 // Interface representing the structure for creating a new Entity (inherits from IEntity)
@@ -116,6 +122,7 @@ export interface IUpdateEntity {
         activated: boolean;
         emailVerified: boolean;
     };
+
     // You can define specific properties here that are updatable for a Entity
     // This interface is intentionally left empty for flexibility
 }

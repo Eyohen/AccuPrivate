@@ -10,6 +10,7 @@ router
     .post('/member/new', AuthenticatedController(TeamMemberProfileController.inviteTeamMember))
     .get('/member/', AuthenticatedController(TeamMemberProfileController.getTeamMembers))
     .get('/member/info', AuthenticatedController(TeamMemberProfileController.getTeamMemberInfo))
+    .delete('/member', AuthenticatedController(TeamMemberProfileController.deleteTeamMember))
 
 export default router
 
