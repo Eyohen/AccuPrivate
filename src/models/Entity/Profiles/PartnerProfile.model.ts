@@ -5,6 +5,7 @@ import ApiKey from "../../ApiKey.model";
 import Entity from "../Entity.model";
 import TeamMember from "./TeamMemberProfile.model";
 
+
 // Define the "Partner" table model
 @Table
 export default class PartnerProfile extends Model<PartnerProfile | IPartnerProfile> {
@@ -30,6 +31,8 @@ export default class PartnerProfile extends Model<PartnerProfile | IPartnerProfi
 
     @HasMany(() => ApiKey)
     apiKeys: ApiKey[];
+
+    
 
     @Column({ type: DataType.STRING, allowNull: false })
     key: string;

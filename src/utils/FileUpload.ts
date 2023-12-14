@@ -62,6 +62,20 @@ class FileUploadService {
 
         return secureUrl;
     }
+
+    static async uploadComplainPicture({ filePath }: { filePath: string }): Promise<string> {
+        const path = filePath,
+            fileName = `${randomUUID()}.jpg`,
+            destinationPath = `complainImages/`
+
+        const secureUrl = await this.uploadToCloudinary({
+            path,
+            fileName,
+            destinationPath
+        })
+
+        return secureUrl;
+    }
 }
 
 export default FileUploadService;
