@@ -108,7 +108,7 @@ export class VendorPublisher extends ProducerFactory {
             message: {
                 meter: {
                     meterNumber: data.meter.meterNumber,
-                   disco: data.meter.disco,
+                    disco: data.meter.disco,
                     vendType: data.meter.vendType,
                     id: data.meter.id,
                 },
@@ -188,7 +188,7 @@ export class VendorPublisher extends ProducerFactory {
                     email: data.partner.email,
                 },
                 transactionId: data.transactionId,
-                retryCount: data.retryCount
+                retryCount: data.retryCount,
             },
         });
     }

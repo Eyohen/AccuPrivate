@@ -206,10 +206,10 @@ class WebhookHandler extends Registry {
                     data instanceof RetryWebhookParams ? data.retryCount : null,
             };
 
-            await this.scheduleNextWebhookNotification(
-                transactionEventService,
-                metaData,
-            );
+            //     await this.scheduleNextWebhookNotification(
+            //         transactionEventService,
+            //         metaData,
+            //     );
         }
     }
 
