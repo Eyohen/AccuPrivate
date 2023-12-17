@@ -11,7 +11,7 @@ import morgan from 'morgan'
 import logger from "./utils/Logger";
 import helmet from 'helmet';
 import 'express-async-errors'
-const newrelic = require('newrelic')
+require('newrelic')
 
 // Create an Express application
 const app = express();
