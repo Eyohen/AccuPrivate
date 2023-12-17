@@ -68,6 +68,7 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
     },
     [TOPICS.PARTNER_TRANSACTION_COMPLETE]: {
         meter: MeterInfo & { id: string },
+        user: User,
         partner: Partner,
         transactionId: string
     },

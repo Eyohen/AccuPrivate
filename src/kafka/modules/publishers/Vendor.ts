@@ -248,6 +248,8 @@ export class VendorPublisher extends ProducerFactory {
                     vendType: data.meter.vendType,
                     id: data.meter.id,
                 },
+                partner: data.partner,
+                user: data.meter,
                 transactionId: data.transactionId
             }
         }).catch((e) => {
