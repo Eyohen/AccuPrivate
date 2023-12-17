@@ -64,7 +64,7 @@ export default class TransactionEventService {
     }
 
     public getTransactionInfo(): Transaction {
-      return this.
+      return this.transaction
     }
 
     public async addMeterValidationRequestedEvent(): Promise<Event> {

@@ -57,7 +57,7 @@ export default class TransactionService {
     }
 
     static async viewTransactionsWithCustomQuery(
-        query: any,
+        query: Record<string, any>,
     ): Promise<Transaction[]> {
         // Retrieve all transactions from the database
         // Sort from latest
@@ -68,7 +68,8 @@ export default class TransactionService {
             })
         ).sort((a, b) => {
             return (
-                b.transactionTimestamp.getTime() - a.transactionTimestamp.getTime()
+                b.transactionTimestamp.getTime() -
+                a.transactionTimestamp.getTime()
             );
         });
         return transactions;
@@ -79,9 +80,12 @@ export default class TransactionService {
         uuid: string,
     ): Promise<Transaction | null> {
         // Retrieve a single transaction by its UUID
-        const transaction: Transaction | null = await Transaction.findByPk(uuid, {
-            include: [PowerUnit, Event, Partner, User, Meter],
-        });
+        const transaction: Transaction | null = await Transaction.findByPk(
+            uuid,
+            {
+                include: [PowerUnit, Event, Partner, User, Meter],
+            },
+        );
         return transaction;
     }
 
@@ -102,9 +106,12 @@ export default class TransactionService {
         updateTransaction: IUpdateTransaction,
     ): Promise<Transaction | null> {
         // Update the transaction in the database
-        const updateResult: [number] = await Transaction.update(updateTransaction, {
-            where: { id: uuid },
-        });
+        const updateResult: [number] = await Transaction.update(
+            updateTransaction,
+            {
+                where: { id: uuid },
+            },
+        );
         // Retrieve the updated transaction by its UUID
         const updatedTransaction: Transaction | null =
             await Transaction.findByPk(uuid);

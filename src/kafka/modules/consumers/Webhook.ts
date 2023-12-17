@@ -8,6 +8,7 @@ import logger from "../../../utils/Logger";
 import { TOPICS } from "../../Constants";
 import ConsumerFactory from "../util/Consumer";
 import {
+    MeterInfo,
     PublisherEventAndParameters,
     Registry,
     Topic,
@@ -22,67 +23,115 @@ import MeterService from "../../../services/Meter.service";
 import Transaction from "../../../models/Transaction.model";
 import User from "../../../models/User.model";
 import WebHook from "../../../models/Webhook.model";
-
+import { ValueOf } from "kafkajs";
 
 class WebhookHandlerRequestValidator {
-  static async validateIncomingWebhookEventRequest(data: PublisherEventAndParameters[TOPICS.TOKEN_RECIEVED_FROM_VENDOR]): Promise<{ transaction: Transaction, partnerProfile: PartnerProfile, meter: Meter, user: User, webhook:WebHook} | Error >{
-
-  try {
-    const transaction = await TransactionService.viewSingleTransaction(
-            data.transactionId,
-        );
-        if (!transaction) {
-          throw new Error(`Error fetching transaction with id ${data.transactionId}`)
-        }
-
-        const user = await transaction.$get('user')
-        if (!user) {
-          throw new Error('User not found for transaction with id ' + transaction.id)
-        }
-        const partnerProfile =
-            await PartnerProfileService.viewSinglePartnerByEmail(
-                transaction.partner.email,
+    static async validateIncomingWebhookEventRequest(
+        data: PublisherEventAndParameters[TOPICS.TOKEN_RECIEVED_FROM_VENDOR],
+    ): Promise<
+        | {
+              transaction: Transaction;
+              partnerProfile: PartnerProfile;
+              meter: Meter;
+              user: User;
+              webhook: WebHook;
+          }
+        | Error
+    > {
+        try {
+            const transaction = await TransactionService.viewSingleTransaction(
+                data.transactionId,
             );
-        if (!partnerProfile) {
-          throw new Error(`Error fetching partner with email ${transaction.partner.email}`)
-        }
+            if (!transaction) {
+                throw new Error(
+                    `Error fetching transaction with id ${data.transactionId}`,
+                );
+            }
 
-        const meter = await transaction.$get("meter");
-        if (!meter) {
-            throw new Error(`No meter found for transaction id ${transaction.id}`);
-        }
+            const user = await transaction.$get("user");
+            if (!user) {
+                throw new Error(
+                    "User not found for transaction with id " + transaction.id,
+                );
+            }
+            const partnerProfile =
+                await PartnerProfileService.viewSinglePartnerByEmail(
+                    transaction.partner.email,
+                );
+            if (!partnerProfile) {
+                throw new Error(
+                    `Error fetching partner with email ${transaction.partner.email}`,
+                );
+            }
 
-               const webhook = await WebhookService.viewWebhookByPartnerId(
-            partnerProfile.id,
-        );
-        if (!webhook) {
-            throw new Error(
-                `Error fetching webhook for partner with id ${partnerProfile.id}`,
+            const meter = await transaction.$get("meter");
+            if (!meter) {
+                throw new Error(
+                    `No meter found for transaction id ${transaction.id}`,
+                );
+            }
+
+            const webhook = await WebhookService.viewWebhookByPartnerId(
+                partnerProfile.id,
             );
-        }
+            if (!webhook) {
+                throw new Error(
+                    `Error fetching webhook for partner with id ${partnerProfile.id}`,
+                );
+            }
 
-      return {
-        transaction, partnerProfile, webhook, user, meter
-      }
-  } catch (error: Error) { logger.error(error.message)
-return error 
-  }
-  }
+            return {
+                transaction,
+                partnerProfile,
+                webhook,
+                user,
+                meter,
+            };
+        } catch (error: Error | any) {
+            logger.error(error.message);
+            return error;
+        }
+    }
 }
 
+type WebhookEventRequestParams = {
+    Retry: RetryWebhookParams;
+    FirstTime: WebhookParamsBase;
+};
 
+class WebhookParamsBase {
+    meter: MeterInfo & { id: string; token: string };
+    user: { name: string; address: string; phoneNumber: string; email: string };
+    partner: { email: string };
+    transactionId: string;
+}
+
+class RetryWebhookParams extends WebhookParamsBase {
+    retryCount: number;
+}
+
+enum Status {
+    RETRY = "Retry",
+    FIRST_TIME = "FirstTime",
+}
 class WebhookHandler extends Registry {
-    private static async handleWebhookRequest(
-        data: PublisherEventAndParameters[TOPICS.TOKEN_RECIEVED_FROM_VENDOR] & { retryCount: number},
+    private static async handleWebhookRequest<T extends Status>(
+        data: WebhookEventRequestParams[T],
     ) {
-        const validationData = await WebhookHandlerRequestValidator.validateIncomingWebhookEventRequest(data)
+        const validationData =
+            await WebhookHandlerRequestValidator.validateIncomingWebhookEventRequest(
+                data,
+            );
         if (validationData instanceof Error) {
-          logger.info(`An error occured while validating new webhook request for transaction with id ${data.transactionId}`)
-          return
+            logger.info(
+                `A error occured while validating new webhook request for transaction with id ${data.transactionId}`,
+            );
+            return;
         }
 
-        const { transaction, partnerProfile, meter, user, webhook} = validationData
-         const transactionEventService = new TransactionEventService(
+        const { transaction, partnerProfile, meter, user, webhook } =
+            validationData;
+        const transactionEventService = new TransactionEventService(
             transaction,
             {
                 meterNumber: transaction.meter.meterNumber,
@@ -148,28 +197,37 @@ class WebhookHandler extends Registry {
             }
 
             await transactionEventService.addWebHookNotificationConfirmedEvent();
-        } catch (error) {
+        } catch (error: Error | any) {
+            const metaData = {
+                url: webhook.url,
+                token: data.meter.token,
+                meter: transaction.meter,
+                retryCount:
+                    data instanceof RetryWebhookParams ? data.retryCount : null,
+            };
+
             await this.scheduleNextWebhookNotification(
                 transactionEventService,
-                {
-                    retryCount: ,
-                    token: data.meter.token,
-                    url: webhook.url,
-                    meter: transaction.meter,
-                },
+                metaData,
             );
         }
     }
 
     private static async scheduleNextWebhookNotification(
         eventService: TransactionEventService,
-        meta: { retryCount: number; meter: IMeter; token: string; url: string },
+        meta: {
+            retryCount: number | null;
+            meter: IMeter;
+            token: string;
+            url: string;
+        },
     ) {
-        const waitTime = meta.retryCount * 2;
+        const retryCount = meta.retryCount ?? 0;
+        const waitTime = retryCount * 2;
 
         setTimeout(async () => {
             await eventService.addWebHookNotificationRetryEvent({
-                retryCount: meta.retryCount,
+                retryCount: retryCount,
                 timeStamp: new Date(),
                 url: meta.url,
             });
@@ -193,7 +251,7 @@ class WebhookHandler extends Registry {
                         token: meta.token,
                     },
                     partner: partner,
-                    retryCount: meta.retryCount + 1,
+                    retryCount: retryCount + 1,
                     user: {
                         name: user.name as string,
                         email: user.email,
@@ -207,9 +265,10 @@ class WebhookHandler extends Registry {
     }
 
     static registry = {
-        [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: this.handleWebhookRequest,
-        [TOPICS.WEBHOOK_NOTIFICATION_TO_PARTNER_RETRY]:
-            this.handleWebhookRequest,
+        [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: this
+            .handleWebhookRequest<Status.FIRST_TIME>,
+        [TOPICS.WEBHOOK_NOTIFICATION_TO_PARTNER_RETRY]: this
+            .handleWebhookRequest<Status.RETRY>,
     };
 }
 
@@ -222,4 +281,3 @@ export default class WebhookConsumer extends ConsumerFactory {
         super(messageProcessor);
     }
 }
-
