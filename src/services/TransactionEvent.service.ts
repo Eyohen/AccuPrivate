@@ -21,7 +21,7 @@ interface EventMeterInfo {
 }
 
 const EventAndPublishers = {
-    [TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER]: VendorPublisher.publishEventForTokenRequest,
+    [TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER]: VendorPublisher.publishEventForInitiatedPowerPurchase,
     [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: VendorPublisher.publishEventForTokenReceivedFromVendor,
     [TOPICS.METER_VALIDATION_REQUESTED_TO_VENDOR]: VendorPublisher.publishEventForMeterValidationRequested,
     [TOPICS.METER_VALIDATION_RECIEVED_FROM_VENDOR]: VendorPublisher.publishEventForMeterValidationReceived,

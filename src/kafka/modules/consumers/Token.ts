@@ -81,47 +81,53 @@ class TokenHandler extends Registry {
         // Check if error occured while purchasing token
         if (tokenInfo instanceof Error) {
             if (tokenInfo instanceof AxiosError) {
-                // If error is due to timeout, trigger event to requery transaction later
-                if (tokenInfo.message === 'Transaction timeout') {
-                    const _eventMessage = { ...eventMessage, error: { code: 202 } }
-                    return await this.triggerEventToRequeryTransactionTokenFromVendor({ eventService: transactionEventService, eventMessage: _eventMessage, retryCount: 1 })
-                }
-
-                // TODO: Check if event should be retried or we should finalize as failed
                 /**
                  * 202 - Timeout / Transaction is processing
                  * 501 - Maintenance error
                  * 500 - Unexpected error - Please requery
-                 */
+                */
+                // If error is due to timeout, trigger event to requery transaction later
                 const responseCode = tokenInfo.response?.data.responseCode
-                const requeryTxn = [202, 500, 501].includes(tokenInfo.response?.data.responseCode as number)
+                const requeryTxn = [202, 500, 501].includes(responseCode) || tokenInfo.message === 'Transaction timeout'
                 if (requeryTxn) {
-                    const _eventMessage = { ...eventMessage, error: { code: responseCode } }
+                    let cause = 'TIMEOUT'
+                    if (responseCode === 501) {
+                        cause = 'MAINTENANCE_ACCOUNT_ACTIVATION_REQUIRED'
+                    } else if (responseCode === 500) {
+                        cause = 'UNEXPECTED_ERROR'
+                    }
+
+                    const _eventMessage = { ...eventMessage, error: { code: responseCode, cause } }
                     return await this.triggerEventToRequeryTransactionTokenFromVendor({ eventService: transactionEventService, eventMessage: _eventMessage, retryCount: 1 })
                 }
 
                 // Other errors (4xx ...) occured while purchasing token
                 await transactionEventService.addTokenRequestFailedNotificationToPartnerEvent()
-                await VendorPublisher.publishEventForFailedTokenRequest(eventMessage)
-                return
+                return await VendorPublisher.publishEventForFailedTokenRequest(eventMessage)
             }
 
             logger.error('Error purchasing token', tokenInfo)
             // Transaction failed, trigger event to retry transaction from scratch
             // TODO: Add timer to trigger it at increasing intervals
             await transactionEventService.addTokenRequestFailedNotificationToPartnerEvent()
-            await VendorPublisher.publishEventForFailedTokenRequest(eventMessage)
-            return
+            return await VendorPublisher.publishEventForFailedTokenRequest(eventMessage)
         }
 
-        // Handle transaction if it timedout or successful
+        /**
+         * Vend token request didn't return an error, but there are two possible outcomes in this case
+         * 
+         * 1. Transaction timedout
+         * 2. No token was found in the response
+         * 3. Transaction was successful and a token was found in the response
+         * 
+         * In the case of 1 and 2, we need to requery the transaction at intervals
+         */
         const transactionTimedOut = tokenInfo.data.responseCode == 202
         const tokenInResponse = (tokenInfo as PurchaseResponse).data.token
 
         // Transaction timedout - Requery the transactio at intervals
         if (transactionTimedOut || !tokenInResponse) {
-            logger.info('Transaction timedout')
-            const _eventMessage = { ...eventMessage, error: { code: 202, cause: 'TRANSACTION_TIMEOUT' } }
+            const _eventMessage = { ...eventMessage, error: { code: 202, cause: transactionTimedOut ? 'TRANSACTION_TIMEOUT' : 'SUCCESS_WITH_NO_TOKEN' } }
             return await this.triggerEventToRequeryTransactionTokenFromVendor({ eventService: transactionEventService, eventMessage: _eventMessage, retryCount: 1 })
         }
 
@@ -130,7 +136,7 @@ class TokenHandler extends Registry {
         // Add and publish token received event
         const _tokenInfo = tokenInfo as PurchaseResponse
         await transactionEventService.addTokenReceivedEvent(_tokenInfo.data.token);
-        await VendorPublisher.publishEventForTokenReceivedFromVendor({
+        return await VendorPublisher.publishEventForTokenReceivedFromVendor({
             transactionId: transaction.id,
             user: {
                 name: user.name as string,
@@ -149,8 +155,6 @@ class TokenHandler extends Registry {
                 token: _tokenInfo.data.token,
             },
         })
-
-        return
     }
 
     private static async handleTokenReceived(data: PublisherEventAndParameters[TOPICS.TOKEN_RECIEVED_FROM_VENDOR]) {
