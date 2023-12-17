@@ -4,6 +4,7 @@ import EmailService, { EmailTemplate } from "../../utils/Email";
 import Validator from "../../utils/Validators";
 import { AuthenticatedRequest } from "../../utils/Interface";
 import EntityService from "../../services/Entity/Entity.service";
+const newrelic= require('newrelic')
 
 class AuthControllerValidator {
     static async activatePartner() {
@@ -15,6 +16,7 @@ class AuthControllerValidator {
 
 export default class AuthController {
     static async activatePartner(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        newrelic.setTransactionName('Auth/Activate Partner')
         const { email } = req.body
 
         const validEmail = Validator.validateEmail(email)
@@ -43,6 +45,7 @@ export default class AuthController {
     }
 
     static async deactivatePartner(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        newrelic.setTransactionName('Auth/Deactivate Partner')
         const { email } = req.body
 
         const validEmail = Validator.validateEmail(email)

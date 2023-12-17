@@ -12,6 +12,7 @@ import teamMemberRoute from './TeamMember.routes'
 import notificationRoute from './Notification.routes'
 import eventRoute from './Event.routes'
 import partnerRoute from './Partner.routes'
+const newrelic = require('newrelic');
 
 const router = Router()
 

@@ -5,6 +5,7 @@ import Role, { RoleEnum } from "../Role.model";
 import PartnerProfile from "./Profiles/PartnerProfile.model";
 import TeamMember from "./Profiles/TeamMemberProfile.model";
 import Notification from "../Notification.model";
+const newrelic = require('newrelic');
 
 // Define the "Entity" table model
 @Table({ tableName: 'Entities' })

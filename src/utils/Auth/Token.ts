@@ -7,6 +7,7 @@ import Entity, { IEntity } from "../../models/Entity/Entity.model";
 import Role, { RoleEnum } from "../../models/Role.model";
 import RoleService from "../../services/Role.service";
 import { extensions } from "sequelize/types/utils/validator-extras";
+const newrelic = require('newrelic');
 
 interface SaveTokenToCache {
     key: string,

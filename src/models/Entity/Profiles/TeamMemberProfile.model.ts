@@ -5,6 +5,7 @@ import Password from "../../Password.model";
 import ApiKey from "../../ApiKey.model";
 import Entity from "../Entity.model";
 import Partner from "./PartnerProfile.model";
+const newrelic = require('newrelic');
 
 // Define the "TeamMember" table model
 @Table
