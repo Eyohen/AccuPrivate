@@ -4,7 +4,6 @@ import Transaction from "../../Transaction.model";
 import ApiKey from "../../ApiKey.model";
 import Entity from "../Entity.model";
 import TeamMember from "./TeamMemberProfile.model";
-const newrelic = require('newrelic')
 
 // Define the "Partner" table model
 @Table

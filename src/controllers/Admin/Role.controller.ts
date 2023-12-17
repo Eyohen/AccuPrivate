@@ -4,7 +4,6 @@ import { BadRequestError } from "../../utils/Errors";
 import RoleService from "../../services/Role.service";
 import { RoleEnum } from "../../models/Role.model";
 import { AuthenticatedRequest } from "../../utils/Interface";
-const newrelic = require('newrelic');
 
 export default class RoleController {
     //  Create role

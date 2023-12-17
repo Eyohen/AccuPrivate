@@ -6,11 +6,9 @@ import { TokenUtil } from "../../utils/Auth/Token";
 import ApiKeyService from "../../services/ApiKey.service ";
 import Cypher from "../../utils/Cypher";
 import { AuthenticatedRequest } from "../../utils/Interface";
-const newrelic = require('newrelic');
 
 export default class ApiController {
     static async getActiveAPIKey(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        newrelic.setTransactionName('Apikey/Get Active Keys')
         const { entity, profile } = req.user.user
 
         if (entity.role !== 'PARTNER') {
