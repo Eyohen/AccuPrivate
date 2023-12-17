@@ -6,13 +6,13 @@ export class NigerianDate {
     this.timeZone = 'Africa/Lagos';
   }
 
-  getCurrentNigerianDate(): Date {
+  public getCurrentNigerianDate(): Date {
     const currentDate = new Date();
     const nigerianDate = this.convertToTimeZone(currentDate, this.timeZone);
     return nigerianDate;
   }
 
-  convertToNigerianTime(inputDate: Date): Date {
+  public convertToNigerianTime(inputDate: Date): Date {
     return this.convertToTimeZone(inputDate, this.timeZone);
   }
 

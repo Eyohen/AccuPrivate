@@ -42,11 +42,7 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
         transactionId: string
     },
     [TOPICS.METER_VALIDATION_RECIEVED_FROM_VENDOR]: MeterValidationRequested,
-    [TOPICS.POWER_PURCHASE_INITIATED_FROM_PARTNER]: {
-        meter: MeterInfo & { id: string },
-        transactionId: string
-    },
-    [TOPICS.TOKEN_REQUESTED_FROM_VENDOR]: {
+    [TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER]: {
         meter: MeterInfo & { id: string },
         user: User,
         partner: Partner,
@@ -57,6 +53,18 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
         user: User,
         partner: Partner,
         transactionId: string
+    },
+    [TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR_RETRY]: {
+        meter: MeterInfo & { id: string },
+        transactionId: string,
+        timeStamp: Date,
+        error: { code: number, cause: string },
+        retryCount: number
+    },
+    [TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_INITIATED]: {
+        meter: MeterInfo & { id: string },
+        transactionId: string,
+        timeStamp: Date,
     },
     [TOPICS.PARTNER_TRANSACTION_COMPLETE]: {
         meter: MeterInfo & { id: string },
@@ -83,11 +91,11 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
     },
     [TOPICS.TOKEN_REQUEST_FAILED]: {
         transactionId: string,
-        meter: MeterInfo 
+        meter: MeterInfo
     },
     [TOPICS.TOKEN_REQUEST_TIMEDOUT]: {
         transactionId: string,
-        meter: MeterInfo 
+        meter: MeterInfo
     },
 }
 

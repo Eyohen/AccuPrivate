@@ -80,27 +80,9 @@ export class VendorPublisher extends ProducerFactory {
         })
     }
 
-    static async publishEventForInitiatedPowerPurchase(data: PublisherEventAndParameters[TOPICS.POWER_PURCHASE_INITIATED_FROM_PARTNER]) {
+    static async publishEventForInitiatedPowerPurchase(data: PublisherEventAndParameters[TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER]) {
         return ProducerFactory.sendMessage({
-            topic: TOPICS.POWER_PURCHASE_INITIATED_FROM_PARTNER,
-            message: {
-                meter: {
-                    meterNumber: data.meter.meterNumber,
-                    disco: data.meter.disco,
-                    vendType: data.meter.vendType,
-                    id: data.meter.id
-                },
-                transactionId: data.transactionId
-            }
-        }).catch((e) => {
-            logger.error(`An error occured while publishing ${TOPICS.POWER_PURCHASE_INITIATED_FROM_PARTNER} event for transaction` + data.transactionId)
-            return e
-        })
-    }
-
-    static async publishEventForTokenRequest(data: PublisherEventAndParameters[TOPICS.TOKEN_REQUESTED_FROM_VENDOR]) {
-        return ProducerFactory.sendMessage({
-            topic: TOPICS.TOKEN_REQUESTED_FROM_VENDOR,
+            topic: TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER,
             message: {
                 meter: {
                     meterNumber: data.meter.meterNumber,
@@ -120,12 +102,12 @@ export class VendorPublisher extends ProducerFactory {
                 transactionId: data.transactionId
             }
         }).catch((e) => {
-            logger.error(`An error occured while publishing ${TOPICS.TOKEN_REQUESTED_FROM_VENDOR} event for transaction` + data.transactionId)
+            logger.error(`An error occured while publishing ${TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER} event for transaction` + data.transactionId)
             return e
         })
     }
 
-    static async publishEventForReceivedToken(data: PublisherEventAndParameters[TOPICS.TOKEN_RECIEVED_FROM_VENDOR]) {
+    static async publishEventForTokenReceivedFromVendor(data: PublisherEventAndParameters[TOPICS.TOKEN_RECIEVED_FROM_VENDOR]) {
         return ProducerFactory.sendMessage({
             topic: TOPICS.TOKEN_RECIEVED_FROM_VENDOR,
             message: {
@@ -152,7 +134,7 @@ export class VendorPublisher extends ProducerFactory {
             return e
         })
     }
-    
+
     static async publishEventForTimedOutTokenRequest(data: PublisherEventAndParameters[TOPICS.TOKEN_REQUEST_TIMEDOUT]) {
         return ProducerFactory.sendMessage({
             topic: TOPICS.TOKEN_REQUEST_TIMEDOUT,
@@ -170,22 +152,57 @@ export class VendorPublisher extends ProducerFactory {
         })
     }
 
-        static async publishEventForTransactionRequery(data: PublisherEventAndParameters[TOPICS.TOKEN_REQUESTED_FROM_VENDOR_REQUERY]) {
-            return ProducerFactory.sendMessage({
-                topic: TOPICS.TOKEN_REQUESTED_FROM_VENDOR_REQUERY,
-                message: {
-                    meter: {
-                        meterNumber: data.meter.meterNumber,
-                        disco: data.meter.disco,
-                        vendType: data.meter.vendType,
-                    },
-                    transactionId: data.transactionId
-                }
-            }).catch((e) => {
-                logger.error(`An error occured while publishing ${TOPICS.TOKEN_REQUESTED_FROM_VENDOR_REQUERY} event for transaction` + data.transactionId)
-                return e
-            })
-        }
+    static async publishEventForGetTransactionTokenRequestedFromVendorRetry(data: PublisherEventAndParameters[TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR_RETRY]) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR_RETRY,
+            message: {
+                meter: {
+                    meterNumber: data.meter.meterNumber,
+                    disco: data.meter.disco,
+                    vendType: data.meter.vendType,
+                    id: data.meter.id,
+                },
+                error: data.error,
+                transactionId: data.transactionId,
+                timeStamp: data.timeStamp,
+                retryCount: data.retryCount
+            }
+        }).catch((e) => {
+            logger.error(`An error occured while publishing ${TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR_RETRY} event for transaction` + data.transactionId)
+            return e
+        })
+    }
+
+    static async publishEventForGetTransactionTokenFromVendorInitiated(data: PublisherEventAndParameters[TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_INITIATED]) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_INITIATED,
+            message: {
+                meter: data.meter,
+                transactionId: data.transactionId,
+                timeStamp: data.timeStamp
+            }
+        }).catch((e) => {
+            logger.error(`An error occured while publishing ${TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_INITIATED} event for transaction` + data.transactionId)
+            return e
+        })
+    }
+
+    static async publishEventForTransactionRequery(data: PublisherEventAndParameters[TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER_REQUERY]) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER_REQUERY,
+            message: {
+                meter: {
+                    meterNumber: data.meter.meterNumber,
+                    disco: data.meter.disco,
+                    vendType: data.meter.vendType,
+                },
+                transactionId: data.transactionId
+            }
+        }).catch((e) => {
+            logger.error(`An error occured while publishing ${TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER_REQUERY} event for transaction` + data.transactionId)
+            return e
+        })
+    }
 
     static async publishEventForSuccessfulTokenRequestWithNoToken(data: PublisherEventAndParameters[TOPICS.TOKEN_REQUEST_SUCCESS_WITH_NO_TOKEN]) {
         return ProducerFactory.sendMessage({
@@ -203,7 +220,7 @@ export class VendorPublisher extends ProducerFactory {
             return e
         })
     }
-    
+
     static async publishEventForFailedTokenRequest(data: PublisherEventAndParameters[TOPICS.TOKEN_REQUEST_FAILED]) {
         return ProducerFactory.sendMessage({
             topic: TOPICS.TOKEN_REQUEST_FAILED,
@@ -223,7 +240,7 @@ export class VendorPublisher extends ProducerFactory {
 
     static async publishEventForCompletedPowerPurchase(data: PublisherEventAndParameters[TOPICS.PARTNER_TRANSACTION_COMPLETE]) {
         return ProducerFactory.sendMessage({
-            topic: TOPICS.POWER_PURCHASE_INITIATED_FROM_PARTNER,
+            topic: TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER,
             message: {
                 meter: {
                     meterNumber: data.meter.meterNumber,

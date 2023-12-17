@@ -95,6 +95,7 @@ interface FailedResponseForBuyPowerRequery {
     responseCode: 202
 }
 
+
 type BuypowerRequeryResponse = _RequeryBuypowerSuccessResponse | InprogressResponseForBuyPowerRequery | FailedResponseForBuyPowerRequery
 
 // Define the VendorService class for handling provider-related operations
@@ -299,7 +300,6 @@ export default class VendorService {
             }
 
             const response = await this.buyPowerAxios().get<BuypowerRequeryResponse>(`/transaction/${transactionId}`)
-
 
             const successResponse = response.data as _RequeryBuypowerSuccessResponse
             if (successResponse.result.status === true) {

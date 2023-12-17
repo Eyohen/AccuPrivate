@@ -92,7 +92,7 @@ class VendorTokenHandler implements Registry {
         this.tokenSent = true
     }
 
-    constructor (transaction: Transaction, response: Response) {
+    constructor(transaction: Transaction, response: Response) {
         this.transaction = transaction
         this.response = () => response
         return this
@@ -361,14 +361,9 @@ export default class VendorController {
             id: meter.id,
         }
         const transactionEventService = new EventService.transactionEventService(transaction, meterInfo);
-
         await transactionEventService.addPowerPurchaseInitiatedEvent(bankRefId, amount);
-        VendorPublisher.publishEventForInitiatedPowerPurchase({
-            transactionId: transaction.id, meter: meterInfo,
-        })
 
         const { user, partnerEntity } = await VendorControllerValdator.requestToken({ bankRefId, transactionId });
-        await transactionEventService.addTokenRequestedEvent(bankRefId);
         await TransactionService.updateSingleTransaction(
             transactionId,
             {
@@ -381,7 +376,7 @@ export default class VendorController {
         const vendorTokenConsumer = new VendorTokenReceivedSubscriber(transaction, res)
         await vendorTokenConsumer.start()
         try {
-            const response = await VendorPublisher.publishEventForTokenRequest({
+            const response = await VendorPublisher.publishEventForInitiatedPowerPurchase({
                 transactionId: transaction.id,
                 user: {
                     name: user.name as string,
@@ -488,7 +483,7 @@ export default class VendorController {
 
         // Check event for request token
         const requestTokenEvent = await Event.findOne({
-            where: { transactionId: transaction.id, eventType: "TOKEN_REQUESTED_FROM_VENDOR" },
+            where: { transactionId: transaction.id, eventType: "POWER_PURCHASE_INITIATED_BY_CUSTOMER" },
         });
 
         if (!requestTokenEvent) {

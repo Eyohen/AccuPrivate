@@ -21,8 +21,8 @@ interface EventMeterInfo {
 }
 
 const EventAndPublishers = {
-    [TOPICS.TOKEN_REQUESTED_FROM_VENDOR]: VendorPublisher.publishEventForTokenRequest,
-    [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: VendorPublisher.publishEventForReceivedToken,
+    [TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER]: VendorPublisher.publishEventForTokenRequest,
+    [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: VendorPublisher.publishEventForTokenReceivedFromVendor,
     [TOPICS.METER_VALIDATION_REQUESTED_TO_VENDOR]: VendorPublisher.publishEventForMeterValidationRequested,
     [TOPICS.METER_VALIDATION_RECIEVED_FROM_VENDOR]: VendorPublisher.publishEventForMeterValidationReceived,
 } as Record<TOPICS, (...args: any[]) => Promise<void>>;
@@ -182,25 +182,7 @@ export default class TransactionEventService {
         return EventService.addEvent(event);
     }
 
-    public addPowerPurchaseInitiatedEvent(bankRefId: string, amount: string): Promise<Event> {
-        const event: ICreateEvent = {
-            transactionId: this.transaction.id,
-            eventType: TOPICS.POWER_PURCHASE_INITIATED_FROM_PARTNER,
-            eventText: TOPICS.POWER_PURCHASE_INITIATED_FROM_PARTNER,
-            payload: JSON.stringify({
-                bankRefId,
-                amount,
-                transactionId: this.transaction.id
-            }),
-            source: 'API',
-            eventTimestamp: new Date(),
-            id: uuidv4(),
-            status: Status.COMPLETE,
-        }
-        return EventService.addEvent(event);
-    }
-
-    public async addTokenRequestedEvent(bankRefId: string,): Promise<Event> {
+    public async addPowerPurchaseInitiatedEvent(bankRefId: string, amount: string): Promise<Event> {
         const user = await this.transaction.$get('user');
         if (!user) {
             throw new Error('Transaction does not have a user');
@@ -208,8 +190,8 @@ export default class TransactionEventService {
 
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
-            eventType: TOPICS.TOKEN_REQUESTED_FROM_VENDOR,
-            eventText: TOPICS.TOKEN_REQUESTED_FROM_VENDOR,
+            eventType: TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER,
+            eventText: TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER,
             payload: JSON.stringify({
                 bankRefId,
                 transactionId: this.transaction.id,
@@ -219,6 +201,29 @@ export default class TransactionEventService {
                 meterId: this.transaction.meterId,
                 meterNumber: this.meterInfo.meterNumber,
                 phoneNumber: user.phoneNumber,
+                vendType: this.meterInfo.vendType,
+            }),
+            source: 'API',
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.COMPLETE,
+        }
+
+        return await EventService.addEvent(event);
+    }
+
+    public async addVendElectricityRequestedFromVendorEvent(): Promise<Event> {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.VEND_ELECTRICITY_REQUESTED_FROM_VENDOR,
+            eventText: TOPICS.VEND_ELECTRICITY_REQUESTED_FROM_VENDOR,
+            payload: JSON.stringify({
+                transactionId: this.transaction.id,
+                superAgent: this.transaction.superagent,
+                amount: this.transaction.amount,
+                disco: this.transaction.disco,
+                meterId: this.transaction.meterId,
+                meterNumber: this.meterInfo.meterNumber,
                 vendType: this.meterInfo.vendType,
             }),
             source: 'API',
@@ -252,12 +257,12 @@ export default class TransactionEventService {
 
         return await EventService.addEvent(event);
     }
-    
-    public async addTokenRequeryEvent(): Promise<Event> {
+
+    public async addGetTransactionTokenRequestedFromVendorEvent(): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
-            eventType: TOPICS.TOKEN_REQUESTED_FROM_VENDOR_REQUERY,
-            eventText: TOPICS.TOKEN_REQUESTED_FROM_VENDOR_REQUERY,
+            eventType: TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR_RETRY,
+            eventText: TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR_RETRY,
             payload: JSON.stringify({
                 transactionId: this.transaction.id,
                 superAgent: this.transaction.superagent,
@@ -266,6 +271,7 @@ export default class TransactionEventService {
                 meterId: this.transaction.meterId,
                 meterNumber: this.meterInfo.meterNumber,
                 vendType: this.meterInfo.vendType,
+                timestamp: new Date(),
             }),
             source: this.transaction.superagent.toUpperCase(),
             eventTimestamp: new Date(),
@@ -275,7 +281,30 @@ export default class TransactionEventService {
 
         return await EventService.addEvent(event);
     }
-    
+
+    public async addGetTransactionTokenFromVendorInitiatedEvent(): Promise<Event> {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_INITIATED,
+            eventText: TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_INITIATED,
+            payload: JSON.stringify({
+                transactionId: this.transaction.id,
+                superAgent: this.transaction.superagent,
+                amount: this.transaction.amount,
+                disco: this.transaction.disco,
+                meterId: this.transaction.meterId,
+                meterNumber: this.meterInfo.meterNumber,
+                vendType: this.meterInfo.vendType,
+                timestamp: new Date(),
+            }),
+            source: this.transaction.superagent.toUpperCase(),
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.COMPLETE,
+        }
+
+        return await EventService.addEvent(event);
+    }
     public async addTokenRequestSuccessfulWithNoTokenEvent(): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
@@ -298,7 +327,7 @@ export default class TransactionEventService {
 
         return await EventService.addEvent(event);
     }
-    
+
     public async addTokenReceivedEvent(token: string): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
@@ -345,7 +374,6 @@ export default class TransactionEventService {
         return await EventService.addEvent(event);
     }
 
-
     public async addTokenSentToPartnerEvent(): Promise<Event> {
         const partner = await this.transaction.$get('partner');
         if (!partner) {
@@ -370,7 +398,7 @@ export default class TransactionEventService {
 
         return EventService.addEvent(event);
     }
-   
+
     public async addTokenRequestFailedNotificationToPartnerEvent(): Promise<Event> {
         const partner = await this.transaction.$get('partner');
         if (!partner) {
@@ -420,7 +448,7 @@ export default class TransactionEventService {
 
         return EventService.addEvent(event);
     }
-    
+
     public async addWebHookNotificationConfirmedEvent(): Promise<Event> {
         const partner = await this.transaction.$get('partner')
         if (!partner) {
