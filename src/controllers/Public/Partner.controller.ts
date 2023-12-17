@@ -1,6 +1,6 @@
 import { NextFunction, Response } from "express";
 import { v4 as uuidv4 } from 'uuid';
-import { BadRequestError } from "../../utils/Errors";
+import { BadRequestError, NotFoundError } from "../../utils/Errors";
 import { RoleEnum } from "../../models/Role.model";
 import { Database } from "../../models";
 import EntityService from "../../services/Entity/Entity.service";
@@ -14,6 +14,7 @@ import { TokenUtil } from "../../utils/Auth/Token";
 import ApiKeyService from "../../services/ApiKey.service ";
 import { PartnerProfile } from "../../models/Entity/Profiles";
 import ResponseTrimmer from "../../utils/ResponseTrimmer";
+import { IPartnerProfile } from "../../models/Entity/Profiles/PartnerProfile.model";
 
 export default class TeamMemberProfileController {
     static async invitePartner(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -109,5 +110,37 @@ export default class TeamMemberProfileController {
                 partner: { ...partnerProfile.dataValues, entity: entity.dataValues }
             }
         })
+    }
+
+    static async getAllPartners(req: AuthenticatedRequest, res: Response, next: NextFunction){
+        const {
+            page, limit,
+        } = req.query as any
+        const query = { where: {} } as any
+        if (limit) query.limit = parseInt(limit)
+        // else query.limit = 10
+        if (page && page != '0' && limit) {
+            query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit)
+        }
+        // else query.offset = 0
+        
+        const _partners : IPartnerProfile [] | void = await PartnerService.viewPartnersWithCustomQuery(query);
+        if(!_partners){
+            throw new NotFoundError("Partners Not found")
+        }
+        const partners: IPartnerProfile [] = _partners.map(item => {
+            delete item.key
+            delete item.sec
+            return item
+        })
+        res.status(200).json({
+            status: 'success',
+            message: 'Partners data retrieved successfully',
+            data: {
+                partners
+            }
+        })
+
+
     }
 }
