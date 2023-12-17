@@ -63,6 +63,13 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
         partner: Partner,
         transactionId: string
     },
+    [TOPICS.WEBHOOK_NOTIFICATION_TO_PARTNER_RETRY]: {
+      meter: MeterInfo & { id: string, token: string},
+      user: User,
+      partner: Partner,
+      transactionId: string,
+      retryCount: number,
+    },
     [TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR_RETRY]: {
         meter: MeterInfo & { id: string },
         transactionId: string,

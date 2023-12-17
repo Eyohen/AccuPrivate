@@ -59,6 +59,14 @@ export default class TransactionEventService {
         this.meterInfo = meterInfo;
     }
 
+    public getMeterInfo(): EventMeterInfo {
+      return this.meterInfo
+    }
+
+    public getTransactionInfo(): Transaction {
+      return this.
+    }
+
     public async addMeterValidationRequestedEvent(): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
@@ -458,7 +466,7 @@ export default class TransactionEventService {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
             eventType: TOPICS.WEBHOOK_NOTIFICATION_CONFIRMED_FROM_PARTNER,
-            eventText: TOPICS.WEBHOOK_NOTIFICATION_SENT_TO_PARTNER,
+            eventText: TOPICS.WEBHOOK_NOTIFICATION_CONFIRMED_FROM_PARTNER,
             payload: JSON.stringify({
                 partner: {
                     email: partner.email,
@@ -474,6 +482,33 @@ export default class TransactionEventService {
         return EventService.addEvent(event);
     }
 
+    public async addWebHookNotificationRetryEvent({ url, retryCount, timeStamp}: { url: string, retryCount: number, timeStamp: Date}): Promise<Event> {
+        const partner = await this.transaction.$get('partner')
+        if (!partner) {
+            throw new Error('Transaction does not have a partner')
+        }
+
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.WEBHOOK_NOTIFICATION_TO_PARTNER_RETRY,
+            eventText: TOPICS.WEBHOOK_NOTIFICATION_TO_PARTNER_RETRY,
+            payload: JSON.stringify({
+                partner: {
+                    email: partner.email,
+                    id: partner.id,
+                },
+                webHookUrl: url, 
+                retryCount,
+                timeStamp
+            }),
+            source: this.transaction.superagent.toUpperCase(),
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.COMPLETE,
+        }
+
+        return EventService.addEvent(event);
+    }
     public async addPartnerTransactionCompleteEvent(): Promise<Event> {
         const partner = await this.transaction.$get('partner');
         if (!partner) {
