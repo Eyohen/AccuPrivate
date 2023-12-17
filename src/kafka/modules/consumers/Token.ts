@@ -11,7 +11,7 @@ import logger from "../../../utils/Logger";
 import { TOPICS } from "../../Constants";
 import { VendorPublisher } from "../publishers/Vendor";
 import ConsumerFactory from "../util/Consumer";
-import { PublisherEventAndParameters, Registry } from "../util/Interface";
+import { PublisherEventAndParameters, Registry, TransactionErrorCause } from "../util/Interface";
 import MessageProcessor from "../util/MessageProcessor";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -20,7 +20,7 @@ interface EventMessage {
     transactionId: string
 }
 
-interface TriggerRequeryTransactionTokenProps { eventService: TransactionEventService, eventMessage: EventMessage & { error: { code: number, cause: string } }, retryCount: number }
+interface TriggerRequeryTransactionTokenProps { eventService: TransactionEventService, eventMessage: EventMessage & { error: { code: number, cause: TransactionErrorCause } }, retryCount: number }
 
 class TokenHandler extends Registry {
     private static async triggerEventToRequeryTransactionTokenFromVendor({ eventService, eventMessage, retryCount }: TriggerRequeryTransactionTokenProps) {
@@ -90,11 +90,11 @@ class TokenHandler extends Registry {
                 const responseCode = tokenInfo.response?.data.responseCode
                 const requeryTxn = [202, 500, 501].includes(responseCode) || tokenInfo.message === 'Transaction timeout'
                 if (requeryTxn) {
-                    let cause = 'TIMEOUT'
+                    let cause = TransactionErrorCause.TRANSACTION_TIMEDOUT
                     if (responseCode === 501) {
-                        cause = 'MAINTENANCE_ACCOUNT_ACTIVATION_REQUIRED'
+                        cause = TransactionErrorCause.MAINTENANCE_ACCOUNT_ACTIVATION_REQUIRED
                     } else if (responseCode === 500) {
-                        cause = 'UNEXPECTED_ERROR'
+                        cause = TransactionErrorCause.UNEXPECTED_ERROR
                     }
 
                     const _eventMessage = { ...eventMessage, error: { code: responseCode, cause } }
@@ -127,7 +127,10 @@ class TokenHandler extends Registry {
 
         // Transaction timedout - Requery the transactio at intervals
         if (transactionTimedOut || !tokenInResponse) {
-            const _eventMessage = { ...eventMessage, error: { code: 202, cause: transactionTimedOut ? 'TRANSACTION_TIMEOUT' : 'SUCCESS_WITH_NO_TOKEN' } }
+            transactionTimedOut && await transactionEventService.addTokenRequestTimedOutEvent()
+            !tokenInResponse && await transactionEventService.addTokenRequestFailedNotificationToPartnerEvent()
+
+            const _eventMessage = { ...eventMessage, error: { code: 202, cause: transactionTimedOut ? TransactionErrorCause.TRANSACTION_TIMEDOUT : TransactionErrorCause.NO_TOKEN_IN_RESPONSE } }
             return await this.triggerEventToRequeryTransactionTokenFromVendor({ eventService: transactionEventService, eventMessage: _eventMessage, retryCount: 1 })
         }
 
@@ -237,11 +240,11 @@ class TokenHandler extends Registry {
         if (!transactionSuccess) {
             logger.error(`Error requerying transaction with id ${data.transactionId}`)
             // TODO: Trigger requery transaction at interval
-            let cause = 'UNKNOWN'
+            let cause = TransactionErrorCause.UNKNOWN
             if (requeryResult.responseCode === 201) {
-                cause = 'TRANSACTION_TIMEOUT'
+                cause = TransactionErrorCause.TRANSACTION_TIMEDOUT
             } else {
-                cause = 'TRANSACTION_FAILED'
+                cause = TransactionErrorCause.TRANSACTION_FAILED
             }
 
             const eventMessage = { meter: data.meter, transactionId: data.transactionId, error: { code: requeryResult.responseCode, cause } }

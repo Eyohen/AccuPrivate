@@ -44,24 +44,6 @@ export class VendorPublisher extends ProducerFactory {
         })
     }
 
-    static async publishEventForDiscoUpdate(data: PublisherEventAndParameters[TOPICS.CHECK_DISCO_UP_INITIATED_TO_VENDOR]) {
-        return ProducerFactory.sendMessage({
-            topic: TOPICS.CHECK_DISCO_UP_INITIATED_TO_VENDOR,
-            message: {
-                meter: {
-                    meterNumber: data.meter.meterNumber,
-                    disco: data.meter.disco,
-                    vendType: data.meter.vendType,
-                    id: data.meter.id
-                },
-                transactionId: data.transactionId
-            }
-        }).catch((e) => {
-            logger.error(`An error occured while publishing ${TOPICS.CHECK_DISCO_UP_INITIATED_TO_VENDOR} event for transaction` + data.transactionId)
-            return e
-        })
-    }
-
     static async publishEventForMeterValidationSentToPartner(data: PublisherEventAndParameters[TOPICS.METER_VALIDATION_SENT_PARTNER]) {
         return ProducerFactory.sendMessage({
             topic: TOPICS.METER_VALIDATION_SENT_PARTNER,
@@ -76,6 +58,23 @@ export class VendorPublisher extends ProducerFactory {
             }
         }).catch((e) => {
             logger.error(`An error occured while publishing ${TOPICS.METER_VALIDATION_SENT_PARTNER} event for transaction` + data.transactionId)
+            return e
+        })
+    }
+
+    static async publishEventForDiscoUpCheckConfirmedFromVendor(data: PublisherEventAndParameters[TOPICS.CHECK_DISCO_UP_CONFIRMED_FROM_VENDOR]) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.CHECK_DISCO_UP_CONFIRMED_FROM_VENDOR,
+            message: {
+                meter: {
+                    meterNumber: data.meter.meterNumber,
+                    disco: data.meter.disco,
+                    vendType: data.meter.vendType,
+                },
+                transactionId: data.transactionId
+            }
+        }).catch((e) => {
+            logger.error(`An error occured while publishing ${TOPICS.CHECK_DISCO_UP_CONFIRMED_FROM_VENDOR} event for transaction` + data.transactionId)
             return e
         })
     }
@@ -131,23 +130,6 @@ export class VendorPublisher extends ProducerFactory {
             }
         }).catch((e) => {
             logger.error(`An error occured while publishing ${TOPICS.TOKEN_RECIEVED_FROM_VENDOR} event for transaction` + data.transactionId)
-            return e
-        })
-    }
-
-    static async publishEventForTimedOutTokenRequest(data: PublisherEventAndParameters[TOPICS.TOKEN_REQUEST_TIMEDOUT]) {
-        return ProducerFactory.sendMessage({
-            topic: TOPICS.TOKEN_REQUEST_TIMEDOUT,
-            message: {
-                meter: {
-                    meterNumber: data.meter.meterNumber,
-                    disco: data.meter.disco,
-                    vendType: data.meter.vendType,
-                },
-                transactionId: data.transactionId
-            }
-        }).catch((e) => {
-            logger.error(`An error occured while publishing ${TOPICS.TOKEN_REQUEST_TIMEDOUT} event for transaction` + data.transactionId)
             return e
         })
     }

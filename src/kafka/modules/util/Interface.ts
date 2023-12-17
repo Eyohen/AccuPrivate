@@ -36,6 +36,15 @@ interface Partner {
     email: string,
 }
 
+export enum TransactionErrorCause {
+    TRANSACTION_TIMEDOUT = 'TRANSACTION_TIMEDOUT',
+    TRANSACTION_FAILED = 'TRANSACTION_FAILED',
+    UNKNOWN = 'UNKNOWN',
+    MAINTENANCE_ACCOUNT_ACTIVATION_REQUIRED = 'MAINTENANCE_ACCOUNT_ACTIVATION_REQUIRED',
+    UNEXPECTED_ERROR = 'UNEXPECTED_ERROR',
+    NO_TOKEN_IN_RESPONSE = 'NO_TOKEN_IN_RESPONSE'
+}
+
 export interface PublisherEventAndParameters extends Record<TOPICS, any> {
     [TOPICS.METER_VALIDATION_REQUESTED_TO_VENDOR]: {
         meter: MeterInfo,
@@ -58,7 +67,7 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
         meter: MeterInfo & { id: string },
         transactionId: string,
         timeStamp: Date,
-        error: { code: number, cause: string },
+        error: { code: number, cause: TransactionErrorCause },
         retryCount: number
     },
     [TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_INITIATED]: {
@@ -93,11 +102,7 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
     [TOPICS.TOKEN_REQUEST_FAILED]: {
         transactionId: string,
         meter: MeterInfo
-    },
-    [TOPICS.TOKEN_REQUEST_TIMEDOUT]: {
-        transactionId: string,
-        meter: MeterInfo
-    },
+    }
 }
 
 export type PublisherParamsUnion = {

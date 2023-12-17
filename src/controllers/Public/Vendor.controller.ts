@@ -289,7 +289,7 @@ export default class VendorController {
                 : await VendorService.baxiCheckDiscoUp(disco).catch((e) => e);
 
         const discoUpEvent = discoUp instanceof Boolean ? await transactionEventService.addDiscoUpEvent() : false
-        discoUpEvent && VendorPublisher.publishEventForDiscoUpdate({
+        discoUpEvent && VendorPublisher.publishEventForDiscoUpCheckConfirmedFromVendor({
             transactionId: transaction.id,
             meter: { meterNumber, disco, vendType },
         })
