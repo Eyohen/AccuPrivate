@@ -4,11 +4,9 @@ import { PartnerProfileService } from "../../services/Entity/Profiles";
 import { InternalServerError } from "../../utils/Errors";
 import { AuthenticatedRequest, AuthenticatedAsyncController } from "../../utils/Interface";
 import { IPartnerProfile } from "../../models/Entity/Profiles/PartnerProfile.model";
-const newrelic = require('newrelic');
 
 export default class PartnerController {
     static async getSinglePartner(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        newrelic.setTransactionName('Partner/Show a Partner')
         const { partnerId } = req.query as any
         const partner: IPartnerProfile | null = await PartnerProfileService.viewSinglePartner(partnerId);
         if (!partner) {
@@ -27,7 +25,6 @@ export default class PartnerController {
     }
 
     static async getAllPartners(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        newrelic.setTransactionName('Partners/Show all Partners')
         const {
             page, limit,
         } = req.query as any

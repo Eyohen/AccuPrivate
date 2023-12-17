@@ -21,7 +21,6 @@ import EventService from "../../services/Event.service";
 import { AuthenticatedRequest } from "../../utils/Interface";
 import { DataType, DataTypes, JSONB } from "sequelize";
 import Event from "../../models/Event.model";
-const newrelic = require('newrelic');
 
 interface valideMeterRequestBody {
     meterNumber: string
@@ -61,7 +60,6 @@ class VendorControllerValdator {
     }
 
     static async requestToken({ bankRefId, transactionId }: RequestTokenValidatorParams): Promise<RequestTokenValidatorResponse> {
-        newrelic.setTransactionName('Vendor/Request Token')
         if (!bankRefId) throw new BadRequestError('Transaction reference is required')
 
         const transactionRecord: Transaction | null = await TransactionService.viewSingleTransaction(transactionId)
@@ -118,7 +116,6 @@ class VendorControllerValdator {
 export default class VendorController {
 
     static async validateMeter(req: Request, res: Response, next: NextFunction) {
-        newrelic.setTransactionName('Vendor/Validate Meter')
         const {
             meterNumber,
             disco,
@@ -235,7 +232,6 @@ export default class VendorController {
     }
 
     static async requestToken(req: Request, res: Response, next: NextFunction) {
-        newrelic.setTransactionName('Vendor/Request Token')
         const {
             transactionId,
             bankRefId,
@@ -360,7 +356,6 @@ export default class VendorController {
     }
 
     static async getDiscos(req: Request, res: Response) {
-        newrelic.setTransactionName('Vendor/Get Discos')
         let discos: { name: string, serviceType: 'PREPAID' | 'POSTPAID' }[] = []
 
         switch (DEFAULT_ELECTRICITY_PROVIDER) {
@@ -409,7 +404,6 @@ export default class VendorController {
     }
 
     static async confirmPayment(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        newrelic.setTransactionName('Vendor/Confirm Payment')
         const { bankRefId } = req.body
 
         const transaction = await TransactionService.viewSingleTransactionByBankRefID(bankRefId)

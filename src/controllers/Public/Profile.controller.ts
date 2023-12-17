@@ -6,12 +6,10 @@ import fs from 'fs'
 import { AuthenticatedRequest } from "../../utils/Interface";
 import EntityService from "../../services/Entity/Entity.service";
 import { AuthUtil, TokenUtil } from "../../utils/Auth/Token";
-const newrelic = require('newrelic');
 
 export default class ProfileController {
 
     static async updateProfile(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        newrelic.setTransactionName('Profile/Update Profile')
         const { entity: { id } } = req.user.user
 
         const entity = await EntityService.viewSingleEntity(id)
@@ -47,7 +45,6 @@ export default class ProfileController {
     }
 
     static async updateProfileData(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        newrelic.setTransactionName('Profile/Update Profile Data')
         const { entity } = req.user.user
         const { email } = req.body
 

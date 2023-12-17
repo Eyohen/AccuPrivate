@@ -20,11 +20,9 @@ import NotificationUtil from "../../utils/Notification";
 import { NODE_ENV } from "../../utils/Constants";
 import NotificationService from "../../services/Notification.service";
 import RoleService from "../../services/Role.service";
-const newrelic = require('newrelic');
 
 export default class AuthController {
     static async signup(req: Request, res: Response, next: NextFunction) {
-        newrelic.setTransactionName('Auth/Sign up')
         const { email, password, roleId } = req.body
 
         const validEmail = Validator.validateEmail(email)
@@ -105,7 +103,6 @@ export default class AuthController {
     }
 
     static async otherSignup(req: Request, res: Response, next: NextFunction) {
-        newrelic.setTransactionName('Auth/Other Sign Up')
         const { email, password, roleId } = req.body
 
 
@@ -170,7 +167,6 @@ export default class AuthController {
     }
 
     static async verifyEmail(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        newrelic.setTransactionName('Auth/Verify Email')
         const { otpCode }: { otpCode: string } = req.body
 
         const { entity: { id } } = req.user.user
@@ -353,7 +349,6 @@ export default class AuthController {
     }
     
     static async login(req: Request, res: Response) {
-        newrelic.setTransactionName('Auth/login')
         const { email, password } = req.body
 
         const entity = await EntityService.viewSingleEntityByEmail(email)
@@ -429,7 +424,6 @@ export default class AuthController {
     }
 
     static async logout(req: AuthenticatedRequest, res: Response) {
-        newrelic.setTransactionName('Auth/logout')
         const { entity: { id } } = req.user.user
         const entity = await EntityService.viewSingleEntity(id)
 
@@ -448,7 +442,6 @@ export default class AuthController {
     }
 
     static async getLoggedUserData(req: AuthenticatedRequest, res: Response) {
-        newrelic.setTransactionName('Auth/Show User Logged Data')
         const entity = await EntityService.viewSingleEntityByEmail(req.user.user.entity.email)
         if (!entity) {
             throw new InternalServerError('Entity not found')

@@ -105,5 +105,5 @@
         "src/**/*",
         "src/global.d.ts",
         "migrations"
-, "src/models/.model.ts", "newrelic.js"    ]
+, "src/models/.model.ts"    ]
 }
