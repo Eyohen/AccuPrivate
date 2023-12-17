@@ -1,5 +1,4 @@
-require('newrelic');
-import 'express-async-errors'
+
 // Import required modules and dependencies
 import express, { Request, Response } from "express";
 import errorHandler from "./middlewares/ErrorHandler";
@@ -11,6 +10,8 @@ import { BAXI_TOKEN, NODE_ENV } from "./utils/Constants";
 import morgan from 'morgan'
 import logger from "./utils/Logger";
 import helmet from 'helmet';
+import 'express-async-errors'
+const newrelic = require('newrelic')
 
 // Create an Express application
 const app = express();

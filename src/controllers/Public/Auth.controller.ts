@@ -105,7 +105,7 @@ export default class AuthController {
     }
 
     static async otherSignup(req: Request, res: Response, next: NextFunction) {
-
+        newrelic.setTransactionName('Auth/Other Sign Up')
         const { email, password, roleId } = req.body
 
 
@@ -170,6 +170,7 @@ export default class AuthController {
     }
 
     static async verifyEmail(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        newrelic.setTransactionName('Auth/Verify Email')
         const { otpCode }: { otpCode: string } = req.body
 
         const { entity: { id } } = req.user.user
@@ -447,6 +448,7 @@ export default class AuthController {
     }
 
     static async getLoggedUserData(req: AuthenticatedRequest, res: Response) {
+        newrelic.setTransactionName('Auth/Show User Logged Data')
         const entity = await EntityService.viewSingleEntityByEmail(req.user.user.entity.email)
         if (!entity) {
             throw new InternalServerError('Entity not found')

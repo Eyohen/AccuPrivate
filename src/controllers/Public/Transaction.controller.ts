@@ -211,6 +211,7 @@ export default class TransactionController {
     }
 
     static async getYesterdaysTransactions(req: AuthenticatedRequest, res: Response) {
+        newrelic.setTransactionName('Transaction/Show Yesterday Transactions')
         const { status } = req.query as any as { status: 'COMPLETED' | 'FAILED' | 'PENDING' }
         const { profile: { id } } = req.user.user
 

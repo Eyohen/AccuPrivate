@@ -39,6 +39,7 @@ export const KAFKA_CLIENT_ID = process.env.KAFKA_CLIENT_ID as string
 export const KAFKA_BROKER = process.env.KAFKA_BROKER as string
 export const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY as string
 
+
 export const DISCO_LOGO = {
     abuja: 'https://res.cloudinary.com/richiepersonaldev/image/upload/v1699947957/dpijlhj08ard76zao2uk.jpg',
     benin: 'https://res.cloudinary.com/richiepersonaldev/image/upload/v1699948367/WhatsApp_Image_2023-11-14_at_08.50.33_zh84o3.jpg',
