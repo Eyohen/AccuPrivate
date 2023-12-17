@@ -1,4 +1,4 @@
-import { NextFunction, Response } from "express";
+import { NextFunction, Response , Request } from "express";
 import { v4 as uuidv4 } from 'uuid';
 import { BadRequestError, NotFoundError } from "../../utils/Errors";
 import { RoleEnum } from "../../models/Role.model";
@@ -124,15 +124,19 @@ export default class TeamMemberProfileController {
         }
         // else query.offset = 0
         
-        const _partners : IPartnerProfile [] | void = await PartnerService.viewPartnersWithCustomQuery(query);
+        const _partners : IPartnerProfile [] | void = await PartnerService.viewPartnersWithCustomQuery(query , {
+            exclude : ['key', 'sec']
+        });
         if(!_partners){
             throw new NotFoundError("Partners Not found")
         }
         const partners: IPartnerProfile [] = _partners.map(item => {
             delete item.key
             delete item.sec
+            console.log(item)
             return item
         })
+        console.log(partners[0].key , 'Yes')
         res.status(200).json({
             status: 'success',
             message: 'Partners data retrieved successfully',
