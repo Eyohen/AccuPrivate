@@ -12,11 +12,9 @@ import PasswordService from "../../services/Password.service";
 import EmailService, { EmailTemplate } from "../../utils/Email";
 import RoleService from "../../services/Role.service";
 import { PRIMARY_ROLES } from "../../utils/Constants";
-const newrelic = require('newrelic')
 
 export default class TeamMemberProfileController {
     static async inviteTeamMember(req: AuthenticatedRequest<RoleEnum.Partner>, res: Response, next: NextFunction) {
-        newrelic.setTransactionName('Teammember/Invite Team Member')
         // The partner is the entity that is inviting the team member
         const { entity: { id }, profile } = req.user.user
         const { email, name, roleId } = req.body
@@ -79,7 +77,6 @@ export default class TeamMemberProfileController {
     }
 
     static async getTeamMembers(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        newrelic.setTransactionName('Teammember/Show Teammember')
         const { entity: { id }, profile } = req.user.user
 
         const entity = await EntityService.viewSingleEntity(id)
@@ -107,7 +104,6 @@ export default class TeamMemberProfileController {
     }
 
     static async getTeamMemberInfo(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        newrelic.setTransactionName('Teammember/Show Teammember Info')
         const { entity: { id } } = req.user.user
         const { email } = req.query as Record<string, string>
 

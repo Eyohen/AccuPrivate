@@ -3,7 +3,6 @@ import { NotFoundError } from "../../utils/Errors";
 import PowerUnit, { IPowerUnit } from "../../models/PowerUnit.model";
 import PowerUnitService from "../../services/PowerUnit.service";
 import { AuthenticatedRequest } from "../../utils/Interface";
-const newrelic = require('newrelic')
 
 interface getPowerUnitQueryParams extends IPowerUnit {
     limit: `${number}`
@@ -12,7 +11,6 @@ interface getPowerUnitQueryParams extends IPowerUnit {
 
 export default class TransactionController {
     static async getPowerUnitInfo(req: AuthenticatedRequest, res: Response) {
-        newrelic.setTransactionName('PowerUnit/Show PowerUnit Info')
         const { token } = req.query as Record<string, string>
 
         const powerUnit: PowerUnit | null = await PowerUnitService.viewPowerUnitByToken(token)
@@ -32,7 +30,6 @@ export default class TransactionController {
     }
 
     static async getPowerUnits(req: AuthenticatedRequest, res: Response) {
-        newrelic.setTransactionName('PowerUnit/Show all Power Unit')
         const { page, limit, } = req.query as any as getPowerUnitQueryParams
 
         const query = { where: {} } as any

@@ -5,7 +5,6 @@ import { JWT_SECRET } from "../utils/Constants";
 import { UnauthenticatedError } from "../utils/Errors";
 import Cypher from "../utils/Cypher";
 import { AuthenticatedRequest } from "../utils/Interface";
-const newrelic = require('newrelic');
 
 export const basicAuth = function (tokenType: AuthToken) {
     return async (req: Request, res: Response, next: NextFunction) => {

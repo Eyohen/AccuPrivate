@@ -4,7 +4,6 @@ import {
     EMAIL_HOST_ADDRESS, SENDGRID_API_KEY,
 } from "../Constants";
 import sendgridClient from '@sendgrid/mail'
-const newrelic = require('newrelic');
 
 interface IPartialMailOptions {
     from?: string;
