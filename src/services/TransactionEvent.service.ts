@@ -60,11 +60,11 @@ export default class TransactionEventService {
     }
 
     public getMeterInfo(): EventMeterInfo {
-      return this.meterInfo
+        return this.meterInfo
     }
 
     public getTransactionInfo(): Transaction {
-      return this.transaction
+        return this.transaction
     }
 
     public async addMeterValidationRequestedEvent(): Promise<Event> {
@@ -269,8 +269,8 @@ export default class TransactionEventService {
     public async addGetTransactionTokenRequestedFromVendorEvent(): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
-            eventType: TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR_RETRY,
-            eventText: TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR_RETRY,
+            eventType: TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR,
+            eventText: TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR,
             payload: JSON.stringify({
                 transactionId: this.transaction.id,
                 superAgent: this.transaction.superagent,
@@ -482,7 +482,7 @@ export default class TransactionEventService {
         return EventService.addEvent(event);
     }
 
-    public async addWebHookNotificationRetryEvent({ url, retryCount, timeStamp}: { url: string, retryCount: number, timeStamp: Date}): Promise<Event> {
+    public async addWebHookNotificationRetryEvent({ url, retryCount, timeStamp }: { url: string, retryCount: number, timeStamp: Date }): Promise<Event> {
         const partner = await this.transaction.$get('partner')
         if (!partner) {
             throw new Error('Transaction does not have a partner')
@@ -497,7 +497,7 @@ export default class TransactionEventService {
                     email: partner.email,
                     id: partner.id,
                 },
-                webHookUrl: url, 
+                webHookUrl: url,
                 retryCount,
                 timeStamp
             }),

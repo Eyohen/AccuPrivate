@@ -21,7 +21,7 @@ export class VendorPublisher extends ProducerFactory {
         }).catch((e) => {
             logger.error(
                 `An error occured while publishing ${TOPICS.METER_VALIDATION_REQUESTED_TO_VENDOR} event for transaction` +
-                    data.transactionId,
+                data.transactionId,
             );
             return e;
         });
@@ -49,7 +49,7 @@ export class VendorPublisher extends ProducerFactory {
         }).catch((e) => {
             logger.error(
                 `An error occured while publishing ${TOPICS.METER_VALIDATION_RECIEVED_FROM_VENDOR} event for transaction` +
-                    data.transactionId,
+                data.transactionId,
             );
             return e;
         });
@@ -72,7 +72,7 @@ export class VendorPublisher extends ProducerFactory {
         }).catch((e) => {
             logger.error(
                 `An error occured while publishing ${TOPICS.METER_VALIDATION_SENT_PARTNER} event for transaction` +
-                    data.transactionId,
+                data.transactionId,
             );
             return e;
         });
@@ -94,7 +94,7 @@ export class VendorPublisher extends ProducerFactory {
         }).catch((e) => {
             logger.error(
                 `An error occured while publishing ${TOPICS.CHECK_DISCO_UP_CONFIRMED_FROM_VENDOR} event for transaction` +
-                    data.transactionId,
+                data.transactionId,
             );
             return e;
         });
@@ -126,7 +126,7 @@ export class VendorPublisher extends ProducerFactory {
         }).catch((e) => {
             logger.error(
                 `An error occured while publishing ${TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER} event for transaction` +
-                    data.transactionId,
+                data.transactionId,
             );
             return e;
         });
@@ -159,7 +159,7 @@ export class VendorPublisher extends ProducerFactory {
         }).catch((e) => {
             logger.error(
                 `An error occured while publishing ${TOPICS.TOKEN_RECIEVED_FROM_VENDOR} event for transaction` +
-                    data.transactionId,
+                data.transactionId,
             );
             return e;
         });
@@ -194,10 +194,10 @@ export class VendorPublisher extends ProducerFactory {
     }
 
     static async publishEventForGetTransactionTokenRequestedFromVendorRetry(
-        data: PublisherEventAndParameters[TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR_RETRY],
+        data: PublisherEventAndParameters[TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR],
     ) {
         return ProducerFactory.sendMessage({
-            topic: TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR_RETRY,
+            topic: TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR,
             message: {
                 meter: {
                     meterNumber: data.meter.meterNumber,
@@ -212,8 +212,8 @@ export class VendorPublisher extends ProducerFactory {
             },
         }).catch((e) => {
             logger.error(
-                `An error occured while publishing ${TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR_RETRY} event for transaction` +
-                    data.transactionId,
+                `An error occured while publishing ${TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR} event for transaction` +
+                data.transactionId,
             );
             return e;
         });
@@ -232,7 +232,7 @@ export class VendorPublisher extends ProducerFactory {
         }).catch((e) => {
             logger.error(
                 `An error occured while publishing ${TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_INITIATED} event for transaction` +
-                    data.transactionId,
+                data.transactionId,
             );
             return e;
         });
@@ -254,7 +254,7 @@ export class VendorPublisher extends ProducerFactory {
         }).catch((e) => {
             logger.error(
                 `An error occured while publishing ${TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER_REQUERY} event for transaction` +
-                    data.transactionId,
+                data.transactionId,
             );
             return e;
         });
@@ -276,7 +276,7 @@ export class VendorPublisher extends ProducerFactory {
         }).catch((e) => {
             logger.error(
                 `An error occured while publishing ${TOPICS.TOKEN_REQUEST_SUCCESS_WITH_NO_TOKEN} event for transaction` +
-                    data.transactionId,
+                data.transactionId,
             );
             return e;
         });
@@ -298,7 +298,7 @@ export class VendorPublisher extends ProducerFactory {
         }).catch((e) => {
             logger.error(
                 `An error occured while publishing ${TOPICS.TOKEN_REQUEST_FAILED} event for transaction` +
-                    data.transactionId,
+                data.transactionId,
             );
             return e;
         });
@@ -323,7 +323,7 @@ export class VendorPublisher extends ProducerFactory {
         }).catch((e) => {
             logger.error(
                 `An error occured while publishing  ${TOPICS.PARTNER_TRANSACTION_COMPLETE} event for transaction` +
-                    data.transactionId,
+                data.transactionId,
             );
             return e;
         });

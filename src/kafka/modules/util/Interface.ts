@@ -69,7 +69,7 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
         transactionId: string;
         retryCount: number;
     };
-    [TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR_RETRY]: {
+    [TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR]: {
         meter: MeterInfo & { id: string };
         transactionId: string;
         timeStamp: Date;
