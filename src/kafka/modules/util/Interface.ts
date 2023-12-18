@@ -45,7 +45,7 @@ export enum TransactionErrorCause {
 }
 
 export interface PublisherEventAndParameters extends Record<TOPICS, any> {
-    [TOPICS.METER_VALIDATION_REQUESTED_TO_VENDOR]: {
+    [TOPICS.METER_VALIDATION_REQUEST_SENT_TO_VENDOR]: {
         meter: MeterInfo;
         transactionId: string;
     };

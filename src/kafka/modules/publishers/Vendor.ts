@@ -6,10 +6,10 @@ import ProducerFactory from "../util/Producer";
 
 export class VendorPublisher extends ProducerFactory {
     static async publishEventForMeterValidationRequested(
-        data: PublisherEventAndParameters[TOPICS.METER_VALIDATION_REQUESTED_TO_VENDOR],
+        data: PublisherEventAndParameters[TOPICS.METER_VALIDATION_REQUEST_SENT_TO_VENDOR],
     ) {
         return ProducerFactory.sendMessage({
-            topic: TOPICS.METER_VALIDATION_REQUESTED_TO_VENDOR,
+            topic: TOPICS.METER_VALIDATION_REQUEST_SENT_TO_VENDOR,
             message: {
                 meter: {
                     meterNumber: data.meter.meterNumber,
@@ -20,7 +20,7 @@ export class VendorPublisher extends ProducerFactory {
             },
         }).catch((e) => {
             logger.error(
-                `An error occured while publishing ${TOPICS.METER_VALIDATION_REQUESTED_TO_VENDOR} event for transaction` +
+                `An error occured while publishing ${TOPICS.METER_VALIDATION_REQUEST_SENT_TO_VENDOR} event for transaction` +
                 data.transactionId,
             );
             return e;

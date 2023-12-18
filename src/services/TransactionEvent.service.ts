@@ -23,7 +23,7 @@ interface EventMeterInfo {
 const EventAndPublishers = {
     [TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER]: VendorPublisher.publishEventForInitiatedPowerPurchase,
     [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: VendorPublisher.publishEventForTokenReceivedFromVendor,
-    [TOPICS.METER_VALIDATION_REQUESTED_TO_VENDOR]: VendorPublisher.publishEventForMeterValidationRequested,
+    [TOPICS.METER_VALIDATION_REQUEST_SENT_TO_VENDOR]: VendorPublisher.publishEventForMeterValidationRequested,
     [TOPICS.METER_VALIDATION_RECIEVED_FROM_VENDOR]: VendorPublisher.publishEventForMeterValidationReceived,
 } as Record<TOPICS, (...args: any[]) => Promise<void>>;
 
@@ -70,8 +70,8 @@ export default class TransactionEventService {
     public async addMeterValidationRequestedEvent(): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
-            eventType: TOPICS.METER_VALIDATION_REQUESTED_TO_VENDOR,
-            eventText: TOPICS.METER_VALIDATION_REQUESTED_TO_VENDOR,
+            eventType: TOPICS.METER_VALIDATION_REQUEST_SENT_TO_VENDOR,
+            eventText: TOPICS.METER_VALIDATION_REQUEST_SENT_TO_VENDOR,
             payload: JSON.stringify({
                 meterNumber: this.meterInfo.meterNumber,
                 disco: this.meterInfo.disco,
