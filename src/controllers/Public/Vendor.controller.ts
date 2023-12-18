@@ -403,6 +403,8 @@ export default class VendorController {
                         transaction: transaction,
                     },
                 });
+
+                return
             }
 
             await transactionEventService.addTokenSentToPartnerEvent();

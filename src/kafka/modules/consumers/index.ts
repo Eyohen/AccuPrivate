@@ -10,14 +10,15 @@ import WebhookConsumer from "./Webhook";
 
 export default class ConsumerRouter {
     static async init() {
-        new CrmConsumer().start()
-        new InventoryConsumer().start()
-        new NotificationConsumer().start()
-        new PartnerConsumer().start()
-        new TokenConsumer().start()
-        new TransactionConsumer().start()
-        new UserConsumer().start()
-        new VendorConsumer().start()
-        new WebhookConsumer().start()
+        new CrmConsumer().start();
+        new InventoryConsumer().start();
+        new NotificationConsumer().start();
+        new PartnerConsumer().start();
+        new TokenConsumer().start();
+        new TransactionConsumer().start();
+        new UserConsumer().start();
+        new VendorConsumer().start();
+        // new WebhookConsumer().start();
     }
 }
+
