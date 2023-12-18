@@ -183,8 +183,8 @@ class TokenHandler extends Registry {
         const tokenInResponse = (tokenInfo as PurchaseResponse).data.token;
 
         // Transaction timedout - Requery the transactio at intervals
-        // if (transactionTimedOut || !tokenInResponse) {
-        if (true) {
+        if (transactionTimedOut || !tokenInResponse) {  // Use this To test for successful token request
+            // if (true) {    // Use thisTo test for failed token request - Proceeds to requery transaction
             transactionTimedOut &&
                 (await transactionEventService.addTokenRequestTimedOutEvent());
             !tokenInResponse &&
