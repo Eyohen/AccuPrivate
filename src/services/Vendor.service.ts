@@ -2,10 +2,10 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
 import { IBaxiGetProviderResponse, IBaxiPurchaseResponse, IBaxiValidateMeterResponse, IBuyPowerGetProvidersResponse, IBuyPowerValidateMeterResponse, IValidateMeter, IVendToken } from "../utils/Interface";
 import querystring from "querystring";
-import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL, NODE_ENV } from "../utils/Constants";
+import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL, IRECHARGE_PBULICK_KEY, IRECHARGE_PRIVATE_KEY, NODE_ENV } from "../utils/Constants";
 import logger from "../utils/Logger";
 import { v4 as UUIDV4 } from 'uuid'
-
+import crypto from 'crypto'
 
 export interface PurchaseResponse {
     status: string;
@@ -125,9 +125,17 @@ declare namespace IRechargeVendorService {
 }
 
 export class IRechargeVendorService extends Vendor {
+    protected static PRIVATE_KEY = IRECHARGE_PRIVATE_KEY
+    protected static PUBLIC_KEY = IRECHARGE_PBULICK_KEY
     protected static client = axios.create({
-        url: NODE_ENV === 'production' ? "https://irecharge.com.ng/pwr_api_live/v2/" : "https://irecharge.com.ng/pwr_api_sandbox/v2"
+        url: NODE_ENV === 'production' ? "https://irecharge.com.ng/pwr_api_live/v2" : "https://irecharge.com.ng/pwr_api_sandbox/v2"
     })
+
+    private static generateHash(combinedString: string): string {
+        // hash_hmac("sha1", combined_string, priv_key)
+        const hash = crypto.createHmac('sha1', IRECHARGE_PRIVATE_KEY).update(combinedString).digest('hex')
+        return ''
+    }
 
     static async getDiscos(): Promise<any> {
         const response = await this.client.get<IRechargeVendorService.GetDiscosResponse>('/get_electric_disco.php?response_format=json')
