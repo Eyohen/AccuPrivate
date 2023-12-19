@@ -16,5 +16,5 @@ COPY . .
 # Expose the port the app runs on
 EXPOSE 3000
 
-# Command to run the application
-CMD ["npm", "run", "dev"]
+# Add a sleep command to delay the startup (sleep for 10 seconds)
+CMD ["sh", "-c", "sleep 10 && npm run dev"]
