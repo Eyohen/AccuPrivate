@@ -1,0 +1,159 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: accuvend-zookeeper
+  namespace: default
+spec:
+  serviceName: zookeeper
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zookeeper
+  template:
+    metadata:
+      labels:
+        app: zookeeper
+    spec:
+      containers:
+        - name: zookeeper
+          image: confluentinc/cp-zookeeper:7.3.2
+          envFrom:
+            - configMapRef:
+                name: zookeeper.config
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: accuvend-kafka
+  namespace: default
+spec:
+  serviceName: kafka
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      initContainers:
+        - name: wait-for-zookeeper
+          image: busybox
+          command:
+            [
+              "sh",
+              "-c",
+              "until nslookup accuvend-zookeeper-0.zookeeper; do sleep 2; done",
+            ]
+
+      containers:
+        - name: kafka
+          image: confluentinc/cp-kafka:7.3.2
+          envFrom:
+            - configMapRef:
+                name: kafka.config
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-node-api
+  namespace: default
+spec:
+  replicas: 2 # Adjust the number of replicas as needed
+  selector:
+    matchLabels:
+      app: backend-node-api
+  template:
+    metadata:
+      labels:
+        app: backend-node-api
+    spec:
+      initContainers:
+        - name: wait-for-kafka
+          image: busybox
+          command:
+            [
+              "sh",
+              "-c",
+              "until nslookup accuvend-kafka-0.kafka; do sleep 2; done",
+            ]
+        - name: wait-for-zookeeper
+          image: busybox
+          command:
+            [
+              "sh",
+              "-c",
+              "until nslookup accuvend-zookeeper-0.zookeeper; do sleep 2; done",
+            ]
+
+      containers:
+        - name: api
+          image: accuvend_api:latest
+          ports:
+            - containerPort: 3000
+          command: ["/bin/sh", "-c"]
+          args:
+            - >
+              npm run dev"
+          envFrom:
+            - configMapRef:
+                name: api.config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apiservice
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+    app: backend-node-api
+  ports:
+    - port: 80
+      targetPort: 3000
+  type: LoadBalancer
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zookeeper-service
+  namespace: default
+spec:
+  selector:
+    app: zookeeper
+  ports:
+    - protocol: TCP
+      port: 2182
+      targetPort: 2181
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-service
+  namespace: default
+spec:
+  selector:
+    app: kafka
+  ports:
+    - protocol: TCP
+      name: internal
+      port: 19092
+      targetPort: 19092
+    - protocol: TCP
+      name: external
+      port: 9092
+      targetPort: 9092
+    - protocol: TCP
+      name: docker
+      port: 29092
+      targetPort: 29092
+
+---
+
