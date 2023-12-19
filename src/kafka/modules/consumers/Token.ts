@@ -41,7 +41,7 @@ interface TriggerRequeryTransactionTokenProps {
 }
 
 class TokenHandler extends Registry {
-    static async triggerEventToRequeryTransactionTokenFromVendor({
+    private static async triggerEventToRequeryTransactionTokenFromVendor({
         eventService,
         eventMessage,
         retryCount,

@@ -98,6 +98,66 @@ interface FailedResponseForBuyPowerRequery {
 
 type BuypowerRequeryResponse = _RequeryBuypowerSuccessResponse | InprogressResponseForBuyPowerRequery | FailedResponseForBuyPowerRequery
 
+abstract class Vendor {
+    protected static client: AxiosInstance
+
+    static getDiscos: () => Promise<any>
+    static isDiscoUp: (disco: string) => Promise<boolean>
+    static validateMeter: (disco: string, meterNumber: string, vendType: 'PREPAID' | 'POSTPAID') => Promise<any>
+    static vend: (disco: string, meterNumber: string, vendType: 'PREPAID' | 'POSTPAID') => Promise<any>
+    static requery: (disco: string, meterNumber: string, vendType: 'PREPAID' | 'POSTPAID') => Promise<any>
+}
+
+declare namespace IRechargeVendorService {
+    interface Disco {
+        id: `${number}`,
+        code: string,
+        description: string,
+        minimum_value: `${number}`,
+        maximum_value: `${number}`,
+    }
+
+    interface GetDiscosResponse {
+        status: '00',
+        message: 'Successful',
+        bundles: IRechargeVendorService.Disco[]
+    }
+}
+
+export class IRechargeVendorService extends Vendor {
+    protected static client = axios.create({
+        url: NODE_ENV === 'production' ? "https://irecharge.com.ng/pwr_api_live/v2/" : "https://irecharge.com.ng/pwr_api_sandbox/v2"
+    })
+
+    static async getDiscos(): Promise<any> {
+        const response = await this.client.get<IRechargeVendorService.GetDiscosResponse>('/get_electric_disco.php?response_format=json')
+
+        return response.data
+    }
+
+    /**
+     * 
+     * @returns vendor_code:YOUR_VENDOR_CODE
+reference_id:UNIQUE_REFERENCE_ID
+meter:CUSTOMER_METER_NUMBER
+disco:AEDC
+response_format:json
+hash:GENERATED_HASH
+     */
+    static async validateMeter(disco: string, meterNumber: string, vendType: "PREPAID" | "POSTPAID"): Promise<any> {
+
+    };
+
+    static async vend(disco: string, meterNumber: string, vendType: "PREPAID" | "POSTPAID"): Promise<any> {
+
+    };
+
+    static async requery(disco: string, meterNumber: string, vendType: "PREPAID" | "POSTPAID"): Promise<any> {
+
+    };
+}
+
+
 // Define the VendorService class for handling provider-related operations
 export default class VendorService {
     private static generateToken(): string {
