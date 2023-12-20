@@ -22,9 +22,13 @@ import { AuthenticatedRequest } from "../../utils/Interface";
 import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
 import EventService from "../../services/Event.service";
 import { RoleEnum } from "../../models/Role.model";
+<<<<<<< HEAD
 import TransactionEventService from "../../services/TransactionEvent.service";
 import { VendorPublisher } from "../../kafka/modules/publishers/Vendor";
 import { Op } from 'sequelize'
+=======
+import { Op } from "sequelize";
+>>>>>>> main
 
 interface getTransactionsRequestBody extends ITransaction {
     page: `${number}`;
@@ -60,6 +64,7 @@ export default class TransactionController {
 
     static async getTransactions(req: AuthenticatedRequest, res: Response) {
         const {
+<<<<<<< HEAD
             page,
             limit,
             status,
@@ -87,6 +92,29 @@ export default class TransactionController {
             query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit);
         }
         if (partnerId) query.where.partnerId = partnerId;
+=======
+            page, limit, status, startDate, endDate,
+            userId, disco, superagent, partnerId
+        } = req.query as any as getTransactionsRequestBody
+
+        const query = { where: {} } as any
+
+        if (status) query.where.status = status
+        if (startDate && endDate) query.where.transactionTimestamp = { [Op.between]: [new Date(startDate), new Date(endDate)] }
+        if (userId) query.where.userId = userId
+        if (disco) query.where.disco = disco
+        if (superagent) query.where.superagent = superagent
+        if (limit) query.limit = parseInt(limit)
+        if (page && page != '0' && limit) {
+            query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit)
+        }
+        if (partnerId) query.where.partnerId = partnerId
+
+        const requestWasMadeByAnAdmin = [RoleEnum.Admin].includes(req.user.user.entity.role)
+        if (!requestWasMadeByAnAdmin) {
+            query.where.partnerId = req.user.user.profile.id
+        }
+>>>>>>> main
 
         const requestWasMadeByAnAdmin = [RoleEnum.Admin].includes(
             req.user.user.entity.role,
@@ -101,11 +129,33 @@ export default class TransactionController {
             throw new NotFoundError("Transactions not found");
         }
 
+        const paginationData = {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            totalCount: transactions.length,
+            totalPages: Math.ceil(transactions.length / parseInt(limit))
+        }
+
+        const response = {
+            transactions: transactions
+        } as any
+
+        if (page && page != '0' && limit) {
+            response['pagination'] = paginationData
+        }
+
         res.status(200).json({
+<<<<<<< HEAD
             status: "success",
             message: "Transactions retrieved successfully",
             data: { transactions },
         });
+=======
+            status: 'success',
+            message: 'Transactions retrieved successfully',
+            data: response
+        })
+>>>>>>> main
     }
 
     static async requeryTimedOutTransaction(
@@ -153,8 +203,33 @@ export default class TransactionController {
                         ? "Transaction failed"
                         : "Transaction pending",
                     transaction: ResponseTrimmer.trimTransaction(transactionRecord),
+<<<<<<< HEAD
                 },
             });
+=======
+                }
+            })
+
+            return
+        }
+
+        await EventService.addEvent({
+            id: randomUUID(),
+            transactionId: transactionRecord.id,
+            eventType: 'REQUERY',
+            eventText: 'Requery successful',
+            eventData: response as unknown as JSON,
+            eventTimestamp: new Date(),
+            source: 'BUYPOWERNG',
+            status: Status.COMPLETE
+        })
+
+        await TransactionService.updateSingleTransaction(transactionRecord.id, { status: Status.COMPLETE })
+        const user = await transactionRecord.$get('user')
+        if (!user) {
+            throw new InternalServerError(`Transaction ${transactionRecord.id} does not have a user`)
+        }
+>>>>>>> main
 
             return;
         }

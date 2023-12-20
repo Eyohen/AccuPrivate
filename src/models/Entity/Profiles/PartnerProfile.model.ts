@@ -5,6 +5,7 @@ import ApiKey from "../../ApiKey.model";
 import Entity from "../Entity.model";
 import TeamMember from "./TeamMemberProfile.model";
 
+
 // Define the "Partner" table model
 @Table
 export default class PartnerProfile extends Model<PartnerProfile | IPartnerProfile> {
@@ -31,6 +32,8 @@ export default class PartnerProfile extends Model<PartnerProfile | IPartnerProfi
     @HasMany(() => ApiKey)
     apiKeys: ApiKey[];
 
+    
+
     @Column({ type: DataType.STRING, allowNull: false })
     key: string;
 
@@ -43,13 +46,14 @@ export default class PartnerProfile extends Model<PartnerProfile | IPartnerProfi
 export interface IPartnerProfile {
     id: string;              // Unique identifier for the Partner
     email: string;   // Phone number for contacting the Partner
-    key: string;
-    sec: string;
+    key?: string;
+    sec?: string;
+    
 }
 
 export interface IPartnerProfileAssociations extends IPartnerProfile {
     transactions: Transaction[];
-    entity: Entity;
+    entity?: Entity;
 }
 
 // Interface representing the structure for creating a new Partner (inherits from IPartner)

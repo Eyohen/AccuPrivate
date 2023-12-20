@@ -20,10 +20,11 @@ import NotificationUtil from "../../utils/Notification";
 import { NODE_ENV } from "../../utils/Constants";
 import NotificationService from "../../services/Notification.service";
 import WebhookService from "../../services/Webhook.service";
+import RoleService from "../../services/Role.service";
 
 export default class AuthController {
     static async signup(req: Request, res: Response, next: NextFunction) {
-        const { email, password } = req.body
+        const { email, password, roleId } = req.body
 
         const validEmail = Validator.validateEmail(email)
         if (!validEmail) {
@@ -102,6 +103,70 @@ export default class AuthController {
             message: 'Partner created successfully',
             data: {
                 partner: ResponseTrimmer.trimPartner({ ...newPartner.dataValues, entity }),
+                accessToken,
+            }
+        })
+    }
+
+    static async otherSignup(req: Request, res: Response, next: NextFunction) {
+        const { email, password, roleId } = req.body
+
+
+        const role = await RoleService.viewRoleById(roleId)
+        if (!role) {
+            throw new BadRequestError('Invalid role')
+        }
+
+        const validEmail = Validator.validateEmail(email)
+        if (!validEmail) {
+            throw new BadRequestError('Invalid email')
+        }
+
+        const validPassword = Validator.validatePassword(password)
+        if (!validPassword) {
+            throw new BadRequestError('Invalid password')
+        }
+
+        const transaction = await Database.transaction()
+
+        const entity = await EntityService.addEntity({
+            id: uuidv4(),
+            email,
+            status: {
+                activated: false,
+                emailVerified: false
+            },
+            role: role.name,
+            notificationSettings: {
+                login: true,
+                failedTransactions: true,
+                logout: true
+            }
+        }, transaction)
+
+        const entityPassword = await PasswordService.addPassword({
+            id: uuidv4(),
+            entityId: entity.id,
+            password
+        }, transaction)
+
+        await entity.update({ status: { ...entity.status, emailVerified: true } })
+        const accessToken = await AuthUtil.generateToken({ type: 'emailverification', entity, profile: entity, expiry: 60 * 10 })
+        const otpCode = await AuthUtil.generateCode({ type: 'emailverification', entity, expiry: 60 * 10 })
+        await transaction.commit()
+
+        logger.info(otpCode)
+        await EmailService.sendEmail({
+            to: entity.email,
+            subject: 'Succesful Email Verification',
+            html: await new EmailTemplate().awaitActivation(entity.email)
+        })
+
+        res.status(201).json({
+            status: 'success',
+            message: 'Partner created successfully',
+            data: {
+                entity: entity.dataValues,
                 accessToken,
             }
         })
@@ -311,13 +376,14 @@ export default class AuthController {
             throw new BadRequestError('Account not activated')
         }
 
+        // Only partners and team members have a profile
         const profile = await EntityService.getAssociatedProfile(entity)
-        if (!profile) {
+        if (!profile && [RoleEnum.Partner, RoleEnum.TeamMember].includes(entity.role.name)) {
             throw new InternalServerError('Profile not found')
         }
 
-        const accessToken = await AuthUtil.generateToken({ type: 'access', entity, profile, expiry: 60 * 60 * 60 * 60 })
-        const refreshToken = await AuthUtil.generateToken({ type: 'refresh', entity, profile, expiry: 60 * 60 * 24 * 30 })
+        const accessToken = await AuthUtil.generateToken({ type: 'access', entity, profile: profile ?? entity, expiry: 60 * 60 * 60 * 60 })
+        const refreshToken = await AuthUtil.generateToken({ type: 'refresh', entity, profile: profile ?? entity, expiry: 60 * 60 * 24 * 30 })
 
         if ([RoleEnum.TeamMember].includes(entity.role.name)) {
             const memberProfile = profile as TeamMemberProfile
@@ -382,23 +448,25 @@ export default class AuthController {
     }
 
     static async getLoggedUserData(req: AuthenticatedRequest, res: Response) {
-        const partner = await PartnerService.viewSinglePartner(req.user.user.profile.id)
-        if (!partner) {
+        const entity = await EntityService.viewSingleEntityByEmail(req.user.user.entity.email)
+        if (!entity) {
+            throw new InternalServerError('Entity not found')
+        }
+
+        const partner = await entity.$get('partnerProfile')
+        const role = entity.role.name
+        if (partner === null && role === 'PARTNER') {
             throw new InternalServerError('Partner not found')
         }
 
-        const entity = await partner.$get('entity')
-        if (!entity) {
-            throw new InternalServerError('Entity not found for authenticated user')
-        }
+        const returnData = role === 'PARTNER'
+            ? { partner: ResponseTrimmer.trimPartner({ ...partner!.dataValues, entity }) }
+            : { entity: entity.dataValues }
 
         res.status(200).json({
             status: 'success',
-            message: 'Partner data retrieved successfully',
-            data: {
-                partner: ResponseTrimmer.trimPartner({ ...partner.dataValues, entity }),
-                unreadNotificationsCount: (await NotificationService.getUnreadNotifications(entity.id)).length,
-            }
+            message: 'Entity data retrieved successfully',
+            data: returnData
         })
     }
 }

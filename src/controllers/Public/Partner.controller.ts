@@ -1,6 +1,12 @@
+<<<<<<< HEAD
 import { NextFunction, Request, Response } from "express";
 import { v4 as uuidv4 } from 'uuid';
 import { BadRequestError, InternalServerError, NotFoundError } from "../../utils/Errors";
+=======
+import { NextFunction, Response } from "express";
+import { v4 as uuidv4 } from 'uuid';
+import { BadRequestError } from "../../utils/Errors";
+>>>>>>> main
 import { RoleEnum } from "../../models/Role.model";
 import { Database } from "../../models";
 import EntityService from "../../services/Entity/Entity.service";
@@ -12,6 +18,7 @@ import RoleService from "../../services/Role.service";
 import Cypher from "../../utils/Cypher";
 import { TokenUtil } from "../../utils/Auth/Token";
 import ApiKeyService from "../../services/ApiKey.service ";
+<<<<<<< HEAD
 import WebhookService from "../../services/Webhook.service";
 import { PartnerProfile } from "../../models/Entity/Profiles";
 import ResponseTrimmer from "../../utils/ResponseTrimmer";
@@ -19,6 +26,12 @@ import Entity from "../../models/Entity/Entity.model";
 import { NOT } from "sequelize/types/deferrable";
 
 export default class PartnerProfileController {
+=======
+import { PartnerProfile } from "../../models/Entity/Profiles";
+import ResponseTrimmer from "../../utils/ResponseTrimmer";
+
+export default class TeamMemberProfileController {
+>>>>>>> main
     static async invitePartner(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         // The partner is the entity that is inviting the team member
         const { email } = req.body
@@ -28,8 +41,13 @@ export default class PartnerProfileController {
             throw new BadRequestError('Role not found')
         }
 
+<<<<<<< HEAD
         const partnerEntity: Entity | null = await EntityService.viewSingleEntityByEmail(email)
         if (partnerEntity) {
+=======
+        const existingPartner: PartnerProfile | null = await PartnerService.viewSinglePartnerByEmail(email)
+        if (existingPartner) {
+>>>>>>> main
             throw new BadRequestError('Email has been used before')
         }
 
@@ -74,6 +92,7 @@ export default class PartnerProfileController {
             password,
         }, transaction)
 
+<<<<<<< HEAD
         await WebhookService.addWebhook({
             id: uuidv4(),
             partnerId: newPartner.id,
@@ -81,6 +100,8 @@ export default class PartnerProfileController {
         
         await transaction.commit()
 
+=======
+>>>>>>> main
         await entity.update({ status: { ...entity.status, emailVerified: true } })
 
         await EmailService.sendEmail({
@@ -98,17 +119,30 @@ export default class PartnerProfileController {
         })
     }
 
+<<<<<<< HEAD
     static async getPartnerInfo(req: Request, res: Response, next: NextFunction) {
+=======
+    static async getPartnerInfo(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        const { entity: { id } } = req.user.user
+>>>>>>> main
         const { email } = req.query as Record<string, string>
 
         const partnerProfile = await PartnerService.viewSinglePartnerByEmail(email)
         if (!partnerProfile) {
+<<<<<<< HEAD
             throw new NotFoundError('Partner not found')
+=======
+            throw new BadRequestError('Team member not found')
+>>>>>>> main
         }
 
         const entity = await partnerProfile.$get('entity')
         if (!entity) {
+<<<<<<< HEAD
             throw new InternalServerError('Entity not found')
+=======
+            throw new BadRequestError('Entity not found')
+>>>>>>> main
         }
 
         res.status(200).json({

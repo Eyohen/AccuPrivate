@@ -28,6 +28,8 @@ async function initiateDB(db: Sequelize): Promise<void> {
     }
 }
 
+console.log(REDIS_PASSWORD,REDIS_PORT, REDIS_HOST , DB_CONFIG.PORT)
+
 const redisClient = new Redis({
     username: 'default',
     password: REDIS_PASSWORD,
