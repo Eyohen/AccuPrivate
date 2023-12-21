@@ -8,9 +8,9 @@ import { AuthenticatedRequest } from "../../utils/Interface";
 export default class RoleController {
     //  Create role
     static async createRole(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { name, description } = req.body
+        const { name, description, type } = req.body
 
-        const role = await RoleService.addRole({ name, description, id: uuidv4() })
+        const role = await RoleService.addRole({ name, description, id: uuidv4(), type })
 
         res.status(200).json({
             status: 'success',

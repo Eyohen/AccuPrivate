@@ -28,9 +28,11 @@ class ResponseTrimmer {
 
     static trimPartner(partner: IPartnerProfile & { entity: IEntity }) {
         return {
+            address: partner.address,
+            companyName: partner.companyName,
             email: partner.email,
             profilePicture: partner.entity.profilePicture,
-            entityId : partner.entity.id
+            entityId: partner.entity.id
         }
     }
 }

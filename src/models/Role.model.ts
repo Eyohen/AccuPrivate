@@ -18,9 +18,13 @@ export default class Role extends Model<IRole | Role> {
     @Column
     id: string;
 
-    @Unique
+    @Unique('unique_name_type')
     @Column({ type: DataType.STRING, allowNull: false })
     name: RoleEnum;
+
+    @Unique('unique_name_type')
+    @Column({ type: DataType.STRING, allowNull: true })
+    type: string;
 
     // One to many with Entity
     @HasMany(() => Entity)
@@ -35,6 +39,7 @@ export interface IRole {
     id: string;                 // Unique identifier for the Entity
     name: RoleEnum;            // Phone number for contacting the Entity
     description: string;
+    type?: string; // To allow diffent types of admins
 }
 
 export interface IUpdateRole {
