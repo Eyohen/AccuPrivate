@@ -24,7 +24,7 @@ import RoleService from "../../services/Role.service";
 
 export default class AuthController {
     static async signup(req: Request, res: Response, next: NextFunction) {
-        const { email, password, roleId } = req.body
+        const { email, password } = req.body
 
         const validEmail = Validator.validateEmail(email)
         if (!validEmail) {
