@@ -151,7 +151,7 @@ export default class AuthController {
         }, transaction)
 
         await entity.update({ status: { ...entity.status, emailVerified: true } })
-        const accessToken = await AuthUtil.generateToken({ type: 'emailverification', entity, profile: entity, expiry: 60 * 10 })
+        const accessToken = await AuthUtil.generateToken({ type: 'emailverification', entity, profile: entity as any, expiry: 60 * 10 })
         const otpCode = await AuthUtil.generateCode({ type: 'emailverification', entity, expiry: 60 * 10 })
         await transaction.commit()
 

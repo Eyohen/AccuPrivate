@@ -48,7 +48,7 @@ class TokenUtil {
 export type AuthToken = 'access' | 'refresh' | 'passwordreset' | 'emailverification'
 interface GenerateTokenData {
     type: AuthToken,
-    profile: IPartnerProfile | ITeamMemberProfile,
+    profile: IPartnerProfile | ITeamMemberProfile | Entity,
     entity: Entity
     expiry: number,
     misc?: Record<string, any>
@@ -68,7 +68,7 @@ interface DeleteToken {
 
 interface RoleProfileEnum extends Record<RoleEnum, any> {
     Partner: IPartnerProfile,
-    TeamMember: ITeamMemberProfile
+    TeamMember: ITeamMemberProfile,
     Admin: Entity
 }
 

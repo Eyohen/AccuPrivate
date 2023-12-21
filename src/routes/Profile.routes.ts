@@ -17,6 +17,10 @@ router
         '/email',
         AuthenticatedController(ProfileController.updateProfileData)
     )
+    .patch(
+        '/data',
+        AuthenticatedController(ProfileController.updateProfileData)
+    )
 
 export default router
 
