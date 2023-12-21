@@ -33,6 +33,7 @@ export default class PartnerProfile extends Model<PartnerProfile | IPartnerProfi
     apiKeys: ApiKey[];
 
     
+    
 
     @Column({ type: DataType.STRING, allowNull: false })
     key: string;
