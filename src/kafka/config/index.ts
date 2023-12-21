@@ -9,10 +9,10 @@ import {
 const kafkaConfig: kafka.KafkaConfig = {
     clientId: KAFKA_CLIENT_ID,
     brokers: [KAFKA_BROKER],
-    connectionTimeout: 4500,
+    connectionTimeout: 450000,
     ssl: true,
     sasl: {
-        mechanism: "plain",
+        mechanism: 'plain',
         username: KAFKA_USERNAME,
         password: KAFKA_PASSWORD,
     },
