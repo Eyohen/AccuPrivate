@@ -133,3 +133,6 @@ dist
 src/config
 
 dist
+
+redis_data
+postgres_data

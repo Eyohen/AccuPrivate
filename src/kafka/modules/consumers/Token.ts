@@ -60,7 +60,6 @@ class TokenHandler extends Registry {
         logger.info(
             `Retrying transaction with id ${eventMessage.transactionId} from vendor`,
         );
-        await eventService.addGetTransactionTokenRequestedFromVendorEvent();
         const eventMetaData = {
             transactionId: eventMessage.transactionId,
             meter: eventMessage.meter,
@@ -68,6 +67,7 @@ class TokenHandler extends Registry {
             timeStamp: new Date(),
             retryCount,
         };
+        await eventService.addGetTransactionTokenRequestedFromVendorEvent(eventMessage.error);
         await VendorPublisher.publishEventForGetTransactionTokenRequestedFromVendorRetry(
             eventMetaData,
         );

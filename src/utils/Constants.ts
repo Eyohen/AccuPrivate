@@ -68,7 +68,7 @@ export const DISCO_LOGO = {
 }
 
 export const IRECHARGE_PRIVATE_KEY = process.env.IRECHARGE_PRIVATE_KEY as string,
-    IRECHARGE_PBULICK_KEY = process.env.IRECHARGE_PBULICK_KEY as string,
+    IRECHARGE_PBULICK_KEY = process.env.IRECHARGE_PBULICK_KEY as string;
 
 export const DB_CONFIG = {
     NAME: process.env.DB_NAME as string,
