@@ -235,6 +235,7 @@ export default class VendorController {
                     disco,
                     vendType,
                 }).catch((e) => {
+                    console.log(e)
                     throw new BadRequestError("Meter validation failed");
                 })
                 : await VendorService.baxiValidateMeter(
@@ -242,6 +243,7 @@ export default class VendorController {
                     meterNumber,
                     vendType
                 ).catch((e) => {
+                    console.log(e)
                     throw new BadRequestError("Meter validation failed");
                 });
 
