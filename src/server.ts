@@ -14,10 +14,13 @@ async function startServer(): Promise<void> {
 
         // Synchronize the database (you may want to add options like force: true to reset the database)
         await Database.sync({ alter: true });
+        console.log('Database Sync Completed')
 
         // Start the server and listen on port 3000
         app.listen(process.env.PORT || 3000, () => {
             logger.info("Server Started on Port 3000");
+            console.log('Server Connected Successfully')
+
         });
     } catch (err) {
         console.error(err)
