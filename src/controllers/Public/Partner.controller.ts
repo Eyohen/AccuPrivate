@@ -21,7 +21,7 @@ import { NOT } from "sequelize/types/deferrable";
 export default class PartnerProfileController {
     static async invitePartner(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         // The partner is the entity that is inviting the team member
-        const { email } = req.body
+        const { email, companyName, address } = req.body
 
         const role = await RoleService.viewRoleByName(RoleEnum.Partner)
         if (!role) {
@@ -38,6 +38,8 @@ export default class PartnerProfileController {
         const newPartner = await PartnerService.addPartner({
             id: uuidv4(),
             email,
+            companyName,
+            address
         }, transaction)
 
         const entity = await EntityService.addEntity({
