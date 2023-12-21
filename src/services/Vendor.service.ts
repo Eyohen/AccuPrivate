@@ -333,6 +333,7 @@ export default class VendorService {
             const response = await this.buyPowerAxios().get<IBuyPowerValidateMeterResponse>(`/check/meter?${params}`);
             return response.data;
         } catch (error: any) {
+            console.error(error)
             throw new Error('An error occurred while validating meter');
         }
     }
