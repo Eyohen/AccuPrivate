@@ -1,4 +1,4 @@
-import { NextFunction, Response , Request } from "express";
+import { NextFunction, Response, Request } from "express";
 import { v4 as uuidv4 } from 'uuid';
 import { BadRequestError, NotFoundError } from "../../utils/Errors";
 import { RoleEnum } from "../../models/Role.model";
@@ -79,7 +79,7 @@ export default class PartnerProfileController {
             id: uuidv4(),
             partnerId: newPartner.id,
         }, transaction)
-        
+
         await transaction.commit()
 
         await entity.update({ status: { ...entity.status, emailVerified: true } })
@@ -122,7 +122,7 @@ export default class PartnerProfileController {
         })
     }
 
-    static async getAllPartners(req: AuthenticatedRequest, res: Response, next: NextFunction){
+    static async getAllPartners(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         const {
             page, limit,
         } = req.query as any
@@ -133,20 +133,19 @@ export default class PartnerProfileController {
             query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit)
         }
         // else query.offset = 0
-        
-        const _partners : IPartnerProfile [] | void = await PartnerService.viewPartnersWithCustomQuery(query , {
-            exclude : ['key', 'sec']
+
+        const _partners: IPartnerProfile[] | void = await PartnerService.viewPartnersWithCustomQuery(query, {
+            exclude: ['key', 'sec']
         });
-        if(!_partners){
+        if (!_partners) {
             throw new NotFoundError("Partners Not found")
         }
-        const partners: IPartnerProfile [] = _partners.map(item => {
-            delete item.key
-            delete item.sec
-            console.log(item)
+        const partners: IPartnerProfile[] = _partners.map(item => {
+            (item.key as any) = undefined;
+            (item.sec as any) = undefined;
             return item
         })
-        console.log(partners[0].key , 'Yes')
+        console.log(partners[0].key, 'Yes')
         res.status(200).json({
             status: 'success',
             message: 'Partners data retrieved successfully',
