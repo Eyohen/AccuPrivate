@@ -1,6 +1,6 @@
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Response , Request } from "express";
 import { v4 as uuidv4 } from 'uuid';
-import { BadRequestError, InternalServerError, NotFoundError } from "../../utils/Errors";
+import { BadRequestError, NotFoundError } from "../../utils/Errors";
 import { RoleEnum } from "../../models/Role.model";
 import { Database } from "../../models";
 import EntityService from "../../services/Entity/Entity.service";
@@ -15,8 +15,7 @@ import ApiKeyService from "../../services/ApiKey.service ";
 import WebhookService from "../../services/Webhook.service";
 import { PartnerProfile } from "../../models/Entity/Profiles";
 import ResponseTrimmer from "../../utils/ResponseTrimmer";
-import Entity from "../../models/Entity/Entity.model";
-import { NOT } from "sequelize/types/deferrable";
+import { IPartnerProfile } from "../../models/Entity/Profiles/PartnerProfile.model";
 
 export default class PartnerProfileController {
     static async invitePartner(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -121,5 +120,41 @@ export default class PartnerProfileController {
                 partner: { ...partnerProfile.dataValues, entity: entity.dataValues }
             }
         })
+    }
+
+    static async getAllPartners(req: AuthenticatedRequest, res: Response, next: NextFunction){
+        const {
+            page, limit,
+        } = req.query as any
+        const query = { where: {} } as any
+        if (limit) query.limit = parseInt(limit)
+        // else query.limit = 10
+        if (page && page != '0' && limit) {
+            query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit)
+        }
+        // else query.offset = 0
+        
+        const _partners : IPartnerProfile [] | void = await PartnerService.viewPartnersWithCustomQuery(query , {
+            exclude : ['key', 'sec']
+        });
+        if(!_partners){
+            throw new NotFoundError("Partners Not found")
+        }
+        const partners: IPartnerProfile [] = _partners.map(item => {
+            delete item.key
+            delete item.sec
+            console.log(item)
+            return item
+        })
+        console.log(partners[0].key , 'Yes')
+        res.status(200).json({
+            status: 'success',
+            message: 'Partners data retrieved successfully',
+            data: {
+                partners
+            }
+        })
+
+
     }
 }

@@ -6,6 +6,7 @@ import PartnerProfile from "./Profiles/PartnerProfile.model";
 import TeamMember from "./Profiles/TeamMemberProfile.model";
 import Notification from "../Notification.model";
 import Complaint from "../Complaint.model";
+import ComplaintReply from "../ComplaintReply.model";
 
 // Define the "Entity" table model
 @Table({ tableName: 'Entities' })
@@ -72,6 +73,9 @@ export default class Entity extends Model<Entity | IEntity> {
 
     @HasMany(()=>Complaint)
     complaints: Complaint[];
+
+    @HasMany(()=>Complaint)
+    complaintReplies: ComplaintReply[];
 
 
     @BeforeValidate

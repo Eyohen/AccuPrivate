@@ -16,8 +16,11 @@ async function initiateDB(db: Sequelize): Promise<void> {
         // Attempt to authenticate the database connection
         await db.authenticate();
 
-        // Add all Sequelize models in the specified directory
+        // Add all Sequelize models in the specified directory for ts files
         await db.addModels([__dirname + '/**/*.model.ts']);
+
+        // Add all Sequelize models in the specified directory for js files
+        await db.addModels([__dirname + '/**/*.model.js']);
 
         // Log a success message when the connection is established
         logger.info('Connection has been established successfully.');
