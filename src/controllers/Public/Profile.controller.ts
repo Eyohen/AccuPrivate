@@ -6,6 +6,7 @@ import fs from 'fs'
 import { AuthenticatedRequest } from "../../utils/Interface";
 import EntityService from "../../services/Entity/Entity.service";
 import { AuthUtil, TokenUtil } from "../../utils/Auth/Token";
+import { RoleEnum } from "../../models/Role.model";
 
 export default class ProfileController {
 
@@ -46,7 +47,15 @@ export default class ProfileController {
 
     static async updateProfileData(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         const { entity } = req.user.user
-        const { email } = req.body
+        const { email, companyName, address } = req.body
+
+        if (entity.role === RoleEnum.Partner) {
+            const partner = await PartnerService.viewSinglePartner(req.user.user.profile.id)
+            if (!partner) {
+                return next(new InternalServerError('Authenticated Partner not found'))
+            }
+            await partner.update({ companyName, address })
+        }
 
         const entity_ = await EntityService.viewSingleEntityByEmail(entity.email)
         if (!entity_) {

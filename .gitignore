@@ -134,6 +134,5 @@ src/config
 
 dist
 
-postgres_data
-
 redis_data
+postgres_data
