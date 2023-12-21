@@ -67,6 +67,9 @@ export const DISCO_LOGO = {
     YOLA: 'https://res.cloudinary.com/richiepersonaldev/image/upload/v1699948178/WhatsApp_Image_2023-11-14_at_08.46'
 }
 
+export const IRECHARGE_PRIVATE_KEY = process.env.IRECHARGE_PRIVATE_KEY as string,
+    IRECHARGE_PBULICK_KEY = process.env.IRECHARGE_PBULICK_KEY as string;
+
 export const DB_CONFIG = {
     NAME: process.env.DB_NAME as string,
     USER: process.env.DB_USER as string,
