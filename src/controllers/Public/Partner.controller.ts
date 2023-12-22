@@ -177,12 +177,12 @@ export default class PartnerProfileController {
             })
             success_Transactions = _complete_Transaction.length
 
-            element.stats = {
-                success_Transactions,
-                failed_Transactions,
-                pending_Transactions
+            // element.stats = {
+            //     success_Transactions,
+            //     failed_Transactions,
+            //     pending_Transactions
                 
-            }
+            // }
             _stats.push({
                 id: element.id,
                 success_Transactions,
