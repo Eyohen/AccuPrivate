@@ -128,7 +128,7 @@ export class IRechargeVendorService extends Vendor {
     protected static PRIVATE_KEY = IRECHARGE_PRIVATE_KEY
     protected static PUBLIC_KEY = IRECHARGE_PBULICK_KEY
     protected static client = axios.create({
-        url: NODE_ENV === 'production' ? "https://irecharge.com.ng/pwr_api_live/v2" : "https://irecharge.com.ng/pwr_api_sandbox/v2"
+        baseURL: NODE_ENV === 'production' ? "https://irecharge.com.ng/pwr_api_live/v2" : "https://irecharge.com.ng/pwr_api_sandbox/v2"
     })
 
     private static generateHash(combinedString: string): string {
@@ -137,7 +137,7 @@ export class IRechargeVendorService extends Vendor {
         return ''
     }
 
-    static async getDiscos(): Promise<any> {
+    static async getDiscos() {
         const response = await this.client.get<IRechargeVendorService.GetDiscosResponse>('/get_electric_disco.php?response_format=json')
 
         return response.data
@@ -442,6 +442,31 @@ export default class VendorService {
 
             return providers
         } catch (error) {
+            logger.error(error)
+            throw new Error()
+        }
+    }
+
+    static async irechargeFetchAvailableDiscos() {
+        try {
+            const response = await IRechargeVendorService.getDiscos()
+            const responseData = response.bundles
+
+            const providers = [] as { name: string, serviceType: 'PREPAID' | 'POSTPAID' }[]
+
+            for (const provider of responseData) {
+                const providerDescription = provider.description.split(' ')
+                const serviceType = providerDescription[providerDescription.length - 1].toUpperCase()
+                providers.push({
+                    name: provider.code.split('_').join(' ').toUpperCase() ,
+                    serviceType: serviceType as 'PREPAID' | 'POSTPAID'
+                })
+
+            }
+
+            return providers
+        } catch (error) {
+            console.error(error)
             logger.error(error)
             throw new Error()
         }

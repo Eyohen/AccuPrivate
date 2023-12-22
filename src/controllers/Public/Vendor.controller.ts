@@ -426,6 +426,9 @@ export default class VendorController {
             case "BUYPOWERNG":
                 discos = await VendorService.buyPowerFetchAvailableDiscos();
                 break;
+            case 'IRECHARGE':
+                discos = await VendorService.irechargeFetchAvailableDiscos();
+                break;
             default:
                 discos = [];
                 break;
