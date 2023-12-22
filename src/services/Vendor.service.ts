@@ -2,7 +2,7 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
 import { IBaxiGetProviderResponse, IBaxiPurchaseResponse, IBaxiValidateMeterResponse, IBuyPowerGetProvidersResponse, IBuyPowerValidateMeterResponse, IValidateMeter, IVendToken } from "../utils/Interface";
 import querystring from "querystring";
-import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL, IRECHARGE_PBULICK_KEY, IRECHARGE_PRIVATE_KEY, NODE_ENV } from "../utils/Constants";
+import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL, IRECHARGE_PUBLIC_KEY, IRECHARGE_PRIVATE_KEY, IRECHARGE_VENDOR_CODE, NODE_ENV } from "../utils/Constants";
 import logger from "../utils/Logger";
 import { v4 as UUIDV4 } from 'uuid'
 import crypto from 'crypto'
@@ -124,17 +124,18 @@ declare namespace IRechargeVendorService {
     }
 }
 
-export class IRechargeVendorService extends Vendor {
+export class IRechargeVendorService  {
     protected static PRIVATE_KEY = IRECHARGE_PRIVATE_KEY
-    protected static PUBLIC_KEY = IRECHARGE_PBULICK_KEY
+    protected static PUBLIC_KEY = IRECHARGE_PUBLIC_KEY
     protected static client = axios.create({
         baseURL: NODE_ENV === 'production' ? "https://irecharge.com.ng/pwr_api_live/v2" : "https://irecharge.com.ng/pwr_api_sandbox/v2"
     })
+    protected static VENDOR_CODE = IRECHARGE_VENDOR_CODE
 
     private static generateHash(combinedString: string): string {
-        // hash_hmac("sha1", combined_string, priv_key)
+        console.log(IRECHARGE_PRIVATE_KEY)
         const hash = crypto.createHmac('sha1', IRECHARGE_PRIVATE_KEY).update(combinedString).digest('hex')
-        return ''
+        return hash
     }
 
     static async getDiscos() {
@@ -152,8 +153,26 @@ disco:AEDC
 response_format:json
 hash:GENERATED_HASH
      */
-    static async validateMeter(disco: string, meterNumber: string, vendType: "PREPAID" | "POSTPAID"): Promise<any> {
+    static async validateMeter({ disco, reference, meterNumber }: { disco: string, meterNumber: string, reference: string }): Promise<any> {
+        reference = (123456789123).toString()
+        const combinedString = `${this.VENDOR_CODE}."|".${reference}."|".${meterNumber}."|".${disco}."|".${this.PUBLIC_KEY}`
+        const hash = this.generateHash(combinedString)
 
+        console.log({
+            vendor_code: this.VENDOR_CODE,
+            reference_id: reference,
+            meter: meterNumber,
+            disco,
+            response_format: 'json',
+            hash,
+            privateKey: this.PRIVATE_KEY,
+            publicKey: this.PUBLIC_KEY,
+            combinedString,
+            combinedStringHash: hash
+        })
+        const response = await this.client.get(`/get_meter_info.php/?vendor_code=${this.VENDOR_CODE}&reference_id=${reference}&meter=${meterNumber}&disco=${disco}&response_format=json&hash=${hash}`)
+
+        return response.data
     };
 
     static async vend(disco: string, meterNumber: string, vendType: "PREPAID" | "POSTPAID"): Promise<any> {
@@ -458,7 +477,7 @@ export default class VendorService {
                 const providerDescription = provider.description.split(' ')
                 const serviceType = providerDescription[providerDescription.length - 1].toUpperCase()
                 providers.push({
-                    name: provider.code.split('_').join(' ').toUpperCase() ,
+                    name: provider.code.split('_').join(' ').toUpperCase(),
                     serviceType: serviceType as 'PREPAID' | 'POSTPAID'
                 })
 
@@ -470,5 +489,10 @@ export default class VendorService {
             logger.error(error)
             throw new Error()
         }
+    }
+
+    static async irechargeValidateMeter(disco: string, meterNumber: string, reference: string) {
+        const response = await IRechargeVendorService.validateMeter({ disco, meterNumber, reference })
+        return response
     }
 }

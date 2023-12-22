@@ -227,23 +227,30 @@ export default class VendorController {
         });
 
         // We Check for Meter User *
-        const response =
-            superagent != "BUYPOWERNG"
-                ? await VendorService.buyPowerValidateMeter({
-                    transactionId: transaction.id,
-                    meterNumber,
-                    disco,
-                    vendType,
-                }).catch((e) => {
-                    throw new BadRequestError("Meter validation failed");
-                })
-                : await VendorService.baxiValidateMeter(
-                    disco,
-                    meterNumber,
-                    vendType
-                ).catch((e) => {
-                    throw new BadRequestError("Meter validation failed");
-                });
+        const response = await VendorService.irechargeValidateMeter(
+            disco,
+            meterNumber,
+            transaction.reference,
+        ).catch((e) => {
+            throw new BadRequestError("Meter validation failed");
+        })
+        console.log(response)
+        // superagent != "BUYPOWERNG"
+        //     ? await VendorService.buyPowerValidateMeter({
+        //         transactionId: transaction.id,
+        //         meterNumber,
+        //         disco,
+        //         vendType,
+        //     }).catch((e) => {
+        //         throw new BadRequestError("Meter validation failed");
+        //     })
+        //     : await VendorService.baxiValidateMeter(
+        //         disco,
+        //         meterNumber,
+        //         vendType
+        //     ).catch((e) => {
+        //         throw new BadRequestError("Meter validation failed");
+        //     });
 
         const userInfo = {
             name: response.name,

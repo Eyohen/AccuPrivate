@@ -54,8 +54,13 @@ export const validateApiKey = async (req: Request, res: Response, next: NextFunc
 
     (req as any).key = validApiKey
 
+    
     // Check if this si the current active api key
     const currentActiveApiKey = await TokenUtil.getTokenFromCache(`active_api_key:${validApiKey}`)
+    console.log({
+        validApiKey,
+        currentActiveApiKey
+    })
     if (!currentActiveApiKey) {
         return next(new UnauthenticatedError('Invalid API key'))
     }
