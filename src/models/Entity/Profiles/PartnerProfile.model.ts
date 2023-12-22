@@ -61,6 +61,14 @@ export interface IPartnerProfile {
     sec: string;
 }
 
+export interface IPartnerStatsProfile  extends IPartnerProfile {
+    stats ?: {
+        failed_Transactions: number 
+        pending_Transactions: number 
+        success_Transactions: number
+    }
+}
+
 export interface IPartnerProfileAssociations extends IPartnerProfile {
     transactions: Transaction[];
     entity?: Entity;

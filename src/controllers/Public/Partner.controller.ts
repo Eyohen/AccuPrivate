@@ -15,7 +15,9 @@ import ApiKeyService from "../../services/ApiKey.service ";
 import WebhookService from "../../services/Webhook.service";
 import { PartnerProfile } from "../../models/Entity/Profiles";
 import ResponseTrimmer from "../../utils/ResponseTrimmer";
-import { IPartnerProfile } from "../../models/Entity/Profiles/PartnerProfile.model";
+import { IPartnerProfile, IPartnerStatsProfile } from "../../models/Entity/Profiles/PartnerProfile.model";
+import TransactionController from "./Transaction.controller";
+import TransactionService from "../../services/Transaction.service";
 
 export default class PartnerProfileController {
     static async invitePartner(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -140,12 +142,49 @@ export default class PartnerProfileController {
         if (!_partners) {
             throw new NotFoundError("Partners Not found")
         }
-        const partners: IPartnerProfile[] = _partners.map(item => {
+        const partners: IPartnerStatsProfile[] = _partners.map(item => {
             (item.key as any) = undefined;
             (item.sec as any) = undefined;
             return item
         })
+        
         console.log(partners[0].key, 'Yes')
+
+        //adding partner Statics here        
+        for (let index = 0; index < partners.length; index++) {
+            let failed_Transactions: number =  0 
+            let pending_Transactions: number = 0 
+            let success_Transactions: number = 0
+            const element = partners[index];
+            const _failed_Transaction = await TransactionService.viewTransactionsWithCustomQuery({
+                partnerId: element.id,
+                status: "FAILED"
+            })
+            failed_Transactions = _failed_Transaction.length
+
+           
+            const _pending_Transaction = await TransactionService.viewTransactionsWithCustomQuery({
+                partnerId: element.id,
+                status: "PENDING"
+            })
+            pending_Transactions = _pending_Transaction.length
+
+           
+            const _complete_Transaction = await TransactionService.viewTransactionsWithCustomQuery({
+                partnerId: element.id,
+                status: "COMPLETE"
+            })
+            success_Transactions = _complete_Transaction.length
+
+            element.stats = {
+                success_Transactions,
+                failed_Transactions,
+                pending_Transactions
+                
+            }
+            
+        }
+        
         res.status(200).json({
             status: 'success',
             message: 'Partners data retrieved successfully',

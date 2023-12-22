@@ -20,7 +20,6 @@ async function startServer(): Promise<void> {
         app.listen(process.env.PORT || 3000, () => {
             logger.info("Server Started on Port 3000");
             console.log('Server Connected Successfully')
-
         });
     } catch (err) {
         console.error(err)
