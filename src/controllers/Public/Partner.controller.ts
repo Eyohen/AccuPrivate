@@ -149,13 +149,14 @@ export default class PartnerProfileController {
         })
         
         console.log(partners[0].key, 'Yes')
-
+        const _stats: any = []
         //adding partner Statics here        
         for (let index = 0; index < partners.length; index++) {
             let failed_Transactions: number =  0 
             let pending_Transactions: number = 0 
             let success_Transactions: number = 0
             const element = partners[index];
+            
             const _failed_Transaction = await TransactionService.viewTransactionsWithCustomQuery({
                 where:{partnerId: element.id,
                 status: "FAILED"}
@@ -182,6 +183,12 @@ export default class PartnerProfileController {
                 pending_Transactions
                 
             }
+            _stats.push({
+                id: element.id,
+                success_Transactions,
+                failed_Transactions,
+                pending_Transactions
+            })
             
         }
 
@@ -189,7 +196,8 @@ export default class PartnerProfileController {
             status: 'success',
             message: 'Partners data retrieved successfully',
             data: {
-                partners
+                partners , 
+                stats: _stats
             }
         })
 
