@@ -157,22 +157,22 @@ export default class PartnerProfileController {
             let success_Transactions: number = 0
             const element = partners[index];
             const _failed_Transaction = await TransactionService.viewTransactionsWithCustomQuery({
-                partnerId: element.id,
-                status: "FAILED"
+                where:{partnerId: element.id,
+                status: "FAILED"}
             })
             failed_Transactions = _failed_Transaction.length
 
            
             const _pending_Transaction = await TransactionService.viewTransactionsWithCustomQuery({
-                partnerId: element.id,
-                status: "PENDING"
+                where:{partnerId: element.id,
+                status: "PENDING"}
             })
             pending_Transactions = _pending_Transaction.length
 
            
             const _complete_Transaction = await TransactionService.viewTransactionsWithCustomQuery({
-                partnerId: element.id,
-                status: "COMPLETE"
+                where:{partnerId: element.id,
+                status: "COMPLETE"}
             })
             success_Transactions = _complete_Transaction.length
 
@@ -184,7 +184,7 @@ export default class PartnerProfileController {
             }
             
         }
-        
+
         res.status(200).json({
             status: 'success',
             message: 'Partners data retrieved successfully',
