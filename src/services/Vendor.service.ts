@@ -124,7 +124,7 @@ declare namespace IRechargeVendorService {
     }
 }
 
-export class IRechargeVendorService  {
+export class IRechargeVendorService {
     protected static PRIVATE_KEY = IRECHARGE_PRIVATE_KEY
     protected static PUBLIC_KEY = IRECHARGE_PUBLIC_KEY
     protected static client = axios.create({
@@ -144,17 +144,7 @@ export class IRechargeVendorService  {
         return response.data
     }
 
-    /**
-     * 
-     * @returns vendor_code:YOUR_VENDOR_CODE
-reference_id:UNIQUE_REFERENCE_ID
-meter:CUSTOMER_METER_NUMBER
-disco:AEDC
-response_format:json
-hash:GENERATED_HASH
-     */
     static async validateMeter({ disco, reference, meterNumber }: { disco: string, meterNumber: string, reference: string }): Promise<any> {
-        reference = (123456789123).toString()
         const combinedString = `${this.VENDOR_CODE}."|".${reference}."|".${meterNumber}."|".${disco}."|".${this.PUBLIC_KEY}`
         const hash = this.generateHash(combinedString)
 
