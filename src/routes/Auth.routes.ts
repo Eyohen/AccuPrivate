@@ -1,7 +1,6 @@
 import express, { Router } from "express";
 import PublicAuthController from "../controllers/Public/Auth.controller";
 import AdminAuthController from "../controllers/Admin/Auth.controller";
-import AdminAuthController from "../controllers/Admin/Auth.controller";
 import { basicAuth } from "../middlewares/Auth";
 import { AuthenticatedController } from "../utils/Interface";
 
