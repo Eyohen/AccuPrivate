@@ -1,5 +1,5 @@
 import { NextFunction, Response, Request } from "express";
-import { BadRequestError } from "../../utils/Errors";
+import { BadRequestError, ForbiddenError } from "../../utils/Errors";
 import EmailService, { EmailTemplate } from "../../utils/Email";
 import Validator from "../../utils/Validators";
 import { AuthenticatedRequest } from "../../utils/Interface";
@@ -7,6 +7,7 @@ import EntityService from "../../services/Entity/Entity.service";
 import { AuthUtil } from "../../utils/Auth/Token";
 import { SU_HOST_EMAIL_1, SU_HOST_EMAIL_2, SU_HOST_EMAIL_3 } from "../../utils/Constants";
 import { randomUUID } from "crypto";
+import { RoleEnum } from "../../models/Role.model";
 
 class AuthControllerValidator {
     static async activatePartner() {
@@ -30,6 +31,10 @@ export default class AuthController {
             throw new BadRequestError('Entity not found')
         }
 
+        if (req.user.user.entity.role === RoleEnum.SuperAdmin) {
+            throw new ForbiddenError('Unauthorized access')
+        }
+ 
         await entity.update({ status: { ...entity.status, activated: true } })
 
         await EmailService.sendEmail({
@@ -58,6 +63,10 @@ export default class AuthController {
             throw new BadRequestError('Entity not found')
         }
 
+        if (req.user.user.entity.role === RoleEnum.SuperAdmin) {
+            throw new ForbiddenError('Unauthorized access')
+        }
+        
         await entity.update({ status: { ...entity.status, activated: true } })
 
         await EmailService.sendEmail({
