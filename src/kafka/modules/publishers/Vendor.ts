@@ -17,6 +17,7 @@ export class VendorPublisher extends ProducerFactory {
                     vendType: data.meter.vendType,
                 },
                 transactionId: data.transactionId,
+                superAgent: data.superAgent
             },
         }).catch((e) => {
             logger.error(
@@ -122,6 +123,7 @@ export class VendorPublisher extends ProducerFactory {
                     email: data.partner.email,
                 },
                 transactionId: data.transactionId,
+                superAgent: data.superAgent
             },
         }).catch((e) => {
             logger.error(
@@ -189,15 +191,16 @@ export class VendorPublisher extends ProducerFactory {
                 },
                 transactionId: data.transactionId,
                 retryCount: data.retryCount,
+                superAgent: data.superAgent
             },
         });
     }
 
     static async publishEventForGetTransactionTokenRequestedFromVendorRetry(
-        data: PublisherEventAndParameters[TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR],
+        data: PublisherEventAndParameters[TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY],
     ) {
         return ProducerFactory.sendMessage({
-            topic: TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR,
+            topic: TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY,
             message: {
                 meter: {
                     meterNumber: data.meter.meterNumber,
@@ -209,6 +212,8 @@ export class VendorPublisher extends ProducerFactory {
                 transactionId: data.transactionId,
                 timeStamp: data.timeStamp,
                 retryCount: data.retryCount,
+                superAgent: data.superAgent,
+                waitTime: data.waitTime
             },
         }).catch((e) => {
             logger.error(
@@ -228,6 +233,7 @@ export class VendorPublisher extends ProducerFactory {
                 meter: data.meter,
                 transactionId: data.transactionId,
                 timeStamp: data.timeStamp,
+                superAgent: data.superAgent
             },
         }).catch((e) => {
             logger.error(
@@ -282,6 +288,39 @@ export class VendorPublisher extends ProducerFactory {
         });
     }
 
+    static async publishEventForTokenSentToPartnerRetry(
+        data: PublisherEventAndParameters[TOPICS.TOKEN_SENT_TO_PARTNER_RETRY],
+    ) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.TOKEN_SENT_TO_PARTNER_RETRY,
+            message: {
+                meter: {
+                    meterNumber: data.meter.meterNumber,
+                    disco: data.meter.disco,
+                    vendType: data.meter.vendType,
+                    id: data.meter.id,
+                    token: data.meter.token,
+                },
+                user: {
+                    name: data.user.name,
+                    email: data.user.email,
+                    address: data.user.address,
+                    phoneNumber: data.user.phoneNumber,
+                },
+                partner: {
+                    email: data.partner.email,
+                },
+                transactionId: data.transactionId,
+            },
+        }).catch((e) => {
+            logger.error(
+                `An error occured while publishing ${TOPICS.TOKEN_REQUEST_FAILED} event for transaction` +
+                data.transactionId,
+            );
+            return e;
+        });
+    }
+   
     static async publishEventForFailedTokenRequest(
         data: PublisherEventAndParameters[TOPICS.TOKEN_REQUEST_FAILED],
     ) {
@@ -308,7 +347,7 @@ export class VendorPublisher extends ProducerFactory {
         data: PublisherEventAndParameters[TOPICS.PARTNER_TRANSACTION_COMPLETE],
     ) {
         return ProducerFactory.sendMessage({
-            topic: TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER,
+            topic: TOPICS.PARTNER_TRANSACTION_COMPLETE,
             message: {
                 meter: {
                     meterNumber: data.meter.meterNumber,
