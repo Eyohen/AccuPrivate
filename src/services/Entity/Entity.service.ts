@@ -65,4 +65,18 @@ export default class EntityService {
 
         return partnerProfile || teamMemberProfile
     }
+
+    static async viewEntityByTeamMemberProfileId(teamMemberProfileId: string): Promise<Entity | null> {
+        const entity: Entity | null = await Entity.findOne({ where: { teamMemberProfileId } })
+
+        if (!entity) {
+            return null
+        }
+
+        return entity
+    }
+
+    static async deleteEntity(entity: Entity, transaction?: Transaction): Promise<void> {
+        transaction ? await entity.destroy({ transaction }) : await entity.destroy()
+    }
 }

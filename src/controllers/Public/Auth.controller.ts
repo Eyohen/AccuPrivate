@@ -19,11 +19,12 @@ import { TeamMemberProfile } from "../../models/Entity/Profiles";
 import NotificationUtil from "../../utils/Notification";
 import { NODE_ENV } from "../../utils/Constants";
 import NotificationService from "../../services/Notification.service";
+import WebhookService from "../../services/Webhook.service";
 import RoleService from "../../services/Role.service";
 
 export default class AuthController {
     static async signup(req: Request, res: Response, next: NextFunction) {
-        const { email, password, roleId } = req.body
+        const { email, password } = req.body
 
         const validEmail = Validator.validateEmail(email)
         if (!validEmail) {
@@ -78,6 +79,11 @@ export default class AuthController {
             id: uuidv4(),
             entityId: entity.id,
             password
+        }, transaction)
+
+        await WebhookService.addWebhook({
+            id: uuidv4(),
+            partnerId: newPartner.id,
         }, transaction)
 
         await entity.update({ status: { ...entity.status, emailVerified: true } })
@@ -145,7 +151,7 @@ export default class AuthController {
         }, transaction)
 
         await entity.update({ status: { ...entity.status, emailVerified: true } })
-        const accessToken = await AuthUtil.generateToken({ type: 'emailverification', entity, profile: entity, expiry: 60 * 10 })
+        const accessToken = await AuthUtil.generateToken({ type: 'emailverification', entity, profile: entity as any, expiry: 60 * 10 })
         const otpCode = await AuthUtil.generateCode({ type: 'emailverification', entity, expiry: 60 * 10 })
         await transaction.commit()
 

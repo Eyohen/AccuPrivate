@@ -1,7 +1,7 @@
 // Import necessary modules and dependencies
-import { Table, Column, Model, DataType, IsUUID, PrimaryKey, BelongsTo, ForeignKey, HasMany } from "sequelize-typescript";
-import Transaction  from "./Transaction.model";
-import Notification from "./Notification.model";
+import { Table, Column, Model, DataType, IsUUID, PrimaryKey, BelongsTo, ForeignKey } from "sequelize-typescript";
+import Transaction from "./Transaction.model";
+import { TOPICS } from "../kafka/Constants";
 
 // Define an enum for the status of events
 export enum Status {
@@ -28,8 +28,8 @@ export default class Event extends Model<Event | IEvent> {
     status: Status;
 
     // Type of the event
-    @Column({ type: DataType.STRING, allowNull: false })
-    eventType: string;
+    @Column({ type: DataType.ENUM, values: Object.values(TOPICS), allowNull: false })
+    eventType: TOPICS;
 
     // Text for the event 
     @Column({ type: DataType.STRING, allowNull: false })
@@ -40,8 +40,8 @@ export default class Event extends Model<Event | IEvent> {
     source: string;
 
     // Data associated with the event (can be a string or JSON)
-    @Column({ type: DataType.STRING || DataType.JSON, allowNull: false })
-    eventData: string | JSON;
+    @Column({ type: DataType.TEXT, allowNull: false })
+    payload: string;
 
     // Foreign key for the associated Transaction
     @ForeignKey(() => Transaction)
@@ -59,11 +59,11 @@ export interface IEvent {
     id: string; // Unique identifier for the event
     eventTimestamp: Date; // Timestamp of the event
     status: Status; // Status of the event (enum)
-    eventType: string; // Type of the event
+    eventType: TOPICS; // Type of the event
     eventText: string; // Text associated with the event
     source: string; // Source of the event
-    eventData: string | JSON; // Data associated with the event (can be a string or JSON)
-    transactionId: string; // Identifier for the associated transaction
+    payload: string; // Data associated with the event (can be a string or JSON)
+    transactionId?: string; // Identifier for the associated transaction
 }
 
 // Define an interface (ICreateEvent) that extends IEvent, typically used for creating new events.
@@ -74,4 +74,8 @@ export interface ICreateEvent extends IEvent {
 // Define an interface (IUpdateEvent) for potential updates to an event (intentionally left empty).
 export interface IUpdateEvent {
     // This interface is currently empty, but it can be extended with specific properties if needed.
+}
+
+export interface TokenRetryEventPayload {
+    retryCount: number
 }

@@ -4,13 +4,64 @@ import { IBaxiGetProviderResponse, IBaxiPurchaseResponse, IBaxiValidateMeterResp
 import querystring from "querystring";
 import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL, NODE_ENV } from "../utils/Constants";
 import logger from "../utils/Logger";
+import { v4 as UUIDV4 } from 'uuid'
+
+
+export interface PurchaseResponse {
+    status: string;
+    statusCode: string;
+    responseCode: 200,
+    responseMessage: string,
+    message: string;
+    data: {
+        id: number;
+        amountGenerated: number;
+        tariff: null | string;
+        debtAmount: number;
+        debtRemaining: number;
+        disco: string;
+        freeUnits: number;
+        orderId: string;
+        receiptNo: number;
+        tax: number;
+        vendTime: string;
+        token: string;
+        totalAmountPaid: number;
+        units: string;
+        vendAmount: number;
+        vendRef: number;
+        responseCode: 200;
+        responseMessage: string;
+        address: string;
+        name: string;
+        phoneNo: string;
+        charges: number;
+        tariffIndex: null | string;
+        parcels: {
+            type: string;
+            content: string;
+        }[];
+        demandCategory: string;
+        assetProvider: string;
+    };
+}
+
+interface TimedOutResponse {
+    data: {
+        status: false,
+        error: true,
+        responseCode: 202,
+        message: 'Transaction is still in progress. Please requery in 20 seconds',
+        delay: [20, 20, 20, 20, 20, 20]
+    }
+}
 
 interface _RequeryBuypowerSuccessResponse {
     result: {
         status: true,
         data: {
             id: number,
-            amountGenerated: number,
+            amountGenerated: `${number}`,
             disco: string,
             orderId: string,
             receiptNo: string,
@@ -44,10 +95,23 @@ interface FailedResponseForBuyPowerRequery {
     responseCode: 202
 }
 
+
 type BuypowerRequeryResponse = _RequeryBuypowerSuccessResponse | InprogressResponseForBuyPowerRequery | FailedResponseForBuyPowerRequery
 
 // Define the VendorService class for handling provider-related operations
 export default class VendorService {
+    private static generateToken(): string {
+        // format 1234-1234-1234-1234-1234
+        let token = ''
+        for (let i = 0; i < 5; i++) {
+            for (let j = 0; j < 4; j++) {
+                token += Math.floor(Math.random() * 10).toString()
+            }
+            token += '-'
+        }
+
+        return token
+    }
 
     // Static method for obtaining a Baxi vending token
     static async baxiVendToken(body: IVendToken) {
@@ -163,7 +227,7 @@ export default class VendorService {
     }
 
     // Static method for vending a token with BuyPower
-    static async buyPowerVendToken(body: IVendToken) {
+    static async buyPowerVendToken(body: IVendToken): Promise<PurchaseResponse | TimedOutResponse> {
         // Define data to be sent in the POST request
         const postData = {
             orderId: body.transactionId,
@@ -182,7 +246,7 @@ export default class VendorService {
 
         try {
             // Make a POST request using the BuyPower Axios instance
-            const response = await this.buyPowerAxios().post(`/vend?strict=0`, postData);
+            const response = await this.buyPowerAxios().post<PurchaseResponse | TimedOutResponse>(`/vend?strict=0`, postData);
             return response.data;
         } catch (error: any) {
             if (error instanceof AxiosError) {
@@ -200,6 +264,41 @@ export default class VendorService {
 
     static async buyPowerRequeryTransaction({ transactionId }: { transactionId: string }) {
         try {
+            console.log(NODE_ENV)
+            // Buypower requery has been returning 500 error on dev mode
+            if (NODE_ENV === 'development') {
+                return {
+                    "status": true,
+                    "message": "Transaction succesful",
+                    'responseCode': 200,
+                    "data": {
+                        "id": 80142232,
+                        "amountGenerated": "16600.00",
+                        "tariff": null,
+                        "disco": "DSTV",
+                        "debtAmount": "0.00",
+                        "debtRemaining": "0.00",
+                        "orderId": transactionId,
+                        "receiptNo": "342544321342",
+                        "tax": "0.00",
+                        "vendTime": new Date(),
+                        "token": this.generateToken(),
+                        "totalAmountPaid": 16600,
+                        "units": "1",
+                        "vendAmount": "16600",
+                        "vendRef": "sfasdfa2432323",
+                        "responseCode": 100,
+                        "responseMessage": "Request successful",
+                        "address": "12342112345",
+                        "name": "23456564345",
+                        "phoneNo": null,
+                        "charges": "0.00",
+                        "tariffIndex": null,
+                        "parcels": [],
+                    }
+                } as SuccessResponseForBuyPowerRequery
+            }
+
             const response = await this.buyPowerAxios().get<BuypowerRequeryResponse>(`/transaction/${transactionId}`)
 
             const successResponse = response.data as _RequeryBuypowerSuccessResponse
@@ -228,7 +327,7 @@ export default class VendorService {
             vertical: 'ELECTRICITY'
         }
         const params: string = querystring.stringify(paramsObject);
-
+        
         try {
             // Make a GET request using the BuyPower Axios instance
             const response = await this.buyPowerAxios().get<IBuyPowerValidateMeterResponse>(`/check/meter?${params}`);

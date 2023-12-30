@@ -19,6 +19,14 @@ export default class PartnerProfile extends Model<PartnerProfile | IPartnerProfi
     @Column({ type: DataType.STRING, allowNull: false })
     email: string;
 
+    // Define a column for the Partner's email (string type, not nullable)
+    @Column({ type: DataType.STRING, allowNull: true })
+    companyName: string;
+
+    // Define a column for the Partner's email (string type, not nullable)
+    @Column({ type: DataType.STRING, allowNull: true })
+    address: string;
+
     @HasOne(() => Entity)
     entity?: Entity;
 
@@ -32,8 +40,6 @@ export default class PartnerProfile extends Model<PartnerProfile | IPartnerProfi
     @HasMany(() => ApiKey)
     apiKeys: ApiKey[];
 
-    
-
     @Column({ type: DataType.STRING, allowNull: false })
     key: string;
 
@@ -46,9 +52,10 @@ export default class PartnerProfile extends Model<PartnerProfile | IPartnerProfi
 export interface IPartnerProfile {
     id: string;              // Unique identifier for the Partner
     email: string;   // Phone number for contacting the Partner
-    key?: string;
-    sec?: string;
-    
+    companyName?: string;
+    address?: string;
+    key: string;
+    sec: string;
 }
 
 export interface IPartnerProfileAssociations extends IPartnerProfile {

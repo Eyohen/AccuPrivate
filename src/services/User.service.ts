@@ -3,6 +3,15 @@ import User from "../models/User.model";
 import { IUser, ICreateUser } from "../models/User.model";
 export default class UserService {
 
+    static async addUserIfNotExists(user: IUser): Promise<User> {
+        const existingUser: User | null = await User.findOne({ where: { email: user.email, phoneNumber: user.phoneNumber } })
+        if (existingUser) {
+            return existingUser
+        }
+        const newUser: User = User.build(user)
+        await newUser.save()
+        return newUser
+    }
 
     static async addUser(user: ICreateUser): Promise<User> {
         try {
