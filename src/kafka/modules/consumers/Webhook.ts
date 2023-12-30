@@ -24,6 +24,7 @@ import Transaction from "../../../models/Transaction.model";
 import User from "../../../models/User.model";
 import WebHook from "../../../models/Webhook.model";
 import { ValueOf } from "kafkajs";
+import { getCurrentWaitTimeForRequeryEvent } from "./Token";
 
 class WebhookHandlerRequestValidator {
     static async validateIncomingWebhookEventRequest(
@@ -224,7 +225,7 @@ class WebhookHandler extends Registry {
         },
     ) {
         const retryCount = meta.retryCount ?? 0;
-        const waitTime = retryCount * 2;
+        const waitTime = getCurrentWaitTimeForRequeryEvent(retryCount);
 
         setTimeout(async () => {
             await eventService.addWebHookNotificationRetryEvent({
