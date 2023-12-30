@@ -1,6 +1,6 @@
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Response, Request } from "express";
 import { v4 as uuidv4 } from 'uuid';
-import { BadRequestError, InternalServerError, NotFoundError } from "../../utils/Errors";
+import { BadRequestError, NotFoundError } from "../../utils/Errors";
 import { RoleEnum } from "../../models/Role.model";
 import { Database } from "../../models";
 import EntityService from "../../services/Entity/Entity.service";
@@ -15,8 +15,9 @@ import ApiKeyService from "../../services/ApiKey.service ";
 import WebhookService from "../../services/Webhook.service";
 import { PartnerProfile } from "../../models/Entity/Profiles";
 import ResponseTrimmer from "../../utils/ResponseTrimmer";
-import Entity from "../../models/Entity/Entity.model";
-import { NOT } from "sequelize/types/deferrable";
+import { IPartnerProfile, IPartnerStatsProfile } from "../../models/Entity/Profiles/PartnerProfile.model";
+import TransactionController from "./Transaction.controller";
+import TransactionService from "../../services/Transaction.service";
 
 export default class PartnerProfileController {
     static async invitePartner(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -80,7 +81,7 @@ export default class PartnerProfileController {
             id: uuidv4(),
             partnerId: newPartner.id,
         }, transaction)
-        
+
         await transaction.commit()
 
         await entity.update({ status: { ...entity.status, emailVerified: true } })
@@ -121,5 +122,85 @@ export default class PartnerProfileController {
                 partner: { ...partnerProfile.dataValues, entity: entity.dataValues }
             }
         })
+    }
+
+    static async getAllPartners(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        const {
+            page, limit,
+        } = req.query as any
+        const query = { where: {} } as any
+        if (limit) query.limit = parseInt(limit)
+        // else query.limit = 10
+        if (page && page != '0' && limit) {
+            query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit)
+        }
+        // else query.offset = 0
+
+        const _partners: IPartnerProfile[] | void = await PartnerService.viewPartnersWithCustomQuery(query, {
+            exclude: ['key', 'sec']
+        });
+        if (!_partners) {
+            throw new NotFoundError("Partners Not found")
+        }
+        const partners: IPartnerStatsProfile[] = _partners.map(item => {
+            (item.key as any) = undefined;
+            (item.sec as any) = undefined;
+            return item
+        })
+        
+        console.log(partners[0].key, 'Yes')
+        const _stats: any = []
+        //adding partner Statics here        
+        for (let index = 0; index < partners.length; index++) {
+            let failed_Transactions: number =  0 
+            let pending_Transactions: number = 0 
+            let success_Transactions: number = 0
+            const element = partners[index];
+            
+            const _failed_Transaction = await TransactionService.viewTransactionsWithCustomQuery({
+                where:{partnerId: element.id,
+                status: "FAILED"}
+            })
+            failed_Transactions = _failed_Transaction.length
+
+           
+            const _pending_Transaction = await TransactionService.viewTransactionsWithCustomQuery({
+                where:{partnerId: element.id,
+                status: "PENDING"}
+            })
+            pending_Transactions = _pending_Transaction.length
+
+           
+            const _complete_Transaction = await TransactionService.viewTransactionsWithCustomQuery({
+                where:{partnerId: element.id,
+                status: "COMPLETE"}
+            })
+            success_Transactions = _complete_Transaction.length
+
+            // element.stats = {
+            //     success_Transactions,
+            //     failed_Transactions,
+            //     pending_Transactions
+                
+            // }
+            _stats.push({
+                id: element.id,
+                success_Transactions,
+                failed_Transactions,
+                pending_Transactions
+            })
+            
+        }
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Partners data retrieved successfully',
+            data: {
+                partners , 
+                stats: _stats
+            }
+        })
+
+
     }
 }

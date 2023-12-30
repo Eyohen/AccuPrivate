@@ -278,7 +278,7 @@ export default class TransactionEventService {
         return await EventService.addEvent(event);
     }
 
-    public async addGetTransactionTokenRequestedFromVendorEvent(): Promise<Event> {
+    public async addGetTransactionTokenRequestedFromVendorEvent(error: { code: number, cause: string }): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
             eventType: TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR,
@@ -290,6 +290,7 @@ export default class TransactionEventService {
                 disco: this.transaction.disco,
                 meterId: this.transaction.meterId,
                 meterNumber: this.meterInfo.meterNumber,
+                error,
                 vendType: this.meterInfo.vendType,
                 timestamp: new Date(),
                 superagent: this.superAgent
