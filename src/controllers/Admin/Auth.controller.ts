@@ -66,7 +66,7 @@ export default class AuthController {
         if (req.user.user.entity.role === RoleEnum.SuperAdmin) {
             throw new ForbiddenError('Unauthorized access')
         }
-        
+
         await entity.update({ status: { ...entity.status, activated: true } })
 
         await EmailService.sendEmail({
@@ -98,6 +98,11 @@ export default class AuthController {
         const activationCode = await AuthUtil.generateCode({ type: 'su_activation', entity, expiry: 5 * 60 * 60 })
         const [activationCode1, activationCode2, activationCode3] = activationCode.split(':') as ReturnType<typeof randomUUID>[]
 
+        console.log({
+            activationCode1, 
+            activationCode2,
+            activationCode3
+        })
         // Send activation code to 3 Admins
         EmailService.sendEmail({
             to: SU_HOST_EMAIL_1,
@@ -159,6 +164,14 @@ export default class AuthController {
             subject: 'Account Activation',
             html: await new EmailTemplate().accountActivation(entity.email)
         })
+
+        await AuthUtil.deleteToken({ entity, tokenType: 'su_activation', tokenClass: 'code' })
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Super admin activation successful',
+            data: null
+        })
     }
 
     static async completeSuperAdminDeActivationRequest(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -183,6 +196,14 @@ export default class AuthController {
             subject: 'Account Deactivation',
             html: await new EmailTemplate().accountActivation(entity.email)
         })
+
+        await AuthUtil.deleteToken({ entity, tokenType: 'su_activation', tokenClass: 'code' })
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Super admin deactivation successful',
+            data: null
+        })
     }
 
     static async requestSuperAdminDeActivation(req: Request, res: Response, next: NextFunction) {
@@ -201,6 +222,12 @@ export default class AuthController {
         const deactivationCode = await AuthUtil.generateCode({ type: 'su_activation', entity, expiry: 5 * 60 * 60 })
         const [deactivationCode1, deactivationCode2, deactivationCode3] = deactivationCode.split(':') as ReturnType<typeof randomUUID>[]
 
+
+        console.log({
+            deactivationCode1, 
+            deactivationCode2,
+            deactivationCode3
+        })
         // Send activation code to 3 Admins
         EmailService.sendEmail({
             to: SU_HOST_EMAIL_1,
