@@ -1,6 +1,7 @@
 import express, { Router } from "express";
 import PublicAuthController from "../controllers/Public/Auth.controller";
 import AdminAuthController from "../controllers/Admin/Auth.controller";
+import AdminAuthController from "../controllers/Admin/Auth.controller";
 import { basicAuth } from "../middlewares/Auth";
 import { AuthenticatedController } from "../utils/Interface";
 
@@ -19,6 +20,12 @@ router
     .post('/activate', AuthenticatedController(AdminAuthController.activatePartner))
     .post('/logout', basicAuth('access'), AuthenticatedController(PublicAuthController.logout))
     .get('/loggeduser', basicAuth('access'), AuthenticatedController(PublicAuthController.getLoggedUserData))
+
+
+    .post('/su/activate/req', AdminAuthController.requestSuperAdminActivation)
+    .post('/su/activate', basicAuth('su_activation'), AuthenticatedController(AdminAuthController.completeSuperAdminActivationRequest))
+    .post('/su/deactivate/req',  AdminAuthController.requestSuperAdminDeActivation)
+    .post('/su/deactivate', basicAuth('su_activation'), AuthenticatedController(AdminAuthController.completeSuperAdminActivationRequest))
 
 export default router
 
