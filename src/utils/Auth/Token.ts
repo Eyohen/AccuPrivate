@@ -7,6 +7,8 @@ import Entity, { IEntity } from "../../models/Entity/Entity.model";
 import Role, { RoleEnum } from "../../models/Role.model";
 import RoleService from "../../services/Role.service";
 import { extensions } from "sequelize/types/utils/validator-extras";
+import { randomUUID } from "crypto";
+import { UUID } from "sequelize";
 
 interface SaveTokenToCache {
     key: string,
@@ -45,9 +47,9 @@ class TokenUtil {
     }
 }
 
-export type AuthToken = 'access' | 'refresh' | 'passwordreset' | 'emailverification'
-interface GenerateTokenData {
-    type: AuthToken,
+export type AuthToken = 'access' | 'refresh' | 'passwordreset' | 'emailverification' | 'su_activation'
+interface GenerateTokenData<T = AuthToken> {
+    type: T,
     profile: IPartnerProfile | ITeamMemberProfile | Entity,
     entity: Entity
     expiry: number,
@@ -81,6 +83,9 @@ export interface DecodedTokenData<T extends RoleEnum = RoleEnum.Partner> {
     token: string
 }
 
+type IUUID = ReturnType<typeof randomUUID>
+type GeneratedCode<T extends AuthToken> = T extends 'su_activation' ? `${IUUID}:${IUUID}:${IUUID}` : `${number}`
+
 class AuthUtil {
     static async generateToken(info: GenerateTokenData) {
         const { type, profile, entity, expiry, misc } = info
@@ -99,13 +104,21 @@ class AuthUtil {
         return token
     }
 
-    static async generateCode({ type, entity, expiry }: Pick<GenerateTokenData, 'entity' | 'type' | 'expiry'>) {
+    static async generateCode<T extends AuthToken>({ type, entity, expiry }: Pick<GenerateTokenData<T>, 'entity' | 'type' | 'expiry'>): Promise<GeneratedCode<T>> {
         const tokenKey = `${type}_code:${entity.id}`
-        const token = Math.floor(100000 + Math.random() * 900000).toString()
+        let token = Math.floor(100000 + Math.random() * 900000).toString()
+
+        if (type === 'su_activation') {
+            const token_1 = randomUUID()
+            const token_2 = randomUUID()
+            const token_3 = randomUUID()
+
+            token = `${token_1}:${token_2}:${token_3}`
+        }
 
         await TokenUtil.saveTokenToCache({ key: tokenKey, token, expiry })
 
-        return token
+        return token as GeneratedCode<T>
     }
 
     static compareToken({ entity, tokenType, token }: Omit<CompareTokenData, 'misc'>) {
