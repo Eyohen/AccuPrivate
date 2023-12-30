@@ -128,6 +128,54 @@ export default class AuthController {
         })
     }
 
+    static async completeSuperAdminActivationRequest(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        const { authorizationCode1, authorizationCode2, authorizationCode3 } = req.body
+
+        const authorizationCode = `${authorizationCode1}:${authorizationCode2}:${authorizationCode3}`
+
+        const entity = await EntityService.viewSingleEntityByEmail(req.user.user.entity.email)
+        if (!entity) {
+            throw new BadRequestError('Entity not found')
+        }
+
+        const validCode = await AuthUtil.compareCode({ entity, tokenType: 'su_activation', token: authorizationCode })
+        if (!validCode) {
+            throw new BadRequestError('Invalid authorization code')
+        }
+
+        await entity.update({ status: { ...entity.status, activated: true } })
+
+        await EmailService.sendEmail({
+            to: entity.email,
+            subject: 'Account Activation',
+            html: await new EmailTemplate().accountActivation(entity.email)
+        })
+    }
+
+    static async completeSuperAdminDeActivationRequest(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        const { authorizationCode1, authorizationCode2, authorizationCode3 } = req.body
+
+        const authorizationCode = `${authorizationCode1}:${authorizationCode2}:${authorizationCode3}`
+
+        const entity = await EntityService.viewSingleEntityByEmail(req.user.user.entity.email)
+        if (!entity) {
+            throw new BadRequestError('Entity not found')
+        }
+
+        const validCode = await AuthUtil.compareCode({ entity, tokenType: 'su_activation', token: authorizationCode })
+        if (!validCode) {
+            throw new BadRequestError('Invalid authorization code')
+        }
+
+        await entity.update({ status: { ...entity.status, activated: false } })
+
+        await EmailService.sendEmail({
+            to: entity.email,
+            subject: 'Account Deactivation',
+            html: await new EmailTemplate().accountActivation(entity.email)
+        })
+    }
+
     static async requestSuperAdminDeActivation(req: Request, res: Response, next: NextFunction) {
         const { email } = req.body
 
