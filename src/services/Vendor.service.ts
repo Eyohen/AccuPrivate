@@ -327,7 +327,7 @@ export default class VendorService {
             vertical: 'ELECTRICITY'
         }
         const params: string = querystring.stringify(paramsObject);
-
+        
         try {
             // Make a GET request using the BuyPower Axios instance
             const response = await this.buyPowerAxios().get<IBuyPowerValidateMeterResponse>(`/check/meter?${params}`);
