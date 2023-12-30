@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import Transaction, {
-    IQueryTransaction,
     ITransaction,
 } from "../../models/Transaction.model";
 import TransactionService from "../../services/Transaction.service";
@@ -10,17 +9,10 @@ import {
     NotFoundError,
 } from "../../utils/Errors";
 import { Status } from "../../models/Event.model";
-import EmailService, { EmailTemplate } from "../../utils/Email";
-import { generateRandomToken } from "../../utils/Helper";
-import { DISCO_LOGO, NODE_ENV } from "../../utils/Constants";
-import PowerUnitService from "../../services/PowerUnit.service";
 import ResponseTrimmer from "../../utils/ResponseTrimmer";
-import { randomUUID } from "crypto";
-import Meter from "../../models/Meter.model";
 import VendorService from "../../services/Vendor.service";
 import { AuthenticatedRequest } from "../../utils/Interface";
 import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
-import EventService from "../../services/Event.service";
 import { RoleEnum } from "../../models/Role.model";
 import TransactionEventService from "../../services/TransactionEvent.service";
 import { VendorPublisher } from "../../kafka/modules/publishers/Vendor";
@@ -170,6 +162,7 @@ export default class TransactionController {
                 disco: transactionRecord.disco,
                 vendType: transactionRecord.meter.vendType,
             },
+            transactionRecord.superagent
         );
         await transactionEventService.addTokenReceivedEvent(response.data.token);
         await VendorPublisher.publishEventForTokenReceivedFromVendor({

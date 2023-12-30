@@ -75,3 +75,7 @@ export interface ICreateEvent extends IEvent {
 export interface IUpdateEvent {
     // This interface is currently empty, but it can be extended with specific properties if needed.
 }
+
+export interface TokenRetryEventPayload {
+    retryCount: number
+}

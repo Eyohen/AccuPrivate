@@ -20,7 +20,6 @@ import {
 } from "../util/Interface";
 import MessageProcessor from "../util/MessageProcessor";
 import { v4 as uuidv4 } from "uuid";
-import { PrimaryKey } from "sequelize-typescript";
 
 interface EventMessage {
     meter: {
@@ -37,14 +36,28 @@ interface TriggerRequeryTransactionTokenProps {
     eventMessage: EventMessage & {
         error: { code: number; cause: TransactionErrorCause };
     };
+    superAgent: Transaction['superagent']
     retryCount: number;
 }
 
-class TokenHandler extends Registry {
+const retry = {
+    count: 0,
+    limit: 3
+}
+
+export function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
+    // Use geometric progression to calculate wait time, where R = 2
+    const waitTime = 2 ** (retryCount - 1)
+    return waitTime
+
+}
+
+export class TokenHandlerUtil {
     static async triggerEventToRequeryTransactionTokenFromVendor({
         eventService,
         eventMessage,
         retryCount,
+        superAgent
     }: TriggerRequeryTransactionTokenProps) {
         /**
          * Not all transactions that are requeried are due to timeout
@@ -56,22 +69,44 @@ class TokenHandler extends Registry {
          * 501 - Maintenance error
          * 500 - Unexpected Error
          */
-
+    
         logger.info(
             `Retrying transaction with id ${eventMessage.transactionId} from vendor`,
         );
+        await eventService.addGetTransactionTokenRequestedFromVendorRetryEvent(eventMessage.error, retryCount);
         const eventMetaData = {
             transactionId: eventMessage.transactionId,
             meter: eventMessage.meter,
             error: eventMessage.error,
             timeStamp: new Date(),
             retryCount,
+            superAgent,
+            waitTime: getCurrentWaitTimeForRequeryEvent(retryCount)
         };
-        await eventService.addGetTransactionTokenRequestedFromVendorEvent(eventMessage.error);
-        await VendorPublisher.publishEventForGetTransactionTokenRequestedFromVendorRetry(
-            eventMetaData,
-        );
+    
+        // Start timer to requery transaction at intervals
+        async function countDownTimer(time: number) {
+            for (let i = time; i > 0; i--) {
+                setTimeout(() => {
+                    logger.info(`Retrying transaction ${i} seconds`)
+                }, (time - i) * 1000)
+            }
+        }
+        console.log({ waitTime: eventMetaData.waitTime })
+        countDownTimer(eventMetaData.waitTime);
+    
+        // Publish event in increasing intervals of seconds i.e 1, 2, 4, 8, 16, 32, 64, 128, 256, 512
+        setTimeout(async () => {
+            logger.info('Retrying transaction from vendor')
+            await VendorPublisher.publishEventForGetTransactionTokenRequestedFromVendorRetry(
+                eventMetaData,
+            );
+        }, eventMetaData.waitTime * 1000);
     }
+}
+
+
+class TokenHandler extends Registry {
 
     private static async handleTokenRequest(
         data: PublisherEventAndParameters[TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER],
@@ -116,7 +151,9 @@ class TokenHandler extends Registry {
         const transactionEventService = new TransactionEventService(
             transaction,
             eventMessage.meter,
+            data.superAgent
         );
+        await transactionEventService.addGetTransactionTokenFromVendorInitiatedEvent();
         await transactionEventService.addVendElectricityRequestedFromVendorEvent();
 
         // Check if error occured while purchasing token
@@ -145,11 +182,12 @@ class TokenHandler extends Registry {
                         ...eventMessage,
                         error: { code: responseCode, cause },
                     };
-                    return await TokenHandler.triggerEventToRequeryTransactionTokenFromVendor(
+                    return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
                         {
                             eventService: transactionEventService,
                             eventMessage: _eventMessage,
                             retryCount: 1,
+                            superAgent: data.superAgent
                         },
                     );
                 }
@@ -183,8 +221,8 @@ class TokenHandler extends Registry {
         const tokenInResponse = (tokenInfo as PurchaseResponse).data.token;
 
         // Transaction timedout - Requery the transactio at intervals
-        if (transactionTimedOut || !tokenInResponse) {  // Use this To test for successful token request
-            // if (true) {    // Use thisTo test for failed token request - Proceeds to requery transaction
+        if (transactionTimedOut || !tokenInResponse) {  //--1 TOGGLE Use this To test for successful token request
+        //--0 TOGGLE if (true) {    // Use thisTo test for failed token request - Proceeds to requery transaction
             transactionTimedOut &&
                 (await transactionEventService.addTokenRequestTimedOutEvent());
             !tokenInResponse &&
@@ -199,11 +237,12 @@ class TokenHandler extends Registry {
                         : TransactionErrorCause.NO_TOKEN_IN_RESPONSE,
                 },
             };
-            return await TokenHandler.triggerEventToRequeryTransactionTokenFromVendor(
+            return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
                 {
                     eventService: transactionEventService,
                     eventMessage: _eventMessage,
                     retryCount: 1,
+                    superAgent: data.superAgent
                 },
             );
         }
@@ -304,8 +343,10 @@ class TokenHandler extends Registry {
     }
 
     private static async requeryTransactionForToken(
-        data: PublisherEventAndParameters[TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR],
+        data: PublisherEventAndParameters[TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY],
     ) {
+        retry.count = data.retryCount;
+        
         // Check if token has been found
         const transaction = await TransactionService.viewSingleTransaction(
             data.transactionId,
@@ -318,6 +359,7 @@ class TokenHandler extends Registry {
         const transactionEventService = new TransactionEventService(
             transaction,
             data.meter,
+            data.superAgent
         );
         await transactionEventService.addGetTransactionTokenFromVendorInitiatedEvent();
         await VendorPublisher.publishEventForGetTransactionTokenFromVendorInitiated(
@@ -325,6 +367,7 @@ class TokenHandler extends Registry {
                 transactionId: transaction.id,
                 meter: data.meter,
                 timeStamp: new Date(),
+                superAgent: data.superAgent
             },
         );
 
@@ -343,7 +386,8 @@ class TokenHandler extends Registry {
             transactionId: transaction.reference,
         });
         const transactionSuccess = requeryResult.responseCode === 200;
-        if (!transactionSuccess) {
+        if (!transactionSuccess) { // --1 TOGGLE
+        //--0 TOGGLE if (retry.count < retry.limit || !transactionSuccess) {
             logger.error(
                 `Error requerying transaction with id ${data.transactionId}`,
             );
@@ -360,10 +404,11 @@ class TokenHandler extends Registry {
                 transactionId: data.transactionId,
                 error: { code: requeryResult.responseCode, cause },
             };
-            await this.triggerEventToRequeryTransactionTokenFromVendor({
+            await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor({
                 eventService: transactionEventService,
                 eventMessage,
                 retryCount: data.retryCount + 1,
+                superAgent: data.superAgent
             });
             return;
         }
@@ -392,7 +437,7 @@ class TokenHandler extends Registry {
     static registry = {
         [TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER]: this.handleTokenRequest,
         [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: this.handleTokenReceived,
-        [TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR]:
+        [TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY]:
             this.requeryTransactionForToken,
         [TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER_REQUERY]:
             this.requeryTransactionForToken,

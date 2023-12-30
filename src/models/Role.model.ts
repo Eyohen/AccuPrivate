@@ -8,7 +8,8 @@ import Entity from "./Entity/Entity.model";
 export enum RoleEnum {
     Admin = 'ADMIN',
     Partner = 'PARTNER',
-    TeamMember = 'TEAMMEMBER'
+    TeamMember = 'TEAMMEMBER',
+    SuperAdmin = 'SUPERADMIN'
 }
 
 @Table

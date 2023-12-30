@@ -24,6 +24,7 @@ import Transaction from "../../../models/Transaction.model";
 import User from "../../../models/User.model";
 import WebHook from "../../../models/Webhook.model";
 import { ValueOf } from "kafkajs";
+import { getCurrentWaitTimeForRequeryEvent } from "./Token";
 
 class WebhookHandlerRequestValidator {
     static async validateIncomingWebhookEventRequest(
@@ -138,6 +139,7 @@ class WebhookHandler extends Registry {
                 disco: transaction.disco,
                 vendType: transaction.meter.vendType,
             },
+            transaction.superagent
         );
 
         try {
@@ -223,7 +225,7 @@ class WebhookHandler extends Registry {
         },
     ) {
         const retryCount = meta.retryCount ?? 0;
-        const waitTime = retryCount * 2;
+        const waitTime = getCurrentWaitTimeForRequeryEvent(retryCount);
 
         setTimeout(async () => {
             await eventService.addWebHookNotificationRetryEvent({
@@ -244,6 +246,11 @@ class WebhookHandler extends Registry {
                 throw new Error("User not found for transaction");
             }
 
+            const transaction = await TransactionService.viewSingleTransaction(eventService.getTransactionInfo().id)
+            if (!transaction) {
+                throw new Error("Transaction not found")
+            }
+
             await VendorPublisher.publishEventForWebhookNotificationToPartnerRetry(
                 {
                     meter: {
@@ -259,6 +266,7 @@ class WebhookHandler extends Registry {
                         phoneNumber: user.phoneNumber,
                     },
                     transactionId: eventService.getTransactionInfo().id,
+                    superAgent: transaction.superagent
                 },
             );
         }, waitTime);
