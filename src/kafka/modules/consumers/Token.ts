@@ -223,8 +223,8 @@ class TokenHandler extends Registry {
         const tokenInResponse = (tokenInfo as PurchaseResponse).data.token;
 
         // Transaction timedout - Requery the transactio at intervals
-        // if (transactionTimedOut || !tokenInResponse) {  // Use this To test for successful token request
-        if (true) {    // Use thisTo test for failed token request - Proceeds to requery transaction
+        if (transactionTimedOut || !tokenInResponse) {  //--1 TOGGLE Use this To test for successful token request
+        //--0 TOGGLE if (true) {    // Use thisTo test for failed token request - Proceeds to requery transaction
             transactionTimedOut &&
                 (await transactionEventService.addTokenRequestTimedOutEvent());
             !tokenInResponse &&
@@ -388,7 +388,8 @@ class TokenHandler extends Registry {
             transactionId: transaction.reference,
         });
         const transactionSuccess = requeryResult.responseCode === 200;
-        if (retry.count < retry.limit || !transactionSuccess) {
+        if (!transactionSuccess) { // --1 TOGGLE
+        //--0 TOGGLE if (retry.count < retry.limit || !transactionSuccess) {
             logger.error(
                 `Error requerying transaction with id ${data.transactionId}`,
             );
