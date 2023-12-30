@@ -77,4 +77,8 @@ export const DB_CONFIG = {
     URL: process.env.DB_URL as string,
 }
 
+export const SU_HOST_EMAIL_1 = process.env.SU_HOST_EMAIL_1 as string,
+    SU_HOST_EMAIL_2 = process.env.SU_HOST_EMAIL_2 as string,
+    SU_HOST_EMAIL_3 = process.env.SU_HOST_EMAIL_3 as string;
+
 export const PRIMARY_ROLES = ['Admin', 'Partner', 'TeamMember']

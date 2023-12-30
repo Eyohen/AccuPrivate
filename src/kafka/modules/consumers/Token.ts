@@ -20,8 +20,6 @@ import {
 } from "../util/Interface";
 import MessageProcessor from "../util/MessageProcessor";
 import { v4 as uuidv4 } from "uuid";
-import { PrimaryKey } from "sequelize-typescript";
-import { count } from "console";
 
 interface EventMessage {
     meter: {

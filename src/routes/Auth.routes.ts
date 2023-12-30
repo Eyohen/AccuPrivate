@@ -20,5 +20,11 @@ router
     .post('/logout', basicAuth('access'), AuthenticatedController(PublicAuthController.logout))
     .get('/loggeduser', basicAuth('access'), AuthenticatedController(PublicAuthController.getLoggedUserData))
 
+
+    .post('/su/activate/req', AdminAuthController.requestSuperAdminActivation)
+    .post('/su/activate', basicAuth('su_activation'), AuthenticatedController(AdminAuthController.completeSuperAdminActivationRequest))
+    .post('/su/deactivate/req',  AdminAuthController.requestSuperAdminDeActivation)
+    .post('/su/deactivate', basicAuth('su_activation'), AuthenticatedController(AdminAuthController.completeSuperAdminDeActivationRequest))
+
 export default router
 
