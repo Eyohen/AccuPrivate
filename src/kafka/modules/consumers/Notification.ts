@@ -55,7 +55,7 @@ class NotificationHandler extends Registry {
             meterNumber: data.meter.meterNumber,
             vendType: transaction.meter.vendType,
             disco: data.meter.disco,
-        })
+        }, transaction.superagent)
 
         // If you've not notified the partner before, notify them
         if (!notifyPartnerEvent) {
@@ -120,7 +120,7 @@ class NotificationHandler extends Registry {
             meterNumber: data.meter.meterNumber,
             vendType: transaction.meter.vendType,
             disco: data.meter.disco,
-        })
+        }, transaction.superagent)
 
         // If you've not notified the partner before, notify them
         if (!notifyPartnerEvent) {
@@ -146,6 +146,7 @@ class NotificationHandler extends Registry {
     }
 
     static registry = {
+        [TOPICS.TOKEN_SENT_TO_PARTNER_RETRY]: this.handleReceivedToken,
         [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: this.handleReceivedToken,
         [TOPICS.TOKEN_REQUEST_FAILED]: this.failedTokenRequest
     }

@@ -17,14 +17,14 @@ export default class EmailService {
         try {
             sendgridClient.setApiKey(SENDGRID_API_KEY)
             mailOptions.from = mailOptions.from ?? EMAIL_HOST_ADDRESS;
-
+            
             await sendgridClient.send({
                 ...mailOptions,
                 from: EMAIL_HOST_ADDRESS,
                 to: mailOptions.to,
                 subject: mailOptions.subject,
             })
-
+            
             mailOptions.from = mailOptions.from ?? EMAIL_HOST_ADDRESS;
         } catch (error: any) {
             logger.error(error.stack);

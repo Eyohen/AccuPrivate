@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: accuvend-zookeeper
+  namespace: default
+spec:
+  serviceName: zookeeper
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zookeeper
+  template:
+    metadata:
+      labels:
+        app: zookeeper
+    spec:
+      containers:
+        - name: zookeeper
+          image: confluentinc/cp-zookeeper:7.3.2
+          envFrom:
+            - configMapRef:
+                name: zookeeper.config
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: accuvend-kafka
+  namespace: default
+spec:
+  serviceName: kafka
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      initContainers:
+        - name: wait-for-zookeeper
+          image: busybox
+          command: ["sh", "-c", "sleep 30"]
+
+      containers:
+        - name: kafka
+          image: confluentinc/cp-kafka:7.3.2
+          envFrom:
+            - configMapRef:
+                name: kafka.config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zookeeper-service
+  namespace: default
+spec:
+  selector:
+    app: zookeeper
+  ports:
+    - protocol: TCP
+      port: 31808  # Use the NodePort value you have
+      targetPort: 2181
+  type: NodePort
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-service
+  namespace: default
+spec:
+  selector:
+    app: kafka
+  ports:
+    - protocol: TCP
+      name: internal
+      port: 19092
+      targetPort: 19092
+    - protocol: TCP
+      name: external
+      port: 30111  # Use the NodePort value you have
+      targetPort: 9092
+    - protocol: TCP
+      name: docker
+      port: 30521  # Use the NodePort value you have
+      targetPort: 29092
+  type: NodePort

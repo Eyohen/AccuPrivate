@@ -10,18 +10,21 @@ async function startServer(): Promise<void> {
         await initiateDB(Database);
 
         await KafkaService.start()
+        console.log('Kafka Connected Successfully')
 
         // Synchronize the database (you may want to add options like force: true to reset the database)
         await Database.sync({ alter: true });
+        console.log('Database Sync Completed')
 
         // Start the server and listen on port 3000
         app.listen(process.env.PORT || 3000, () => {
             logger.info("Server Started on Port 3000");
+            console.log('Server Connected Successfully')
         });
     } catch (err) {
         console.error(err)
         // Log any errors that occur during server startup
-        logger.error(err); 5
+        logger.error(err); 
         // Exit the process with a non-zero status code to indicate an error
         process.exit(1);
     }

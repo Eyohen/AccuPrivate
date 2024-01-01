@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import Transaction, {
-    IQueryTransaction,
     ITransaction,
 } from "../../models/Transaction.model";
 import TransactionService from "../../services/Transaction.service";
@@ -10,17 +9,10 @@ import {
     NotFoundError,
 } from "../../utils/Errors";
 import { Status } from "../../models/Event.model";
-import EmailService, { EmailTemplate } from "../../utils/Email";
-import { generateRandomToken } from "../../utils/Helper";
-import { DISCO_LOGO, NODE_ENV } from "../../utils/Constants";
-import PowerUnitService from "../../services/PowerUnit.service";
 import ResponseTrimmer from "../../utils/ResponseTrimmer";
-import { randomUUID } from "crypto";
-import Meter from "../../models/Meter.model";
 import VendorService from "../../services/Vendor.service";
 import { AuthenticatedRequest } from "../../utils/Interface";
 import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
-import EventService from "../../services/Event.service";
 import { RoleEnum } from "../../models/Role.model";
 import TransactionEventService from "../../services/TransactionEvent.service";
 import { VendorPublisher } from "../../kafka/modules/publishers/Vendor";
@@ -60,33 +52,22 @@ export default class TransactionController {
 
     static async getTransactions(req: AuthenticatedRequest, res: Response) {
         const {
-            page,
-            limit,
-            status,
-            startDate,
-            endDate,
-            userId,
-            disco,
-            superagent,
-            partnerId,
-        } = req.query as any as getTransactionsRequestBody;
+            page, limit, status, startDate, endDate,
+            userId, disco, superagent, partnerId
+        } = req.query as any as getTransactionsRequestBody
 
-        console.log(req.query);
-        const query = { where: {} } as any;
+        const query = { where: {} } as any
 
-        if (status) query.where.status = status;
-        if (startDate && endDate)
-            query.where["transactionTimestamp"] = {
-                [Op.between]: [new Date(startDate), new Date(endDate)],
-            };
-        if (userId) query.where.userId = userId;
-        if (disco) query.where.disco = disco;
-        if (superagent) query.where.superagent = superagent;
-        if (limit) query.limit = parseInt(limit);
-        if (page && page != "0" && limit) {
-            query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit);
+        if (status) query.where.status = status
+        if (startDate && endDate) query.where.transactionTimestamp = { [Op.between]: [new Date(startDate), new Date(endDate)] }
+        if (userId) query.where.userId = userId
+        if (disco) query.where.disco = disco
+        if (superagent) query.where.superagent = superagent
+        if (limit) query.limit = parseInt(limit)
+        if (page && page != '0' && limit) {
+            query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit)
         }
-        if (partnerId) query.where.partnerId = partnerId;
+        if (partnerId) query.where.partnerId = partnerId
 
         const requestWasMadeByAnAdmin = [RoleEnum.Admin].includes(
             req.user.user.entity.role,
@@ -101,11 +82,26 @@ export default class TransactionController {
             throw new NotFoundError("Transactions not found");
         }
 
+        const paginationData = {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            totalCount: transactions.length,
+            totalPages: Math.ceil(transactions.length / parseInt(limit))
+        }
+
+        const response = {
+            transactions: transactions
+        } as any
+
+        if (page && page != '0' && limit) {
+            response['pagination'] = paginationData
+        }
+
         res.status(200).json({
-            status: "success",
-            message: "Transactions retrieved successfully",
-            data: { transactions },
-        });
+            status: 'success',
+            message: 'Transactions retrieved successfully',
+            data: response
+        })
     }
 
     static async requeryTimedOutTransaction(
@@ -166,6 +162,7 @@ export default class TransactionController {
                 disco: transactionRecord.disco,
                 vendType: transactionRecord.meter.vendType,
             },
+            transactionRecord.superagent
         );
         await transactionEventService.addTokenReceivedEvent(response.data.token);
         await VendorPublisher.publishEventForTokenReceivedFromVendor({

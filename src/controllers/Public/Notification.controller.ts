@@ -6,28 +6,36 @@ import { NotFoundError } from "../../utils/Errors"
 import Notification from "../../models/Notification.model"
 import EntityService from "../../services/Entity/Entity.service"
 import { Op } from "sequelize"
+import { RoleEnum } from "../../models/Role.model"
 
 export default class NotificationController {
     static async getNotifications(req: AuthenticatedRequest, res: Response, _next: NextFunction) {
         const { entity: { id } } = req.user.user
         const { page, limit, status } = req.query as { page: `${number}`, limit: `${number}`, status: 'read' | 'unread' }
-        const _page = parseInt(page) || 1
-        const _limit = limit ? parseInt(limit) : 0
 
-        const query: {
-            read?: boolean,
-            offset?: number,
+        const query = { where: {} } as {
+            where: {
+                read?: boolean,
+                entityId: string,
+            },
             limit?: number,
-            entityId: string,
-        } = status === 'read' ? { read: true, entityId: id } : status === 'unread' ? { read: false, entityId: id } : { entityId: id }
-
-        if (page && limit) {
-            query['offset'] = (_page - 1) * _limit
-            query['limit'] = _limit
+            offset?: number,
         }
 
-        console.log(query)
-        const notifications = await NotificationService.viewNotificationWithCustomQuery({ where: query })
+        const role = req.user.user.entity.role
+        const requestWasMadeByAnAdmin = [RoleEnum.Admin].includes(role)
+
+        if (!requestWasMadeByAnAdmin) {
+            query.where['entityId'] = id
+        }
+        query.where = status === 'read' ? { ...query.where, read: true } : status === 'unread' ? { read: false, ...query.where } : query.where
+
+        if (limit) query.limit = parseInt(limit)
+        if (page && page != '0' && limit) {
+            query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit)
+        }
+
+        const notifications = await NotificationService.viewNotifications()
 
         res.status(200).json({
             status: 'success',

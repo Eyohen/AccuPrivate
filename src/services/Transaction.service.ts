@@ -93,10 +93,7 @@ export default class TransactionService {
         bankRefId: string,
     ): Promise<Transaction | null> {
         // Retrieve a single transaction by its UUID
-        const transaction: Transaction | null = await Transaction.findOne({
-            where: { bankRefId: bankRefId },
-            include: [Partner, Meter, User, Meter, PowerUnit],
-        });
+        const transaction: Transaction | null = await Transaction.findOne({ where: { bankRefId: bankRefId }, include: [PowerUnit, Event, Partner, User, Meter] },);
         return transaction;
     }
 
@@ -140,14 +137,9 @@ export default class TransactionService {
         return transactions;
     }
 
-    static async viewTransactionsForYesterdayByStatus(
-        partnerId: string,
-        status: "COMPLETED" | "PENDING" | "FAILED",
-    ): Promise<Transaction[]> {
-        const yesterdayDate = new Date();
-        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-        console.log(yesterdayDate);
-        console.log(new Date());
+    static async viewTransactionsForYesterdayByStatus(partnerId: string, status: 'COMPLETED' | 'PENDING' | 'FAILED'): Promise<Transaction[]> {
+        const yesterdayDate = new Date()
+        yesterdayDate.setDate(yesterdayDate.getDate() - 1)
 
         const transactions: Transaction[] = await Transaction.findAll({
             where: {

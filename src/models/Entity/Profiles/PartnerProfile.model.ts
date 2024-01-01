@@ -5,6 +5,7 @@ import ApiKey from "../../ApiKey.model";
 import Entity from "../Entity.model";
 import TeamMember from "./TeamMemberProfile.model";
 
+
 // Define the "Partner" table model
 @Table
 export default class PartnerProfile extends Model<PartnerProfile | IPartnerProfile> {
@@ -17,6 +18,14 @@ export default class PartnerProfile extends Model<PartnerProfile | IPartnerProfi
     // Define a column for the Partner's email (string type, not nullable)
     @Column({ type: DataType.STRING, allowNull: false })
     email: string;
+
+    // Define a column for the Partner's email (string type, not nullable)
+    @Column({ type: DataType.STRING, allowNull: true })
+    companyName: string;
+
+    // Define a column for the Partner's email (string type, not nullable)
+    @Column({ type: DataType.STRING, allowNull: true })
+    address: string;
 
     @HasOne(() => Entity)
     entity?: Entity;
@@ -31,6 +40,9 @@ export default class PartnerProfile extends Model<PartnerProfile | IPartnerProfi
     @HasMany(() => ApiKey)
     apiKeys: ApiKey[];
 
+    
+    
+
     @Column({ type: DataType.STRING, allowNull: false })
     key: string;
 
@@ -43,13 +55,23 @@ export default class PartnerProfile extends Model<PartnerProfile | IPartnerProfi
 export interface IPartnerProfile {
     id: string;              // Unique identifier for the Partner
     email: string;   // Phone number for contacting the Partner
+    companyName?: string;
+    address?: string;
     key: string;
     sec: string;
 }
 
+export interface IPartnerStatsProfile  extends IPartnerProfile {
+    stats ?: {
+        failed_Transactions: number 
+        pending_Transactions: number 
+        success_Transactions: number
+    }
+}
+
 export interface IPartnerProfileAssociations extends IPartnerProfile {
     transactions: Transaction[];
-    entity: Entity;
+    entity?: Entity;
 }
 
 // Interface representing the structure for creating a new Partner (inherits from IPartner)

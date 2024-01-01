@@ -1,5 +1,6 @@
 import { ConsumerSubscribeTopics, EachMessagePayload } from "kafkajs";
 import { TOPICS } from "../../Constants";
+import Transaction from "../../../models/Transaction.model";
 
 export type Topic = TOPICS;
 
@@ -48,6 +49,7 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
     [TOPICS.METER_VALIDATION_REQUEST_SENT_TO_VENDOR]: {
         meter: MeterInfo;
         transactionId: string;
+        superAgent: Transaction['superagent']
     };
     [TOPICS.METER_VALIDATION_RECIEVED_FROM_VENDOR]: MeterValidationRequested;
     [TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER]: {
@@ -55,6 +57,7 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
         user: User;
         partner: Partner;
         transactionId: string;
+        superAgent: Transaction['superagent']
     };
     [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: {
         meter: MeterInfo & { id: string; token: string };
@@ -68,18 +71,22 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
         partner: Partner;
         transactionId: string;
         retryCount: number;
+        superAgent: Transaction['superagent'],
     };
-    [TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR]: {
+    [TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY]: {
         meter: MeterInfo & { id: string };
         transactionId: string;
         timeStamp: Date;
         error: { code: number; cause: TransactionErrorCause };
         retryCount: number;
+        superAgent: Transaction['superagent'],
+        waitTime: number,
     };
     [TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_INITIATED]: {
         meter: MeterInfo & { id: string };
         transactionId: string;
         timeStamp: Date;
+        superAgent: Transaction['superagent']
     };
     [TOPICS.PARTNER_TRANSACTION_COMPLETE]: {
         meter: MeterInfo & { id: string };
@@ -95,6 +102,12 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
     [TOPICS.TOKEN_SENT_TO_EMAIL]: {
         meter: MeterInfo & { id: string };
         user: User & { id: string };
+        transactionId: string;
+    };
+    [TOPICS.TOKEN_SENT_TO_PARTNER_RETRY]: {
+        meter: MeterInfo & { id: string; token: string };
+        user: User;
+        partner: Partner;
         transactionId: string;
     };
     [TOPICS.CREATE_USER_INITIATED]: {
