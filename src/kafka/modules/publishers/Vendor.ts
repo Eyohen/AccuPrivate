@@ -133,6 +133,40 @@ export class VendorPublisher extends ProducerFactory {
             return e;
         });
     }
+   
+    static async publishEventForRetryPowerPurchaseWithNewVendor(
+        data: PublisherEventAndParameters[TOPICS.RETRY_PURCHASE_FROM_NEW_VENDOR],
+    ) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.RETRY_PURCHASE_FROM_NEW_VENDOR,
+            message: {
+                meter: {
+                    meterNumber: data.meter.meterNumber,
+                    disco: data.meter.disco,
+                    vendType: data.meter.vendType,
+                    id: data.meter.id,
+                },
+                user: {
+                    name: data.user.name,
+                    email: data.user.email,
+                    address: data.user.address,
+                    phoneNumber: data.user.phoneNumber,
+                },
+                partner: {
+                    email: data.partner.email,
+                },
+                transactionId: data.transactionId,
+                superAgent: data.superAgent,
+                newVendor: data.newVendor   
+            },
+        }).catch((e) => {
+            logger.error(
+                `An error occured while publishing ${TOPICS.RETRY_PURCHASE_FROM_NEW_VENDOR} event for transaction` +
+                data.transactionId,
+            );
+            return e;
+        });
+    }
 
     static async publishEventForTokenReceivedFromVendor(
         data: PublisherEventAndParameters[TOPICS.TOKEN_RECIEVED_FROM_VENDOR],

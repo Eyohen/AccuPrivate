@@ -17,5 +17,9 @@ class Validator {
         const meterRegex = /^[0-9]{11}$/;
         return meterRegex.test(meterNumber);
     }
+    static validateUrl(url) {
+        const urlRegex = /^(http|https):\/\/[^ "]+$/;
+        return urlRegex.test(url);
+    }
 }
 exports.default = Validator;

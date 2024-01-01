@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const Complaint_model_1 = __importDefault(require("../models/Complaint.model"));
 const Entity_model_1 = __importDefault(require("../models/Entity/Entity.model"));
+const ComplaintReply_model_1 = __importDefault(require("../models/ComplaintReply.model"));
 const Logger_1 = __importDefault(require("../utils/Logger"));
 const uuid_1 = require("uuid");
 class ComplaintService {
@@ -42,6 +43,7 @@ class ComplaintService {
             }
             catch (err) {
                 Logger_1.default.error("Error Reading Complaint");
+                throw err;
             }
         });
     }
@@ -63,11 +65,11 @@ class ComplaintService {
                 findAllObject.where.status = status;
             console.log(findAllObject);
             try {
-                const complaints = yield Complaint_model_1.default.findAll(findAllObject);
-                const totalItems = yield Complaint_model_1.default.count({ where: findAllObject.where });
+                const complaints = yield Complaint_model_1.default.findAndCountAll(findAllObject);
+                const totalItems = complaints.count;
                 const totalPages = Math.ceil(totalItems / _limit);
                 return {
-                    complaint: complaints,
+                    complaint: complaints.rows,
                     pagination: {
                         currentPage: _offset,
                         pageSize: _limit,
@@ -79,6 +81,81 @@ class ComplaintService {
             catch (err) {
                 console.log(err);
                 Logger_1.default.error("Error Reading Complaints");
+                throw err;
+            }
+        });
+    }
+    static updateAComplaint(uuid, complaint) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const result = yield Complaint_model_1.default.update(complaint, { where: { id: uuid } });
+                let _complaint = null;
+                if (result[0] > 1)
+                    _complaint = yield Complaint_model_1.default.findByPk(uuid);
+                return {
+                    result,
+                    _complaint
+                };
+            }
+            catch (error) {
+                console.log(error);
+                Logger_1.default.error("Error Reading Complaints");
+                throw error;
+            }
+        });
+    }
+    static addComplaintReply(uuid, complaintReply) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                // const complaint : Complaint | null = await Complaint.findByPk(uuid)
+                // const ComplaintReply =  await complaint?.$create('complaintReplies', complaintReply )
+                // return ComplaintReply
+                const newComplaintRely = yield ComplaintReply_model_1.default.build(Object.assign({ id: (0, uuid_1.v4)(), complaintId: uuid }, complaintReply));
+                yield newComplaintRely.save();
+                return newComplaintRely;
+            }
+            catch (error) {
+                console.log(error);
+                Logger_1.default.error("Error Reading Complaints");
+                throw error;
+            }
+        });
+    }
+    static viewListOfComplaintPaginatedRelies(uuid, limit, offset) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let _limit = 9;
+            let _offset = 1;
+            const findAllObject = {};
+            console.log(uuid, 'inner');
+            if (limit)
+                findAllObject.limt = limit;
+            if (offset)
+                findAllObject.offset = offset - 1;
+            try {
+                const complaint = yield Complaint_model_1.default.findByPk(uuid, {
+                    include: [Object.assign(Object.assign({ model: ComplaintReply_model_1.default }, findAllObject), { include: [Entity_model_1.default] })]
+                });
+                if (uuid) {
+                    findAllObject.where = {};
+                    findAllObject.where.complaintId = uuid;
+                }
+                const totalItems = yield ComplaintReply_model_1.default.count({ where: findAllObject.where });
+                console.log(totalItems);
+                const totalPages = Math.ceil(totalItems / _limit);
+                return {
+                    complaint: complaint,
+                    pagination: {
+                        currentPage: _offset,
+                        pageSize: _limit,
+                        totalItems,
+                        totalPages
+                    }
+                };
+            }
+            catch (error) {
+                console.log(error);
+                Logger_1.default.error("Error Reading Complaints Relpies");
+                throw error;
             }
         });
     }

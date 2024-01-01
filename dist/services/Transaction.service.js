@@ -21,8 +21,13 @@ const PartnerProfile_model_1 = __importDefault(require("../models/Entity/Profile
 const User_model_1 = __importDefault(require("../models/User.model"));
 const Meter_model_1 = __importDefault(require("../models/Meter.model"));
 const sequelize_1 = require("sequelize");
+const Helper_1 = require("../utils/Helper");
 // Define the TransactionService class for handling transaction-related operations
 class TransactionService {
+    static addTransactionWithoutValidatingUserRelationship(transaction) {
+        const transactionData = Transaction_model_1.default.build(Object.assign(Object.assign({}, transaction), { reference: (0, Helper_1.generateRandomString)(10) }));
+        return transactionData.save({ validate: false });
+    }
     // Static method for adding a new transaction
     static addTransaction(transaction) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -40,15 +45,21 @@ class TransactionService {
     static viewTransactions() {
         return __awaiter(this, void 0, void 0, function* () {
             // Retrieve all transactions from the database
-            const transactions = yield Transaction_model_1.default.findAll();
+            const transactions = yield Transaction_model_1.default.findAll({
+                where: {},
+                include: [PowerUnit_model_1.default, Event_model_1.default, PartnerProfile_model_1.default, User_model_1.default, Meter_model_1.default],
+            });
             return transactions;
         });
     }
     static viewTransactionsWithCustomQuery(query) {
         return __awaiter(this, void 0, void 0, function* () {
             // Retrieve all transactions from the database
-            // Sort from latest 
-            const transactions = (yield Transaction_model_1.default.findAll(Object.assign(Object.assign({}, query), { include: [PowerUnit_model_1.default, Event_model_1.default, PartnerProfile_model_1.default, User_model_1.default, Meter_model_1.default] }))).sort((a, b) => { return b.transactionTimestamp.getTime() - a.transactionTimestamp.getTime(); });
+            // Sort from latest
+            const transactions = (yield Transaction_model_1.default.findAll(Object.assign(Object.assign({}, query), { include: [PowerUnit_model_1.default, Event_model_1.default, PartnerProfile_model_1.default, User_model_1.default, Meter_model_1.default] }))).sort((a, b) => {
+                return (b.transactionTimestamp.getTime() -
+                    a.transactionTimestamp.getTime());
+            });
             return transactions;
         });
     }
@@ -56,7 +67,9 @@ class TransactionService {
     static viewSingleTransaction(uuid) {
         return __awaiter(this, void 0, void 0, function* () {
             // Retrieve a single transaction by its UUID
-            const transaction = yield Transaction_model_1.default.findByPk(uuid, { include: [PowerUnit_model_1.default, Event_model_1.default, PartnerProfile_model_1.default, User_model_1.default, Meter_model_1.default] });
+            const transaction = yield Transaction_model_1.default.findByPk(uuid, {
+                include: [PowerUnit_model_1.default, Event_model_1.default, PartnerProfile_model_1.default, User_model_1.default, Meter_model_1.default],
+            });
             return transaction;
         });
     }
@@ -71,7 +84,9 @@ class TransactionService {
     static updateSingleTransaction(uuid, updateTransaction) {
         return __awaiter(this, void 0, void 0, function* () {
             // Update the transaction in the database
-            const updateResult = yield Transaction_model_1.default.update(updateTransaction, { where: { id: uuid } });
+            const updateResult = yield Transaction_model_1.default.update(updateTransaction, {
+                where: { id: uuid },
+            });
             // Retrieve the updated transaction by its UUID
             const updatedTransaction = yield Transaction_model_1.default.findByPk(uuid);
             return updatedTransaction;
@@ -89,9 +104,9 @@ class TransactionService {
                 where: {
                     // partnerId: partnerId,
                     transactionTimestamp: {
-                        [sequelize_1.Op.between]: [yesterdayDate, currentDate]
-                    }
-                }
+                        [sequelize_1.Op.between]: [yesterdayDate, currentDate],
+                    },
+                },
             });
             // console.log(transactions)
             return transactions;
@@ -106,9 +121,9 @@ class TransactionService {
                     partnerId: partnerId,
                     status,
                     transactionTimestamp: {
-                        $between: [yesterdayDate, new Date()]
-                    }
-                }
+                        $between: [yesterdayDate, new Date()],
+                    },
+                },
             });
             return transactions;
         });

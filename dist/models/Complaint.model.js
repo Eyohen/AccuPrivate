@@ -23,6 +23,7 @@ exports.Status = void 0;
  */
 const sequelize_typescript_1 = require("sequelize-typescript");
 const Entity_model_1 = __importDefault(require("./Entity/Entity.model"));
+const ComplaintReply_model_1 = __importDefault(require("./ComplaintReply.model"));
 // Define an enum for the status of complaint
 var Status;
 (function (Status) {
@@ -68,6 +69,10 @@ __decorate([
     (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.ENUM, values: Object.values(Status), defaultValue: Status.PENDING, allowNull: false }),
     __metadata("design:type", String)
 ], Complaint.prototype, "status", void 0);
+__decorate([
+    (0, sequelize_typescript_1.HasMany)(() => ComplaintReply_model_1.default),
+    __metadata("design:type", Array)
+], Complaint.prototype, "complaintReplies", void 0);
 Complaint = __decorate([
     sequelize_typescript_1.Table
 ], Complaint);

@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { RoleEnum } from "../models/Role.model";
 import { AuthenticatedController, AuthenticatedRequest } from "../utils/Interface";
 import { ForbiddenError } from "../utils/Errors";
-//
+
 export default class RBACMiddelware {
     static validateRole = (allowedRoles: RoleEnum[]) => {
         return AuthenticatedController(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {

@@ -20,8 +20,8 @@ class RoleController {
     //  Create role
     static createRole(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { name, description } = req.body;
-            const role = yield Role_service_1.default.addRole({ name, description, id: (0, uuid_1.v4)() });
+            const { name, description, type } = req.body;
+            const role = yield Role_service_1.default.addRole({ name, description, id: (0, uuid_1.v4)(), type });
             res.status(200).json({
                 status: 'success',
                 message: 'Role created successfully',

@@ -1,13 +1,17 @@
 // Import required modules and types
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
-import { IBaxiGetProviderResponse, IBaxiPurchaseResponse, IBaxiValidateMeterResponse, IBuyPowerGetProvidersResponse, IBuyPowerValidateMeterResponse, IValidateMeter, IVendToken } from "../utils/Interface";
+import { BaseResponse, IBaxiGetProviderResponse, IBaxiPurchaseResponse, IBaxiValidateMeterResponse, IBuyPowerGetProvidersResponse, IBuyPowerValidateMeterResponse, IValidateMeter, IVendToken } from "../utils/Interface";
 import querystring from "querystring";
-import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL, NODE_ENV } from "../utils/Constants";
+import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL, IRECHARGE_PUBLIC_KEY, IRECHARGE_PRIVATE_KEY, IRECHARGE_VENDOR_CODE, NODE_ENV } from "../utils/Constants";
 import logger from "../utils/Logger";
 import { v4 as UUIDV4 } from 'uuid'
+import crypto from 'crypto'
+import Transaction from "../models/Transaction.model";
+import { generateRandomToken } from "../utils/Helper";
+import { response } from "express";
 
-
-export interface PurchaseResponse {
+export interface PurchaseResponse extends BaseResponse {
+    source: 'BUYPOWERNG';
     status: string;
     statusCode: string;
     responseCode: 200,
@@ -46,7 +50,8 @@ export interface PurchaseResponse {
     };
 }
 
-interface TimedOutResponse {
+interface TimedOutResponse extends BaseResponse {
+    source: 'BUYPOWERNG';
     data: {
         status: false,
         error: true,
@@ -56,7 +61,8 @@ interface TimedOutResponse {
     }
 }
 
-interface _RequeryBuypowerSuccessResponse {
+interface _RequeryBuypowerSuccessResponse extends BaseResponse {
+    source: 'BUYPOWERNG';
     result: {
         status: true,
         data: {
@@ -76,7 +82,8 @@ interface _RequeryBuypowerSuccessResponse {
     }
 }
 
-interface SuccessResponseForBuyPowerRequery {
+interface SuccessResponseForBuyPowerRequery extends BaseResponse {
+    source: 'BUYPOWERNG'
     status: true,
     message: string,
     data: _RequeryBuypowerSuccessResponse['result']['data']
@@ -84,12 +91,14 @@ interface SuccessResponseForBuyPowerRequery {
 }
 
 interface InprogressResponseForBuyPowerRequery {
+    source: 'BUYPOWERNG'
     status: false,
     message: string,
     responseCode: 201
 }
 
 interface FailedResponseForBuyPowerRequery {
+    source: 'BUYPOWERNG'
     status: false,
     message: string,
     responseCode: 202
@@ -97,6 +106,144 @@ interface FailedResponseForBuyPowerRequery {
 
 
 type BuypowerRequeryResponse = _RequeryBuypowerSuccessResponse | InprogressResponseForBuyPowerRequery | FailedResponseForBuyPowerRequery
+
+abstract class Vendor {
+    protected static client: AxiosInstance
+
+    static getDiscos: () => Promise<any>
+    static isDiscoUp: (disco: string) => Promise<boolean>
+    static validateMeter: (disco: string, meterNumber: string, vendType: 'PREPAID' | 'POSTPAID') => Promise<any>
+    static vend: (disco: string, meterNumber: string, vendType: 'PREPAID' | 'POSTPAID') => Promise<any>
+    static requery: (disco: string, meterNumber: string, vendType: 'PREPAID' | 'POSTPAID') => Promise<any>
+}
+
+declare namespace IRechargeVendorService {
+    interface Disco {
+        id: `${number}`,
+        code: string,
+        description: string,
+        minimum_value: `${number}`,
+        maximum_value: `${number}`,
+    }
+
+    interface GetDiscosResponse {
+        status: '00',
+        message: 'Successful',
+        bundles: IRechargeVendorService.Disco[]
+    }
+}
+
+export class IRechargeVendorService {
+    protected static PRIVATE_KEY = IRECHARGE_PRIVATE_KEY
+    protected static PUBLIC_KEY = IRECHARGE_PUBLIC_KEY
+    protected static client = axios.create({
+        baseURL: NODE_ENV === 'production' ? "https://irecharge.com.ng/pwr_api_live/v2" : "https://irecharge.com.ng/pwr_api_sandbox/v2"
+    })
+    protected static VENDOR_CODE = IRECHARGE_VENDOR_CODE
+
+    private static generateHash(combinedString: string): string {
+        console.log(IRECHARGE_PRIVATE_KEY)
+        const hash = crypto.createHmac('sha1', IRECHARGE_PRIVATE_KEY).update(combinedString).digest('hex')
+        return hash
+    }
+
+    static async getDiscos() {
+        const response = await this.client.get<IRechargeVendorService.GetDiscosResponse>('/get_electric_disco.php?response_format=json')
+
+        return response.data
+    }
+
+    static async validateMeter({ disco, reference, meterNumber }: { disco: string, meterNumber: string, reference: string }): Promise<any> {
+        const combinedString = this.VENDOR_CODE + "|" + '12434324234234234' + "|" + meterNumber + "|" + disco + "|" + this.PUBLIC_KEY
+        const hash = this.generateHash(combinedString)
+
+        console.log({
+            vendor_code: this.VENDOR_CODE,
+            reference_id: reference,
+            meter: meterNumber,
+            disco,
+            response_format: 'json',
+            hash,
+            privateKey: this.PRIVATE_KEY,
+            publicKey: this.PUBLIC_KEY,
+            combinedString,
+            combinedStringHash: hash
+        })
+        const response = await this.client.get(`/get_meter_info.php/?vendor_code=${this.VENDOR_CODE}&reference_id=${reference}&meter=${meterNumber}&disco=${disco}&response_format=json&hash=${hash}`)
+
+        return response.data
+    };
+
+    static async vend(disco: string, meterNumber: string, vendType: "PREPAID" | "POSTPAID"): Promise<any> {
+
+    };
+
+    static async requery(disco: string, meterNumber: string, vendType: "PREPAID" | "POSTPAID"): Promise<any> {
+
+    };
+}
+
+class BaxipaySeed {
+    static generateDataForSuccessfulVend(reference: string, amount: string) {
+        const statuses = ['success', 'failure', 'pending'];
+        const transactionStatuses = ['completed', 'pending', 'failed'];
+        const statusCode = Math.floor(Math.random() * 1000).toString();
+        const tokenAmount = Math.random() > 0.5 ? null : Math.floor(Math.random() * 100);
+        const amountOfPower = amount
+        const feesAmount = Math.floor(Math.random() * 10);
+        const feeder = 'Feeder Name';
+        const dssName = 'DSS Name';
+        const serviceBand = 'Service Band';
+        const message = Math.random() > 0.5 ? 'Transaction successful' : 'Transaction failed';
+        const token = generateRandomToken();
+        const exchangeReference = 'Exchange Ref';
+        const tariff = 'Tariff Type';
+        const power = 'Power Type';
+        const status = 'OK';
+        const providerMessage = 'Provider Message';
+        const baxiReference = Math.floor(Math.random() * 100000);
+
+        return {
+            source: 'BAXI' as const,
+            status: statuses[Math.floor(Math.random() * statuses.length)],
+            statusCode: statusCode,
+            message: message,
+            data: {
+                transactionStatus: transactionStatuses[Math.floor(Math.random() * transactionStatuses.length)],
+                transactionReference: reference,
+                statusCode: statusCode,
+                transactionMessage: message,
+                tokenCode: 'Token Code',
+                tokenAmount: tokenAmount,
+                amountOfPower: amountOfPower,
+                rawOutput: {
+                    fees: [
+                        {
+                            amount: feesAmount,
+                            kind: 'Kind of Fee',
+                            description: 'Fee Description',
+                            taxAmount: Math.floor(Math.random() * 5)
+                        }
+                    ],
+                    feeder: feeder,
+                    dssName: dssName,
+                    serviceBand: serviceBand,
+                    message: message,
+                    token: token,
+                    rate: 'Exchange Rate',
+                    exchangeReference: exchangeReference,
+                    tariff: tariff,
+                    power: power,
+                    status: status,
+                    statusCode: statusCode
+                },
+                provider_message: providerMessage,
+                baxiReference: baxiReference
+            },
+            responseCode: 200
+        }
+    }
+}
 
 // Define the VendorService class for handling provider-related operations
 export default class VendorService {
@@ -116,7 +263,7 @@ export default class VendorService {
     // Static method for obtaining a Baxi vending token
     static async baxiVendToken(body: IVendToken) {
         const {
-            transactionId,
+            reference,
             meterNumber,
             disco,
             amount,
@@ -124,19 +271,51 @@ export default class VendorService {
         } = body
 
         try {
-            const response = await this.baxiAxios().post<IBaxiPurchaseResponse>('/request', {
+            const response = await this.baxiAxios().post<IBaxiPurchaseResponse>('/electricity/request', {
                 amount,
                 phone,
                 account_number: meterNumber,
                 service_type: disco.toLowerCase() + '_electric' + '_prepaid',
                 agentId: 'baxi',
-                agentReference: transactionId
+                agentReference: reference
             })
 
-            return response.data.data
+            return { ...response.data, source: 'BAXI' as const }
         } catch (error: any) {
-            logger.error(error)
+            if (NODE_ENV === 'development') {
+                // This is because baxi API currently has been failing on dev mode
+                return BaxipaySeed.generateDataForSuccessfulVend(reference, amount)
+            }
+
             throw new Error(error.message)
+        }
+    }
+
+    static async baxiRequeryTransaction({ reference }: { reference: string }) {
+        try {
+            const response = await this.baxiAxios().get<IBaxiPurchaseResponse>(`/superagent/transaction/requery?agentReference=${reference}`)
+
+            const responseData = response.data
+            if (responseData.status === 'success') {
+                return {
+                    source: 'BAXI' as const,
+                    status: true,
+                    message: 'Transaction successful',
+                    data: responseData.data,
+                    responseCode: 200
+                }
+            }
+
+            return NODE_ENV === 'development'
+                ? BaxipaySeed.generateDataForSuccessfulVend(reference, '10000')
+                : {
+                    source: 'BAXI' as const,
+                    status: false,
+                    message: responseData.message,
+                    responseCode: 202
+                }
+        } catch (error) {
+            throw error
         }
     }
 
@@ -149,17 +328,16 @@ export default class VendorService {
         }
 
         try {
-            const response = await this.baxiAxios().post<IBaxiValidateMeterResponse>('/verify', postData)
+            const response = await this.baxiAxios().post<IBaxiValidateMeterResponse>('/electricity/verify', postData)
             return response.data.data
         } catch (error: any) {
-            logger.error(error)
             throw new Error(error.message)
         }
     }
 
     static async baxiFetchAvailableDiscos() {
         try {
-            const response = await this.baxiAxios().get<IBaxiGetProviderResponse>('/billers')
+            const response = await this.baxiAxios().get<IBaxiGetProviderResponse>('/electricity/billers')
             const responseData = response.data
 
             const providers = [] as { name: string, serviceType: 'PREPAID' | 'POSTPAID' }[]
@@ -178,8 +356,7 @@ export default class VendorService {
 
             return providers
         } catch (error) {
-            logger.error(error)
-            throw new Error()
+            throw error
         }
     }
 
@@ -197,6 +374,7 @@ export default class VendorService {
 
             return false
         } catch (error) {
+            console.error(error)
             logger.error(error)
             throw new Error()
         }
@@ -230,7 +408,7 @@ export default class VendorService {
     static async buyPowerVendToken(body: IVendToken): Promise<PurchaseResponse | TimedOutResponse> {
         // Define data to be sent in the POST request
         const postData = {
-            orderId: body.transactionId,
+            orderId: body.reference,
             meter: body.meterNumber,
             disco: body.disco,
             paymentType: "B2B",
@@ -247,7 +425,7 @@ export default class VendorService {
         try {
             // Make a POST request using the BuyPower Axios instance
             const response = await this.buyPowerAxios().post<PurchaseResponse | TimedOutResponse>(`/vend?strict=0`, postData);
-            return response.data;
+            return { ...response.data, source: 'BUYPOWERNG' };
         } catch (error: any) {
             if (error instanceof AxiosError) {
                 if (error.response?.data?.message === "An unexpected error occurred. Please requery.") {
@@ -262,12 +440,12 @@ export default class VendorService {
         // TODO: Use event emitter to requery transaction after 10s
     }
 
-    static async buyPowerRequeryTransaction({ transactionId }: { transactionId: string }) {
+    static async buyPowerRequeryTransaction({ reference }: { reference: string }) {
         try {
-            console.log(NODE_ENV)
             // Buypower requery has been returning 500 error on dev mode
             if (NODE_ENV === 'development') {
                 return {
+                    'source': 'BUYPOWERNG',
                     "status": true,
                     "message": "Transaction succesful",
                     'responseCode': 200,
@@ -278,7 +456,7 @@ export default class VendorService {
                         "disco": "DSTV",
                         "debtAmount": "0.00",
                         "debtRemaining": "0.00",
-                        "orderId": transactionId,
+                        "orderId": reference,
                         "receiptNo": "342544321342",
                         "tax": "0.00",
                         "vendTime": new Date(),
@@ -299,11 +477,12 @@ export default class VendorService {
                 } as SuccessResponseForBuyPowerRequery
             }
 
-            const response = await this.buyPowerAxios().get<BuypowerRequeryResponse>(`/transaction/${transactionId}`)
+            const response = await this.buyPowerAxios().get<BuypowerRequeryResponse>(`/transaction/${reference}`)
 
             const successResponse = response.data as _RequeryBuypowerSuccessResponse
             if (successResponse.result.status === true) {
                 return {
+                    source: 'BUYPOWERNG',
                     status: true,
                     message: 'Transaction successful',
                     data: successResponse.result.data,
@@ -311,7 +490,7 @@ export default class VendorService {
                 } as SuccessResponseForBuyPowerRequery
             }
 
-            return response.data as InprogressResponseForBuyPowerRequery | FailedResponseForBuyPowerRequery
+            return { ...response.data, source: 'BUYPOWERNG' } as InprogressResponseForBuyPowerRequery | FailedResponseForBuyPowerRequery
         } catch (error) {
             throw error
         }
@@ -327,7 +506,7 @@ export default class VendorService {
             vertical: 'ELECTRICITY'
         }
         const params: string = querystring.stringify(paramsObject);
-        
+
         try {
             // Make a GET request using the BuyPower Axios instance
             const response = await this.buyPowerAxios().get<IBuyPowerValidateMeterResponse>(`/check/meter?${params}`);
@@ -378,5 +557,35 @@ export default class VendorService {
             logger.error(error)
             throw new Error()
         }
+    }
+
+    static async irechargeFetchAvailableDiscos() {
+        try {
+            const response = await IRechargeVendorService.getDiscos()
+            const responseData = response.bundles
+
+            const providers = [] as { name: string, serviceType: 'PREPAID' | 'POSTPAID' }[]
+
+            for (const provider of responseData) {
+                const providerDescription = provider.description.split(' ')
+                const serviceType = providerDescription[providerDescription.length - 1].toUpperCase()
+                providers.push({
+                    name: provider.code.split('_').join(' ').toUpperCase(),
+                    serviceType: serviceType as 'PREPAID' | 'POSTPAID'
+                })
+
+            }
+
+            return providers
+        } catch (error) {
+            console.error(error)
+            logger.error(error)
+            throw new Error()
+        }
+    }
+
+    static async irechargeValidateMeter(disco: string, meterNumber: string, reference: string) {
+        const response = await IRechargeVendorService.validateMeter({ disco, meterNumber, reference })
+        return response
     }
 }

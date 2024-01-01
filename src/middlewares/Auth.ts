@@ -1,7 +1,7 @@
 import { AuthToken, DecodedTokenData, TokenUtil } from "../utils/Auth/Token";
 import { Request, Response, NextFunction } from "express";
 import jwt from 'jsonwebtoken'
-import { JWT_SECRET } from "../utils/Constants";
+import { JWT_SECRET, NODE_ENV } from "../utils/Constants";
 import { UnauthenticatedError } from "../utils/Errors";
 import Cypher from "../utils/Cypher";
 import { AuthenticatedRequest } from "../utils/Interface";
@@ -54,8 +54,13 @@ export const validateApiKey = async (req: Request, res: Response, next: NextFunc
 
     (req as any).key = validApiKey
 
+
     // Check if this si the current active api key
     const currentActiveApiKey = await TokenUtil.getTokenFromCache(`active_api_key:${validApiKey}`)
+    NODE_ENV === 'development' && console.log({
+        validApiKey,
+        currentActiveApiKey
+    })
     if (!currentActiveApiKey) {
         return next(new UnauthenticatedError('Invalid API key'))
     }
