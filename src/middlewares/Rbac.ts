@@ -6,7 +6,6 @@ import { ForbiddenError } from "../utils/Errors";
 export default class RBACMiddelware {
     static validateRole = (allowedRoles: RoleEnum[]) => {
         return AuthenticatedController(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-            console.log(req.user.user.entity)
             const userIsPermitted = allowedRoles.includes(req.user.user.entity.role)
             if (!userIsPermitted) {
                 throw new ForbiddenError('Unauthorized access')
