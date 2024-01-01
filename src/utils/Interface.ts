@@ -1,12 +1,12 @@
 import { string } from "zod"
-import { ITransaction } from "../models/Transaction.model"
+import Transaction, { ITransaction } from "../models/Transaction.model"
 import { DecodedTokenData } from "./Auth/Token"
 import { Request as ExpressApiRequest, NextFunction, Response } from "express"
 import { UUID } from "crypto"
 import { RoleEnum } from "../models/Role.model"
 
 export interface IVendToken {
-    transactionId: string
+    reference: string
     meterNumber: string
     disco: string
     amount: string
@@ -23,7 +23,8 @@ export interface IValidateMeter {
 }
 
 
-export interface IBaxiGetProviderResponse {
+export interface IBaxiGetProviderResponse extends BaseResponse {
+    source: 'BAXI',
     "status": "success",
     "message": "Successful",
     "code": 200,
@@ -38,7 +39,12 @@ export interface IBaxiGetProviderResponse {
     }
 }
 
-export interface IBaxiPurchaseResponse {
+export interface BaseResponse {
+    source: Transaction['superagent']
+}
+
+export interface IBaxiPurchaseResponse extends BaseResponse {
+    source: 'BAXI';
     status: string;
     statusCode: string;
     message: string;
@@ -50,7 +56,7 @@ export interface IBaxiPurchaseResponse {
         tokenCode: string;
         tokenAmount: null | number;
         amountOfPower: null | number;
-        rawOutput?: {
+        rawOutput: {
             fees: {
                 amount: number;
                 kind: string | null;

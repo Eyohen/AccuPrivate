@@ -1,13 +1,15 @@
 // Import required modules and types
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
-import { IBaxiGetProviderResponse, IBaxiPurchaseResponse, IBaxiValidateMeterResponse, IBuyPowerGetProvidersResponse, IBuyPowerValidateMeterResponse, IValidateMeter, IVendToken } from "../utils/Interface";
+import { BaseResponse, IBaxiGetProviderResponse, IBaxiPurchaseResponse, IBaxiValidateMeterResponse, IBuyPowerGetProvidersResponse, IBuyPowerValidateMeterResponse, IValidateMeter, IVendToken } from "../utils/Interface";
 import querystring from "querystring";
 import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL, IRECHARGE_PUBLIC_KEY, IRECHARGE_PRIVATE_KEY, IRECHARGE_VENDOR_CODE, NODE_ENV } from "../utils/Constants";
 import logger from "../utils/Logger";
 import { v4 as UUIDV4 } from 'uuid'
 import crypto from 'crypto'
+import Transaction from "../models/Transaction.model";
 
-export interface PurchaseResponse {
+export interface PurchaseResponse extends BaseResponse {
+    source: 'BUYPOWERNG';
     status: string;
     statusCode: string;
     responseCode: 200,
@@ -46,7 +48,8 @@ export interface PurchaseResponse {
     };
 }
 
-interface TimedOutResponse {
+interface TimedOutResponse extends BaseResponse {
+    source: 'BUYPOWERNG';
     data: {
         status: false,
         error: true,
@@ -56,7 +59,8 @@ interface TimedOutResponse {
     }
 }
 
-interface _RequeryBuypowerSuccessResponse {
+interface _RequeryBuypowerSuccessResponse extends BaseResponse {
+    source: 'BUYPOWERNG';
     result: {
         status: true,
         data: {
@@ -76,7 +80,8 @@ interface _RequeryBuypowerSuccessResponse {
     }
 }
 
-interface SuccessResponseForBuyPowerRequery {
+interface SuccessResponseForBuyPowerRequery extends BaseResponse {
+    source: 'BUYPOWERNG'
     status: true,
     message: string,
     data: _RequeryBuypowerSuccessResponse['result']['data']
@@ -84,12 +89,14 @@ interface SuccessResponseForBuyPowerRequery {
 }
 
 interface InprogressResponseForBuyPowerRequery {
+    source: 'BUYPOWERNG'
     status: false,
     message: string,
     responseCode: 201
 }
 
 interface FailedResponseForBuyPowerRequery {
+    source: 'BUYPOWERNG'
     status: false,
     message: string,
     responseCode: 202
@@ -193,7 +200,7 @@ export default class VendorService {
     // Static method for obtaining a Baxi vending token
     static async baxiVendToken(body: IVendToken) {
         const {
-            transactionId,
+            reference,
             meterNumber,
             disco,
             amount,
@@ -201,19 +208,45 @@ export default class VendorService {
         } = body
 
         try {
-            const response = await this.baxiAxios().post<IBaxiPurchaseResponse>('/request', {
+            const response = await this.baxiAxios().post<IBaxiPurchaseResponse>('/electricity/request', {
                 amount,
                 phone,
                 account_number: meterNumber,
                 service_type: disco.toLowerCase() + '_electric' + '_prepaid',
                 agentId: 'baxi',
-                agentReference: transactionId
+                agentReference: reference
             })
 
-            return response.data
+            return { ...response.data, source: 'BAXI' as const }
         } catch (error: any) {
             logger.error(error)
             throw new Error(error.message)
+        }
+    }
+
+    static async baxiRequeryTransaction({ reference }: { reference: string }) {
+        try {
+            const response = await this.baxiAxios().get<IBaxiPurchaseResponse>(`/superagent/transaction/requery?agentReference=${reference}`)
+
+            const responseData = response.data
+            if (responseData.status === 'success') {
+                return {
+                    source: 'BAXI' as const,
+                    status: true,
+                    message: 'Transaction successful',
+                    data: responseData.data,
+                    responseCode: 200
+                }
+            }
+
+            return {
+                source: 'BAXI' as const,
+                status: false,
+                message: responseData.message,
+                responseCode: 202
+            }
+        } catch (error) {
+            throw error
         }
     }
 
@@ -226,7 +259,7 @@ export default class VendorService {
         }
 
         try {
-            const response = await this.baxiAxios().post<IBaxiValidateMeterResponse>('/verify', postData)
+            const response = await this.baxiAxios().post<IBaxiValidateMeterResponse>('/electricity/verify', postData)
             return response.data.data
         } catch (error: any) {
             throw new Error(error.message)
@@ -306,7 +339,7 @@ export default class VendorService {
     static async buyPowerVendToken(body: IVendToken): Promise<PurchaseResponse | TimedOutResponse> {
         // Define data to be sent in the POST request
         const postData = {
-            orderId: body.transactionId,
+            orderId: body.reference,
             meter: body.meterNumber,
             disco: body.disco,
             paymentType: "B2B",
@@ -323,7 +356,7 @@ export default class VendorService {
         try {
             // Make a POST request using the BuyPower Axios instance
             const response = await this.buyPowerAxios().post<PurchaseResponse | TimedOutResponse>(`/vend?strict=0`, postData);
-            return response.data;
+            return { ...response.data, source: 'BUYPOWERNG' };
         } catch (error: any) {
             if (error instanceof AxiosError) {
                 if (error.response?.data?.message === "An unexpected error occurred. Please requery.") {
@@ -338,12 +371,12 @@ export default class VendorService {
         // TODO: Use event emitter to requery transaction after 10s
     }
 
-    static async buyPowerRequeryTransaction({ transactionId }: { transactionId: string }) {
+    static async buyPowerRequeryTransaction({ reference }: { reference: string }) {
         try {
-            console.log(NODE_ENV)
             // Buypower requery has been returning 500 error on dev mode
             if (NODE_ENV === 'development') {
                 return {
+                    'source': 'BUYPOWERNG',
                     "status": true,
                     "message": "Transaction succesful",
                     'responseCode': 200,
@@ -354,7 +387,7 @@ export default class VendorService {
                         "disco": "DSTV",
                         "debtAmount": "0.00",
                         "debtRemaining": "0.00",
-                        "orderId": transactionId,
+                        "orderId": reference,
                         "receiptNo": "342544321342",
                         "tax": "0.00",
                         "vendTime": new Date(),
@@ -375,11 +408,12 @@ export default class VendorService {
                 } as SuccessResponseForBuyPowerRequery
             }
 
-            const response = await this.buyPowerAxios().get<BuypowerRequeryResponse>(`/transaction/${transactionId}`)
+            const response = await this.buyPowerAxios().get<BuypowerRequeryResponse>(`/transaction/${reference}`)
 
             const successResponse = response.data as _RequeryBuypowerSuccessResponse
             if (successResponse.result.status === true) {
                 return {
+                    source: 'BUYPOWERNG',
                     status: true,
                     message: 'Transaction successful',
                     data: successResponse.result.data,
@@ -387,7 +421,7 @@ export default class VendorService {
                 } as SuccessResponseForBuyPowerRequery
             }
 
-            return response.data as InprogressResponseForBuyPowerRequery | FailedResponseForBuyPowerRequery
+            return { ...response.data, source: 'BUYPOWERNG' } as InprogressResponseForBuyPowerRequery | FailedResponseForBuyPowerRequery
         } catch (error) {
             throw error
         }
