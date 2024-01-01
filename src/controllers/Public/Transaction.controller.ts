@@ -125,7 +125,7 @@ export default class TransactionController {
 
         let powerUnit = await transactionRecord.$get("powerUnit");
         const response = await VendorService.buyPowerRequeryTransaction({
-            transactionId: transactionRecord.id,
+            reference: transactionRecord.reference,
         });
         if (response.status === false) {
             const transactionFailed = response.responseCode === 202;

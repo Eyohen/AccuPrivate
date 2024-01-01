@@ -86,9 +86,9 @@ class PartnerProfileService {
             return partner;
         });
     }
-    static viewPartnersWithCustomQuery(query) {
+    static viewPartnersWithCustomQuery(query, attributes = {}) {
         return __awaiter(this, void 0, void 0, function* () {
-            const partners = yield PartnerProfile_model_1.default.findAll(Object.assign(Object.assign({}, query), { include: [Entity_model_1.default] }));
+            const partners = yield PartnerProfile_model_1.default.findAll(Object.assign(Object.assign({}, query), { include: [Entity_model_1.default], attributes: attributes }));
             return partners;
         });
     }

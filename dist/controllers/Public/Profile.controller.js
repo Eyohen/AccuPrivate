@@ -13,10 +13,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const Errors_1 = require("../../utils/Errors");
+const PartnerProfile_service_1 = __importDefault(require("../../services/Entity/Profiles/PartnerProfile.service"));
 const FileUpload_1 = __importDefault(require("../../utils/FileUpload"));
 const fs_1 = __importDefault(require("fs"));
 const Entity_service_1 = __importDefault(require("../../services/Entity/Entity.service"));
 const Token_1 = require("../../utils/Auth/Token");
+const Role_model_1 = require("../../models/Role.model");
 class ProfileController {
     static updateProfile(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -51,7 +53,14 @@ class ProfileController {
     static updateProfileData(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             const { entity } = req.user.user;
-            const { email } = req.body;
+            const { email, companyName, address } = req.body;
+            if (entity.role === Role_model_1.RoleEnum.Partner) {
+                const partner = yield PartnerProfile_service_1.default.viewSinglePartner(req.user.user.profile.id);
+                if (!partner) {
+                    return next(new Errors_1.InternalServerError('Authenticated Partner not found'));
+                }
+                yield partner.update({ companyName, address });
+            }
             const entity_ = yield Entity_service_1.default.viewSingleEntityByEmail(entity.email);
             if (!entity_) {
                 return next(new Errors_1.InternalServerError('Authenticated Partner not found'));

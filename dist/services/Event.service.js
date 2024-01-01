@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Event_model_1 = __importDefault(require("../models/Event.model"));
 const Transaction_model_1 = __importDefault(require("../models/Transaction.model"));
 const Logger_1 = __importDefault(require("../utils/Logger"));
+const TransactionEvent_service_1 = __importDefault(require("./TransactionEvent.service"));
 // EventService class for handling event-related operations
 class EventService {
     // Method for adding a new event to the database
@@ -28,7 +29,9 @@ class EventService {
                 return newEvent;
             }
             catch (err) {
+                console.error(err);
                 Logger_1.default.info('Error Logging Event');
+                throw err;
             }
         });
     }
@@ -57,5 +60,12 @@ class EventService {
             }
         });
     }
+    static viewSingleEventByTransactionIdAndType(transactionId, eventType) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const event = yield Event_model_1.default.findOne({ where: { transactionId, eventType }, include: [Transaction_model_1.default] });
+            return event;
+        });
+    }
 }
+EventService.transactionEventService = TransactionEvent_service_1.default;
 exports.default = EventService;

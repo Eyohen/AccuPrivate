@@ -106,5 +106,63 @@ class ComplaintController {
             }
         });
     }
+    static updateComplaint(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { id } = req.params;
+            try {
+                console.log(req.body);
+                const data = yield Complaint_service_1.default.updateAComplaint(id, req.body);
+                if ((data === null || data === void 0 ? void 0 : data.result) && (data === null || data === void 0 ? void 0 : data.result[0]) < 1) {
+                    return next(new Errors_1.InternalServerError('Sorry Couldn\'t update complaint'));
+                }
+                res.status(200).json({
+                    status: 'success',
+                    affectRows: data === null || data === void 0 ? void 0 : data.result,
+                    complaint: data === null || data === void 0 ? void 0 : data._complaint
+                });
+            }
+            catch (err) {
+                next(new Errors_1.InternalServerError('Sorry Couldn\'t update complaint'));
+            }
+        });
+    }
+    static addComplaintReply(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { id } = req.params;
+            try {
+                if (!req.body.message) {
+                    return next(new Errors_1.BadRequestError('No message  provided'));
+                }
+                if (!req.body.entityId) {
+                    return next(new Errors_1.BadRequestError('No user provided'));
+                }
+                const data = yield Complaint_service_1.default.addComplaintReply(id, req.body);
+                res.status(200).json({
+                    status: 'success',
+                    data,
+                });
+            }
+            catch (err) {
+                next(new Errors_1.InternalServerError('Sorry Couldn\'t create complaint Reply'));
+            }
+        });
+    }
+    static getComplaintRely(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { id } = req.params;
+            console.log(id);
+            try {
+                const data = yield Complaint_service_1.default.viewListOfComplaintPaginatedRelies(id);
+                res.status(200).json({
+                    status: 'success',
+                    complaint: data === null || data === void 0 ? void 0 : data.complaint,
+                    pagination: data === null || data === void 0 ? void 0 : data.pagination
+                });
+            }
+            catch (err) {
+                next(new Errors_1.InternalServerError('Sorry Couldn\'t get complaint Reply'));
+            }
+        });
+    }
 }
 exports.ComplaintController = ComplaintController;

@@ -472,7 +472,7 @@ class TokenHandler extends Registry {
                             vendType: meter.vendType,
                             id: meter.id,
                         },
-                        transactionId: transaction.id,,
+                        transactionId: transaction.id,
                         error: {
                             code: 202,
                             cause: TransactionErrorCause.NO_TOKEN_IN_RESPONSE,

@@ -20,6 +20,8 @@ const PartnerProfile_model_1 = __importDefault(require("./Entity/Profiles/Partne
 const Event_model_1 = __importDefault(require("./Event.model"));
 const PowerUnit_model_1 = __importDefault(require("./PowerUnit.model"));
 const Meter_model_1 = __importDefault(require("./Meter.model"));
+const Helper_1 = require("../utils/Helper");
+const Date_1 = require("../utils/Date");
 // Define enums for status and payment type
 var Status;
 (function (Status) {
@@ -74,6 +76,10 @@ __decorate([
     __metadata("design:type", Object)
 ], Transaction.prototype, "superagent", void 0);
 __decorate([
+    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.STRING, allowNull: true, defaultValue: () => (0, Helper_1.generateRandomString)(10) }),
+    __metadata("design:type", String)
+], Transaction.prototype, "reference", void 0);
+__decorate([
     (0, sequelize_typescript_1.ForeignKey)(() => User_model_1.default),
     (0, sequelize_typescript_1.IsUUID)(4),
     sequelize_typescript_1.Column,
@@ -89,6 +95,12 @@ __decorate([
     sequelize_typescript_1.Column,
     __metadata("design:type", String)
 ], Transaction.prototype, "partnerId", void 0);
+__decorate([
+    (0, sequelize_typescript_1.ForeignKey)(() => PartnerProfile_model_1.default),
+    (0, sequelize_typescript_1.IsUUID)(4),
+    sequelize_typescript_1.Column,
+    __metadata("design:type", String)
+], Transaction.prototype, "powerUnitId", void 0);
 __decorate([
     (0, sequelize_typescript_1.BelongsTo)(() => PartnerProfile_model_1.default),
     __metadata("design:type", PartnerProfile_model_1.default)
@@ -111,6 +123,22 @@ __decorate([
     (0, sequelize_typescript_1.BelongsTo)(() => Meter_model_1.default),
     __metadata("design:type", Meter_model_1.default)
 ], Transaction.prototype, "meter", void 0);
+__decorate([
+    (0, sequelize_typescript_1.Column)({
+        type: sequelize_typescript_1.DataType.DATE,
+        allowNull: false,
+        defaultValue: new Date_1.NigerianDate().getCurrentNigerianDate(),
+    }),
+    __metadata("design:type", Date)
+], Transaction.prototype, "createdAt", void 0);
+__decorate([
+    (0, sequelize_typescript_1.Column)({
+        type: sequelize_typescript_1.DataType.DATE,
+        allowNull: false,
+        defaultValue: new Date_1.NigerianDate().getCurrentNigerianDate(),
+    }),
+    __metadata("design:type", Date)
+], Transaction.prototype, "updatedAt", void 0);
 Transaction = __decorate([
     sequelize_typescript_1.Table
 ], Transaction);

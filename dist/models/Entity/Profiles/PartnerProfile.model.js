@@ -32,6 +32,14 @@ __decorate([
     __metadata("design:type", String)
 ], PartnerProfile.prototype, "email", void 0);
 __decorate([
+    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.STRING, allowNull: true }),
+    __metadata("design:type", String)
+], PartnerProfile.prototype, "companyName", void 0);
+__decorate([
+    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.STRING, allowNull: true }),
+    __metadata("design:type", String)
+], PartnerProfile.prototype, "address", void 0);
+__decorate([
     (0, sequelize_typescript_1.HasOne)(() => Entity_model_1.default),
     __metadata("design:type", Entity_model_1.default)
 ], PartnerProfile.prototype, "entity", void 0);

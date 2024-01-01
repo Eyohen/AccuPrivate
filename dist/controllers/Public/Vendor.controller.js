@@ -43,54 +43,98 @@ const Meter_service_1 = __importDefault(require("../../services/Meter.service"))
 const User_model_1 = __importDefault(require("../../models/User.model"));
 const Meter_model_1 = __importDefault(require("../../models/Meter.model"));
 const Vendor_service_1 = __importDefault(require("../../services/Vendor.service"));
-const PowerUnit_service_1 = __importDefault(require("../../services/PowerUnit.service"));
 const Constants_1 = require("../../utils/Constants");
 const Errors_1 = require("../../utils/Errors");
-const Helper_1 = require("../../utils/Helper");
-const Email_1 = __importStar(require("../../utils/Email"));
-const ResponseTrimmer_1 = __importDefault(require("../../utils/ResponseTrimmer"));
-const Notification_1 = __importDefault(require("../../utils/Notification"));
-const Notification_service_1 = __importDefault(require("../../services/Notification.service"));
 const Event_service_1 = __importDefault(require("../../services/Event.service"));
 const Event_model_1 = __importDefault(require("../../models/Event.model"));
+const Vendor_1 = require("../../kafka/modules/publishers/Vendor");
+const Crm_1 = require("../../kafka/modules/publishers/Crm");
+const Token_1 = require("../../kafka/modules/consumers/Token");
+const Constants_2 = require("../../kafka/Constants");
+const Interface_1 = require("../../kafka/modules/util/Interface");
+const crypto_1 = require("crypto");
+const Consumer_1 = __importDefault(require("../../kafka/modules/util/Consumer"));
+const MessageProcessor_1 = __importDefault(require("../../kafka/modules/util/MessageProcessor"));
+const Logger_1 = __importDefault(require("../../utils/Logger"));
+const console_1 = require("console");
+const TransactionEvent_service_1 = __importDefault(require("../../services/TransactionEvent.service"));
+const Webhook_service_1 = __importDefault(require("../../services/Webhook.service"));
+class VendorTokenHandler {
+    handleTokenReceived(data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.response().status(200).send({
+                status: 'success',
+                message: 'Token purchase initiated successfully',
+                data: {
+                    transaction: this.transaction,
+                    meter: data.meter,
+                    token: data.meter.token
+                }
+            });
+            this.tokenSent = true;
+        });
+    }
+    constructor(transaction, response) {
+        this.tokenSent = false;
+        this.registry = {
+            [Constants_2.TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: this.handleTokenReceived.bind(this)
+        };
+        this.transaction = transaction;
+        this.response = () => response;
+        return this;
+    }
+    getTokenState() {
+        return this.tokenSent;
+    }
+}
+class VendorTokenReceivedSubscriber extends Consumer_1.default {
+    constructor(transaction, response) {
+        const tokenHandler = new VendorTokenHandler(transaction, response);
+        const messageProcessor = new MessageProcessor_1.default(tokenHandler.registry, (0, crypto_1.randomUUID)());
+        super(messageProcessor);
+        this.tokenHandler = tokenHandler;
+    }
+    getTokenSentState() {
+        return this.tokenHandler.getTokenState();
+    }
+}
 // Validate request parameters for each controller
 class VendorControllerValdator {
-    static validateMeter() {
-    }
-    static requestToken({ bankRefId, transactionId }) {
+    static validateMeter() { }
+    static requestToken({ bankRefId, transactionId, }) {
         return __awaiter(this, void 0, void 0, function* () {
             if (!bankRefId)
-                throw new Errors_1.BadRequestError('Transaction reference is required');
+                throw new Errors_1.BadRequestError("Transaction reference is required");
             const transactionRecord = yield Transaction_service_1.default.viewSingleTransaction(transactionId);
             if (!transactionRecord) {
-                throw new Errors_1.BadRequestError('Transaction does not exist');
+                throw new Errors_1.BadRequestError("Transaction does not exist");
             }
             // Check if Disco is Up
             const checKDisco = yield Vendor_service_1.default.buyPowerCheckDiscoUp(transactionRecord.disco);
             if (!checKDisco)
-                throw new Errors_1.BadRequestError('Disco is currently down');
+                throw new Errors_1.BadRequestError("Disco is currently down");
             // Check if bankRefId has been used before
             const existingTransaction = yield Transaction_service_1.default.viewSingleTransactionByBankRefID(bankRefId);
             if (existingTransaction instanceof Transaction_model_1.default) {
-                throw new Errors_1.BadRequestError('Bank reference has been used before');
+                throw new Errors_1.BadRequestError("Bank reference has been used before");
             }
             const transactionHasCompleted = transactionRecord.status === Transaction_model_1.Status.COMPLETE;
             if (transactionHasCompleted) {
-                throw new Errors_1.BadRequestError('Transaction has been completed before');
+                throw new Errors_1.BadRequestError("Transaction has been completed before");
             }
-            //  Get Meter 
-            const meter = yield transactionRecord.$get('meter');
+            //  Get Meter
+            const meter = yield transactionRecord.$get("meter");
             if (!meter) {
                 throw new Errors_1.InternalServerError(`Transaction ${transactionRecord.id} does not have a meter`);
             }
-            const user = yield transactionRecord.$get('user');
+            const user = yield transactionRecord.$get("user");
             if (!user) {
                 throw new Errors_1.InternalServerError(`Transaction ${transactionRecord.id} does not have a user`);
             }
-            const partner = yield transactionRecord.$get('partner');
-            const entity = yield (partner === null || partner === void 0 ? void 0 : partner.$get('entity'));
+            const partner = yield transactionRecord.$get("partner");
+            const entity = yield (partner === null || partner === void 0 ? void 0 : partner.$get("entity"));
             if (!entity) {
-                throw new Errors_1.InternalServerError('Entity not found');
+                throw new Errors_1.InternalServerError("Entity not found");
             }
             return {
                 user,
@@ -103,77 +147,192 @@ class VendorControllerValdator {
     static getDiscos() { }
     static checkDisco() { }
 }
+class VendorControllerUtil {
+    static replayRequestToken({ transaction, meterInfo, previousRetryEvent }) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const transactionEventService = new TransactionEvent_service_1.default(transaction, meterInfo, transaction.superagent);
+            const eventPayload = JSON.parse(previousRetryEvent.payload);
+            yield Token_1.TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor({
+                eventService: transactionEventService,
+                eventMessage: {
+                    meter: {
+                        meterNumber: meterInfo.meterNumber,
+                        disco: transaction.disco,
+                        vendType: meterInfo.vendType,
+                        id: meterInfo.id,
+                    },
+                    transactionId: transaction.id,
+                    error: {
+                        code: 100,
+                        cause: Interface_1.TransactionErrorCause.UNKNOWN
+                    },
+                },
+                superAgent: transaction.superagent,
+                retryCount: eventPayload.retryCount + 1
+            });
+        });
+    }
+    static replayWebhookNotification({ transaction, meterInfo }) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const transactionEventService = new TransactionEvent_service_1.default(transaction, meterInfo, transaction.superagent);
+            const user = yield transaction.$get('user');
+            if (!user) {
+                throw new Errors_1.InternalServerError('User not found');
+            }
+            const powerUnit = yield transaction.$get('powerUnit');
+            if (!powerUnit) {
+                throw new Errors_1.BadRequestError('Can not replay transaction if no powerunit');
+            }
+            const partner = yield transaction.$get('partner');
+            if (!partner) {
+                throw new Errors_1.InternalServerError('Partner not found');
+            }
+            const webhook = yield Webhook_service_1.default.viewWebhookByPartnerId(partner.id);
+            if (!webhook) {
+                throw new Errors_1.InternalServerError('Webhook not found');
+            }
+            yield transactionEventService.addWebHookNotificationRetryEvent({
+                retryCount: 1,
+                timeStamp: new Date(),
+                url: webhook.url
+            });
+            yield Vendor_1.VendorPublisher.publishEventForWebhookNotificationToPartnerRetry({
+                meter: Object.assign(Object.assign({}, meterInfo), { token: powerUnit.token }),
+                user: Object.assign({ name: user.name }, user.dataValues),
+                transactionId: transaction.id,
+                partner: partner,
+                retryCount: 1,
+                superAgent: transaction.superagent,
+            });
+        });
+    }
+    static replayTokenSent({ transaction }) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const powerUnit = yield transaction.$get('powerUnit');
+            if (!powerUnit) {
+                throw new Errors_1.InternalServerError('Power unit not found');
+            }
+            const meter = yield powerUnit.$get('meter');
+            if (!meter) {
+                throw new Errors_1.InternalServerError('Meter not found');
+            }
+            const user = yield transaction.$get('user');
+            if (!user) {
+                throw new Errors_1.InternalServerError('User not found');
+            }
+            const partner = yield transaction.$get('partner');
+            if (!partner) {
+                throw new Errors_1.InternalServerError('Partner not found');
+            }
+            const transactionEventService = new TransactionEvent_service_1.default(transaction, {
+                meterNumber: powerUnit.meter.meterNumber,
+                disco: transaction.disco,
+                vendType: powerUnit.meter.vendType,
+            }, transaction.superagent);
+            yield transactionEventService.addTokenSentToPartnerRetryEvent();
+            yield Vendor_1.VendorPublisher.publishEventForTokenSentToPartnerRetry({
+                meter: {
+                    meterNumber: meter.meterNumber,
+                    disco: transaction.disco,
+                    vendType: meter.vendType,
+                    id: meter.id,
+                    token: powerUnit.token
+                },
+                user: Object.assign({ name: user.name }, user.dataValues),
+                partner: partner,
+                transactionId: transaction.id,
+            });
+        });
+    }
+    static validateMeter({ meterNumber, disco, vendType, transaction }) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (transaction.superagent === 'BUYPOWERNG') {
+                return yield Vendor_service_1.default.buyPowerValidateMeter({
+                    transactionId: transaction.id,
+                    meterNumber,
+                    disco,
+                    vendType,
+                });
+            }
+            else if (transaction.superagent === 'BAXI') {
+                return yield Vendor_service_1.default.baxiValidateMeter(disco, meterNumber, vendType);
+            }
+            else if (transaction.superagent === 'IRECHARGE') {
+                return yield Vendor_service_1.default.irechargeValidateMeter(disco, meterNumber, transaction.reference);
+            }
+            else {
+                throw new Errors_1.BadRequestError('Invalid superagent');
+            }
+        });
+    }
+}
 class VendorController {
     static validateMeter(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { meterNumber, disco, phoneNumber, email, vendType } = req.body;
+            const { meterNumber, disco, phoneNumber, email, vendType, } = req.body;
             const superagent = Constants_1.DEFAULT_ELECTRICITY_PROVIDER; // BUYPOWERNG or BAXI
-            const transactionId = (0, uuid_1.v4)();
             const partnerId = req.key;
-            // We Check for Meter User *
-            const response = superagent != 'BUYPOWERNG'
-                ? yield Vendor_service_1.default.buyPowerValidateMeter({
-                    transactionId,
-                    meterNumber,
-                    disco,
-                    vendType
-                }).catch(e => { throw new Errors_1.BadRequestError('Meter validation failed'); })
-                : yield Vendor_service_1.default.baxiValidateMeter(disco, meterNumber, vendType)
-                    .catch(e => { throw new Errors_1.BadRequestError('Meter validation failed'); });
-            // Add User
-            const user = yield User_service_1.default.addUser({
+            const transaction = yield Transaction_service_1.default.addTransactionWithoutValidatingUserRelationship({
                 id: (0, uuid_1.v4)(),
-                address: response.address,
-                email: email,
-                name: response.name,
-                phoneNumber: phoneNumber,
-            });
-            const transaction = yield Transaction_service_1.default.addTransaction({
-                id: transactionId,
-                amount: '0',
+                amount: "0",
                 status: Transaction_model_1.Status.PENDING,
                 superagent: superagent,
                 paymentType: Transaction_model_1.PaymentType.PAYMENT,
                 transactionTimestamp: new Date(),
                 disco: disco,
-                userId: user.id,
                 partnerId: partnerId,
             });
-            yield Event_service_1.default.addEvent({
-                id: (0, uuid_1.v4)(),
-                eventTimestamp: new Date(),
-                status: Transaction_model_1.Status.COMPLETE,
-                eventType: 'VALIDATE_METER',
-                eventText: 'Validate meter',
-                source: 'API',
-                eventData: JSON.stringify({}),
-                transactionId: transactionId,
+            const transactionEventService = new Event_service_1.default.transactionEventService(transaction, { meterNumber, disco, vendType }, superagent);
+            yield transactionEventService.addMeterValidationRequestedEvent();
+            Vendor_1.VendorPublisher.publishEventForMeterValidationRequested({
+                meter: { meterNumber, disco, vendType },
+                transactionId: transaction.id,
+                superAgent: superagent
             });
-            // Check if disco is up, and add event for it
-            const discoUp = superagent === 'BUYPOWERNG'
-                ? yield Vendor_service_1.default.buyPowerCheckDiscoUp(disco).catch(e => e)
-                : yield Vendor_service_1.default.baxiCheckDiscoUp(disco).catch(e => e);
-            discoUp instanceof Error
-                ? yield Event_service_1.default.addEvent({
-                    id: (0, uuid_1.v4)(),
-                    eventTimestamp: new Date(),
-                    status: Transaction_model_1.Status.FAILED,
-                    eventType: 'DISCO_UP',
-                    eventText: 'Disco up',
-                    source: 'API',
-                    eventData: JSON.stringify({ disco }),
-                    transactionId: transactionId,
-                })
-                : yield Event_service_1.default.addEvent({
-                    id: (0, uuid_1.v4)(),
-                    eventTimestamp: new Date(),
-                    status: Transaction_model_1.Status.COMPLETE,
-                    eventType: 'DISCO_UP',
-                    eventText: 'Disco up',
-                    source: 'API',
-                    eventData: JSON.stringify({ disco }),
-                    transactionId: transactionId,
-                });
+            // We Check for Meter User *
+            const response = yield VendorControllerUtil.validateMeter({ meterNumber, disco, vendType, transaction });
+            const userInfo = {
+                name: response.name,
+                email: email,
+                address: response.address,
+                phoneNumber: phoneNumber,
+                id: (0, uuid_1.v4)(),
+            };
+            yield transactionEventService.addMeterValidationReceivedEvent({ user: userInfo });
+            Vendor_1.VendorPublisher.publishEventForMeterValidationReceived({
+                meter: { meterNumber, disco, vendType },
+                transactionId: transaction.id,
+                user: userInfo,
+            });
+            yield transactionEventService.addCRMUserInitiatedEvent({ user: userInfo });
+            Crm_1.CRMPublisher.publishEventForInitiatedUser({
+                user: userInfo,
+                transactionId: transaction.id,
+            });
+            // Add User if no record of user in db
+            const user = yield User_service_1.default.addUserIfNotExists({
+                id: userInfo.id,
+                address: response.address,
+                email: email,
+                name: response.name,
+                phoneNumber: phoneNumber,
+            });
+            yield transaction.update({ userId: user.id });
+            yield transactionEventService.addCRMUserConfirmedEvent({ user: userInfo });
+            Crm_1.CRMPublisher.publishEventForConfirmedUser({
+                user: userInfo,
+                transactionId: transaction.id,
+            });
+            // Check if disco is up
+            const discoUp = superagent === "BUYPOWERNG"
+                ? yield Vendor_service_1.default.buyPowerCheckDiscoUp(disco).catch((e) => e)
+                : yield Vendor_service_1.default.baxiCheckDiscoUp(disco).catch((e) => e);
+            const discoUpEvent = discoUp instanceof Boolean ? yield transactionEventService.addDiscoUpEvent() : false;
+            discoUpEvent && Vendor_1.VendorPublisher.publishEventForDiscoUpCheckConfirmedFromVendor({
+                transactionId: transaction.id,
+                meter: { meterNumber, disco, vendType },
+            });
+            // TODO: Publish event for disco up to kafka
             const meter = yield Meter_service_1.default.addMeter({
                 id: (0, uuid_1.v4)(),
                 address: response.address,
@@ -183,11 +342,13 @@ class VendorController {
                 vendType,
             });
             yield transaction.update({ meterId: meter.id });
-            const successful = transaction instanceof Transaction_model_1.default && user instanceof User_model_1.default && meter instanceof Meter_model_1.default;
+            const successful = transaction instanceof Transaction_model_1.default &&
+                user instanceof User_model_1.default &&
+                meter instanceof Meter_model_1.default;
             if (!successful)
-                throw new Errors_1.InternalServerError('An error occured while validating meter');
+                throw new Errors_1.InternalServerError("An error occured while validating meter");
             res.status(200).json({
-                status: 'success',
+                status: "success",
                 data: {
                     transaction: {
                         transactionId: transaction.id,
@@ -200,115 +361,190 @@ class VendorController {
                         phone: user.phoneNumber,
                         vendType: meter.vendType,
                         name: user.name,
-                    }
-                }
+                    },
+                },
+            });
+            yield transactionEventService.addMeterValidationSentEvent(meter.id);
+            Vendor_1.VendorPublisher.publishEventForMeterValidationSentToPartner({
+                transactionId: transaction.id,
+                meter: { meterNumber, disco, vendType, id: meter.id },
             });
         });
     }
     static requestToken(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             const { transactionId, bankRefId, bankComment, amount, vendType } = req.query;
-            const { user, partnerEntity, transaction, meter } = yield VendorControllerValdator.requestToken({ bankRefId, transactionId });
-            // Initiate Purchase for token
-            const tokenInfo = yield Vendor_service_1.default.buyPowerVendToken({
-                transactionId,
+            const transaction = yield Transaction_service_1.default.viewSingleTransaction(transactionId);
+            if (!transaction) {
+                throw new Errors_1.NotFoundError("Transaction not found");
+            }
+            const meter = yield transaction.$get("meter");
+            if (!meter) {
+                throw new Errors_1.InternalServerError("Transaction does not have a meter");
+            }
+            const meterInfo = {
                 meterNumber: meter.meterNumber,
                 disco: transaction.disco,
-                amount: amount,
-                phone: user.phoneNumber,
-                vendType: vendType
-            }).catch(error => error);
-            if (tokenInfo instanceof Error) {
-                if (tokenInfo.message !== 'Transaction timeout')
-                    throw tokenInfo;
-                yield Event_service_1.default.addEvent({
-                    id: (0, uuid_1.v4)(),
-                    eventTimestamp: new Date(),
-                    status: Transaction_model_1.Status.FAILED,
-                    eventType: 'REQUEST_TOKEN',
-                    eventText: 'Request token',
-                    source: 'API',
-                    eventData: JSON.stringify({
-                        reason: 'TRANSACTION_TIMEOUT'
-                    }),
-                    transactionId: transactionId,
+                vendType: meter.vendType,
+                id: meter.id,
+            };
+            const transactionEventService = new Event_service_1.default.transactionEventService(transaction, meterInfo, transaction.superagent);
+            yield transactionEventService.addPowerPurchaseInitiatedEvent(bankRefId, amount);
+            const { user, partnerEntity } = yield VendorControllerValdator.requestToken({ bankRefId, transactionId });
+            yield Transaction_service_1.default.updateSingleTransaction(transactionId, {
+                bankRefId,
+                bankComment,
+                amount,
+                status: Transaction_model_1.Status.PENDING,
+            });
+            const vendorTokenConsumer = new VendorTokenReceivedSubscriber(transaction, res);
+            yield vendorTokenConsumer.start();
+            try {
+                const response = yield Vendor_1.VendorPublisher.publishEventForInitiatedPowerPurchase({
+                    transactionId: transaction.id,
+                    user: {
+                        name: user.name,
+                        email: user.email,
+                        address: user.address,
+                        phoneNumber: user.phoneNumber,
+                    },
+                    partner: {
+                        email: partnerEntity.email,
+                    },
+                    meter: meterInfo,
+                    superAgent: transaction.superagent,
                 });
-                yield Transaction_service_1.default.updateSingleTransaction(transactionId, { status: Transaction_model_1.Status.PENDING, bankComment, bankRefId });
-                const notification = yield Notification_service_1.default.addNotification({
-                    id: (0, uuid_1.v4)(),
-                    title: 'Failed transaction',
-                    heading: 'Failed transaction',
-                    message: `
-                    Failed transaction for ${meter.meterNumber} with amount ${amount}
-
-                    Bank Ref: ${bankRefId}
-                    Bank Comment: ${bankComment}
-                    Transaction Id: ${transactionId}                    
-                    `,
-                    entityId: partnerEntity.id,
-                    read: false,
-                });
-                // Check if partner wants to receive notifications for failed transactions
-                if (partnerEntity.notificationSettings.failedTransactions) {
-                    yield Notification_1.default.sendNotificationToUser(partnerEntity.id, notification);
+                if (response instanceof Error) {
+                    throw console_1.error;
                 }
-                throw new Errors_1.GateWayTimeoutError('Transaction timeout');
+                const tokenHasBeenSentFromVendorConsumer = vendorTokenConsumer.getTokenSentState();
+                if (!tokenHasBeenSentFromVendorConsumer) {
+                    res.status(200).json({
+                        status: "success",
+                        message: "Token purchase initiated successfully",
+                        data: {
+                            transaction: yield Transaction_service_1.default.viewSingleTransaction(transactionId),
+                        },
+                    });
+                    return;
+                }
+                yield transactionEventService.addTokenSentToPartnerEvent();
+                return;
             }
-            const discoLogo = Constants_1.DISCO_LOGO[transaction.disco.toLowerCase()];
-            // Add Power Unit to store token 
-            const newPowerUnit = yield PowerUnit_service_1.default.addPowerUnit({
-                id: (0, uuid_1.v4)(),
-                transactionId: transactionId,
-                disco: transaction.disco,
-                discoLogo,
-                amount: amount,
-                meterId: meter.id,
-                superagent: transaction.superagent,
-                address: meter.address,
-                token: Constants_1.NODE_ENV === 'development' ? (0, Helper_1.generateRandomToken)() : tokenInfo.data.token,
-                tokenNumber: tokenInfo.token,
-                tokenUnits: tokenInfo.units
-            });
-            // Update Transaction
-            // TODO: Add request token event to transaction
-            yield Event_service_1.default.addEvent({
-                id: (0, uuid_1.v4)(),
-                eventTimestamp: new Date(),
-                status: Transaction_model_1.Status.COMPLETE,
-                eventType: 'REQUEST_TOKEN',
-                eventText: 'Request token',
-                source: 'API',
-                eventData: JSON.stringify({}),
-                transactionId: transactionId,
-            });
-            yield Transaction_service_1.default.updateSingleTransaction(transactionId, { amount, bankRefId, bankComment, status: Transaction_model_1.Status.COMPLETE });
-            Email_1.default.sendEmail({
-                to: user.email,
-                subject: 'Token Purchase',
-                html: yield new Email_1.EmailTemplate().receipt({
-                    transaction: transaction,
-                    meterNumber: meter === null || meter === void 0 ? void 0 : meter.meterNumber,
-                    token: newPowerUnit.token
-                })
-            }).then((r) => __awaiter(this, void 0, void 0, function* () {
-                yield Event_service_1.default.addEvent({
-                    id: (0, uuid_1.v4)(),
-                    eventTimestamp: new Date(),
-                    status: Transaction_model_1.Status.COMPLETE,
-                    eventType: 'TOKEN_SENT',
-                    eventText: 'Sent token',
-                    source: 'API',
-                    eventData: JSON.stringify({
-                        userEmail: user.email
-                    }),
-                    transactionId: transactionId,
-                });
-            }));
+            catch (error) {
+                Logger_1.default.error('SuttingDown vendor token consumer of id');
+                yield vendorTokenConsumer.shutdown();
+            }
+        });
+    }
+    static getTransactionStage(events) {
+        /**
+         * The events are in groups, if the last event in the group is not complete, then the transaction is still in that stage
+         *
+         * METER_VALIDATION stage - METER_VALIDATION_REQUEST_SENT_TO_VENDOR, METER_VALIDATION_RECIEVED_FROM_VENDOR
+         * CREATE_USER stage - CREATE_USER_INITIATED, CREATE_USER_CONFIRMED
+         * POWER_PURCHASE stage - POWER_PURCHASE_INITIATED_BY_CUSTOMER, TOKEN_RECIEVED_FROM_VENDOR
+         *      Power purchase has other stages that may occur due to error
+         *      GET_TRANSACTION_TOKEN stage - GET_TRANSACTION_TOKEN_FROM_VENDOR_INITIATED, GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY, GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR
+         *
+         * WEBHOOK_NOTIFICATION stage - WEBHOOK_NOTIFICATION_SENT_TO_PARTNER, WEBHOOK_NOTIFICATION_CONFIRMED_FROM_PARTNER
+         * TOKEN_SENT stage - TOKEN_SENT_TO_PARTNER, TOKEN_SENT_TO_EMAIL, TOKEN_SENT_TO_NUMBER
+         * PARTNER_TRANSACTION_COMPLETE stage - PARTNER_TRANSACTION_COMPLETE
+         */
+        /**
+         * Find the stage that the transaction is in, then continue from there
+         *
+         * If transaction is in power purchase stage, check if it is in the GET_TRANSACTION_TOKEN stage
+         */
+        const stages = {
+            METER_VALIDATION: [
+                Constants_2.TOPICS.METER_VALIDATION_REQUEST_SENT_TO_VENDOR, Constants_2.TOPICS.METER_VALIDATION_RECIEVED_FROM_VENDOR, Constants_2.TOPICS.METER_VALIDATION_REQUEST_SENT_TO_VENDOR,
+            ],
+            CREATE_USER: [
+                Constants_2.TOPICS.CREATE_USER_INITIATED, Constants_2.TOPICS.CREATE_USER_CONFIRMED
+            ],
+            POWER_PURCHASE: [
+                Constants_2.TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER, Constants_2.TOPICS.TOKEN_RECIEVED_FROM_VENDOR
+            ],
+            GET_TRANSACTION_TOKEN: [
+                Constants_2.TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_INITIATED, Constants_2.TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY, Constants_2.TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR
+            ],
+            WEBHOOK_NOTIFICATION: [
+                Constants_2.TOPICS.WEBHOOK_NOTIFICATION_SENT_TO_PARTNER, Constants_2.TOPICS.WEBHOOK_NOTIFICATION_CONFIRMED_FROM_PARTNER
+            ],
+            TOKEN_SENT: [
+                Constants_2.TOPICS.TOKEN_SENT_TO_PARTNER, Constants_2.TOPICS.TOKEN_SENT_TO_EMAIL, Constants_2.TOPICS.TOKEN_SENT_TO_NUMBER
+            ],
+            PARTNER_TRANSACTION_COMPLETE: [
+                Constants_2.TOPICS.PARTNER_TRANSACTION_COMPLETE
+            ]
+        };
+        const stagesKeys = Object.keys(stages);
+        // Sort events by timestamp
+        const sortedEvents = events.sort((a, b) => {
+            return a.createdAt.getTime() - b.createdAt.getTime();
+        });
+        // Get the last event for the transaction
+        const lastEventInTransaction = sortedEvents[sortedEvents.length - 1];
+        // Find the stage that the latest event belongs to
+        const stage = stagesKeys.find((stage) => {
+            const stageEvents = stages[stage];
+            return stageEvents.includes(lastEventInTransaction.eventType);
+        });
+        return { stage, lastEventInTransaction };
+    }
+    static replayTransaction(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { eventId } = req.body;
+            const event = yield Event_service_1.default.viewSingleEvent(eventId);
+            if (!event) {
+                throw new Errors_1.NotFoundError('Event not found');
+            }
+            const transaction = yield Transaction_service_1.default.viewSingleTransaction(event.transactionId);
+            if (!transaction) {
+                throw new Errors_1.NotFoundError('Transaction not found');
+            }
+            const { stage, lastEventInTransaction } = this.getTransactionStage(yield transaction.$get('events'));
+            const meter = yield transaction.$get('meter');
+            if (!meter) {
+                throw new Errors_1.InternalServerError('Meter not found for replayed transaction');
+            }
+            switch (stage) {
+                case 'GET_TRANSACTION_TOKEN':
+                    yield VendorControllerUtil.replayRequestToken({
+                        transaction,
+                        meterInfo: {
+                            meterNumber: meter.meterNumber,
+                            disco: transaction.disco,
+                            vendType: meter.vendType,
+                            id: meter.id,
+                        },
+                        previousRetryEvent: lastEventInTransaction
+                    });
+                    break;
+                case 'WEBHOOK_NOTIFICATION':
+                    yield VendorControllerUtil.replayWebhookNotification({
+                        meterInfo: {
+                            meterNumber: meter.meterNumber,
+                            disco: transaction.disco,
+                            vendType: meter.vendType,
+                            id: meter.id,
+                        },
+                        transaction,
+                    });
+                    break;
+                case 'TOKEN_SENT':
+                    yield VendorControllerUtil.replayTokenSent({
+                        transaction,
+                    });
+                default:
+                    throw new Errors_1.BadRequestError('Transaction cannot be replayed');
+            }
             res.status(200).json({
                 status: 'success',
-                message: 'Token retrieved successfully',
+                message: 'Transaction replayed successfully',
                 data: {
-                    newPowerUnit: ResponseTrimmer_1.default.trimPowerUnit(newPowerUnit)
+                    transaction: yield Transaction_service_1.default.viewSingleTransaction(transaction.id)
                 }
             });
         });
@@ -317,22 +553,25 @@ class VendorController {
         return __awaiter(this, void 0, void 0, function* () {
             let discos = [];
             switch (Constants_1.DEFAULT_ELECTRICITY_PROVIDER) {
-                case 'BAXI':
+                case "BAXI":
                     discos = yield Vendor_service_1.default.baxiFetchAvailableDiscos();
                     break;
-                case 'BUYPOWERNG':
+                case "BUYPOWERNG":
                     discos = yield Vendor_service_1.default.buyPowerFetchAvailableDiscos();
+                    break;
+                case 'IRECHARGE':
+                    discos = yield Vendor_service_1.default.irechargeFetchAvailableDiscos();
                     break;
                 default:
                     discos = [];
                     break;
             }
             res.status(200).json({
-                status: 'success',
-                message: 'Discos retrieved successfully',
+                status: "success",
+                message: "Discos retrieved successfully",
                 data: {
-                    discos: discos
-                }
+                    discos: discos,
+                },
             });
         });
     }
@@ -341,21 +580,21 @@ class VendorController {
             const { disco } = req.query;
             let result = false;
             switch (Constants_1.DEFAULT_ELECTRICITY_PROVIDER) {
-                case 'BAXI':
+                case "BAXI":
                     result = yield Vendor_service_1.default.baxiCheckDiscoUp(disco);
                     break;
-                case 'BUYPOWERNG':
+                case "BUYPOWERNG":
                     result = yield Vendor_service_1.default.buyPowerCheckDiscoUp(disco);
                     break;
                 default:
-                    throw new Errors_1.InternalServerError('An error occured');
+                    throw new Errors_1.InternalServerError("An error occured");
             }
             res.status(200).json({
-                status: 'success',
-                message: 'Disco check successful',
+                status: "success",
+                message: "Disco check successful",
                 data: {
-                    discAvailable: result
-                }
+                    discAvailable: result,
+                },
             });
         });
     }
@@ -364,34 +603,29 @@ class VendorController {
             const { bankRefId } = req.body;
             const transaction = yield Transaction_service_1.default.viewSingleTransactionByBankRefID(bankRefId);
             if (!transaction)
-                throw new Errors_1.NotFoundError('Transaction not found');
-            const meter = yield transaction.$get('meter');
+                throw new Errors_1.NotFoundError("Transaction not found");
+            const meter = yield transaction.$get("meter");
             if (!meter)
-                throw new Errors_1.InternalServerError('Transaction does not have a meter');
-            const partner = yield transaction.$get('partner');
-            const entity = yield (partner === null || partner === void 0 ? void 0 : partner.$get('entity'));
+                throw new Errors_1.InternalServerError("Transaction does not have a meter");
+            const partner = yield transaction.$get("partner");
+            const entity = yield (partner === null || partner === void 0 ? void 0 : partner.$get("entity"));
             if (!entity)
-                throw new Errors_1.InternalServerError('Entity not found');
+                throw new Errors_1.InternalServerError("Entity not found");
             // Check event for request token
             const requestTokenEvent = yield Event_model_1.default.findOne({
-                where: { transactionId: transaction.id, eventType: 'REQUEST_TOKEN' }
+                where: { transactionId: transaction.id, eventType: "POWER_PURCHASE_INITIATED_BY_CUSTOMER" },
             });
             if (!requestTokenEvent) {
-                throw new Errors_1.BadRequestError('Request token event not found');
+                throw new Errors_1.BadRequestError("Request token event not found");
             }
-            yield Event_service_1.default.addEvent({
-                id: (0, uuid_1.v4)(),
-                eventTimestamp: new Date(),
-                status: Transaction_model_1.Status.COMPLETE,
-                eventType: 'CONFIRM_PAYMENT',
-                eventText: 'Confirm payment',
-                source: 'API',
-                eventData: JSON.stringify({}),
-                transactionId: transaction.id,
-            });
+            new Event_service_1.default.transactionEventService(transaction, {
+                meterNumber: meter.meterNumber,
+                disco: transaction.disco,
+                vendType: meter.vendType,
+            }, transaction.superagent).addPartnerTransactionCompleteEvent();
             res.status(200).json({
-                status: 'success',
-                message: 'Payment confirmed successfully',
+                status: "success",
+                message: "Payment confirmed successfully",
                 data: {
                     transaction: {
                         transactionId: transaction.id,
@@ -404,8 +638,8 @@ class VendorController {
                         phone: meter.userId,
                         vendType: meter.vendType,
                         name: meter.userId,
-                    }
-                }
+                    },
+                },
             });
         });
     }

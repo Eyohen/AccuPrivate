@@ -39,6 +39,9 @@ const Errors_1 = require("../../utils/Errors");
 const Email_1 = __importStar(require("../../utils/Email"));
 const Validators_1 = __importDefault(require("../../utils/Validators"));
 const Entity_service_1 = __importDefault(require("../../services/Entity/Entity.service"));
+const Token_1 = require("../../utils/Auth/Token");
+const Constants_1 = require("../../utils/Constants");
+const Role_model_1 = require("../../models/Role.model");
 class AuthControllerValidator {
     static activatePartner() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -56,6 +59,13 @@ class AuthController {
             const entity = yield Entity_service_1.default.viewSingleEntityByEmail(email);
             if (!entity) {
                 throw new Errors_1.BadRequestError('Entity not found');
+            }
+            const role = yield entity.$get('role');
+            if (!role) {
+                throw new Errors_1.BadRequestError('Role not found');
+            }
+            if (role.name === Role_model_1.RoleEnum.SuperAdmin) {
+                throw new Errors_1.ForbiddenError('Unauthorized access');
             }
             yield entity.update({ status: Object.assign(Object.assign({}, entity.status), { activated: true }) });
             yield Email_1.default.sendEmail({
@@ -81,6 +91,13 @@ class AuthController {
             if (!entity) {
                 throw new Errors_1.BadRequestError('Entity not found');
             }
+            const role = yield entity.$get('role');
+            if (!role) {
+                throw new Errors_1.BadRequestError('Role not found');
+            }
+            if (role.name === Role_model_1.RoleEnum.SuperAdmin) {
+                throw new Errors_1.ForbiddenError('Unauthorized access');
+            }
             yield entity.update({ status: Object.assign(Object.assign({}, entity.status), { activated: true }) });
             yield Email_1.default.sendEmail({
                 to: entity.email,
@@ -91,6 +108,178 @@ class AuthController {
                 status: 'success',
                 message: 'Deactivated user successfully',
                 data: null
+            });
+        });
+    }
+    static requestSuperAdminActivation(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { email } = req.body;
+            const validEmail = Validators_1.default.validateEmail(email);
+            if (!validEmail) {
+                throw new Errors_1.BadRequestError('Invalid email');
+            }
+            const entity = yield Entity_service_1.default.viewSingleEntityByEmail(email);
+            if (!entity) {
+                throw new Errors_1.BadRequestError('Entity not found');
+            }
+            const role = yield entity.$get('role');
+            if (!role) {
+                throw new Errors_1.BadRequestError('Role not found');
+            }
+            if (role.name !== Role_model_1.RoleEnum.SuperAdmin) {
+                throw new Errors_1.ForbiddenError('Unauthorized access');
+            }
+            const activationCode = yield Token_1.AuthUtil.generateCode({ type: 'su_activation', entity, expiry: 5 * 60 * 60 });
+            const [activationCode1, activationCode2, activationCode3] = activationCode.split(':');
+            console.log({
+                activationCode1,
+                activationCode2,
+                activationCode3
+            });
+            // Send activation code to 3 Admins
+            Email_1.default.sendEmail({
+                to: Constants_1.SU_HOST_EMAIL_1,
+                html: yield (new Email_1.EmailTemplate().suAccountActivation({
+                    email: Constants_1.SU_HOST_EMAIL_1,
+                    authorizationCode: activationCode1,
+                })),
+                subject: 'Super Admin account activation request'
+            });
+            Email_1.default.sendEmail({
+                to: Constants_1.SU_HOST_EMAIL_2,
+                html: yield (new Email_1.EmailTemplate().suAccountActivation({
+                    email: Constants_1.SU_HOST_EMAIL_2,
+                    authorizationCode: activationCode2,
+                })),
+                subject: 'Super Admin account activation request'
+            });
+            Email_1.default.sendEmail({
+                to: Constants_1.SU_HOST_EMAIL_3,
+                html: yield (new Email_1.EmailTemplate().suAccountActivation({
+                    email: Constants_1.SU_HOST_EMAIL_3,
+                    authorizationCode: activationCode3,
+                })),
+                subject: 'Super Admin account activation request'
+            });
+            const accessToken = yield Token_1.AuthUtil.generateToken({ type: 'su_activation', entity, profile: entity, expiry: 5 * 60 * 60 });
+            res.status(200).json({
+                status: 'success',
+                message: 'Activation request sent successfully',
+                data: {
+                    accessToken
+                }
+            });
+        });
+    }
+    static completeSuperAdminActivationRequest(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { authorizationCode1, authorizationCode2, authorizationCode3 } = req.body;
+            const authorizationCode = `${authorizationCode1}:${authorizationCode2}:${authorizationCode3}`;
+            const entity = yield Entity_service_1.default.viewSingleEntityByEmail(req.user.user.entity.email);
+            if (!entity) {
+                throw new Errors_1.BadRequestError('Entity not found');
+            }
+            const validCode = yield Token_1.AuthUtil.compareCode({ entity, tokenType: 'su_activation', token: authorizationCode });
+            if (!validCode) {
+                throw new Errors_1.BadRequestError('Invalid authorization code');
+            }
+            yield entity.update({ status: Object.assign(Object.assign({}, entity.status), { activated: true }) });
+            yield Email_1.default.sendEmail({
+                to: entity.email,
+                subject: 'Account Activation',
+                html: yield new Email_1.EmailTemplate().accountActivation(entity.email)
+            });
+            yield Token_1.AuthUtil.deleteToken({ entity, tokenType: 'su_activation', tokenClass: 'code' });
+            res.status(200).json({
+                status: 'success',
+                message: 'Super admin activation successful',
+                data: null
+            });
+        });
+    }
+    static completeSuperAdminDeActivationRequest(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { authorizationCode1, authorizationCode2, authorizationCode3 } = req.body;
+            const authorizationCode = `${authorizationCode1}:${authorizationCode2}:${authorizationCode3}`;
+            const entity = yield Entity_service_1.default.viewSingleEntityByEmail(req.user.user.entity.email);
+            if (!entity) {
+                throw new Errors_1.BadRequestError('Entity not found');
+            }
+            const validCode = yield Token_1.AuthUtil.compareCode({ entity, tokenType: 'su_activation', token: authorizationCode });
+            if (!validCode) {
+                throw new Errors_1.BadRequestError('Invalid authorization code');
+            }
+            yield entity.update({ status: Object.assign(Object.assign({}, entity.status), { activated: false }) });
+            yield Email_1.default.sendEmail({
+                to: entity.email,
+                subject: 'Account Deactivation',
+                html: yield new Email_1.EmailTemplate().accountActivation(entity.email)
+            });
+            yield Token_1.AuthUtil.deleteToken({ entity, tokenType: 'su_activation', tokenClass: 'code' });
+            res.status(200).json({
+                status: 'success',
+                message: 'Super admin deactivation successful',
+                data: null
+            });
+        });
+    }
+    static requestSuperAdminDeActivation(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { email } = req.body;
+            const validEmail = Validators_1.default.validateEmail(email);
+            if (!validEmail) {
+                throw new Errors_1.BadRequestError('Invalid email');
+            }
+            const entity = yield Entity_service_1.default.viewSingleEntityByEmail(email);
+            if (!entity) {
+                throw new Errors_1.BadRequestError('Entity not found');
+            }
+            const role = yield entity.$get('role');
+            if (!role) {
+                throw new Errors_1.BadRequestError('Role not found');
+            }
+            if (role.name !== Role_model_1.RoleEnum.SuperAdmin) {
+                throw new Errors_1.ForbiddenError('Unauthorized access');
+            }
+            const deactivationCode = yield Token_1.AuthUtil.generateCode({ type: 'su_activation', entity, expiry: 5 * 60 * 60 });
+            const [deactivationCode1, deactivationCode2, deactivationCode3] = deactivationCode.split(':');
+            console.log({
+                deactivationCode1,
+                deactivationCode2,
+                deactivationCode3
+            });
+            // Send activation code to 3 Admins
+            Email_1.default.sendEmail({
+                to: Constants_1.SU_HOST_EMAIL_1,
+                html: yield (new Email_1.EmailTemplate().suDeAccountActivation({
+                    email: Constants_1.SU_HOST_EMAIL_1,
+                    authorizationCode: deactivationCode1,
+                })),
+                subject: 'Super Admin account deactivation request'
+            });
+            Email_1.default.sendEmail({
+                to: Constants_1.SU_HOST_EMAIL_2,
+                html: yield (new Email_1.EmailTemplate().suDeAccountActivation({
+                    email: Constants_1.SU_HOST_EMAIL_2,
+                    authorizationCode: deactivationCode2,
+                })),
+                subject: 'Super Admin account deactivation request'
+            });
+            Email_1.default.sendEmail({
+                to: Constants_1.SU_HOST_EMAIL_3,
+                html: yield (new Email_1.EmailTemplate().suDeAccountActivation({
+                    email: Constants_1.SU_HOST_EMAIL_3,
+                    authorizationCode: deactivationCode3,
+                })),
+                subject: 'Super Admin account deactivation request'
+            });
+            const accessToken = yield Token_1.AuthUtil.generateToken({ type: 'su_activation', entity, profile: entity, expiry: 5 * 60 * 60 });
+            res.status(200).json({
+                status: 'success',
+                message: 'Deactivation request sent successfully',
+                data: {
+                    accessToken
+                }
             });
         });
     }

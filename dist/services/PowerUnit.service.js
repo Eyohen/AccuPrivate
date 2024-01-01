@@ -45,8 +45,22 @@ class PowerUnitService {
             return powerUnit;
         });
     }
-    static updateSinglePowerUnit() {
+    static viewSinglePowerUnitByTransactionId(transactionId) {
         return __awaiter(this, void 0, void 0, function* () {
+            const powerUnit = yield PowerUnit_model_1.default.findOne({ where: { transactionId } });
+            return powerUnit;
+        });
+    }
+    static updateSinglePowerUnit(powerUnitId, update) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const powerUnit = yield PowerUnit_model_1.default.findByPk(powerUnitId);
+            if (!powerUnit)
+                throw new Error('PowerUnit not found');
+            yield powerUnit.update(update);
+            const updatedPowerUnit = yield PowerUnit_model_1.default.findByPk(powerUnitId);
+            if (!updatedPowerUnit)
+                throw new Error('PowerUnit not found');
+            return updatedPowerUnit;
         });
     }
 }
