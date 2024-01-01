@@ -18,7 +18,7 @@ export default class ConsumerRouter {
         new TransactionConsumer().start();
         new UserConsumer().start();
         new VendorConsumer().start();
-        // new WebhookConsumer().start();
+        new WebhookConsumer().start();
     }
 }
 

@@ -31,7 +31,12 @@ export default class AuthController {
             throw new BadRequestError('Entity not found')
         }
 
-        if (req.user.user.entity.role === RoleEnum.SuperAdmin) {
+        const role = await entity.$get('role')
+        if (!role) {
+            throw new BadRequestError('Role not found')
+        }
+
+        if (role.name === RoleEnum.SuperAdmin) {
             throw new ForbiddenError('Unauthorized access')
         }
  
@@ -63,7 +68,12 @@ export default class AuthController {
             throw new BadRequestError('Entity not found')
         }
 
-        if (req.user.user.entity.role === RoleEnum.SuperAdmin) {
+        const role = await entity.$get('role')
+        if (!role) {
+            throw new BadRequestError('Role not found')
+        }
+
+        if (role.name === RoleEnum.SuperAdmin) {
             throw new ForbiddenError('Unauthorized access')
         }
 
@@ -93,6 +103,15 @@ export default class AuthController {
         const entity = await EntityService.viewSingleEntityByEmail(email)
         if (!entity) {
             throw new BadRequestError('Entity not found')
+        }
+
+        const role = await entity.$get('role')
+        if (!role) {
+            throw new BadRequestError('Role not found')
+        }
+
+        if (role.name !== RoleEnum.SuperAdmin) {
+            throw new ForbiddenError('Unauthorized access')
         }
 
         const activationCode = await AuthUtil.generateCode({ type: 'su_activation', entity, expiry: 5 * 60 * 60 })
@@ -219,6 +238,15 @@ export default class AuthController {
             throw new BadRequestError('Entity not found')
         }
 
+        const role = await entity.$get('role')
+        if (!role) {
+            throw new BadRequestError('Role not found')
+        }
+
+        if (role.name !== RoleEnum.SuperAdmin) {
+            throw new ForbiddenError('Unauthorized access')
+        }
+        
         const deactivationCode = await AuthUtil.generateCode({ type: 'su_activation', entity, expiry: 5 * 60 * 60 })
         const [deactivationCode1, deactivationCode2, deactivationCode3] = deactivationCode.split(':') as ReturnType<typeof randomUUID>[]
 

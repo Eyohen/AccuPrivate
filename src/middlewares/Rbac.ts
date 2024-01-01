@@ -1,12 +1,19 @@
 import { NextFunction, Request, Response } from "express";
+import { RoleEnum } from "../models/Role.model";
+import { AuthenticatedController, AuthenticatedRequest } from "../utils/Interface";
+import { ForbiddenError } from "../utils/Errors";
 //
-// class RBACMiddelware {
-//     private static validateUsersPermission
-//
-//     static async checkRole = () => {
-//         return (req: Request, res: Response, next: NextFunction) {
-//
-//         }
-//     }
-// }
+export default class RBACMiddelware {
+    static validateRole = (allowedRoles: RoleEnum[]) => {
+        return AuthenticatedController(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+            console.log(req.user.user.entity)
+            const userIsPermitted = allowedRoles.includes(req.user.user.entity.role)
+            if (!userIsPermitted) {
+                throw new ForbiddenError('Unauthorized access')
+            }
+
+            next()
+        })
+    }
+}
 
