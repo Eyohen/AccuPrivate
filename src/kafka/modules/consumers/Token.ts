@@ -20,6 +20,7 @@ import {
 } from "../util/Interface";
 import MessageProcessor from "../util/MessageProcessor";
 import { v4 as uuidv4 } from "uuid";
+import EventService from "../../../services/Event.service";
 
 interface EventMessage {
     meter: {
@@ -158,16 +159,43 @@ export class TokenHandlerUtil {
 
     static async getNextBestVendorForVendRePurchase(currentVendor: Transaction['superagent']) {
         // TODO: Implement logic to calculate best rates from different vendors
-        return currentVendor === 'BUYPOWERNG' ? 'BAXI' : 'BUYPOWERNG'
+        if (currentVendor === 'BUYPOWERNG') return 'BAXI'
+        else if (currentVendor === 'BAXI') return 'BUYPOWERNG'
+        else throw new Error('Invalid superagent')
     }
 }
 
 
 class TokenHandler extends Registry {
+    private static async retryPowerPurchaseWithNewVendor(data: PublisherEventAndParameters[TOPICS.RETRY_PURCHASE_FROM_NEW_VENDOR]) {
+        const transaction = await TransactionService.viewSingleTransaction(data.transactionId);
+        if (!transaction) {
+            throw new Error(`Error fetching transaction with id ${data.transactionId}`);
+        }
+        if (!transaction.bankRefId) {
+            throw new Error('BankRefId not found')
+        }
+        
+        await TransactionService.updateSingleTransaction(transaction.id, { superagent: data.newVendor })
+        const transactionEventService = new EventService.transactionEventService(transaction, data.meter, data.newVendor);
+        await transactionEventService.addPowerPurchaseInitiatedEvent(transaction.bankRefId, transaction.amount);
+        await VendorPublisher.publishEventForInitiatedPowerPurchase({
+            meter: data.meter,
+            user: data.user,
+            partner: data.partner,
+            transactionId: transaction.id,
+            superAgent: data.newVendor,
+        })
+    }
 
     private static async handleTokenRequest(
         data: PublisherEventAndParameters[TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER],
     ) {
+        console.log({
+            log: 'New token request',
+            currentVendor: data.superAgent
+        })
+
         const transaction = await TransactionService.viewSingleTransaction(
             data.transactionId,
         );
@@ -267,7 +295,7 @@ class TokenHandler extends Registry {
          *
          * In the case of 1 and 2, we need to requery the transaction at intervals
          */
-        const transactionTimedOutFromBuypower = tokenInfo.source === 'BUYPOWERNG' ? tokenInfo.data.responseCode == 202 : false // TODO: Add check for when transaction timeout from baxi
+        let transactionTimedOutFromBuypower = tokenInfo.source === 'BUYPOWERNG' ? tokenInfo.data.responseCode == 202 : false // TODO: Add check for when transaction timeout from baxi
         let tokenInResponse: string | null = null;
         if (tokenInfo.source === 'BUYPOWERNG') {
             tokenInResponse = tokenInfo.data.responseCode !== 202 ? tokenInfo.data.token : null
@@ -276,8 +304,8 @@ class TokenHandler extends Registry {
         }
 
         // Transaction timedout from buypower - Requery the transactio at intervals
-        if (transactionTimedOutFromBuypower || !tokenInResponse) {  //--1 TOGGLE Use this To test for successful token request
-            // if (true) {    // --0 TOGGLE  Use thisTo test for failed token request - Proceeds to requery transaction
+        transactionTimedOutFromBuypower = true // TOGGLE  Use thisTo test for failed token request - Proceeds to requery transaction
+        if (transactionTimedOutFromBuypower || !tokenInResponse) { 
             transactionTimedOutFromBuypower &&
                 (await transactionEventService.addTokenRequestTimedOutEvent());
             !tokenInResponse &&
@@ -305,7 +333,6 @@ class TokenHandler extends Registry {
         // Token purchase was successful
         // And token was found in request
         // Add and publish token received event
-        console.log(tokenInfo)
         await transactionEventService.addTokenReceivedEvent(tokenInResponse);
         return await VendorPublisher.publishEventForTokenReceivedFromVendor({
             transactionId: transaction!.id,
@@ -402,6 +429,13 @@ class TokenHandler extends Registry {
             return;
         }
 
+        const user = await transaction.$get('user')
+        const meter = await transaction.$get('meter')
+        const partner = await transaction.$get('partner')
+        if (!user || !meter || !partner) {
+            throw new Error("Transaction  required relations not found");
+        }
+
         const transactionEventService = new TransactionEventService(
             transaction,
             data.meter,
@@ -434,12 +468,31 @@ class TokenHandler extends Registry {
         // if (!transactionSuccess) { // --1 TOGGLE
         if (!transactionSuccess) { //--0 TOGGLE 
             if (retry.count > retry.limit) {
+                logger.warn('Retry limit reached, retrying with new vendor')
                 // Attempt purchase from new vendor
-                return
+                if (!transaction.bankRefId) throw new Error('BankRefId not found')
+
+                const newVendor = await TokenHandlerUtil.getNextBestVendorForVendRePurchase(transaction.superagent)
+                await transactionEventService.addPowerPurchaseRetryWithNewVendor({ bankRefId: transaction.bankRefId, currentVendor: transaction.superagent, newVendor })
+                
+                retry.count = 0
+                return await VendorPublisher.publishEventForRetryPowerPurchaseWithNewVendor({
+                    meter: data.meter,
+                    partner: partner,
+                    transactionId: transaction.id,
+                    superAgent: newVendor,
+                    user: {
+                        name: transaction.user.name as string,
+                        email: transaction.user.email,
+                        address: transaction.user.address,
+                        phoneNumber: transaction.user.phoneNumber,
+                    },
+                    newVendor,
+                })
             }
 
             logger.error(
-                `Error requerying transaction with id ${data.transactionId}`,
+                `Error requerying transaction with id ${data.transactionId} `,
             );
             // TODO: Trigger requery transaction at interval
             let cause = TransactionErrorCause.UNKNOWN;
@@ -461,11 +514,6 @@ class TokenHandler extends Registry {
                 superAgent: data.superAgent
             });
             return;
-        }
-
-        const meter = await transaction.$get('meter')
-        if (!meter) {
-            throw new Error('Meter not found')
         }
 
         const token = requeryResult.source === 'BAXI' ? requeryResult.data?.rawOutput.token : requeryResult.data.token
@@ -518,6 +566,7 @@ class TokenHandler extends Registry {
             this.requeryTransactionForToken,
         [TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER_REQUERY]:
             this.requeryTransactionForToken,
+        [TOPICS.RETRY_PURCHASE_FROM_NEW_VENDOR]: this.retryPowerPurchaseWithNewVendor
     };
 }
 
