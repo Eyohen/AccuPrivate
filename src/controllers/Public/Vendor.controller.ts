@@ -229,7 +229,7 @@ class VendorControllerUtil {
         await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
             {
                 eventService: transactionEventService,
-                eventMessage: {
+                eventData: {
                     meter: {
                         meterNumber: meterInfo.meterNumber,
                         disco: transaction.disco,
@@ -241,8 +241,9 @@ class VendorControllerUtil {
                         code: 100,
                         cause: TransactionErrorCause.UNKNOWN
                     },
-
                 },
+                tokenInResponse: null,
+                transactionTimedOutFromBuypower: false,
                 superAgent: transaction.superagent,
                 retryCount: eventPayload.retryCount + 1
             }
