@@ -326,7 +326,7 @@ class TokenHandler extends Registry {
         }
 
         // Transaction timedout from buypower - Requery the transactio at intervals
-        transactionTimedOutFromBuypower = true // TOGGLE  Use thisTo test for failed token request - Proceeds to requery transaction
+        // transactionTimedOutFromBuypower = true // TOGGLE  Use thisTo test for failed token request - Proceeds to requery transaction
         if (transactionTimedOutFromBuypower || !tokenInResponse) {
             return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
                 {
@@ -473,7 +473,7 @@ class TokenHandler extends Registry {
          * When requerying a transaction, the response code is 201.
          */
         const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction)
-        requeryResult.responseCode = 400 //  TOGGLE if you intend to test for failed transacstion
+        // requeryResult.responseCode = 400 //  TOGGLE if you intend to test for failed transacstion
         const transactionSuccess = requeryResult.responseCode === 200;
         if (!transactionSuccess) {
             if (retry.count > retry.limit) {
@@ -504,7 +504,7 @@ class TokenHandler extends Registry {
             logger.error(
                 `Error requerying transaction with id ${data.transactionId} `,
             );
-            
+
             // TODO: Trigger requery transaction at interval
             let cause = TransactionErrorCause.UNKNOWN;
             if (requeryResult.responseCode === 201) {
