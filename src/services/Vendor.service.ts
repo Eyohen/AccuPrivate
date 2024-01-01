@@ -145,7 +145,7 @@ export class IRechargeVendorService {
     }
 
     static async validateMeter({ disco, reference, meterNumber }: { disco: string, meterNumber: string, reference: string }): Promise<any> {
-        const combinedString = `${this.VENDOR_CODE}."|".${reference}."|".${meterNumber}."|".${disco}."|".${this.PUBLIC_KEY}`
+        const combinedString = this.VENDOR_CODE + "|" + '12434324234234234' + "|" + meterNumber + "|" + disco + "|" + this.PUBLIC_KEY
         const hash = this.generateHash(combinedString)
 
         console.log({
@@ -210,7 +210,7 @@ export default class VendorService {
                 agentReference: transactionId
             })
 
-            return response.data.data
+            return response.data
         } catch (error: any) {
             logger.error(error)
             throw new Error(error.message)
@@ -229,7 +229,6 @@ export default class VendorService {
             const response = await this.baxiAxios().post<IBaxiValidateMeterResponse>('/verify', postData)
             return response.data.data
         } catch (error: any) {
-            logger.error(error)
             throw new Error(error.message)
         }
     }
@@ -404,7 +403,7 @@ export default class VendorService {
             vertical: 'ELECTRICITY'
         }
         const params: string = querystring.stringify(paramsObject);
-        
+
         try {
             // Make a GET request using the BuyPower Axios instance
             const response = await this.buyPowerAxios().get<IBuyPowerValidateMeterResponse>(`/check/meter?${params}`);

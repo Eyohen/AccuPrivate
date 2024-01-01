@@ -45,12 +45,29 @@ const retry = {
     limit: 3
 }
 
+interface TokenPurchaseData<T = Transaction['superagent']> {
+    transaction: Transaction;
+    meterNumber: string,
+    disco: string,
+    vendType: 'PREPAID' | 'POSTPAID',
+    phone: string,
+}
+
+const TransactionErrorCodeAndCause = {
+    501: TransactionErrorCause.MAINTENANCE_ACCOUNT_ACTIVATION_REQUIRED,
+    500: TransactionErrorCause.UNEXPECTED_ERROR,
+    202: TransactionErrorCause.TRANSACTION_TIMEDOUT
+}
+
 export function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
     // Use geometric progression to calculate wait time, where R = 2
     const waitTime = 2 ** (retryCount - 1)
     return waitTime
 
 }
+
+type ProcessVendRequestReturnData<T = Omit<Transaction['superagent'], 'IRECHARGE'>> =
+    T extends 'BAXI' ? Awaited<ReturnType<typeof VendorService.baxiVendToken>> : T extends 'BUYPOWERNG' ? Awaited<ReturnType<typeof VendorService.buyPowerVendToken>> | Error : never
 
 export class TokenHandlerUtil {
     static async triggerEventToRequeryTransactionTokenFromVendor({
@@ -69,7 +86,7 @@ export class TokenHandlerUtil {
          * 501 - Maintenance error
          * 500 - Unexpected Error
          */
-    
+
         logger.info(
             `Retrying transaction with id ${eventMessage.transactionId} from vendor`,
         );
@@ -83,7 +100,7 @@ export class TokenHandlerUtil {
             superAgent,
             waitTime: getCurrentWaitTimeForRequeryEvent(retryCount)
         };
-    
+
         // Start timer to requery transaction at intervals
         async function countDownTimer(time: number) {
             for (let i = time; i > 0; i--) {
@@ -94,7 +111,7 @@ export class TokenHandlerUtil {
         }
         console.log({ waitTime: eventMetaData.waitTime })
         countDownTimer(eventMetaData.waitTime);
-    
+
         // Publish event in increasing intervals of seconds i.e 1, 2, 4, 8, 16, 32, 64, 128, 256, 512
         setTimeout(async () => {
             logger.info('Retrying transaction from vendor')
@@ -103,8 +120,39 @@ export class TokenHandlerUtil {
             );
         }, eventMetaData.waitTime * 1000);
     }
-}
 
+    static async processVendRequest<T = Omit<Transaction['superagent'], 'IRECHARGE'>>(data: TokenPurchaseData): Promise<ProcessVendRequestReturnData<T>> {
+        const _data = {
+            transactionId: data.transaction.id,
+            meterNumber: data.meterNumber,
+            disco: data.disco,
+            vendType: data.vendType,
+            amount: data.transaction.amount,
+            phone: data.phone,
+        }
+
+        switch (data.transaction.superagent) {
+            case "BAXI":
+                return await VendorService.baxiVendToken(_data) as ProcessVendRequestReturnData<T>
+            case "BUYPOWERNG":
+                return await VendorService.buyPowerVendToken(_data).catch((e) => e)
+            default:
+                throw new Error("Invalid superagent");
+        }
+    }
+
+    private static async processVendRequestForBuypowerNg(data: TokenPurchaseData) {
+
+    }
+
+    private static async processVendRequestForIrecharge(data: TokenPurchaseData) {
+
+    }
+
+    private static async processVendRequestForBaxi(data: TokenPurchaseData) {
+
+    }
+}
 
 class TokenHandler extends Registry {
 
@@ -120,19 +168,22 @@ class TokenHandler extends Registry {
             );
             return;
         }
+
         const { user, meter, partner } = transaction;
 
+        if (transaction.superagent === 'IRECHARGE') {
+            throw 'Unsupported superagent'
+        }
+
         // Purchase token from vendor
-        const tokenInfo = (await VendorService.buyPowerVendToken({
-            transactionId: transaction.reference,
-            meterNumber: data.meter.meterNumber,
-            disco: data.meter.disco,
-            vendType: data.meter.vendType,
-            amount: transaction.amount,
+        const superagent = transaction.superagent
+        const tokenInfo = await TokenHandlerUtil.processVendRequest<typeof superagent>({
+            transaction,
+            meterNumber: meter.meterNumber,
+            disco: transaction.disco,
+            vendType: meter.vendType,
             phone: user.phoneNumber,
-        }).catch((e) => e)) as
-            | Error
-            | Awaited<ReturnType<typeof VendorService.buyPowerVendToken>>;
+        });
 
         const eventMessage = {
             meter: {
@@ -160,28 +211,19 @@ class TokenHandler extends Registry {
         if (tokenInfo instanceof Error) {
             if (tokenInfo instanceof AxiosError) {
                 /**
+                 * Note that these error codes are only valid for Buypower
                  * 202 - Timeout / Transaction is processing
                  * 501 - Maintenance error
                  * 500 - Unexpected error - Please requery
                  */
                 // If error is due to timeout, trigger event to requery transaction later
-                const responseCode = tokenInfo.response?.data.responseCode;
-                const requeryTxn =
-                    [202, 500, 501].includes(responseCode) ||
-                    tokenInfo.message === "Transaction timeout";
-                if (requeryTxn) {
-                    let cause = TransactionErrorCause.TRANSACTION_TIMEDOUT;
-                    if (responseCode === 501) {
-                        cause =
-                            TransactionErrorCause.MAINTENANCE_ACCOUNT_ACTIVATION_REQUIRED;
-                    } else if (responseCode === 500) {
-                        cause = TransactionErrorCause.UNEXPECTED_ERROR;
-                    }
+                let responseCode = tokenInfo.response?.data.responseCode as keyof typeof TransactionErrorCodeAndCause;
+                responseCode = tokenInfo.message === 'Transaction timeout' ? 202 : responseCode
 
-                    const _eventMessage = {
-                        ...eventMessage,
-                        error: { code: responseCode, cause },
-                    };
+                if ([202, 500, 501].includes(responseCode) && transaction.superagent === 'BUYPOWERNG') {
+                    const cause = TransactionErrorCodeAndCause[responseCode] ?? TransactionErrorCause.TRANSACTION_TIMEDOUT;
+                    const _eventMessage = { ...eventMessage, error: { code: responseCode, cause } };
+
                     return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
                         {
                             eventService: transactionEventService,
@@ -192,11 +234,11 @@ class TokenHandler extends Registry {
                     );
                 }
 
+                // This doesn't account for other errors that may arise from other Providers
+
                 // Other errors (4xx ...) occured while purchasing token
                 await transactionEventService.addTokenRequestFailedNotificationToPartnerEvent();
-                return await VendorPublisher.publishEventForFailedTokenRequest(
-                    eventMessage,
-                );
+                return await VendorPublisher.publishEventForFailedTokenRequest(eventMessage);
             }
 
             logger.error("Error purchasing token", tokenInfo);
@@ -217,12 +259,13 @@ class TokenHandler extends Registry {
          *
          * In the case of 1 and 2, we need to requery the transaction at intervals
          */
-        const transactionTimedOut = tokenInfo.data.responseCode == 202;
+       
+        const transactionTimedOut = (tokenInfo.data as any).responseCode == 202;
         const tokenInResponse = (tokenInfo as PurchaseResponse).data.token;
 
         // Transaction timedout - Requery the transactio at intervals
         if (transactionTimedOut || !tokenInResponse) {  //--1 TOGGLE Use this To test for successful token request
-        //--0 TOGGLE if (true) {    // Use thisTo test for failed token request - Proceeds to requery transaction
+            //--0 TOGGLE if (true) {    // Use thisTo test for failed token request - Proceeds to requery transaction
             transactionTimedOut &&
                 (await transactionEventService.addTokenRequestTimedOutEvent());
             !tokenInResponse &&
@@ -251,9 +294,7 @@ class TokenHandler extends Registry {
         // And token was found in request
         // Add and publish token received event
         const _tokenInfo = tokenInfo as PurchaseResponse;
-        await transactionEventService.addTokenReceivedEvent(
-            _tokenInfo.data.token,
-        );
+        await transactionEventService.addTokenReceivedEvent(_tokenInfo.data.token);
         return await VendorPublisher.publishEventForTokenReceivedFromVendor({
             transactionId: transaction!.id,
             user: {
@@ -346,7 +387,7 @@ class TokenHandler extends Registry {
         data: PublisherEventAndParameters[TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY],
     ) {
         retry.count = data.retryCount;
-        
+
         // Check if token has been found
         const transaction = await TransactionService.viewSingleTransaction(
             data.transactionId,
@@ -387,7 +428,7 @@ class TokenHandler extends Registry {
         });
         const transactionSuccess = requeryResult.responseCode === 200;
         if (!transactionSuccess) { // --1 TOGGLE
-        //--0 TOGGLE if (retry.count < retry.limit || !transactionSuccess) {
+            //--0 TOGGLE if (retry.count < retry.limit || !transactionSuccess) {
             logger.error(
                 `Error requerying transaction with id ${data.transactionId}`,
             );
