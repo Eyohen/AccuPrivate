@@ -155,6 +155,11 @@ export class TokenHandlerUtil {
                 throw new Error('Unsupported superagent')
         }
     }
+
+    static async getNextBestVendorForVendRePurchase(currentVendor: Transaction['superagent']) {
+        // TODO: Implement logic to calculate best rates from different vendors
+        return currentVendor === 'BUYPOWERNG' ? 'BAXI' : 'BUYPOWERNG'
+    }
 }
 
 
@@ -272,7 +277,7 @@ class TokenHandler extends Registry {
 
         // Transaction timedout from buypower - Requery the transactio at intervals
         if (transactionTimedOutFromBuypower || !tokenInResponse) {  //--1 TOGGLE Use this To test for successful token request
-            //--0 TOGGLE if (true) {    // Use thisTo test for failed token request - Proceeds to requery transaction
+            // if (true) {    // --0 TOGGLE  Use thisTo test for failed token request - Proceeds to requery transaction
             transactionTimedOutFromBuypower &&
                 (await transactionEventService.addTokenRequestTimedOutEvent());
             !tokenInResponse &&
@@ -300,8 +305,8 @@ class TokenHandler extends Registry {
         // Token purchase was successful
         // And token was found in request
         // Add and publish token received event
-        const _tokenInfo = tokenInfo as PurchaseResponse;
-        await transactionEventService.addTokenReceivedEvent(_tokenInfo.data.token);
+        console.log(tokenInfo)
+        await transactionEventService.addTokenReceivedEvent(tokenInResponse);
         return await VendorPublisher.publishEventForTokenReceivedFromVendor({
             transactionId: transaction!.id,
             user: {
@@ -318,7 +323,7 @@ class TokenHandler extends Registry {
                 meterNumber: meter.meterNumber,
                 disco: transaction!.disco,
                 vendType: meter.vendType,
-                token: _tokenInfo.data.token,
+                token: tokenInResponse,
             },
         });
     }
@@ -330,28 +335,25 @@ class TokenHandler extends Registry {
             data.transactionId,
         );
         if (!transaction) {
-            logger.error(
+            throw new Error(
                 `Error fetching transaction with id ${data.transactionId}`,
             );
-            return;
         }
 
         // Check if transaction is already complete
         if (transaction.status === Status.COMPLETE) {
-            logger.error(
+            throw new Error(
                 `Transaction with id ${data.transactionId} is already complete`,
             );
-            return;
         }
 
         // Requery transaction from provider and update transaction status
         const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction);
         const transactionSuccess = requeryResult.responseCode === 200;
         if (!transactionSuccess) {
-            logger.error(
+            throw new Error(
                 `Error requerying transaction with id ${data.transactionId}`,
             );
-            return;
         }
 
         // If successful, check if a power unit exists for the transaction, if none exists, create one
@@ -427,9 +429,15 @@ class TokenHandler extends Registry {
          * When requerying a transaction, the response code is 201.
          */
         const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction)
+        requeryResult.responseCode = 400
         const transactionSuccess = requeryResult.responseCode === 200;
-        if (!transactionSuccess) { // --1 TOGGLE
-            //--0 TOGGLE if (retry.count < retry.limit || !transactionSuccess) {
+        // if (!transactionSuccess) { // --1 TOGGLE
+        if (!transactionSuccess) { //--0 TOGGLE 
+            if (retry.count > retry.limit) {
+                // Attempt purchase from new vendor
+                return
+            }
+
             logger.error(
                 `Error requerying transaction with id ${data.transactionId}`,
             );
@@ -478,7 +486,7 @@ class TokenHandler extends Registry {
                             cause: TransactionErrorCause.NO_TOKEN_IN_RESPONSE,
                         },
                     },
-                    retryCount: 1,
+                    retryCount: data.retryCount + 1,
                     superAgent: data.superAgent
                 },
             );

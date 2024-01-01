@@ -7,6 +7,8 @@ import logger from "../utils/Logger";
 import { v4 as UUIDV4 } from 'uuid'
 import crypto from 'crypto'
 import Transaction from "../models/Transaction.model";
+import { generateRandomToken } from "../utils/Helper";
+import { response } from "express";
 
 export interface PurchaseResponse extends BaseResponse {
     source: 'BUYPOWERNG';
@@ -181,6 +183,67 @@ export class IRechargeVendorService {
     };
 }
 
+class BaxipaySeed {
+    static generateDataForSuccessfulVend(reference: string, amount: string) {
+        const statuses = ['success', 'failure', 'pending'];
+        const transactionStatuses = ['completed', 'pending', 'failed'];
+        const statusCode = Math.floor(Math.random() * 1000).toString();
+        const tokenAmount = Math.random() > 0.5 ? null : Math.floor(Math.random() * 100);
+        const amountOfPower = amount
+        const feesAmount = Math.floor(Math.random() * 10);
+        const feeder = 'Feeder Name';
+        const dssName = 'DSS Name';
+        const serviceBand = 'Service Band';
+        const message = Math.random() > 0.5 ? 'Transaction successful' : 'Transaction failed';
+        const token = generateRandomToken();
+        const exchangeReference = 'Exchange Ref';
+        const tariff = 'Tariff Type';
+        const power = 'Power Type';
+        const status = 'OK';
+        const providerMessage = 'Provider Message';
+        const baxiReference = Math.floor(Math.random() * 100000);
+
+        return {
+            source: 'BAXI' as const,
+            status: statuses[Math.floor(Math.random() * statuses.length)],
+            statusCode: statusCode,
+            message: message,
+            data: {
+                transactionStatus: transactionStatuses[Math.floor(Math.random() * transactionStatuses.length)],
+                transactionReference: reference,
+                statusCode: statusCode,
+                transactionMessage: message,
+                tokenCode: 'Token Code',
+                tokenAmount: tokenAmount,
+                amountOfPower: amountOfPower,
+                rawOutput: {
+                    fees: [
+                        {
+                            amount: feesAmount,
+                            kind: 'Kind of Fee',
+                            description: 'Fee Description',
+                            taxAmount: Math.floor(Math.random() * 5)
+                        }
+                    ],
+                    feeder: feeder,
+                    dssName: dssName,
+                    serviceBand: serviceBand,
+                    message: message,
+                    token: token,
+                    rate: 'Exchange Rate',
+                    exchangeReference: exchangeReference,
+                    tariff: tariff,
+                    power: power,
+                    status: status,
+                    statusCode: statusCode
+                },
+                provider_message: providerMessage,
+                baxiReference: baxiReference
+            },
+            responseCode: 200
+        }
+    }
+}
 
 // Define the VendorService class for handling provider-related operations
 export default class VendorService {
@@ -219,7 +282,11 @@ export default class VendorService {
 
             return { ...response.data, source: 'BAXI' as const }
         } catch (error: any) {
-            logger.error(error)
+            if (NODE_ENV === 'development') {
+                // This is because baxi API currently has been failing on dev mode
+                return BaxipaySeed.generateDataForSuccessfulVend(reference, amount)
+            }
+
             throw new Error(error.message)
         }
     }
@@ -239,12 +306,14 @@ export default class VendorService {
                 }
             }
 
-            return {
-                source: 'BAXI' as const,
-                status: false,
-                message: responseData.message,
-                responseCode: 202
-            }
+            return NODE_ENV === 'development'
+                ? BaxipaySeed.generateDataForSuccessfulVend(reference, '10000')
+                : {
+                    source: 'BAXI' as const,
+                    status: false,
+                    message: responseData.message,
+                    responseCode: 202
+                }
         } catch (error) {
             throw error
         }
@@ -268,7 +337,7 @@ export default class VendorService {
 
     static async baxiFetchAvailableDiscos() {
         try {
-            const response = await this.baxiAxios().get<IBaxiGetProviderResponse>('/billers')
+            const response = await this.baxiAxios().get<IBaxiGetProviderResponse>('/electricity/billers')
             const responseData = response.data
 
             const providers = [] as { name: string, serviceType: 'PREPAID' | 'POSTPAID' }[]
@@ -287,8 +356,7 @@ export default class VendorService {
 
             return providers
         } catch (error) {
-            logger.error(error)
-            throw new Error()
+            throw error
         }
     }
 
@@ -306,6 +374,7 @@ export default class VendorService {
 
             return false
         } catch (error) {
+            console.error(error)
             logger.error(error)
             throw new Error()
         }
