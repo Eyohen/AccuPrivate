@@ -12,7 +12,8 @@ import { NigerianDate } from "../utils/Date";
 export enum Status {
     COMPLETE = 'COMPLETE',
     PENDING = 'PENDING',
-    FAILED = 'FAILED'
+    FAILED = 'FAILED',
+    FLAGGED = 'FLAGGED'
 }
 
 export enum PaymentType {
