@@ -17,6 +17,7 @@ router
     .post('/resetpassword', basicAuth('passwordreset'), AuthenticatedController(PublicAuthController.resetPassword))
     .post('/changepassword', basicAuth('access'), AuthenticatedController(PublicAuthController.changePassword))
     .post('/login', AuthenticatedController(PublicAuthController.login))
+    .post('/login/admin', AuthenticatedController(PublicAuthController.login))
     .post('/deactivate', basicAuth('access'), RBACMiddelware.validateRole([RoleEnum.SuperAdmin]), AuthenticatedController(AdminAuthController.deactivatePartner))
     .post('/activate', basicAuth('access'), RBACMiddelware.validateRole([RoleEnum.SuperAdmin]), AuthenticatedController(AdminAuthController.activatePartner))
     .post('/logout', basicAuth('access'), AuthenticatedController(PublicAuthController.logout))
