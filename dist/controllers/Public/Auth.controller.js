@@ -52,11 +52,12 @@ const Role_model_1 = require("../../models/Role.model");
 const Notification_1 = __importDefault(require("../../utils/Notification"));
 const Constants_1 = require("../../utils/Constants");
 const Notification_service_1 = __importDefault(require("../../services/Notification.service"));
+const Webhook_service_1 = __importDefault(require("../../services/Webhook.service"));
 const Role_service_1 = __importDefault(require("../../services/Role.service"));
 class AuthController {
     static signup(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { email, password, roleId } = req.body;
+            const { email, password } = req.body;
             const validEmail = Validators_1.default.validateEmail(email);
             if (!validEmail) {
                 throw new Errors_1.BadRequestError('Invalid email');
@@ -102,6 +103,10 @@ class AuthController {
                 id: (0, uuid_1.v4)(),
                 entityId: entity.id,
                 password
+            }, transaction);
+            yield Webhook_service_1.default.addWebhook({
+                id: (0, uuid_1.v4)(),
+                partnerId: newPartner.id,
             }, transaction);
             yield entity.update({ status: Object.assign(Object.assign({}, entity.status), { emailVerified: true }) });
             const accessToken = yield Token_1.AuthUtil.generateToken({ type: 'emailverification', entity, profile: newPartner, expiry: 60 * 10 });

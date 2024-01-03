@@ -16,6 +16,7 @@ const Role_routes_1 = __importDefault(require("./Role.routes"));
 const TeamMember_routes_1 = __importDefault(require("./TeamMember.routes"));
 const Notification_routes_1 = __importDefault(require("./Notification.routes"));
 const Event_routes_1 = __importDefault(require("./Event.routes"));
+const Webhook_routes_1 = __importDefault(require("./Webhook.routes"));
 const Partner_routes_1 = __importDefault(require("./Partner.routes"));
 const complaint_routes_1 = __importDefault(require("./complaint.routes"));
 const router = (0, express_1.Router)();
@@ -32,6 +33,7 @@ router
     .use('/team', TeamMember_routes_1.default)
     .use('/notification', Notification_routes_1.default)
     .use('/event', Event_routes_1.default)
+    .use('/webhook', Webhook_routes_1.default)
     .use('/partner', Partner_routes_1.default)
     .use('/complaints', complaint_routes_1.default);
 exports.default = router;

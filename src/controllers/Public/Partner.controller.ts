@@ -148,7 +148,7 @@ export default class PartnerProfileController {
             return item
         })
         
-        console.log(partners[0].key, 'Yes')
+        
         const _stats: any = []
         //adding partner Statics here        
         for (let index = 0; index < partners.length; index++) {

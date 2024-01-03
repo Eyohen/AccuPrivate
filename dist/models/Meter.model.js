@@ -40,7 +40,7 @@ __decorate([
 ], Meter.prototype, "disco", void 0);
 __decorate([
     (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.STRING, allowNull: false }),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], Meter.prototype, "vendType", void 0);
 __decorate([
     (0, sequelize_typescript_1.ForeignKey)(() => User_model_1.default),

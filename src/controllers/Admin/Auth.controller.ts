@@ -31,7 +31,12 @@ export default class AuthController {
             throw new BadRequestError('Entity not found')
         }
 
-        if (req.user.user.entity.role === RoleEnum.SuperAdmin) {
+        const role = await entity.$get('role')
+        if (!role) {
+            throw new BadRequestError('Role not found')
+        }
+
+        if (role.name === RoleEnum.SuperAdmin) {
             throw new ForbiddenError('Unauthorized access')
         }
  
@@ -63,11 +68,16 @@ export default class AuthController {
             throw new BadRequestError('Entity not found')
         }
 
-        if (req.user.user.entity.role === RoleEnum.SuperAdmin) {
+        const role = await entity.$get('role')
+        if (!role) {
+            throw new BadRequestError('Role not found')
+        }
+
+        if (role.name === RoleEnum.SuperAdmin) {
             throw new ForbiddenError('Unauthorized access')
         }
 
-        await entity.update({ status: { ...entity.status, activated: true } })
+        await entity.update({ status: { ...entity.status, activated: false } })
 
         await EmailService.sendEmail({
             to: entity.email,
@@ -95,6 +105,15 @@ export default class AuthController {
             throw new BadRequestError('Entity not found')
         }
 
+        const role = await entity.$get('role')
+        if (!role) {
+            throw new BadRequestError('Role not found')
+        }
+
+        if (role.name !== RoleEnum.SuperAdmin) {
+            throw new ForbiddenError('Unauthorized access')
+        }
+
         const activationCode = await AuthUtil.generateCode({ type: 'su_activation', entity, expiry: 5 * 60 * 60 })
         const [activationCode1, activationCode2, activationCode3] = activationCode.split(':') as ReturnType<typeof randomUUID>[]
 
@@ -107,7 +126,7 @@ export default class AuthController {
         EmailService.sendEmail({
             to: SU_HOST_EMAIL_1,
             html: await (new EmailTemplate().suAccountActivation({
-                email: SU_HOST_EMAIL_1,
+                email: email,
                 authorizationCode: activationCode1,
             })),
             subject: 'Super Admin account activation request'
@@ -116,7 +135,7 @@ export default class AuthController {
         EmailService.sendEmail({
             to: SU_HOST_EMAIL_2,
             html: await (new EmailTemplate().suAccountActivation({
-                email: SU_HOST_EMAIL_2,
+                email: email,
                 authorizationCode: activationCode2,
             })),
             subject: 'Super Admin account activation request'
@@ -125,7 +144,7 @@ export default class AuthController {
         EmailService.sendEmail({
             to: SU_HOST_EMAIL_3,
             html: await (new EmailTemplate().suAccountActivation({
-                email: SU_HOST_EMAIL_3,
+                email: email,
                 authorizationCode: activationCode3,
             })),
             subject: 'Super Admin account activation request'
@@ -219,6 +238,15 @@ export default class AuthController {
             throw new BadRequestError('Entity not found')
         }
 
+        const role = await entity.$get('role')
+        if (!role) {
+            throw new BadRequestError('Role not found')
+        }
+
+        if (role.name !== RoleEnum.SuperAdmin) {
+            throw new ForbiddenError('Unauthorized access')
+        }
+        
         const deactivationCode = await AuthUtil.generateCode({ type: 'su_activation', entity, expiry: 5 * 60 * 60 })
         const [deactivationCode1, deactivationCode2, deactivationCode3] = deactivationCode.split(':') as ReturnType<typeof randomUUID>[]
 
@@ -232,7 +260,7 @@ export default class AuthController {
         EmailService.sendEmail({
             to: SU_HOST_EMAIL_1,
             html: await (new EmailTemplate().suDeAccountActivation({
-                email: SU_HOST_EMAIL_1,
+                email: email,
                 authorizationCode: deactivationCode1,
             })),
             subject: 'Super Admin account deactivation request'
@@ -241,7 +269,7 @@ export default class AuthController {
         EmailService.sendEmail({
             to: SU_HOST_EMAIL_2,
             html: await (new EmailTemplate().suDeAccountActivation({
-                email: SU_HOST_EMAIL_2,
+                email: email,
                 authorizationCode: deactivationCode2,
             })),
             subject: 'Super Admin account deactivation request'
@@ -250,7 +278,7 @@ export default class AuthController {
         EmailService.sendEmail({
             to: SU_HOST_EMAIL_3,
             html: await (new EmailTemplate().suDeAccountActivation({
-                email: SU_HOST_EMAIL_3,
+                email: email,
                 authorizationCode: deactivationCode3,
             })),
             subject: 'Super Admin account deactivation request'

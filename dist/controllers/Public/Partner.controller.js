@@ -47,12 +47,14 @@ const Role_service_1 = __importDefault(require("../../services/Role.service"));
 const Cypher_1 = __importDefault(require("../../utils/Cypher"));
 const Token_1 = require("../../utils/Auth/Token");
 const ApiKey_service_1 = __importDefault(require("../../services/ApiKey.service "));
+const Webhook_service_1 = __importDefault(require("../../services/Webhook.service"));
 const ResponseTrimmer_1 = __importDefault(require("../../utils/ResponseTrimmer"));
-class TeamMemberProfileController {
+const Transaction_service_1 = __importDefault(require("../../services/Transaction.service"));
+class PartnerProfileController {
     static invitePartner(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             // The partner is the entity that is inviting the team member
-            const { email } = req.body;
+            const { email, companyName, address } = req.body;
             const role = yield Role_service_1.default.viewRoleByName(Role_model_1.RoleEnum.Partner);
             if (!role) {
                 throw new Errors_1.BadRequestError('Role not found');
@@ -65,6 +67,8 @@ class TeamMemberProfileController {
             const newPartner = yield PartnerProfile_service_1.default.addPartner({
                 id: (0, uuid_1.v4)(),
                 email,
+                companyName,
+                address
             }, transaction);
             const entity = yield Entity_service_1.default.addEntity({
                 id: (0, uuid_1.v4)(),
@@ -96,6 +100,11 @@ class TeamMemberProfileController {
                 entityId: entity.id,
                 password,
             }, transaction);
+            yield Webhook_service_1.default.addWebhook({
+                id: (0, uuid_1.v4)(),
+                partnerId: newPartner.id,
+            }, transaction);
+            yield transaction.commit();
             yield entity.update({ status: Object.assign(Object.assign({}, entity.status), { emailVerified: true }) });
             yield Email_1.default.sendEmail({
                 to: newPartner.email,
@@ -117,7 +126,7 @@ class TeamMemberProfileController {
             const { email } = req.query;
             const partnerProfile = yield PartnerProfile_service_1.default.viewSinglePartnerByEmail(email);
             if (!partnerProfile) {
-                throw new Errors_1.BadRequestError('Team member not found');
+                throw new Errors_1.NotFoundError('Partner not found');
             }
             const entity = yield partnerProfile.$get('entity');
             if (!entity) {
@@ -132,5 +141,72 @@ class TeamMemberProfileController {
             });
         });
     }
+    static getAllPartners(req, res, next) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { page, limit, } = req.query;
+            const query = { where: {} };
+            if (limit)
+                query.limit = parseInt(limit);
+            // else query.limit = 10
+            if (page && page != '0' && limit) {
+                query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit);
+            }
+            // else query.offset = 0
+            const _partners = yield PartnerProfile_service_1.default.viewPartnersWithCustomQuery(query, {
+                exclude: ['key', 'sec']
+            });
+            if (!_partners) {
+                throw new Errors_1.NotFoundError("Partners Not found");
+            }
+            const partners = _partners.map(item => {
+                item.key = undefined;
+                item.sec = undefined;
+                return item;
+            });
+            console.log(partners[0].key, 'Yes');
+            const _stats = [];
+            //adding partner Statics here        
+            for (let index = 0; index < partners.length; index++) {
+                let failed_Transactions = 0;
+                let pending_Transactions = 0;
+                let success_Transactions = 0;
+                const element = partners[index];
+                const _failed_Transaction = yield Transaction_service_1.default.viewTransactionsWithCustomQuery({
+                    where: { partnerId: element.id,
+                        status: "FAILED" }
+                });
+                failed_Transactions = _failed_Transaction.length;
+                const _pending_Transaction = yield Transaction_service_1.default.viewTransactionsWithCustomQuery({
+                    where: { partnerId: element.id,
+                        status: "PENDING" }
+                });
+                pending_Transactions = _pending_Transaction.length;
+                const _complete_Transaction = yield Transaction_service_1.default.viewTransactionsWithCustomQuery({
+                    where: { partnerId: element.id,
+                        status: "COMPLETE" }
+                });
+                success_Transactions = _complete_Transaction.length;
+                // element.stats = {
+                //     success_Transactions,
+                //     failed_Transactions,
+                //     pending_Transactions
+                // }
+                _stats.push({
+                    id: element.id,
+                    success_Transactions,
+                    failed_Transactions,
+                    pending_Transactions
+                });
+            }
+            res.status(200).json({
+                status: 'success',
+                message: 'Partners data retrieved successfully',
+                data: {
+                    partners,
+                    stats: _stats
+                }
+            });
+        });
+    }
 }
-exports.default = TeamMemberProfileController;
+exports.default = PartnerProfileController;

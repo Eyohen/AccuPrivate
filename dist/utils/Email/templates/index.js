@@ -43,6 +43,12 @@ class EmailTemplate {
         this.invitePartner = ({ email, password }) => __awaiter(this, void 0, void 0, function* () {
             return container(yield ejs_1.default.renderFile(__dirname + '/partnerinvitation.ejs', { email, password }));
         });
+        this.suAccountActivation = ({ email, authorizationCode }) => __awaiter(this, void 0, void 0, function* () {
+            return container(yield ejs_1.default.renderFile(__dirname + '/su_activation_request.ejs', { email, authorizationCode }));
+        });
+        this.suDeAccountActivation = ({ email, authorizationCode }) => __awaiter(this, void 0, void 0, function* () {
+            return container(yield ejs_1.default.renderFile(__dirname + '/su_deactivation_request.ejs', { email, authorizationCode }));
+        });
     }
 }
 exports.default = EmailTemplate;

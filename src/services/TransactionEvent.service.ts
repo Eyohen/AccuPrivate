@@ -230,6 +230,39 @@ export default class TransactionEventService {
         return await EventService.addEvent(event);
     }
 
+    public async addPowerPurchaseRetryWithNewVendor({ bankRefId, currentVendor, newVendor }: {
+        bankRefId: string, currentVendor: Transaction['superagent'], newVendor: Transaction['superagent']
+    }): Promise<Event> {
+        const user = await this.transaction.$get('user');
+        if (!user) {
+            throw new Error('Transaction does not have a user');
+        }
+
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.RETRY_PURCHASE_FROM_NEW_VENDOR,
+            eventText: TOPICS.RETRY_PURCHASE_FROM_NEW_VENDOR,
+            payload: JSON.stringify({
+                bankRefId,
+                transactionId: this.transaction.id,
+                currentSuperAgent: currentVendor,
+                newSuperAgent: newVendor,
+                amount: this.transaction.amount,
+                disco: this.transaction.disco,
+                meterId: this.transaction.meterId,
+                meterNumber: this.meterInfo.meterNumber,
+                phoneNumber: user.phoneNumber,
+                vendType: this.meterInfo.vendType,
+            }),
+            source: 'API',
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.COMPLETE,
+        }
+
+        return await EventService.addEvent(event);
+    }
+
     public async addVendElectricityRequestedFromVendorEvent(): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,

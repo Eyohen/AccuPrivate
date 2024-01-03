@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { v4 as uuidv4 } from 'uuid';
-import { BadRequestError, InternalServerError } from "../../utils/Errors";
+import { BadRequestError, ForbiddenError, InternalServerError } from "../../utils/Errors";
 import EmailService, { EmailTemplate } from "../../utils/Email";
 import ResponseTrimmer from '../../utils/ResponseTrimmer';
 import Partner from "../../models/Entity/Profiles/PartnerProfile.model";
@@ -164,7 +164,7 @@ export default class AuthController {
 
         res.status(201).json({
             status: 'success',
-            message: 'Partner created successfully',
+            message: 'User created successfully',
             data: {
                 entity: entity.dataValues,
                 accessToken,
@@ -374,6 +374,18 @@ export default class AuthController {
 
         if (!entity.status.activated) {
             throw new BadRequestError('Account not activated')
+        }
+
+        const role = await entity.$get('role')
+        if (!role) {
+            throw new InternalServerError('Role not found for user')
+        }
+
+        const requestWasMadeToAdminRoute = req.url === '/login/admin'
+        const userIsAdmin = [RoleEnum.SuperAdmin, RoleEnum.Admin].includes(role.name)
+        const unauthorizedAccess = (requestWasMadeToAdminRoute && !userIsAdmin) || (!requestWasMadeToAdminRoute && userIsAdmin)
+        if (unauthorizedAccess) {
+            throw new ForbiddenError('Unauthorized access to current login route')
         }
 
         // Only partners and team members have a profile

@@ -119,6 +119,10 @@ __decorate([
     __metadata("design:type", Array)
 ], Entity.prototype, "complaints", void 0);
 __decorate([
+    (0, sequelize_typescript_1.HasMany)(() => Complaint_model_1.default),
+    __metadata("design:type", Array)
+], Entity.prototype, "complaintReplies", void 0);
+__decorate([
     sequelize_typescript_1.BeforeValidate,
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Entity]),

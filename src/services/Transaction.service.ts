@@ -15,6 +15,7 @@ import User from "../models/User.model";
 import Meter from "../models/Meter.model";
 import { Op } from "sequelize";
 import { generateRandomString } from "../utils/Helper";
+import { Sequelize } from "sequelize-typescript";
 
 // Define the TransactionService class for handling transaction-related operations
 export default class TransactionService {
@@ -75,6 +76,38 @@ export default class TransactionService {
         return transactions;
     }
 
+    static async viewTransactionsCountWithCustomQuery(
+        query: Record<string, any>,
+    ): Promise<number> {
+        // Retrieve all transactions from the database
+        // Sort from latest
+        const transactionCount: number = (
+            await Transaction.count({
+                ...query,
+            })
+        )
+        return transactionCount;
+    }
+
+    static async viewTransactionsAmountWithCustomQuery(
+        query: Record<string, any>,
+    ): Promise<number> {
+        // Retrieve all transactions from the database
+        // Sort from latest
+        const transactionCount: any = (
+            await Transaction.findAll({
+                ...query,
+                
+                attributes : [
+                    [Sequelize.fn('sum', Sequelize.cast(Sequelize.col('amount'),'DECIMAL') ), 'total_amount'],
+                ]
+                
+            })
+        )
+        return transactionCount;
+    }
+
+
     // Static method for viewing a single transaction by UUID
     static async viewSingleTransaction(
         uuid: string,
@@ -119,20 +152,15 @@ export default class TransactionService {
         partnerId: string,
     ): Promise<Transaction[]> {
         const yesterdayDate = new Date();
-        yesterdayDate.setDate(yesterdayDate.getDate() - 5);
-        const currentDate = new Date();
-        console.log(yesterdayDate);
-        console.log(new Date());
-        console.log(partnerId);
+        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
         const transactions: Transaction[] = await Transaction.findAll({
             where: {
-                // partnerId: partnerId,
+                partnerId: partnerId,
                 transactionTimestamp: {
-                    [Op.between]: [yesterdayDate, currentDate],
+                    [Op.between]: [yesterdayDate, new Date()],
                 },
             },
         });
-        // console.log(transactions)
 
         return transactions;
     }
@@ -146,7 +174,7 @@ export default class TransactionService {
                 partnerId: partnerId,
                 status,
                 transactionTimestamp: {
-                    $between: [yesterdayDate, new Date()],
+                    [Op.between]: [yesterdayDate, new Date()],
                 },
             },
         });

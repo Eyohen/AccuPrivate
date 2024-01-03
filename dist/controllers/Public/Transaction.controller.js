@@ -1,27 +1,4 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -38,16 +15,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Transaction_service_1 = __importDefault(require("../../services/Transaction.service"));
 const Errors_1 = require("../../utils/Errors");
 const Event_model_1 = require("../../models/Event.model");
-const Email_1 = __importStar(require("../../utils/Email"));
-const Helper_1 = require("../../utils/Helper");
-const Constants_1 = require("../../utils/Constants");
-const PowerUnit_service_1 = __importDefault(require("../../services/PowerUnit.service"));
 const ResponseTrimmer_1 = __importDefault(require("../../utils/ResponseTrimmer"));
-const crypto_1 = require("crypto");
 const Vendor_service_1 = __importDefault(require("../../services/Vendor.service"));
 const PartnerProfile_service_1 = __importDefault(require("../../services/Entity/Profiles/PartnerProfile.service"));
-const Event_service_1 = __importDefault(require("../../services/Event.service"));
 const Role_model_1 = require("../../models/Role.model");
+const TransactionEvent_service_1 = __importDefault(require("../../services/TransactionEvent.service"));
+const Vendor_1 = require("../../kafka/modules/publishers/Vendor");
 const sequelize_1 = require("sequelize");
 class TransactionController {
     static getTransactionInfo(req, res) {
@@ -57,13 +30,13 @@ class TransactionController {
                 ? yield Transaction_service_1.default.viewSingleTransactionByBankRefID(bankRefId)
                 : yield Transaction_service_1.default.viewSingleTransaction(transactionId);
             if (!transaction) {
-                throw new Errors_1.NotFoundError('Transaction not found');
+                throw new Errors_1.NotFoundError("Transaction not found");
             }
-            const powerUnit = yield transaction.$get('powerUnit');
+            const powerUnit = yield transaction.$get("powerUnit");
             res.status(200).json({
-                status: 'success',
-                message: 'Transaction info retrieved successfully',
-                data: { transaction: Object.assign(Object.assign({}, transaction.dataValues), { powerUnit }) }
+                status: "success",
+                message: "Transaction info retrieved successfully",
+                data: { transaction: Object.assign(Object.assign({}, transaction.dataValues), { powerUnit }) },
             });
         });
     }
@@ -94,7 +67,7 @@ class TransactionController {
             }
             const transactions = yield Transaction_service_1.default.viewTransactionsWithCustomQuery(query);
             if (!transactions) {
-                throw new Errors_1.NotFoundError('Transactions not found');
+                throw new Errors_1.NotFoundError("Transactions not found");
             }
             const paginationData = {
                 page: parseInt(page),
@@ -120,112 +93,92 @@ class TransactionController {
             const { bankRefId } = req.query;
             let transactionRecord = yield Transaction_service_1.default.viewSingleTransactionByBankRefID(bankRefId);
             if (!transactionRecord) {
-                throw new Errors_1.NotFoundError('Transaction record not found');
+                throw new Errors_1.NotFoundError("Transaction record not found");
             }
-            if (transactionRecord.superagent === 'BUYPOWERNG') {
-                throw new Errors_1.BadRequestError('Transaction cannot be requery for this superagent');
+            console.log(transactionRecord.superagent);
+            if (transactionRecord.superagent !== "BUYPOWERNG") {
+                throw new Errors_1.BadRequestError("Transaction cannot be requery for this superagent");
             }
-            let powerUnit = yield transactionRecord.$get('powerUnit');
-            const response = yield Vendor_service_1.default.buyPowerRequeryTransaction({ transactionId: transactionRecord.id });
+            let powerUnit = yield transactionRecord.$get("powerUnit");
+            const response = yield Vendor_service_1.default.buyPowerRequeryTransaction({
+                reference: transactionRecord.reference,
+            });
             if (response.status === false) {
                 const transactionFailed = response.responseCode === 202;
                 const transactionIsPending = response.responseCode === 201;
                 if (transactionFailed)
-                    yield Transaction_service_1.default.updateSingleTransaction(transactionRecord.id, { status: Event_model_1.Status.FAILED });
+                    yield Transaction_service_1.default.updateSingleTransaction(transactionRecord.id, {
+                        status: Event_model_1.Status.FAILED,
+                    });
                 else if (transactionIsPending)
-                    yield Transaction_service_1.default.updateSingleTransaction(transactionRecord.id, { status: Event_model_1.Status.PENDING });
+                    yield Transaction_service_1.default.updateSingleTransaction(transactionRecord.id, {
+                        status: Event_model_1.Status.PENDING,
+                    });
                 res.status(200).json({
-                    status: 'success',
-                    message: 'Requery request successful',
+                    status: "success",
+                    message: "Requery request successful",
                     data: {
                         requeryStatusCode: transactionFailed ? 400 : 202,
-                        requeryStatusMessage: transactionFailed ? 'Transaction failed' : 'Transaction pending',
+                        requeryStatusMessage: transactionFailed
+                            ? "Transaction failed"
+                            : "Transaction pending",
                         transaction: ResponseTrimmer_1.default.trimTransaction(transactionRecord),
-                    }
+                    },
                 });
                 return;
             }
-            yield Event_service_1.default.addEvent({
-                id: (0, crypto_1.randomUUID)(),
-                transactionId: transactionRecord.id,
-                eventType: 'REQUERY',
-                eventText: 'Requery successful',
-                eventData: response,
-                eventTimestamp: new Date(),
-                source: 'BUYPOWERNG',
-                status: Event_model_1.Status.COMPLETE
-            });
-            yield Transaction_service_1.default.updateSingleTransaction(transactionRecord.id, { status: Event_model_1.Status.COMPLETE });
-            const user = yield transactionRecord.$get('user');
-            if (!user) {
-                throw new Errors_1.InternalServerError(`Transaction ${transactionRecord.id} does not have a user`);
-            }
-            if (!transactionRecord.userId) {
-                throw new Errors_1.InternalServerError(`Timedout transaction ${transactionRecord.id} does not have a user`);
-            }
-            const meter = yield transactionRecord.$get('meter');
-            if (!meter) {
-                throw new Errors_1.InternalServerError(`Timedout transaction ${transactionRecord.id} does not have a meter`);
-            }
-            // Power unit will only be created if the transaction has been completed or if a sucessful requery has been don
-            const transactionHasBeenAccountedFor = !!powerUnit;
-            // Add Power Unit to store token if transcation has not been accounted for 
-            powerUnit = powerUnit
-                ? powerUnit
-                : yield PowerUnit_service_1.default.addPowerUnit({
-                    id: (0, crypto_1.randomUUID)(),
-                    transactionId: transactionRecord.id,
+            const transactionEventService = new TransactionEvent_service_1.default(transactionRecord, {
+                meterNumber: transactionRecord.meter.meterNumber,
+                disco: transactionRecord.disco,
+                vendType: transactionRecord.meter.vendType,
+            }, transactionRecord.superagent);
+            yield transactionEventService.addTokenReceivedEvent(response.data.token);
+            yield Vendor_1.VendorPublisher.publishEventForTokenReceivedFromVendor({
+                meter: {
+                    id: transactionRecord.meter.id,
+                    meterNumber: transactionRecord.meter.meterNumber,
                     disco: transactionRecord.disco,
-                    discoLogo: Constants_1.DISCO_LOGO[transactionRecord.disco.toLowerCase()],
-                    amount: transactionRecord.amount,
-                    meterId: meter.id,
-                    superagent: transactionRecord.superagent,
-                    address: meter.address,
-                    token: Constants_1.NODE_ENV === 'development' ? (0, Helper_1.generateRandomToken)() : response.data.token,
-                    tokenNumber: 0,
-                    tokenUnits: response.data.token
-                });
-            // Update Transaction if transaction has not been accounted for
-            // TODO: Add request token event to transaction
-            transactionRecord = transactionHasBeenAccountedFor ? transactionRecord : yield transactionRecord.update({ amount: transactionRecord.amount, status: Event_model_1.Status.COMPLETE });
-            // TODO: Only send email if transaction has not been completed before
-            !transactionHasBeenAccountedFor && Email_1.default.sendEmail({
-                to: user.email,
-                subject: 'Token Purchase',
-                html: yield new Email_1.EmailTemplate().receipt({
-                    transaction: transactionRecord,
-                    meterNumber: meter.meterNumber,
-                    token: powerUnit.token
-                })
+                    vendType: transactionRecord.meter.vendType,
+                    token: response.data.token,
+                },
+                user: {
+                    name: transactionRecord.user.name,
+                    email: transactionRecord.user.email,
+                    address: transactionRecord.user.address,
+                    phoneNumber: transactionRecord.user.phoneNumber,
+                },
+                partner: {
+                    email: transactionRecord.partner.email,
+                },
+                transactionId: transactionRecord.id,
             });
             res.status(200).json({
-                status: 'success',
-                message: 'Requery request successful',
+                status: "success",
+                message: "Requery request successful",
                 data: {
                     requeryStatusCode: 200,
-                    requeryStatusMessage: 'Transaction successful',
+                    requeryStatusMessage: "Transaction successful",
                     transaction: ResponseTrimmer_1.default.trimTransaction(transactionRecord),
-                    powerUnit: ResponseTrimmer_1.default.trimPowerUnit(powerUnit)
-                }
+                },
             });
         });
     }
     static getYesterdaysTransactions(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             const { status } = req.query;
-            const { profile: { id } } = req.user.user;
+            const { profile: { id }, } = req.user.user;
             const partner = yield PartnerProfile_service_1.default.viewSinglePartner(id);
             if (!partner) {
-                throw new Errors_1.InternalServerError('Authenticated partner not found');
+                throw new Errors_1.InternalServerError("Authenticated partner not found");
             }
             const transactions = status
                 ? yield Transaction_service_1.default.viewTransactionsForYesterdayByStatus(partner.id, status.toUpperCase())
                 : yield Transaction_service_1.default.viewTransactionForYesterday(partner.id);
             const totalAmount = transactions.reduce((acc, curr) => acc + parseInt(curr.amount), 0);
             res.status(200).json({
-                status: 'success',
-                message: 'Transactions retrieved successfully',
-                data: { transactions, totalAmount }
+                status: "success",
+                message: "Transactions retrieved successfully",
+                data: { transactions, totalAmount },
             });
         });
     }

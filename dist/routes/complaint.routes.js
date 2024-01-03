@@ -12,5 +12,8 @@ exports.router = express_1.default.Router();
 exports.router
     .get('/id', FileUpload_1.default.multerUpload.single('complaint_image'), (0, Interface_1.AuthenticatedController)(Complaint_controller_1.ComplaintController.getComplaint))
     .post('/create', (0, Interface_1.AuthenticatedController)(Complaint_controller_1.ComplaintController.createComplaint))
-    .get('/all', (0, Interface_1.AuthenticatedController)(Complaint_controller_1.ComplaintController.getComplaints));
+    .get('/all', (0, Interface_1.AuthenticatedController)(Complaint_controller_1.ComplaintController.getComplaints))
+    .patch('/update/:id', (0, Interface_1.AuthenticatedController)(Complaint_controller_1.ComplaintController.updateComplaint))
+    .get('/replies/:id', (0, Interface_1.AuthenticatedController)(Complaint_controller_1.ComplaintController.getComplaintRely))
+    .post('/reply/create/:id', (0, Interface_1.AuthenticatedController)(Complaint_controller_1.ComplaintController.addComplaintReply));
 exports.default = exports.router;

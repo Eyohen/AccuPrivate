@@ -12,7 +12,8 @@ import { NigerianDate } from "../utils/Date";
 export enum Status {
     COMPLETE = 'COMPLETE',
     PENDING = 'PENDING',
-    FAILED = 'FAILED'
+    FAILED = 'FAILED',
+    FLAGGED = 'FLAGGED'
 }
 
 export enum PaymentType {
@@ -134,7 +135,7 @@ export interface ITransaction {
     disco: string; // Disco associated with the transaction
     bankRefId?: string; // Bank reference ID related to the transaction
     bankComment?: string; // Comments or notes from the bank regarding the transaction
-    superagent: 'BUYPOWERNG' | 'BAXI'; // superagent associated with the transaction
+    superagent: 'BUYPOWERNG' | 'BAXI' | 'IRECHARGE'; // superagent associated with the transaction
     userId: string; // Unique identifier of the user associated with the transaction
     partnerId?: string; // Unique identifier of the Partner associated with the transaction
     meterId?: string; // Unique identifier of the Meter associated with the transaction

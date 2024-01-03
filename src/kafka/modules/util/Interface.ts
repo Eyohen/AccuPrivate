@@ -59,6 +59,14 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
         transactionId: string;
         superAgent: Transaction['superagent']
     };
+    [TOPICS.RETRY_PURCHASE_FROM_NEW_VENDOR]: {
+        meter: MeterInfo & { id: string };
+        user: User;
+        partner: Partner;
+        transactionId: string;
+        superAgent: Transaction['superagent'],
+        newVendor: Transaction['superagent'],
+    };
     [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: {
         meter: MeterInfo & { id: string; token: string };
         user: User;
@@ -132,7 +140,7 @@ export type PublisherParamsUnion = {
 }[keyof PublisherEventAndParameters];
 
 export type MessageHandler = {
-    [K in TOPICS]?: (data: PublisherEventAndParameters[K]) => Promise<void>;
+    [K in TOPICS]?: (data: PublisherEventAndParameters[K]) => Promise<any>;
 };
 
 export type KafkaTopics = Omit<ConsumerSubscribeTopics, "topics"> & {

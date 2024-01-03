@@ -10,31 +10,21 @@ import MeterService from "../../services/Meter.service";
 import User from "../../models/User.model";
 import Meter, { IMeter } from "../../models/Meter.model";
 import VendorService from "../../services/Vendor.service";
-import PowerUnit from "../../models/PowerUnit.model";
-import PowerUnitService from "../../services/PowerUnit.service";
 import {
     DEFAULT_ELECTRICITY_PROVIDER,
-    DISCO_LOGO,
-    NODE_ENV,
 } from "../../utils/Constants";
 import {
     BadRequestError,
-    GateWayTimeoutError,
     InternalServerError,
     NotFoundError,
 } from "../../utils/Errors";
-import { generateRandomToken } from "../../utils/Helper";
-import EmailService, { EmailTemplate } from "../../utils/Email";
-import ResponseTrimmer from "../../utils/ResponseTrimmer";
-import NotificationUtil from "../../utils/Notification";
 import Entity from "../../models/Entity/Entity.model";
-import NotificationService from "../../services/Notification.service";
 import EventService from "../../services/Event.service";
 import { AuthenticatedRequest } from "../../utils/Interface";
 import Event, { TokenRetryEventPayload } from "../../models/Event.model";
 import { VendorPublisher } from "../../kafka/modules/publishers/Vendor";
 import { CRMPublisher } from "../../kafka/modules/publishers/Crm";
-import TokenConsumer, { TokenHandlerUtil } from "../../kafka/modules/consumers/Token";
+import { TokenHandlerUtil } from "../../kafka/modules/consumers/Token";
 import { TOPICS } from "../../kafka/Constants";
 import { PublisherEventAndParameters, Registry, TransactionErrorCause } from "../../kafka/modules/util/Interface";
 import { randomUUID } from "crypto";
@@ -42,7 +32,6 @@ import ConsumerFactory from "../../kafka/modules/util/Consumer";
 import MessageProcessorFactory from "../../kafka/modules/util/MessageProcessor";
 import logger from "../../utils/Logger";
 import { error } from "console";
-import { PartnerProfile } from "../../models/Entity/Profiles";
 import TransactionEventService from "../../services/TransactionEvent.service";
 import WebhookService from "../../services/Webhook.service";
 
@@ -229,7 +218,7 @@ class VendorControllerUtil {
         await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
             {
                 eventService: transactionEventService,
-                eventMessage: {
+                eventData: {
                     meter: {
                         meterNumber: meterInfo.meterNumber,
                         disco: transaction.disco,
@@ -241,8 +230,9 @@ class VendorControllerUtil {
                         code: 100,
                         cause: TransactionErrorCause.UNKNOWN
                     },
-
                 },
+                tokenInResponse: null,
+                transactionTimedOutFromBuypower: false,
                 superAgent: transaction.superagent,
                 retryCount: eventPayload.retryCount + 1
             }
@@ -338,6 +328,25 @@ class VendorControllerUtil {
             transactionId: transaction.id,
         })
     }
+
+    static async validateMeter({ meterNumber, disco, vendType, transaction }: {
+        meterNumber: string, disco: string, vendType: 'PREPAID' | 'POSTPAID', transaction: Transaction
+    }) {
+        if (transaction.superagent === 'BUYPOWERNG') {
+            return await VendorService.buyPowerValidateMeter({
+                transactionId: transaction.id,
+                meterNumber,
+                disco,
+                vendType,
+            })
+        } else if (transaction.superagent === 'BAXI') {
+            return await VendorService.baxiValidateMeter(disco, meterNumber, vendType)
+        } else if (transaction.superagent === 'IRECHARGE') {
+            return await VendorService.irechargeValidateMeter(disco, meterNumber, transaction.reference)
+        } else {
+            throw new BadRequestError('Invalid superagent')
+        }
+    }
 }
 
 
@@ -377,26 +386,7 @@ export default class VendorController {
         });
 
         // We Check for Meter User *
-        const response =
-            superagent == "BUYPOWERNG"
-                ? await VendorService.buyPowerValidateMeter({
-                    transactionId: transaction.id,
-                    meterNumber,
-                    disco,
-                    vendType,
-                }).catch((e) => {
-                    console.log(e)
-                    throw new BadRequestError("Meter validation failed");
-                })
-                : await VendorService.baxiValidateMeter(
-                    disco,
-                    meterNumber,
-                    vendType
-                ).catch((e) => {
-                    console.log(e)
-                    throw new BadRequestError("Meter validation failed");
-                });
-
+        const response = await VendorControllerUtil.validateMeter({ meterNumber, disco, vendType, transaction })
         const userInfo = {
             name: response.name,
             email: email,
@@ -704,6 +694,9 @@ export default class VendorController {
                 break;
             case "BUYPOWERNG":
                 discos = await VendorService.buyPowerFetchAvailableDiscos();
+                break;
+            case 'IRECHARGE':
+                discos = await VendorService.irechargeFetchAvailableDiscos();
                 break;
             default:
                 discos = [];

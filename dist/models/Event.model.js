@@ -16,6 +16,7 @@ exports.Status = void 0;
 // Import necessary modules and dependencies
 const sequelize_typescript_1 = require("sequelize-typescript");
 const Transaction_model_1 = __importDefault(require("./Transaction.model"));
+const Constants_1 = require("../kafka/Constants");
 // Define an enum for the status of events
 var Status;
 (function (Status) {
@@ -41,7 +42,7 @@ __decorate([
     __metadata("design:type", String)
 ], Event.prototype, "status", void 0);
 __decorate([
-    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.STRING, allowNull: false }),
+    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.ENUM, values: Object.values(Constants_1.TOPICS), allowNull: false }),
     __metadata("design:type", String)
 ], Event.prototype, "eventType", void 0);
 __decorate([
@@ -53,9 +54,9 @@ __decorate([
     __metadata("design:type", String)
 ], Event.prototype, "source", void 0);
 __decorate([
-    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.STRING || sequelize_typescript_1.DataType.JSON, allowNull: false }),
-    __metadata("design:type", Object)
-], Event.prototype, "eventData", void 0);
+    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.TEXT, allowNull: false }),
+    __metadata("design:type", String)
+], Event.prototype, "payload", void 0);
 __decorate([
     (0, sequelize_typescript_1.ForeignKey)(() => Transaction_model_1.default),
     (0, sequelize_typescript_1.IsUUID)(4),
