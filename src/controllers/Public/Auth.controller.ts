@@ -164,7 +164,7 @@ export default class AuthController {
 
         res.status(201).json({
             status: 'success',
-            message: 'Partner created successfully',
+            message: 'User created successfully',
             data: {
                 entity: entity.dataValues,
                 accessToken,

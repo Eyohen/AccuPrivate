@@ -126,7 +126,7 @@ export default class AuthController {
         EmailService.sendEmail({
             to: SU_HOST_EMAIL_1,
             html: await (new EmailTemplate().suAccountActivation({
-                email: SU_HOST_EMAIL_1,
+                email: email,
                 authorizationCode: activationCode1,
             })),
             subject: 'Super Admin account activation request'
@@ -135,7 +135,7 @@ export default class AuthController {
         EmailService.sendEmail({
             to: SU_HOST_EMAIL_2,
             html: await (new EmailTemplate().suAccountActivation({
-                email: SU_HOST_EMAIL_2,
+                email: email,
                 authorizationCode: activationCode2,
             })),
             subject: 'Super Admin account activation request'
@@ -144,7 +144,7 @@ export default class AuthController {
         EmailService.sendEmail({
             to: SU_HOST_EMAIL_3,
             html: await (new EmailTemplate().suAccountActivation({
-                email: SU_HOST_EMAIL_3,
+                email: email,
                 authorizationCode: activationCode3,
             })),
             subject: 'Super Admin account activation request'
@@ -260,7 +260,7 @@ export default class AuthController {
         EmailService.sendEmail({
             to: SU_HOST_EMAIL_1,
             html: await (new EmailTemplate().suDeAccountActivation({
-                email: SU_HOST_EMAIL_1,
+                email: email,
                 authorizationCode: deactivationCode1,
             })),
             subject: 'Super Admin account deactivation request'
@@ -269,7 +269,7 @@ export default class AuthController {
         EmailService.sendEmail({
             to: SU_HOST_EMAIL_2,
             html: await (new EmailTemplate().suDeAccountActivation({
-                email: SU_HOST_EMAIL_2,
+                email: email,
                 authorizationCode: deactivationCode2,
             })),
             subject: 'Super Admin account deactivation request'
@@ -278,7 +278,7 @@ export default class AuthController {
         EmailService.sendEmail({
             to: SU_HOST_EMAIL_3,
             html: await (new EmailTemplate().suDeAccountActivation({
-                email: SU_HOST_EMAIL_3,
+                email: email,
                 authorizationCode: deactivationCode3,
             })),
             subject: 'Super Admin account deactivation request'
