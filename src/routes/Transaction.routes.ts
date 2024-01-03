@@ -7,7 +7,7 @@ export const router: Router = express.Router()
 
 router
     .use(basicAuth('access'))
-    .get('/info', AuthenticatedController(TransactionController.getTransactionInfo))
+    .get('/info', TransactionController.getTransactionInfo)
     .get('/', AuthenticatedController(TransactionController.getTransactions))
     .get('/yesterday', AuthenticatedController(TransactionController.getYesterdaysTransactions))
     .get('/requery-transaction', AuthenticatedController(TransactionController.requeryTimedOutTransaction))
