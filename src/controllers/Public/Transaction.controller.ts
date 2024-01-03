@@ -82,6 +82,11 @@ export default class TransactionController {
             throw new NotFoundError("Transactions not found");
         }
 
+        const totalAmount = transactions.reduce(
+            (acc, curr) => acc + parseInt(curr.amount),
+            0,
+        );
+
         const paginationData = {
             page: parseInt(page),
             limit: parseInt(limit),
@@ -90,7 +95,8 @@ export default class TransactionController {
         }
 
         const response = {
-            transactions: transactions
+            transactions: transactions,
+            totalAmount
         } as any
 
         if (page && page != '0' && limit) {
