@@ -5,6 +5,8 @@ import { JWT_SECRET, NODE_ENV } from "../utils/Constants";
 import { UnauthenticatedError } from "../utils/Errors";
 import Cypher from "../utils/Cypher";
 import { AuthenticatedRequest } from "../utils/Interface";
+import ApiKeyService from "../services/ApiKey.service ";
+import logger from "../utils/Logger";
 
 export const basicAuth = function (tokenType: AuthToken) {
     return async (req: Request, res: Response, next: NextFunction) => {
@@ -52,7 +54,7 @@ export const validateApiKey = async (req: Request, res: Response, next: NextFunc
         return next(new UnauthenticatedError('Invalid API key'))
     };
 
-    (req as any).key = validApiKey
+    (req as any).key = validApiKey // Partners id
 
 
     // Check if this si the current active api key
@@ -71,6 +73,10 @@ export const validateApiKey = async (req: Request, res: Response, next: NextFunc
     if (Cypher.decryptString(currentActiveApiKey) !== apiKey) {
         return next(new UnauthenticatedError('Invalid API key'))
     }
+
+    ApiKeyService.updateLastUsedTime(validApiKey).catch((e) => {
+        logger.info('Error updating last used time for api key')
+    })
 
     next()
 }

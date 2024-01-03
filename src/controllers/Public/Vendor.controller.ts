@@ -10,31 +10,21 @@ import MeterService from "../../services/Meter.service";
 import User from "../../models/User.model";
 import Meter, { IMeter } from "../../models/Meter.model";
 import VendorService from "../../services/Vendor.service";
-import PowerUnit from "../../models/PowerUnit.model";
-import PowerUnitService from "../../services/PowerUnit.service";
 import {
     DEFAULT_ELECTRICITY_PROVIDER,
-    DISCO_LOGO,
-    NODE_ENV,
 } from "../../utils/Constants";
 import {
     BadRequestError,
-    GateWayTimeoutError,
     InternalServerError,
     NotFoundError,
 } from "../../utils/Errors";
-import { generateRandomToken } from "../../utils/Helper";
-import EmailService, { EmailTemplate } from "../../utils/Email";
-import ResponseTrimmer from "../../utils/ResponseTrimmer";
-import NotificationUtil from "../../utils/Notification";
 import Entity from "../../models/Entity/Entity.model";
-import NotificationService from "../../services/Notification.service";
 import EventService from "../../services/Event.service";
 import { AuthenticatedRequest } from "../../utils/Interface";
 import Event, { TokenRetryEventPayload } from "../../models/Event.model";
 import { VendorPublisher } from "../../kafka/modules/publishers/Vendor";
 import { CRMPublisher } from "../../kafka/modules/publishers/Crm";
-import TokenConsumer, { TokenHandlerUtil } from "../../kafka/modules/consumers/Token";
+import { TokenHandlerUtil } from "../../kafka/modules/consumers/Token";
 import { TOPICS } from "../../kafka/Constants";
 import { PublisherEventAndParameters, Registry, TransactionErrorCause } from "../../kafka/modules/util/Interface";
 import { randomUUID } from "crypto";
@@ -42,7 +32,6 @@ import ConsumerFactory from "../../kafka/modules/util/Consumer";
 import MessageProcessorFactory from "../../kafka/modules/util/MessageProcessor";
 import logger from "../../utils/Logger";
 import { error } from "console";
-import { PartnerProfile } from "../../models/Entity/Profiles";
 import TransactionEventService from "../../services/TransactionEvent.service";
 import WebhookService from "../../services/Webhook.service";
 
