@@ -119,20 +119,15 @@ export default class TransactionService {
         partnerId: string,
     ): Promise<Transaction[]> {
         const yesterdayDate = new Date();
-        yesterdayDate.setDate(yesterdayDate.getDate() - 5);
-        const currentDate = new Date();
-        console.log(yesterdayDate);
-        console.log(new Date());
-        console.log(partnerId);
+        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
         const transactions: Transaction[] = await Transaction.findAll({
             where: {
-                // partnerId: partnerId,
+                partnerId: partnerId,
                 transactionTimestamp: {
-                    [Op.between]: [yesterdayDate, currentDate],
+                    [Op.between]: [yesterdayDate, new Date()],
                 },
             },
         });
-        // console.log(transactions)
 
         return transactions;
     }
@@ -146,7 +141,7 @@ export default class TransactionService {
                 partnerId: partnerId,
                 status,
                 transactionTimestamp: {
-                    $between: [yesterdayDate, new Date()],
+                    [Op.between]: [yesterdayDate, new Date()],
                 },
             },
         });
