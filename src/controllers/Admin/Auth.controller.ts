@@ -8,6 +8,7 @@ import { AuthUtil } from "../../utils/Auth/Token";
 import { SU_HOST_EMAIL_1, SU_HOST_EMAIL_2, SU_HOST_EMAIL_3 } from "../../utils/Constants";
 import { randomUUID } from "crypto";
 import { RoleEnum } from "../../models/Role.model";
+const newrelic = require('newrelic');
 
 class AuthControllerValidator {
     static async activatePartner() {
@@ -19,6 +20,7 @@ class AuthControllerValidator {
 
 export default class AuthController {
     static async activatePartner(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        newrelic.setTransactionName("Activate Partner")
         const { email } = req.body
 
         const validEmail = Validator.validateEmail(email)
@@ -51,6 +53,7 @@ export default class AuthController {
     }
 
     static async deactivatePartner(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        newrelic.setTransactionName("Deactivate Partner")
         const { email } = req.body
 
         const validEmail = Validator.validateEmail(email)
@@ -83,6 +86,7 @@ export default class AuthController {
     }
 
     static async requestSuperAdminActivation(req: Request, res: Response, next: NextFunction) {
+        newrelic.setTransactionName("Request SuperAdmin Activation")
         const { email } = req.body
 
         const validEmail = Validator.validateEmail(email)

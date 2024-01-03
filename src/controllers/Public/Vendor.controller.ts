@@ -45,6 +45,7 @@ import { error } from "console";
 import { PartnerProfile } from "../../models/Entity/Profiles";
 import TransactionEventService from "../../services/TransactionEvent.service";
 import WebhookService from "../../services/Webhook.service";
+const newrelic = require('newrelic');
 
 interface valideMeterRequestBody {
     meterNumber: string;
@@ -82,6 +83,7 @@ class VendorTokenHandler implements Registry {
     private response: () => Response
 
     private async handleTokenReceived(data: PublisherEventAndParameters[TOPICS.TOKEN_RECIEVED_FROM_VENDOR]) {
+        newrelic.setTransactionName("Token Recieved")
         this.response().status(200).send({
             status: 'success',
             message: 'Token purchase initiated successfully',
@@ -131,13 +133,13 @@ class VendorTokenReceivedSubscriber extends ConsumerFactory {
 class VendorControllerValdator {
     static validateMeter() { }
 
-    static async requestToken({
+    static async requestToken( {
         bankRefId,
         transactionId,
     }: RequestTokenValidatorParams): Promise<RequestTokenValidatorResponse> {
         if (!bankRefId)
             throw new BadRequestError("Transaction reference is required");
-
+            newrelic.setTransactionName("Token Request")
         const transactionRecord: Transaction | null =
             await TransactionService.viewSingleTransaction(transactionId);
         if (!transactionRecord) {
@@ -221,6 +223,7 @@ interface RequestTokenUtilParams {
 }
 class VendorControllerUtil {
     static async replayRequestToken({ transaction, meterInfo, previousRetryEvent }: RequestTokenUtilParams) {
+        newrelic.setTransactionName("Replay Request Token")
         const transactionEventService = new TransactionEventService(
             transaction, meterInfo, transaction.superagent
         )
@@ -250,6 +253,8 @@ class VendorControllerUtil {
     }
 
     static async replayWebhookNotification({ transaction, meterInfo }: { transaction: Transaction, meterInfo: { meterNumber: string, disco: string, vendType: 'PREPAID' | 'POSTPAID', id: string } }) {
+        newrelic.setTransactionName("Replay Webhook Notification")
+       
         const transactionEventService = new TransactionEventService(
             transaction, meterInfo, transaction.superagent
         )
@@ -293,6 +298,7 @@ class VendorControllerUtil {
     }
 
     static async replayTokenSent({ transaction }: { transaction: Transaction }) {
+        newrelic.setTransactionName("Replay Token Sent")
         const powerUnit = await transaction.$get('powerUnit')
         if (!powerUnit) {
             throw new InternalServerError('Power unit not found')
@@ -343,6 +349,7 @@ class VendorControllerUtil {
 
 export default class VendorController {
     static async validateMeter(req: Request, res: Response, next: NextFunction) {
+        newrelic.setTransactionName("Validate Meter")
         const {
             meterNumber,
             disco,
@@ -492,6 +499,7 @@ export default class VendorController {
     }
 
     static async requestToken(req: Request, res: Response, next: NextFunction) {
+        newrelic.setTransactionName("Request Token")
         const { transactionId, bankRefId, bankComment, amount, vendType } =
             req.query as Record<string, any>;
 
@@ -634,6 +642,7 @@ export default class VendorController {
     }
 
     static async replayTransaction(req: Request, res: Response, next: NextFunction) {
+        newrelic.setTransactionName("Replay Transadction")
         const { eventId } = req.body
 
         const event = await EventService.viewSingleEvent(eventId)
@@ -696,6 +705,7 @@ export default class VendorController {
     }
 
     static async getDiscos(req: Request, res: Response) {
+        newrelic.setTransactionName("Show Discos")
         let discos: { name: string; serviceType: "PREPAID" | "POSTPAID" }[] = [];
 
         switch (DEFAULT_ELECTRICITY_PROVIDER) {
@@ -720,6 +730,7 @@ export default class VendorController {
     }
 
     static async checkDisco(req: Request, res: Response) {
+        newrelic.setTransactionName("Check Discos")
         const { disco } = req.query;
 
         let result = false;
