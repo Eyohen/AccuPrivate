@@ -55,11 +55,13 @@ export default class TransactionEventService {
     private transaction: Transaction;
     private meterInfo: EventMeterInfo;
     private superAgent: Transaction['superagent']
+    private partner: Transaction['partner']['email']
 
-    constructor(transaction: Transaction, meterInfo: EventMeterInfo, superAgent: Transaction['superagent']) {
+    constructor(transaction: Transaction, meterInfo: EventMeterInfo, superAgent: Transaction['superagent'], partner: string) {
         this.transaction = transaction;
         this.meterInfo = meterInfo;
-        this.superAgent = superAgent
+        this.superAgent = superAgent;
+        this.partner = partner
     }
 
     public getMeterInfo(): EventMeterInfo {
@@ -79,7 +81,8 @@ export default class TransactionEventService {
                 meterNumber: this.meterInfo.meterNumber,
                 disco: this.meterInfo.disco,
                 vendType: this.meterInfo.vendType,
-                superagent: this.superAgent
+                superagent: this.superAgent,
+                partnerEmail: this.partner
             }),
             source: 'API',
             eventTimestamp: new Date(),
@@ -105,7 +108,8 @@ export default class TransactionEventService {
                 meterNumber: this.meterInfo.meterNumber,
                 disco: this.meterInfo.disco,
                 vendType: this.meterInfo.vendType,
-                superagent: this.superAgent
+                superagent: this.superAgent,
+                partnerEmail: this.partner
             }),
             source: this.transaction.superagent.toUpperCase(),
             eventTimestamp: new Date(),
@@ -126,7 +130,8 @@ export default class TransactionEventService {
                 meterNumber: this.meterInfo.meterNumber,
                 disco: this.meterInfo.disco,
                 vendType: this.meterInfo.vendType,
-                superagent: this.superAgent
+                superagent: this.superAgent,
+                partnerEmail: this.partner
             }),
             source: 'API',
             eventTimestamp: new Date(),
@@ -149,7 +154,9 @@ export default class TransactionEventService {
                     address: info.user.address,
                     phoneNumber: info.user.phoneNumber,
                 },
-                superagent: this.superAgent
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+                disco: this.meterInfo.disco,
             }),
             source: 'API',
             eventTimestamp: new Date(),
@@ -172,7 +179,9 @@ export default class TransactionEventService {
                     address: info.user.address,
                     phoneNumber: info.user.phoneNumber,
                 },
-                superagent: this.superAgent
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+                disco: this.meterInfo.disco,
             }),
             source: 'API',
             eventTimestamp: new Date(),
@@ -189,7 +198,8 @@ export default class TransactionEventService {
             eventText: TOPICS.CHECK_DISCO_UP_CONFIRMED_FROM_VENDOR,
             payload: JSON.stringify({
                 disco: this.meterInfo.disco,
-                superagent: this.superAgent
+                superagent: this.superAgent,
+                patner: this.partner
             }),
             source: 'API',
             eventTimestamp: new Date(),
@@ -219,7 +229,8 @@ export default class TransactionEventService {
                 meterNumber: this.meterInfo.meterNumber,
                 phoneNumber: user.phoneNumber,
                 vendType: this.meterInfo.vendType,
-                superagent: this.superAgent
+                superagent: this.superAgent,
+                partnerEmail: this.partner
             }),
             source: 'API',
             eventTimestamp: new Date(),
@@ -253,6 +264,7 @@ export default class TransactionEventService {
                 meterNumber: this.meterInfo.meterNumber,
                 phoneNumber: user.phoneNumber,
                 vendType: this.meterInfo.vendType,
+                partnerEmail: this.partner
             }),
             source: 'API',
             eventTimestamp: new Date(),
@@ -276,7 +288,8 @@ export default class TransactionEventService {
                 meterId: this.transaction.meterId,
                 meterNumber: this.meterInfo.meterNumber,
                 vendType: this.meterInfo.vendType,
-                superagent: this.superAgent
+                superagent: this.superAgent,
+                partnerEmail: this.partner
             }),
             source: 'API',
             eventTimestamp: new Date(),
@@ -300,7 +313,8 @@ export default class TransactionEventService {
                 meterId: this.transaction.meterId,
                 meterNumber: this.meterInfo.meterNumber,
                 vendType: this.meterInfo.vendType,
-                superagent: this.superAgent
+                superagent: this.superAgent,
+                partnerEmail: this.partner
             }),
             source: this.transaction.superagent.toUpperCase(),
             eventTimestamp: new Date(),
@@ -326,7 +340,8 @@ export default class TransactionEventService {
                 error,
                 vendType: this.meterInfo.vendType,
                 timestamp: new Date(),
-                superagent: this.superAgent
+                superagent: this.superAgent,
+                partnerEmail: this.partner
             }),
             source: this.transaction.superagent.toUpperCase(),
             eventTimestamp: new Date(),
@@ -352,6 +367,7 @@ export default class TransactionEventService {
                 vendType: this.meterInfo.vendType,
                 timestamp: new Date(),
                 superagent: this.superAgent,
+                partnerEmail: this.partner,
                 error,
                 retryCount
             }),
@@ -378,7 +394,8 @@ export default class TransactionEventService {
                 meterNumber: this.meterInfo.meterNumber,
                 vendType: this.meterInfo.vendType,
                 timestamp: new Date(),
-                superagent: this.superAgent
+                superagent: this.superAgent,
+                partnerEmail: this.partner
             }),
             source: this.transaction.superagent.toUpperCase(),
             eventTimestamp: new Date(),
@@ -401,7 +418,8 @@ export default class TransactionEventService {
                 meterId: this.transaction.meterId,
                 meterNumber: this.meterInfo.meterNumber,
                 vendType: this.meterInfo.vendType,
-                superagent: this.superAgent
+                superagent: this.superAgent,
+                partnerEmail: this.partner
             }),
             source: this.transaction.superagent.toUpperCase(),
             eventTimestamp: new Date(),
@@ -426,7 +444,8 @@ export default class TransactionEventService {
                 meterId: this.transaction.meterId,
                 meterNumber: this.meterInfo.meterNumber,
                 vendType: this.meterInfo.vendType,
-                superagent: this.superAgent
+                superagent: this.superAgent,
+                partnerEmail: this.partner
             }),
             source: this.transaction.superagent.toUpperCase(),
             eventTimestamp: new Date(),
@@ -449,7 +468,9 @@ export default class TransactionEventService {
             eventText: TOPICS.TOKEN_SENT_TO_EMAIL,
             payload: JSON.stringify({
                 email: user.email,
-                superagent: this.superAgent
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+                disco: this.meterInfo.disco,
             }),
             source: this.transaction.superagent.toUpperCase(),
             eventTimestamp: new Date(),
@@ -475,7 +496,9 @@ export default class TransactionEventService {
                     email: partner.email,
                     id: partner.id,
                 },
-                superagent: this.superAgent
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+                disco: this.meterInfo.disco,
             }),
             source: this.transaction.superagent.toUpperCase(),
             eventTimestamp: new Date(),
@@ -501,7 +524,9 @@ export default class TransactionEventService {
                     email: partner.email,
                     id: partner.id,
                 },
-                superagent: this.superAgent
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+                disco: this.meterInfo.disco,
             }),
             source: this.transaction.superagent.toUpperCase(),
             eventTimestamp: new Date(),
@@ -527,7 +552,9 @@ export default class TransactionEventService {
                     email: partner.email,
                     id: partner.id,
                 },
-                superagent: this.superAgent
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+                disco: this.meterInfo.disco,
             }),
             source: this.transaction.superagent.toUpperCase(),
             eventTimestamp: new Date(),
@@ -553,7 +580,9 @@ export default class TransactionEventService {
                     email: partner.email,
                     id: partner.id,
                 },
-                superagent: this.superAgent
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+                disco: this.meterInfo.disco,
             }),
             source: this.transaction.superagent.toUpperCase(),
             eventTimestamp: new Date(),
@@ -579,7 +608,9 @@ export default class TransactionEventService {
                     email: partner.email,
                     id: partner.id,
                 },
-                superagent: this.superAgent
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+                disco: this.meterInfo.disco,
             }),
             source: this.transaction.superagent.toUpperCase(),
             eventTimestamp: new Date(),
@@ -608,7 +639,9 @@ export default class TransactionEventService {
                 webHookUrl: url,
                 retryCount,
                 superagent: this.superAgent,
-                timeStamp
+                timeStamp,
+                partnerEmail: this.partner,
+                disco: this.meterInfo.disco,
             }),
             source: this.transaction.superagent.toUpperCase(),
             eventTimestamp: new Date(),
@@ -633,7 +666,9 @@ export default class TransactionEventService {
                     email: partner.email,
                     id: partner.id,
                 },
-                superagent: this.superAgent
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+                disco: this.meterInfo.disco,
             }),
             source: this.transaction.superagent.toUpperCase(),
             eventTimestamp: new Date(),
