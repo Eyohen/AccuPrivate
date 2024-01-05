@@ -142,7 +142,6 @@ export class IRechargeVendorService {
     protected static VENDOR_CODE = IRECHARGE_VENDOR_CODE
 
     private static generateHash(combinedString: string): string {
-        console.log(IRECHARGE_PRIVATE_KEY)
         const hash = crypto.createHmac('sha1', IRECHARGE_PRIVATE_KEY).update(combinedString).digest('hex')
         return hash
     }
@@ -154,21 +153,9 @@ export class IRechargeVendorService {
     }
 
     static async validateMeter({ disco, reference, meterNumber }: { disco: string, meterNumber: string, reference: string }): Promise<any> {
-        const combinedString = this.VENDOR_CODE + "|" + '12434324234234234' + "|" + meterNumber + "|" + disco + "|" + this.PUBLIC_KEY
+        const combinedString = this.VENDOR_CODE + "|" + reference + "|" + meterNumber + "|" + disco + "|" + this.PUBLIC_KEY
         const hash = this.generateHash(combinedString)
 
-        console.log({
-            vendor_code: this.VENDOR_CODE,
-            reference_id: reference,
-            meter: meterNumber,
-            disco,
-            response_format: 'json',
-            hash,
-            privateKey: this.PRIVATE_KEY,
-            publicKey: this.PUBLIC_KEY,
-            combinedString,
-            combinedStringHash: hash
-        })
         const response = await this.client.get(`/get_meter_info.php/?vendor_code=${this.VENDOR_CODE}&reference_id=${reference}&meter=${meterNumber}&disco=${disco}&response_format=json&hash=${hash}`)
 
         return response.data
@@ -280,11 +267,15 @@ export default class VendorService {
                 agentReference: reference
             })
 
+            response.data.data.rawOutput.token = NODE_ENV === 'development' ? generateRandomToken() : response.data.data.rawOutput.token
             return { ...response.data, source: 'BAXI' as const }
         } catch (error: any) {
+            logger.error('An error occured with baxi')
             if (NODE_ENV === 'development') {
                 // This is because baxi API currently has been failing on dev mode
-                return BaxipaySeed.generateDataForSuccessfulVend(reference, amount)
+                const res = BaxipaySeed.generateDataForSuccessfulVend(reference, amount)
+                logger.warn(res.data.rawOutput.token)
+                return res
             }
 
             throw new Error(error.message)
@@ -331,6 +322,7 @@ export default class VendorService {
             const response = await this.baxiAxios().post<IBaxiValidateMeterResponse>('/electricity/verify', postData)
             return response.data.data
         } catch (error: any) {
+            console.log(error.response)
             throw new Error(error.message)
         }
     }
