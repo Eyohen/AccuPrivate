@@ -267,14 +267,15 @@ export default class VendorService {
                 agentReference: reference
             })
 
-            response.data.data.rawOutput.token = NODE_ENV === 'development' ? generateRandomToken() : response.data.data.rawOutput.token
+            response.data.data.rawOutput.token = NODE_ENV === 'development' 
+                ? generateRandomToken() 
+                : response.data.data.rawOutput.token
+                
             return { ...response.data, source: 'BAXI' as const }
         } catch (error: any) {
-            logger.error('An error occured with baxi')
             if (NODE_ENV === 'development') {
                 // This is because baxi API currently has been failing on dev mode
                 const res = BaxipaySeed.generateDataForSuccessfulVend(reference, amount)
-                logger.warn(res.data.rawOutput.token)
                 return res
             }
 
