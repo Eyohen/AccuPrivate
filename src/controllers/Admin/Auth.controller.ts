@@ -77,7 +77,7 @@ export default class AuthController {
             throw new ForbiddenError('Unauthorized access')
         }
 
-        await entity.update({ status: { ...entity.status, activated: true } })
+        await entity.update({ status: { ...entity.status, activated: false } })
 
         await EmailService.sendEmail({
             to: entity.email,

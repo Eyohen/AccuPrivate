@@ -9,6 +9,7 @@ router
     .use(basicAuth('access'))
     .get('/info', TransactionController.getTransactionInfo)
     .get('/', AuthenticatedController(TransactionController.getTransactions))
+    .get('/kpi', AuthenticatedController(TransactionController.getTransactionsKPI))
     .get('/yesterday', AuthenticatedController(TransactionController.getYesterdaysTransactions))
     .get('/requery-transaction', AuthenticatedController(TransactionController.requeryTimedOutTransaction))
 

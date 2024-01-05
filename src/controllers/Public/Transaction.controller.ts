@@ -71,7 +71,9 @@ export default class TransactionController {
 
         const requestWasMadeByAnAdmin = [RoleEnum.Admin].includes(
             req.user.user.entity.role,
-        );
+        ) || [RoleEnum.SuperAdmin].includes(
+            req.user.user.entity.role,
+        ) ;
         if (!requestWasMadeByAnAdmin) {
             query.where.partnerId = req.user.user.profile.id;
         }
@@ -101,6 +103,56 @@ export default class TransactionController {
 
         if (page && page != '0' && limit) {
             response['pagination'] = paginationData
+        }
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Transactions retrieved successfully',
+            data: response
+        })
+    }
+    static async getTransactionsKPI(req: AuthenticatedRequest, res: Response) {
+        const {
+            page, limit, status, startDate, endDate,
+            userId, disco, superagent, partnerId
+        } = req.query as any as getTransactionsRequestBody
+
+        const query = { where: {} } as any
+
+        if (status) query.where.status = status.toUpperCase()
+        if (startDate && endDate) query.where.transactionTimestamp = { [Op.between]: [new Date(startDate), new Date(endDate)] }
+        if (userId) query.where.userId = userId
+        if (disco) query.where.disco = disco
+        if (superagent) query.where.superagent = superagent
+        if (limit) query.limit = parseInt(limit)
+        if (page && page != '0' && limit) {
+            query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit)
+        }
+        if (partnerId) query.where.partnerId = partnerId
+
+        const requestWasMadeByAnAdmin = [RoleEnum.Admin].includes(
+            req.user.user.entity.role,
+        ) || [RoleEnum.SuperAdmin].includes(
+            req.user.user.entity.role,
+        ) ;
+        if (!requestWasMadeByAnAdmin) {
+            query.where.partnerId = req.user.user.profile.id;
+        }
+
+
+        const totalTransactionAmount: any = await TransactionService.viewTransactionsAmountWithCustomQuery(query)
+        const totalTransactionCount : number = await TransactionService.viewTransactionsCountWithCustomQuery(query)
+        
+        
+
+       
+        
+
+        
+
+        const response = {
+            totalTransactionAmount,
+            totalTransactionCount
         }
 
         res.status(200).json({

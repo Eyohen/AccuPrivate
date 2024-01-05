@@ -15,6 +15,7 @@ import User from "../models/User.model";
 import Meter from "../models/Meter.model";
 import { Op } from "sequelize";
 import { generateRandomString } from "../utils/Helper";
+import { Sequelize } from "sequelize-typescript";
 
 // Define the TransactionService class for handling transaction-related operations
 export default class TransactionService {
@@ -74,6 +75,38 @@ export default class TransactionService {
         });
         return transactions;
     }
+
+    static async viewTransactionsCountWithCustomQuery(
+        query: Record<string, any>,
+    ): Promise<number> {
+        // Retrieve all transactions from the database
+        // Sort from latest
+        const transactionCount: number = (
+            await Transaction.count({
+                ...query,
+            })
+        )
+        return transactionCount;
+    }
+
+    static async viewTransactionsAmountWithCustomQuery(
+        query: Record<string, any>,
+    ): Promise<number> {
+        // Retrieve all transactions from the database
+        // Sort from latest
+        const transactionCount: any = (
+            await Transaction.findAll({
+                ...query,
+                
+                attributes : [
+                    [Sequelize.fn('sum', Sequelize.cast(Sequelize.col('amount'),'DECIMAL') ), 'total_amount'],
+                ]
+                
+            })
+        )
+        return transactionCount;
+    }
+
 
     // Static method for viewing a single transaction by UUID
     static async viewSingleTransaction(
