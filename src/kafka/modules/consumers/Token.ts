@@ -240,7 +240,7 @@ class TokenHandler extends Registry {
         }
 
         await TransactionService.updateSingleTransaction(transaction.id, { superagent: data.newVendor })
-        const transactionEventService = new EventService.transactionEventService(transaction, data.meter, data.newVendor);
+        const transactionEventService = new EventService.transactionEventService(transaction, data.meter, data.newVendor, data.partner.email);
         await transactionEventService.addPowerPurchaseInitiatedEvent(transaction.bankRefId, transaction.amount);
         await VendorPublisher.publishEventForInitiatedPowerPurchase({
             meter: data.meter,
@@ -302,7 +302,8 @@ class TokenHandler extends Registry {
         const transactionEventService = new TransactionEventService(
             transaction,
             eventMessage.meter,
-            data.superAgent
+            data.superAgent,
+            partner.email
         );
         await transactionEventService.addGetTransactionTokenFromVendorInitiatedEvent();
         await transactionEventService.addVendElectricityRequestedFromVendorEvent();
@@ -456,11 +457,10 @@ class TokenHandler extends Registry {
                 address: transaction.meter.address,
             });
 
-        await TransactionService.updateSingleTransaction(data.transactionId, {
+        return await TransactionService.updateSingleTransaction(data.transactionId, {
             status: Status.COMPLETE,
             powerUnitId: powerUnit.id,
         });
-        return;
     }
 
     private static async requeryTransactionForToken(
@@ -485,7 +485,8 @@ class TokenHandler extends Registry {
         const transactionEventService = new TransactionEventService(
             transaction,
             data.meter,
-            data.superAgent
+            data.superAgent,
+            partner.email
         );
         await transactionEventService.addGetTransactionTokenFromVendorInitiatedEvent();
         await VendorPublisher.publishEventForGetTransactionTokenFromVendorInitiated(

@@ -139,7 +139,8 @@ class WebhookHandler extends Registry {
                 disco: transaction.disco,
                 vendType: transaction.meter.vendType,
             },
-            transaction.superagent
+            transaction.superagent,
+            transaction.partner.email,
         );
 
         try {

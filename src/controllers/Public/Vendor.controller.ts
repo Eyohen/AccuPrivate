@@ -211,7 +211,7 @@ interface RequestTokenUtilParams {
 class VendorControllerUtil {
     static async replayRequestToken({ transaction, meterInfo, previousRetryEvent }: RequestTokenUtilParams) {
         const transactionEventService = new TransactionEventService(
-            transaction, meterInfo, transaction.superagent
+            transaction, meterInfo, transaction.superagent, transaction.partner.email
         )
 
         const eventPayload = JSON.parse(previousRetryEvent.payload) as TokenRetryEventPayload
@@ -241,7 +241,8 @@ class VendorControllerUtil {
 
     static async replayWebhookNotification({ transaction, meterInfo }: { transaction: Transaction, meterInfo: { meterNumber: string, disco: string, vendType: 'PREPAID' | 'POSTPAID', id: string } }) {
         const transactionEventService = new TransactionEventService(
-            transaction, meterInfo, transaction.superagent
+            transaction, meterInfo, transaction.superagent,
+            transaction.partner.email
         )
 
         const user = await transaction.$get('user')
@@ -308,7 +309,7 @@ class VendorControllerUtil {
             meterNumber: powerUnit.meter.meterNumber,
             disco: transaction.disco,
             vendType: powerUnit.meter.vendType as IMeter['vendType'],
-        }, transaction.superagent
+        }, transaction.superagent, partner.email
         )
 
         await transactionEventService.addTokenSentToPartnerRetryEvent()
@@ -375,7 +376,7 @@ export default class VendorController {
             });
 
         const transactionEventService = new EventService.transactionEventService(
-            transaction, { meterNumber, disco, vendType }, superagent
+            transaction, { meterNumber, disco, vendType }, superagent, transaction.partner.email
         );
 
         await transactionEventService.addMeterValidationRequestedEvent();
@@ -502,7 +503,7 @@ export default class VendorController {
             vendType: meter.vendType,
             id: meter.id,
         }
-        const transactionEventService = new EventService.transactionEventService(transaction, meterInfo, transaction.superagent);
+        const transactionEventService = new EventService.transactionEventService(transaction, meterInfo, transaction.superagent, transaction.partner.email);
         await transactionEventService.addPowerPurchaseInitiatedEvent(bankRefId, amount);
 
         const { user, partnerEntity } = await VendorControllerValdator.requestToken({ bankRefId, transactionId });
@@ -768,7 +769,7 @@ export default class VendorController {
             meterNumber: meter.meterNumber,
             disco: transaction.disco,
             vendType: meter.vendType as IMeter["vendType"],
-        }, transaction.superagent).addPartnerTransactionCompleteEvent();
+        }, transaction.superagent, transaction.partner.email).addPartnerTransactionCompleteEvent();
 
         res.status(200).json({
             status: "success",

@@ -428,8 +428,9 @@ export default class VendorService {
             return { ...response.data, source: 'BUYPOWERNG' };
         } catch (error: any) {
             if (error instanceof AxiosError) {
-                if (error.response?.data?.message === "An unexpected error occurred. Please requery.") {
-                    logger.error(error.message, { meta: { stack: error.stack, responseData: error.response.data } })
+                const requery = error.response?.data?.message === "An unexpected error occurred. Please requery." || error.response?.data?.responseCode === 500
+                if (requery) {
+                    logger.error(error.message, { meta: { stack: error.stack, responseData: error.response?.data } })
                     throw new Error('Transaction timeout')
                 }
             }

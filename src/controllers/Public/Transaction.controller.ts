@@ -212,6 +212,11 @@ export default class TransactionController {
             return;
         }
 
+        const partner = await transactionRecord.$get("partner");
+        if (!partner) {
+            throw new InternalServerError("Partner not found");
+        }
+
         const transactionEventService = new TransactionEventService(
             transactionRecord,
             {
@@ -219,7 +224,8 @@ export default class TransactionController {
                 disco: transactionRecord.disco,
                 vendType: transactionRecord.meter.vendType,
             },
-            transactionRecord.superagent
+            transactionRecord.superagent,
+            partner.email
         );
         await transactionEventService.addTokenReceivedEvent(response.data.token);
         await VendorPublisher.publishEventForTokenReceivedFromVendor({
