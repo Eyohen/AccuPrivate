@@ -494,11 +494,30 @@ export default class AuthController {
     }
 
     static async updateLoginOTPRequirement(req: AuthenticatedRequest, res: Response) {
-        const { requireOtp } = req.body
+        const { requireOtp, entityId } = req.body
 
-        const entity = await EntityService.viewSingleEntityByEmail(req.user.user.entity.email)
+        let entity = await EntityService.viewSingleEntityByEmail(req.user.user.entity.email)
         if (!entity) {
             throw new InternalServerError('Entity record not found for Authenticated user')
+        }
+
+        const requestMadeByPartner = req.user.user.entity.role === RoleEnum.Partner
+        if (requestMadeByPartner && entity.id !== entityId) {
+            const userEntity = await EntityService.viewSingleEntity(entityId)
+            if (!userEntity) {
+                throw new InternalServerError('Entity record not found for user')
+            }
+
+            const profile = await EntityService.getAssociatedProfile(userEntity)
+            if (!profile) {
+                throw new InternalServerError('Profile not found')
+            }
+
+            if (profile instanceof TeamMemberProfile && profile.partnerId !== req.user.user.profile.id) {
+                throw new ForbiddenError('Unauthorized access to user')
+            }
+
+            entity = userEntity 
         }
 
         await EntityService.updateEntity(entity, { requireOTPOnLogin: requireOtp })
@@ -508,6 +527,7 @@ export default class AuthController {
             message: 'OTP requirement updated successfully',
             data: null
         })
+
     }
 
     static async logout(req: AuthenticatedRequest, res: Response) {
