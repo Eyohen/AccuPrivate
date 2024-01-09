@@ -29,7 +29,7 @@ export default class UserService {
                 emailVerified: true,
                 activated: true,
             },
-            requireOTPOnLogin: false
+            requireOTPOnLogin: true
         }, transaction)
 
         const password = await PasswordService.addPassword({

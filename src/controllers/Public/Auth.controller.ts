@@ -112,7 +112,6 @@ export default class AuthController {
     static async otherSignup(req: Request, res: Response, next: NextFunction) {
         const { email, password, roleId } = req.body
 
-
         const role = await RoleService.viewRoleById(roleId)
         if (!role) {
             throw new BadRequestError('Invalid role')
@@ -403,6 +402,7 @@ export default class AuthController {
         let accessToken: string | null = null
         if (entity.requireOTPOnLogin) {
             const otpCode = await AuthUtil.generateCode({ type: 'otp', entity, expiry: 60 * 60 * 3 })
+            console.log({ otpCode })
             accessToken = await AuthUtil.generateToken({ type: 'otp', entity, profile: entity, expiry: 60 * 60 * 3 })
 
             await EmailService.sendEmail({
@@ -473,7 +473,7 @@ export default class AuthController {
         }
 
         const profile = await EntityService.getAssociatedProfile(entity)
-        if (!profile && req.user.user.entity.role === RoleEnum.EndUser) {
+        if (!profile && req.user.user.entity.role !== RoleEnum.EndUser) {
             throw new InternalServerError('Entity not found for authenticated user')
         }
 
@@ -500,7 +500,7 @@ export default class AuthController {
         if (!entity) {
             throw new InternalServerError('Entity record not found for Authenticated user')
         }
-        
+
         await EntityService.updateEntity(entity, { requireOTPOnLogin: requireOtp })
 
         res.status(200).json({

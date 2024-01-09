@@ -16,7 +16,6 @@ import WebhookService from "../../services/Webhook.service";
 import { PartnerProfile } from "../../models/Entity/Profiles";
 import ResponseTrimmer from "../../utils/ResponseTrimmer";
 import { IPartnerProfile, IPartnerStatsProfile } from "../../models/Entity/Profiles/PartnerProfile.model";
-import TransactionController from "./Transaction.controller";
 import TransactionService from "../../services/Transaction.service";
 
 export default class PartnerProfileController {
