@@ -143,6 +143,13 @@ class AuthUtil {
         const tokenKey = `${tokenType}_${tokenClass}:${entity.id}`
         await TokenUtil.deleteTokenFromCache(tokenKey)
     }
+
+    static async clear({ entity }: { entity: IEntity }) {
+        await this.deleteToken({ entity, tokenType: 'access', tokenClass: 'token' })
+        await this.deleteToken({ entity, tokenType: 'refresh', tokenClass: 'token' })
+        await this.deleteToken({ entity, tokenType: 'passwordreset', tokenClass: 'code' })
+        await this.deleteToken({ entity, tokenType: 'emailverification', tokenClass: 'code' })
+    }
 }
 
 export { AuthUtil, TokenUtil }

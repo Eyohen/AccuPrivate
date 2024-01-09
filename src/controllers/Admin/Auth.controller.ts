@@ -48,7 +48,7 @@ export default class AuthController {
             html: await new EmailTemplate().accountActivation(entity.email)
         })
 
-        await AuthUtil.clear({ entit })
+        await AuthUtil.clear({ entity })
 
         res.status(200).json({
             status: 'success',
@@ -57,7 +57,6 @@ export default class AuthController {
         })
     }
 
-    static async deactivatePartner(req: Request, res: Response, next: NextFunction) {
     static async deactivatePartner(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         const { email } = req.body
 
@@ -71,24 +70,24 @@ export default class AuthController {
             throw new BadRequestError('Entity not found')
         }
 
-        await AuthUtil.clear({ entity })
         const role = await entity.$get('role')
         if (!role) {
             throw new BadRequestError('Role not found')
         }
-
+        
         if (role.name === RoleEnum.SuperAdmin) {
             throw new ForbiddenError('Unauthorized access')
         }
 
         await entity.update({ status: { ...entity.status, activated: false } })
+        await AuthUtil.clear({ entity })
 
         await EmailService.sendEmail({
             to: entity.email,
             subject: 'Account Activation',
             html: await new EmailTemplate().accountActivation(entity.email)
         })
-
+        
         res.status(200).json({
             status: 'success',
             message: 'Deactivated user successfully',
