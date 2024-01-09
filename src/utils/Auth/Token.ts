@@ -47,7 +47,7 @@ class TokenUtil {
     }
 }
 
-export type AuthToken = 'access' | 'refresh' | 'passwordreset' | 'emailverification' | 'su_activation'
+export type AuthToken = 'access' | 'refresh' | 'passwordreset' | 'emailverification' | 'su_activation' | 'otp'
 interface GenerateTokenData<T = AuthToken> {
     type: T,
     profile: IPartnerProfile | ITeamMemberProfile | Entity,

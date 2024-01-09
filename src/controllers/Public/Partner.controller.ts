@@ -56,7 +56,8 @@ export default class PartnerProfileController {
                 login: true,
                 failedTransactions: true,
                 logout: true
-            }
+            },
+            requireOTPOnLogin: false
         }, transaction)
 
         const apiKey = await ApiKeyService.addApiKey({
