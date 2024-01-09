@@ -360,9 +360,13 @@ export default class AuthController {
     }
 
     static async login(req: Request, res: Response) {
-        const { email, password } = req.body
+        const { email, password, phoneNumber: _phoneNumber } = req.body
 
-        const entity = await EntityService.viewSingleEntityByEmail(email)
+        const phoneNumber = _phoneNumber ? _phoneNumber.startsWith('+234') ? _phoneNumber.replace('+234', '0') : _phoneNumber : null
+
+
+        let entity = email && await EntityService.viewSingleEntityByEmail(email)
+        entity = phoneNumber ? await EntityService.viewSingleEntityByPhoneNumber(phoneNumber) : entity
         if (!entity) {
             throw new BadRequestError('Invalid Email or password')
         }
@@ -477,6 +481,11 @@ export default class AuthController {
             throw new InternalServerError('Entity not found for authenticated user')
         }
 
+        console.log({
+            profile: profile?.dataValues,
+            entity: entity.dataValues
+        })
+
         const accessToken = await AuthUtil.generateToken({ type: 'access', entity, profile: profile ?? entity, expiry: 60 * 60 * 24 * 30 })
         const refreshToken = await AuthUtil.generateToken({ type: 'refresh', entity, profile: profile ?? entity, expiry: 60 * 60 * 60 * 60 })
 
@@ -517,7 +526,7 @@ export default class AuthController {
                 throw new ForbiddenError('Unauthorized access to user')
             }
 
-            entity = userEntity 
+            entity = userEntity
         }
 
         await EntityService.updateEntity(entity, { requireOTPOnLogin: requireOtp })

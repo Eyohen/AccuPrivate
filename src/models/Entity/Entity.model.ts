@@ -66,6 +66,9 @@ export default class Entity extends Model<Entity | IEntity> {
     @Column({ type: DataType.BOOLEAN, defaultValue: false })
     requireOTPOnLogin: boolean
 
+    @Column({ type: DataType.STRING, allowNull: true })
+    phoneNumber: string
+
     @BelongsTo(() => Role)
     role: Role;
 
@@ -124,7 +127,8 @@ export interface IEntity {
         failedTransactions: boolean;
     }
     complaints?: Complaint[],
-    requireOTPOnLogin: boolean
+    requireOTPOnLogin: boolean,
+    phoneNumber?: string
 }
 
 // Interface representing the structure for creating a new Entity (inherits from IEntity)
