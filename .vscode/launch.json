@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Attach by process id",
+            "type": "node",
+            "port": 4321,
+            "request": "attach",
+            "skipFiles": [
+                "<node_internals>/**",
+                "node_modules/**",
+                "dist/**",
+                ".git/**"
+            ]
+        }
+    ]
+}

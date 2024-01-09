@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { NotFoundError } from "../../utils/Errors";
 import PowerUnit, { IPowerUnit } from "../../models/PowerUnit.model";
 import PowerUnitService from "../../services/PowerUnit.service";
+import { AuthenticatedRequest } from "../../utils/Interface";
 
 interface getPowerUnitQueryParams extends IPowerUnit {
     limit: `${number}`
@@ -9,7 +10,7 @@ interface getPowerUnitQueryParams extends IPowerUnit {
 }
 
 export default class TransactionController {
-    static async getPowerUnitInfo(req: Request, res: Response) {
+    static async getPowerUnitInfo(req: AuthenticatedRequest, res: Response) {
         const { token } = req.query as Record<string, string>
 
         const powerUnit: PowerUnit | null = await PowerUnitService.viewPowerUnitByToken(token)
@@ -28,7 +29,7 @@ export default class TransactionController {
         })
     }
 
-    static async getPowerUnits(req: Request, res: Response) {
+    static async getPowerUnits(req: AuthenticatedRequest, res: Response) {
         const { page, limit, } = req.query as any as getPowerUnitQueryParams
 
         const query = { where: {} } as any

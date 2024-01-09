@@ -1,7 +1,12 @@
-import { ITransaction } from "../models/Transaction.model"
+import { string } from "zod"
+import Transaction, { ITransaction } from "../models/Transaction.model"
+import { DecodedTokenData } from "./Auth/Token"
+import { Request as ExpressApiRequest, NextFunction, Response } from "express"
+import { UUID } from "crypto"
+import { RoleEnum } from "../models/Role.model"
 
 export interface IVendToken {
-    transactionId: string
+    reference: string
     meterNumber: string
     disco: string
     amount: string
@@ -18,7 +23,8 @@ export interface IValidateMeter {
 }
 
 
-export interface IBaxiGetProviderResponse {
+export interface IBaxiGetProviderResponse extends BaseResponse {
+    source: 'BAXI',
     "status": "success",
     "message": "Successful",
     "code": 200,
@@ -33,7 +39,12 @@ export interface IBaxiGetProviderResponse {
     }
 }
 
-export interface IBaxiPurchaseResponse {
+export interface BaseResponse {
+    source: Transaction['superagent']
+}
+
+export interface IBaxiPurchaseResponse extends BaseResponse {
+    source: 'BAXI';
     status: string;
     statusCode: string;
     message: string;
@@ -45,7 +56,7 @@ export interface IBaxiPurchaseResponse {
         tokenCode: string;
         tokenAmount: null | number;
         amountOfPower: null | number;
-        rawOutput?: {
+        rawOutput: {
             fees: {
                 amount: number;
                 kind: string | null;
@@ -125,4 +136,32 @@ export interface IReceiptEmailTemplateProps {
     transaction: ITransaction,
     meterNumber: string,
     token: string
+}
+
+export interface INotification {
+    title: string;
+    message: string;
+    heading?: string;
+    entityId: string;
+    eventId?: string;
+}
+
+export type AuthOptions = 'authenticated' | 'none';
+
+export interface AuthenticatedRequest<T extends RoleEnum = RoleEnum.Partner> extends ExpressApiRequest {
+    headers: {
+        authorization: string;
+        signature?: string;
+        Signature?: string;
+    }
+    user: DecodedTokenData<T>;
+}
+
+export type AuthenticatedAsyncController = (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<void>;
+
+// TODO: Add option to specify if authentication type is through API Key or JWT
+export function AuthenticatedController(controller: AuthenticatedAsyncController) {
+    return async (req: ExpressApiRequest, res: Response, next: NextFunction) => {
+        return controller(req as AuthenticatedRequest, res, next)
+    }
 }
