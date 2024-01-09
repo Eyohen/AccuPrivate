@@ -105,6 +105,13 @@ class AuthUtil {
         const tokenKey = `${tokenType}_${tokenClass}:${partner.id}`
         await TokenUtil.deleteTokenFromCache(tokenKey)
     }
+
+    static async clear({ partner }: { partner: IPartner }) {
+        await this.deleteToken({ partner, tokenType: 'access', tokenClass: 'token' })
+        await this.deleteToken({ partner, tokenType: 'refresh', tokenClass: 'token' })
+        await this.deleteToken({ partner, tokenType: 'passwordreset', tokenClass: 'code' })
+        await this.deleteToken({ partner, tokenType: 'emailverification', tokenClass: 'code' })
+    }
 }
 
 export { AuthUtil, TokenUtil }

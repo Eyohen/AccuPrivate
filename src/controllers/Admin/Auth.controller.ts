@@ -26,12 +26,14 @@ export default class AuthController {
         }
 
         await partner.update({ status: { ...partner.status, activated: true } })
-        
+
         await EmailService.sendEmail({
             to: partner.email,
             subject: 'Account Activation',
             html: await new EmailTemplate().accountActivation(partner.email)
         })
+
+        await AuthUtil.clear({ partner })
 
         res.status(200).json({
             status: 'success',
@@ -39,7 +41,7 @@ export default class AuthController {
             data: null
         })
     }
-    
+
     static async deactivatePartner(req: Request, res: Response, next: NextFunction) {
         const { email } = req.body
 
@@ -54,7 +56,8 @@ export default class AuthController {
         }
 
         await partner.update({ status: { ...partner.status, activated: false } })
-        
+        await AuthUtil.clear({ partner })
+
         await EmailService.sendEmail({
             to: partner.email,
             subject: 'Account Activation',
