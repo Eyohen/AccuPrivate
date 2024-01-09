@@ -5,7 +5,7 @@ import Validator from "../../utils/Validators";
 import { AuthenticatedRequest } from "../../utils/Interface";
 import EntityService from "../../services/Entity/Entity.service";
 import { AuthUtil } from "../../utils/Auth/Token";
-import { SU_HOST_EMAIL_1, SU_HOST_EMAIL_2, SU_HOST_EMAIL_3 } from "../../utils/Constants";
+import { NODE_ENV, SU_HOST_EMAIL_1, SU_HOST_EMAIL_2, SU_HOST_EMAIL_3 } from "../../utils/Constants";
 import { randomUUID } from "crypto";
 import { RoleEnum } from "../../models/Role.model";
 
@@ -39,7 +39,7 @@ export default class AuthController {
         if (role.name === RoleEnum.SuperAdmin) {
             throw new ForbiddenError('Unauthorized access')
         }
- 
+
         await entity.update({ status: { ...entity.status, activated: true } })
 
         await EmailService.sendEmail({
@@ -74,7 +74,7 @@ export default class AuthController {
         if (!role) {
             throw new BadRequestError('Role not found')
         }
-        
+
         if (role.name === RoleEnum.SuperAdmin) {
             throw new ForbiddenError('Unauthorized access')
         }
@@ -87,7 +87,7 @@ export default class AuthController {
             subject: 'Account Activation',
             html: await new EmailTemplate().accountActivation(entity.email)
         })
-        
+
         res.status(200).json({
             status: 'success',
             message: 'Deactivated user successfully',
@@ -121,7 +121,7 @@ export default class AuthController {
         const [activationCode1, activationCode2, activationCode3] = activationCode.split(':') as ReturnType<typeof randomUUID>[]
 
         console.log({
-            activationCode1, 
+            activationCode1,
             activationCode2,
             activationCode3
         })
@@ -249,13 +249,13 @@ export default class AuthController {
         if (role.name !== RoleEnum.SuperAdmin) {
             throw new ForbiddenError('Unauthorized access')
         }
-        
+
         const deactivationCode = await AuthUtil.generateCode({ type: 'su_activation', entity, expiry: 5 * 60 * 60 })
         const [deactivationCode1, deactivationCode2, deactivationCode3] = deactivationCode.split(':') as ReturnType<typeof randomUUID>[]
 
 
-        console.log({
-            deactivationCode1, 
+        NODE_ENV === 'development' && console.log({
+            deactivationCode1,
             deactivationCode2,
             deactivationCode3
         })
