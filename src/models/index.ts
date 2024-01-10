@@ -5,11 +5,12 @@ import { Sequelize } from 'sequelize-typescript';
 import logger from '../utils/Logger';
 import { DB_CONFIG, REDIS_HOST, REDIS_PASSWORD, REDIS_PORT, REDIS_URL } from '../utils/Constants';
 
+console.log(DB_CONFIG.URL)
 // Create a new Sequelize instance for database connection and add Models
 const Database = new Sequelize(DB_CONFIG.URL, {
     logging: false
 });
-console.log(DB_CONFIG.URL)
+
 
 // Asynchronous function to initiate the database connection
 async function initiateDB(db: Sequelize): Promise<void> {
