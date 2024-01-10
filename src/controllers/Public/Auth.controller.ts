@@ -364,7 +364,6 @@ export default class AuthController {
 
         const phoneNumber = _phoneNumber ? _phoneNumber.startsWith('+234') ? _phoneNumber.replace('+234', '0') : _phoneNumber : null
 
-
         let entity = email && await EntityService.viewSingleEntityByEmail(email)
         entity = phoneNumber ? await EntityService.viewSingleEntityByPhoneNumber(phoneNumber) : entity
         if (!entity) {
@@ -398,11 +397,6 @@ export default class AuthController {
             throw new InternalServerError('Profile not found')
         }
 
-        const validPassword = await PasswordService.comparePassword(password, entityPassword.password)
-        if (!validPassword && !entity.requireOTPOnLogin) {
-            throw new BadRequestError('Invalid Email or password')
-        }
-
         let accessToken: string | null = null
         if (entity.requireOTPOnLogin) {
             const otpCode = await AuthUtil.generateCode({ type: 'otp', entity, expiry: 60 * 60 * 3 })
@@ -414,6 +408,11 @@ export default class AuthController {
                 text: 'Login authorization code is ' + otpCode,
                 subject: 'Login Authorization'
             })
+        } else {
+            const validPassword = await PasswordService.comparePassword(password, entityPassword.password)
+            if (!validPassword) {
+                throw new BadRequestError('Invalid Email or password')
+            }
         }
 
         const refreshToken = accessToken ? undefined : await AuthUtil.generateToken({ type: 'refresh', entity, profile: profile ?? entity, expiry: 60 * 60 * 60 * 60 })
