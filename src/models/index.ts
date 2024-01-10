@@ -9,6 +9,7 @@ import { DB_CONFIG, REDIS_HOST, REDIS_PASSWORD, REDIS_PORT, REDIS_URL } from '..
 const Database = new Sequelize(DB_CONFIG.URL, {
     logging: false
 });
+console.log(DB_CONFIG.URL)
 
 // Asynchronous function to initiate the database connection
 async function initiateDB(db: Sequelize): Promise<void> {
