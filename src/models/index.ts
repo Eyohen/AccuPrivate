@@ -33,6 +33,7 @@ async function initiateDB(db: Sequelize): Promise<void> {
 }
 
 const redisClient = new Redis(REDIS_URL)
+console.log(REDIS_URL)
 
 redisClient.on('error', (error) => {
     logger.info('An error occured while connecting to REDIS')
