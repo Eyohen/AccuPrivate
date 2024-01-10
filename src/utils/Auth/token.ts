@@ -1,7 +1,14 @@
 import jwt from "jsonwebtoken";
-import { IPartner } from "../../models/Partner.model";
+import { IPartnerProfile } from "../../models/Entity/Profiles/PartnerProfile.model";
 import { ENCRYPTION_KEY, JWT_SECRET } from "../Constants";
 import { redisClient } from "../../models";
+import { ITeamMemberProfile } from "../../models/Entity/Profiles/TeamMemberProfile.model";
+import Entity, { IEntity } from "../../models/Entity/Entity.model";
+import Role, { RoleEnum } from "../../models/Role.model";
+import RoleService from "../../services/Role.service";
+import { extensions } from "sequelize/types/utils/validator-extras";
+import { randomUUID } from "crypto";
+import { UUID } from "sequelize";
 
 interface SaveTokenToCache {
     key: string,
@@ -40,56 +47,87 @@ class TokenUtil {
     }
 }
 
-export type AuthToken = 'access' | 'refresh' | 'passwordreset' | 'emailverification'
-interface GenerateTokenData {
-    type: AuthToken,
-    partner: IPartner,
+export type AuthToken = 'access' | 'refresh' | 'passwordreset' | 'emailverification' | 'su_activation' | 'otp'
+interface GenerateTokenData<T = AuthToken> {
+    type: T,
+    profile: IPartnerProfile | ITeamMemberProfile | Entity,
+    entity: Entity
     expiry: number,
     misc?: Record<string, any>
 }
 
 interface CompareTokenData {
     tokenType: AuthToken,
-    partner: IPartner,
+    entity: IEntity,
     token: string
 }
 
 interface DeleteToken {
     tokenType: AuthToken,
     tokenClass: 'token' | 'code',
-    partner: IPartner
+    entity: IEntity
 }
+
+interface RoleProfileEnum extends Record<RoleEnum, any> {
+    Partner: IPartnerProfile,
+    TeamMember: ITeamMemberProfile,
+    Admin: Entity
+}
+
+export interface DecodedTokenData<T extends RoleEnum = RoleEnum.Partner> {
+    user: {
+        profile: RoleProfileEnum[T]
+        entity: IEntity & { role: RoleEnum }
+    },
+    misc: Record<string, any>,
+    token: string
+}
+
+type IUUID = ReturnType<typeof randomUUID>
+type GeneratedCode<T extends AuthToken> = T extends 'su_activation' ? `${IUUID}:${IUUID}:${IUUID}` : `${number}`
 
 class AuthUtil {
     static async generateToken(info: GenerateTokenData) {
-        const { type, partner, expiry, misc } = info
+        const { type, profile, entity, expiry, misc } = info
 
-        const tokenKey = `${type}_token:${partner.id}`
-        const token = jwt.sign({ partner, misc: { ...misc, tokenType: type } }, JWT_SECRET, { expiresIn: info.expiry })
+        const role = await RoleService.viewRoleById(entity.roleId)
+        if (!role) {
+            throw new Error('Role not found')
+        }
 
-        await TokenUtil.saveTokenToCache({ key: tokenKey, token, expiry })
-
-        return token
-    }
-
-    static async generateCode(info: GenerateTokenData) {
-        const { type, partner, expiry, misc } = info
-
-        const tokenKey = `${type}_code:${partner.id}`
-        const token = Math.floor(100000 + Math.random() * 900000).toString()
+        const tokenData: Omit<DecodedTokenData, 'token'> = { user: { profile, entity: { ...entity.dataValues, role: role.name } }, misc: { ...misc, tokenType: type } }
+        const tokenKey = `${type}_token:${entity.id}`
+        const token = jwt.sign(tokenData, JWT_SECRET, { expiresIn: info.expiry })
 
         await TokenUtil.saveTokenToCache({ key: tokenKey, token, expiry })
 
         return token
     }
 
-    static compareToken({ partner, tokenType, token }: Omit<CompareTokenData, 'misc'>) {
-        const tokenKey = `${tokenType}_token:${partner.id}`
+    static async generateCode<T extends AuthToken>({ type, entity, expiry }: Pick<GenerateTokenData<T>, 'entity' | 'type' | 'expiry'>): Promise<GeneratedCode<T>> {
+        const tokenKey = `${type}_code:${entity.id}`
+        let token = Math.floor(100000 + Math.random() * 900000).toString()
+
+        if (type === 'su_activation') {
+            const token_1 = randomUUID()
+            const token_2 = randomUUID()
+            const token_3 = randomUUID()
+
+            token = `${token_1}:${token_2}:${token_3}`
+        }
+
+        await TokenUtil.saveTokenToCache({ key: tokenKey, token, expiry })
+
+        return token as GeneratedCode<T>
+    }
+
+    static compareToken({ entity, tokenType, token }: Omit<CompareTokenData, 'misc'>) {
+        const tokenKey = `${tokenType}_token:${entity.id}`
         return TokenUtil.compareToken(tokenKey, token)
     }
 
-    static compareCode({ partner, tokenType, token }: Omit<CompareTokenData, 'misc'>) {
-        const tokenKey = `${tokenType}_code:${partner.id}`
+    static compareCode({ entity, tokenType, token }: Omit<CompareTokenData, 'misc'>) {
+        const tokenKey = `${tokenType}_code:${entity.id}`
         return TokenUtil.compareToken(tokenKey, token)
     }
 
@@ -101,16 +139,16 @@ class AuthUtil {
 
     }
 
-    static async deleteToken({ partner, tokenType, tokenClass }: DeleteToken) {
-        const tokenKey = `${tokenType}_${tokenClass}:${partner.id}`
+    static async deleteToken({ entity, tokenType, tokenClass }: DeleteToken) {
+        const tokenKey = `${tokenType}_${tokenClass}:${entity.id}`
         await TokenUtil.deleteTokenFromCache(tokenKey)
     }
 
-    static async clear({ partner }: { partner: IPartner }) {
-        await this.deleteToken({ partner, tokenType: 'access', tokenClass: 'token' })
-        await this.deleteToken({ partner, tokenType: 'refresh', tokenClass: 'token' })
-        await this.deleteToken({ partner, tokenType: 'passwordreset', tokenClass: 'code' })
-        await this.deleteToken({ partner, tokenType: 'emailverification', tokenClass: 'code' })
+    static async clear({ entity }: { entity: IEntity }) {
+        await this.deleteToken({ entity, tokenType: 'access', tokenClass: 'token' })
+        await this.deleteToken({ entity, tokenType: 'refresh', tokenClass: 'token' })
+        await this.deleteToken({ entity, tokenType: 'passwordreset', tokenClass: 'code' })
+        await this.deleteToken({ entity, tokenType: 'emailverification', tokenClass: 'code' })
     }
 }
 
