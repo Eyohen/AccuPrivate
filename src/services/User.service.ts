@@ -13,7 +13,7 @@ export default class UserService {
     static async addUserIfNotExists(user: IUser): Promise<User> {
         const transaction = await Database.transaction()
 
-        const existingUser: User | null = await User.findOne({ where: { email: user.email, phoneNumber: user.phoneNumber } })
+        const existingUser: User | null = await User.findOne({ where: { phoneNumber: user.phoneNumber } })
         if (existingUser) {
             return existingUser
         }
