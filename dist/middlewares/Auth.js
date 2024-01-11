@@ -59,9 +59,14 @@ const validateApiKey = (req, res, next) => __awaiter(void 0, void 0, void 0, fun
     req.key = validApiKey;
     // Check if this si the current active api key
     const currentActiveApiKey = yield Token_1.TokenUtil.getTokenFromCache(`active_api_key:${validApiKey}`);
+    console.log({
+        validApiKey,
+        currentActiveApiKey
+    });
     if (!currentActiveApiKey) {
         return next(new Errors_1.UnauthenticatedError('Invalid API key'));
     }
+    // console.log(currentActiveApiKey)
     // TODO: Disallow api key if user is not yet active
     if (Cypher_1.default.decryptString(currentActiveApiKey) !== apiKey) {
         return next(new Errors_1.UnauthenticatedError('Invalid API key'));

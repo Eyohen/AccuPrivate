@@ -28,7 +28,19 @@ export default class PowerUnitService {
         return powerUnit
     }
 
-    static async updateSinglePowerUnit() {
+    static async viewSinglePowerUnitByTransactionId(transactionId: string): Promise<PowerUnit | void | null> {
+        const powerUnit: PowerUnit | null = await PowerUnit.findOne({ where: { transactionId } })
+        return powerUnit
+    }
 
+    static async updateSinglePowerUnit(powerUnitId: string, update: Partial<ICreatePowerUnit>): Promise<PowerUnit> {
+        const powerUnit: PowerUnit | null = await PowerUnit.findByPk(powerUnitId)
+        if (!powerUnit) throw new Error('PowerUnit not found')
+        await powerUnit.update(update)
+
+        const updatedPowerUnit: PowerUnit | null = await PowerUnit.findByPk(powerUnitId)
+        if (!updatedPowerUnit) throw new Error('PowerUnit not found')
+        
+        return updatedPowerUnit
     }
 }

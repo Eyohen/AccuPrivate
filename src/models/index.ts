@@ -3,12 +3,14 @@ import Redis from 'ioredis'
 import { Dialect, DataTypes } from 'sequelize'
 import { Sequelize } from 'sequelize-typescript';
 import logger from '../utils/Logger';
-import { DB_CONFIG, REDIS_HOST, REDIS_PASSWORD, REDIS_PORT } from '../utils/Constants';
+import { DB_CONFIG, REDIS_HOST, REDIS_PASSWORD, REDIS_PORT, REDIS_URL } from '../utils/Constants';
 
+console.log(DB_CONFIG.URL)
 // Create a new Sequelize instance for database connection and add Models
 const Database = new Sequelize(DB_CONFIG.URL, {
     logging: false
 });
+
 
 // Asynchronous function to initiate the database connection
 async function initiateDB(db: Sequelize): Promise<void> {
@@ -31,14 +33,8 @@ async function initiateDB(db: Sequelize): Promise<void> {
     }
 }
 
-console.log(REDIS_PASSWORD,REDIS_PORT, REDIS_HOST , DB_CONFIG.PORT)
-
-const redisClient = new Redis({
-    username: 'default',
-    password: REDIS_PASSWORD,
-    port: REDIS_PORT,
-    host: REDIS_HOST,
-})
+const redisClient = new Redis(REDIS_URL)
+console.log(REDIS_URL)
 
 redisClient.on('error', (error) => {
     logger.info('An error occured while connecting to REDIS')

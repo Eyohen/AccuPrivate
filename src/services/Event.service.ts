@@ -1,14 +1,16 @@
 // Import necessary types and the Event model
-import { ICreateEvent, IEvent } from "../models/Event.model";
+import { TOPICS } from "../kafka/Constants";
+import { ICreateEvent, IEvent, Status } from "../models/Event.model";
 import Event from "../models/Event.model";
 import Transaction from "../models/Transaction.model";
 import logger from "../utils/Logger";
+import TransactionEventService from "./TransactionEvent.service";
 
 // EventService class for handling event-related operations
 export default class EventService {
 
     // Method for adding a new event to the database
-    static async addEvent(event: ICreateEvent): Promise<Event | void> {
+    static async addEvent(event: ICreateEvent): Promise<Event> {
         try {
             // Create a new event using the Event model
             // const newEvent: Event = await Event.create(event);
@@ -16,7 +18,9 @@ export default class EventService {
             await newEvent.save();
             return newEvent;
         } catch (err) {
+            console.error(err)
             logger.info('Error Logging Event');
+            throw err;
         }
     }
 
@@ -40,4 +44,11 @@ export default class EventService {
             logger.info('Error reading Event');
         }
     }
+
+    static async viewSingleEventByTransactionIdAndType(transactionId: string, eventType: IEvent['eventType']): Promise<Event | void | null> {
+        const event: Event | null = await Event.findOne({ where: { transactionId, eventType }, include: [Transaction] });
+        return event;
+    }
+
+    static transactionEventService = TransactionEventService;
 }

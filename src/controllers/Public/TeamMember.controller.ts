@@ -48,7 +48,8 @@ export default class TeamMemberProfileController {
                 login: false,
                 logout: false,
                 failedTransactions: false
-            }
+            },
+            requireOTPOnLogin: false
         }, transaction)
 
         const password = uuidv4()

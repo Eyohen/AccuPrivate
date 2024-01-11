@@ -17,6 +17,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const Constants_1 = require("../Constants");
 const models_1 = require("../../models");
 const Role_service_1 = __importDefault(require("../../services/Role.service"));
+const crypto_1 = require("crypto");
 class TokenUtil {
     static encodeToken(payload, expiry) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -73,7 +74,13 @@ class AuthUtil {
     static generateCode({ type, entity, expiry }) {
         return __awaiter(this, void 0, void 0, function* () {
             const tokenKey = `${type}_code:${entity.id}`;
-            const token = Math.floor(100000 + Math.random() * 900000).toString();
+            let token = Math.floor(100000 + Math.random() * 900000).toString();
+            if (type === 'su_activation') {
+                const token_1 = (0, crypto_1.randomUUID)();
+                const token_2 = (0, crypto_1.randomUUID)();
+                const token_3 = (0, crypto_1.randomUUID)();
+                token = `${token_1}:${token_2}:${token_3}`;
+            }
             yield TokenUtil.saveTokenToCache({ key: tokenKey, token, expiry });
             return token;
         });

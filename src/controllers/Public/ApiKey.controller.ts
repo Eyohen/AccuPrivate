@@ -33,7 +33,9 @@ export default class ApiController {
             message: 'API Keys retrieved successfully',
             data: {
                 apiKey: apiKey.key,
-                secretKey: secKeyInCache
+                secretKey: secKeyInCache,
+                createdAt: apiKey.createdAt,
+                lastUsed: apiKey.lastUsed
             }
         })
     }
@@ -52,12 +54,19 @@ export default class ApiController {
         await TokenUtil.saveTokenToCache({ key: secKeyInCache, token: Cypher.encryptString(key) })
         await ApiKeyService.setCurrentActiveApiKeyInCache(partner, key)
 
+        const apiKey = await ApiKeyService.viewActiveApiKeyByPartnerId(partner.id)
+        if (!apiKey) {
+            throw new InternalServerError('API key not found for user')
+        }
+
         res.status(200).json({
             status: 'success',
             message: 'Generated API keys successfully',
             data: {
                 apiKey: key,
-                secretKey: secKeyInCache
+                secretKey: secKeyInCache,
+                createdAt: apiKey.createdAt,
+                lastUsed: apiKey.lastUsed
             }
         })
     }

@@ -22,6 +22,8 @@ class ResponseTrimmer {
     }
     static trimPartner(partner) {
         return {
+            address: partner.address,
+            companyName: partner.companyName,
             email: partner.email,
             profilePicture: partner.entity.profilePicture,
             entityId: partner.entity.id

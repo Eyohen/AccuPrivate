@@ -1,7 +1,6 @@
 import express, { Router } from "express";
 import PublicRoleController from "../controllers/Public/Role.controller";
 import AdminRoleController from "../controllers/Admin/Role.controller";
-import { basicAuth } from "../middlewares/Auth";
 import { AuthenticatedController } from "../utils/Interface";
 
 const router: Router = express.Router()

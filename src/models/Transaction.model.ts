@@ -5,12 +5,15 @@ import Partner from "./Entity/Profiles/PartnerProfile.model";
 import Event from "./Event.model";
 import PowerUnit from "./PowerUnit.model";
 import Meter from "./Meter.model";
+import { generateRandomString } from "../utils/Helper";
+import { NigerianDate } from "../utils/Date";
 
 // Define enums for status and payment type
 export enum Status {
     COMPLETE = 'COMPLETE',
     PENDING = 'PENDING',
-    FAILED = 'FAILED'
+    FAILED = 'FAILED',
+    FLAGGED = 'FLAGGED'
 }
 
 export enum PaymentType {
@@ -59,6 +62,9 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     @Column({ type: DataType.STRING, allowNull: false })
     superagent: ITransaction['superagent'];
 
+    @Column({ type: DataType.STRING, allowNull: true, defaultValue: () => generateRandomString(10) })
+    reference: string;
+
     // Foreign key for the associated User
     @ForeignKey(() => User)
     @IsUUID(4)
@@ -74,6 +80,11 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     @IsUUID(4)
     @Column
     partnerId?: string;
+
+    @ForeignKey(() => Partner)
+    @IsUUID(4)
+    @Column
+    powerUnitId?: string;
 
     // Belongs to a Partner
     @BelongsTo(() => Partner)
@@ -96,6 +107,21 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     // Has one associated Meter
     @BelongsTo(() => Meter)
     meter: Meter;
+
+    @Column({
+        type: DataType.DATE,
+        allowNull: false,
+        defaultValue: new NigerianDate().getCurrentNigerianDate(),
+    })
+    createdAt: Date;
+
+    @Column({
+        type: DataType.DATE,
+        allowNull: false,
+        defaultValue: new NigerianDate().getCurrentNigerianDate(),
+    })
+    updatedAt: Date;
+
 }
 
 
@@ -109,10 +135,11 @@ export interface ITransaction {
     disco: string; // Disco associated with the transaction
     bankRefId?: string; // Bank reference ID related to the transaction
     bankComment?: string; // Comments or notes from the bank regarding the transaction
-    superagent: 'BUYPOWERNG' | 'BAXI'; // superagent associated with the transaction
+    superagent: 'BUYPOWERNG' | 'BAXI' | 'IRECHARGE'; // superagent associated with the transaction
     userId: string; // Unique identifier of the user associated with the transaction
     partnerId?: string; // Unique identifier of the Partner associated with the transaction
     meterId?: string; // Unique identifier of the Meter associated with the transaction
+    reference: string
 }
 
 // Define an interface representing the creation of a transaction (ICreateTransaction).

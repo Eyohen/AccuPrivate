@@ -133,3 +133,11 @@ dist
 src/config
 
 dist
+
+redis_data
+postgres_data
+
+confluence-docker-compose.yml
+create_topics.sh
+zk-single-kafka-single.yml
+test-api.js

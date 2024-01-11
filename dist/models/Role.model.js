@@ -23,6 +23,7 @@ var RoleEnum;
     RoleEnum["Admin"] = "ADMIN";
     RoleEnum["Partner"] = "PARTNER";
     RoleEnum["TeamMember"] = "TEAMMEMBER";
+    RoleEnum["SuperAdmin"] = "SUPERADMIN";
 })(RoleEnum || (exports.RoleEnum = RoleEnum = {}));
 let Role = class Role extends sequelize_typescript_1.Model {
 };
@@ -33,10 +34,15 @@ __decorate([
     __metadata("design:type", String)
 ], Role.prototype, "id", void 0);
 __decorate([
-    sequelize_typescript_1.Unique,
+    (0, sequelize_typescript_1.Unique)('unique_name_type'),
     (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.STRING, allowNull: false }),
     __metadata("design:type", String)
 ], Role.prototype, "name", void 0);
+__decorate([
+    (0, sequelize_typescript_1.Unique)('unique_name_type'),
+    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.STRING, allowNull: true }),
+    __metadata("design:type", String)
+], Role.prototype, "type", void 0);
 __decorate([
     (0, sequelize_typescript_1.HasMany)(() => Entity_model_1.default),
     __metadata("design:type", Array)

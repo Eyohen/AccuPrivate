@@ -14,6 +14,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const User_model_1 = __importDefault(require("../models/User.model"));
 class UserService {
+    static addUserIfNotExists(user) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const existingUser = yield User_model_1.default.findOne({ where: { email: user.email, phoneNumber: user.phoneNumber } });
+            if (existingUser) {
+                return existingUser;
+            }
+            const newUser = User_model_1.default.build(user);
+            yield newUser.save();
+            return newUser;
+        });
+    }
     static addUser(user) {
         return __awaiter(this, void 0, void 0, function* () {
             try {

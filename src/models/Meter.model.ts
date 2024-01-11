@@ -26,7 +26,7 @@ export default class Meter extends Model<Meter | IMeter> {
     disco: string;
 
     @Column({ type: DataType.STRING, allowNull: false })
-    vendType: string;
+    vendType: IMeter['vendType'];
 
     // Foreign key for the associated User
     @ForeignKey(() => User)

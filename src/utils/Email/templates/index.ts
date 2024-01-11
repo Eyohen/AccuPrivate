@@ -3,6 +3,7 @@ import fs from 'fs';
 import { LOGO_URL } from '../../Constants';
 import { IReceiptEmailTemplateProps } from '../../Interface';
 import Transaction from '../../../models/Transaction.model';
+import { randomUUID } from 'crypto';
 
 const containerTemplate = fs.readFileSync(__dirname + '/container.ejs', 'utf8')
 
@@ -37,6 +38,12 @@ class EmailTemplate {
     }
     invitePartner = async ({ email, password }: { email: string, password: string }) => {
         return container(await ejs.renderFile(__dirname + '/partnerinvitation.ejs', { email, password }))
+    }
+    suAccountActivation = async ({ email, authorizationCode }: { email: string, authorizationCode: ReturnType<typeof randomUUID> }) => {
+        return container(await ejs.renderFile(__dirname + '/su_activation_request.ejs', { email, authorizationCode }))
+    }
+    suDeAccountActivation = async ({ email, authorizationCode }: { email: string, authorizationCode: ReturnType<typeof randomUUID> }) => {
+        return container(await ejs.renderFile(__dirname + '/su_deactivation_request.ejs', { email, authorizationCode }))
     }
 }
 

@@ -32,8 +32,10 @@ function initiateDB(db) {
         try {
             // Attempt to authenticate the database connection
             yield db.authenticate();
-            // Add all Sequelize models in the specified directory
+            // Add all Sequelize models in the specified directory for ts files
             yield db.addModels([__dirname + '/**/*.model.ts']);
+            // Add all Sequelize models in the specified directory for js files
+            yield db.addModels([__dirname + '/**/*.model.js']);
             // Log a success message when the connection is established
             Logger_1.default.info('Connection has been established successfully.');
         }
@@ -45,13 +47,7 @@ function initiateDB(db) {
     });
 }
 exports.initiateDB = initiateDB;
-console.log(Constants_1.REDIS_PASSWORD, Constants_1.REDIS_PORT, Constants_1.REDIS_HOST, Constants_1.DB_CONFIG.PORT);
-const redisClient = new ioredis_1.default({
-    username: 'default',
-    password: Constants_1.REDIS_PASSWORD,
-    port: Constants_1.REDIS_PORT,
-    host: Constants_1.REDIS_HOST,
-});
+const redisClient = new ioredis_1.default(Constants_1.REDIS_URL);
 exports.redisClient = redisClient;
 redisClient.on('error', (error) => {
     Logger_1.default.info('An error occured while connecting to REDIS');

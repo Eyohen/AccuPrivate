@@ -1,4 +1,4 @@
-import { NextFunction, Response , Request } from "express";
+import { NextFunction, Response, Request } from "express";
 import { v4 as uuidv4 } from 'uuid';
 import { BadRequestError, NotFoundError } from "../../utils/Errors";
 import { RoleEnum } from "../../models/Role.model";
@@ -12,14 +12,16 @@ import RoleService from "../../services/Role.service";
 import Cypher from "../../utils/Cypher";
 import { TokenUtil } from "../../utils/Auth/Token";
 import ApiKeyService from "../../services/ApiKey.service ";
+import WebhookService from "../../services/Webhook.service";
 import { PartnerProfile } from "../../models/Entity/Profiles";
 import ResponseTrimmer from "../../utils/ResponseTrimmer";
-import { IPartnerProfile } from "../../models/Entity/Profiles/PartnerProfile.model";
+import { IPartnerProfile, IPartnerStatsProfile } from "../../models/Entity/Profiles/PartnerProfile.model";
+import TransactionService from "../../services/Transaction.service";
 
-export default class TeamMemberProfileController {
+export default class PartnerProfileController {
     static async invitePartner(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         // The partner is the entity that is inviting the team member
-        const { email } = req.body
+        const { email, companyName, address } = req.body
 
         const role = await RoleService.viewRoleByName(RoleEnum.Partner)
         if (!role) {
@@ -36,6 +38,8 @@ export default class TeamMemberProfileController {
         const newPartner = await PartnerService.addPartner({
             id: uuidv4(),
             email,
+            companyName,
+            address
         }, transaction)
 
         const entity = await EntityService.addEntity({
@@ -51,7 +55,8 @@ export default class TeamMemberProfileController {
                 login: true,
                 failedTransactions: true,
                 logout: true
-            }
+            },
+            requireOTPOnLogin: false
         }, transaction)
 
         const apiKey = await ApiKeyService.addApiKey({
@@ -71,6 +76,13 @@ export default class TeamMemberProfileController {
             entityId: entity.id,
             password,
         }, transaction)
+
+        await WebhookService.addWebhook({
+            id: uuidv4(),
+            partnerId: newPartner.id,
+        }, transaction)
+
+        await transaction.commit()
 
         await entity.update({ status: { ...entity.status, emailVerified: true } })
 
@@ -95,7 +107,7 @@ export default class TeamMemberProfileController {
 
         const partnerProfile = await PartnerService.viewSinglePartnerByEmail(email)
         if (!partnerProfile) {
-            throw new BadRequestError('Team member not found')
+            throw new NotFoundError('Partner not found')
         }
 
         const entity = await partnerProfile.$get('entity')
@@ -112,7 +124,7 @@ export default class TeamMemberProfileController {
         })
     }
 
-    static async getAllPartners(req: AuthenticatedRequest, res: Response, next: NextFunction){
+    static async getAllPartners(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         const {
             page, limit,
         } = req.query as any
@@ -123,25 +135,69 @@ export default class TeamMemberProfileController {
             query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit)
         }
         // else query.offset = 0
-        
-        const _partners : IPartnerProfile [] | void = await PartnerService.viewPartnersWithCustomQuery(query , {
-            exclude : ['key', 'sec']
+
+        const _partners: IPartnerProfile[] | void = await PartnerService.viewPartnersWithCustomQuery(query, {
+            exclude: ['key', 'sec']
         });
-        if(!_partners){
+        if (!_partners) {
             throw new NotFoundError("Partners Not found")
         }
-        const partners: IPartnerProfile [] = _partners.map(item => {
-            delete item.key
-            delete item.sec
-            console.log(item)
+        const partners: IPartnerStatsProfile[] = _partners.map(item => {
+            (item.key as any) = undefined;
+            (item.sec as any) = undefined;
             return item
         })
-        console.log(partners[0].key , 'Yes')
+        
+        
+        const _stats: any = []
+        //adding partner Statics here        
+        for (let index = 0; index < partners.length; index++) {
+            let failed_Transactions: number =  0 
+            let pending_Transactions: number = 0 
+            let success_Transactions: number = 0
+            const element = partners[index];
+            
+            const _failed_Transaction = await TransactionService.viewTransactionsWithCustomQuery({
+                where:{partnerId: element.id,
+                status: "FAILED"}
+            })
+            failed_Transactions = _failed_Transaction.length
+
+           
+            const _pending_Transaction = await TransactionService.viewTransactionsWithCustomQuery({
+                where:{partnerId: element.id,
+                status: "PENDING"}
+            })
+            pending_Transactions = _pending_Transaction.length
+
+           
+            const _complete_Transaction = await TransactionService.viewTransactionsWithCustomQuery({
+                where:{partnerId: element.id,
+                status: "COMPLETE"}
+            })
+            success_Transactions = _complete_Transaction.length
+
+            // element.stats = {
+            //     success_Transactions,
+            //     failed_Transactions,
+            //     pending_Transactions
+                
+            // }
+            _stats.push({
+                id: element.id,
+                success_Transactions,
+                failed_Transactions,
+                pending_Transactions
+            })
+            
+        }
+
         res.status(200).json({
             status: 'success',
             message: 'Partners data retrieved successfully',
             data: {
-                partners
+                partners , 
+                stats: _stats
             }
         })
 

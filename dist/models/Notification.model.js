@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const sequelize_typescript_1 = require("sequelize-typescript");
 const Entity_model_1 = __importDefault(require("./Entity/Entity.model"));
 const Event_model_1 = __importDefault(require("./Event.model"));
+const Date_1 = require("../utils/Date");
 let Notification = class Notification extends sequelize_typescript_1.Model {
 };
 __decorate([
@@ -59,6 +60,22 @@ __decorate([
     (0, sequelize_typescript_1.BelongsTo)(() => Entity_model_1.default),
     __metadata("design:type", Entity_model_1.default)
 ], Notification.prototype, "entity", void 0);
+__decorate([
+    (0, sequelize_typescript_1.Column)({
+        type: sequelize_typescript_1.DataType.DATE,
+        allowNull: false,
+        defaultValue: new Date_1.NigerianDate().getCurrentNigerianDate(),
+    }),
+    __metadata("design:type", Date)
+], Notification.prototype, "createdAt", void 0);
+__decorate([
+    (0, sequelize_typescript_1.Column)({
+        type: sequelize_typescript_1.DataType.DATE,
+        allowNull: false,
+        defaultValue: new Date_1.NigerianDate().getCurrentNigerianDate(),
+    }),
+    __metadata("design:type", Date)
+], Notification.prototype, "updatedAt", void 0);
 Notification = __decorate([
     sequelize_typescript_1.Table
 ], Notification);
