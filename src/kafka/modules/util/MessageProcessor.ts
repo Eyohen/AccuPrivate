@@ -21,7 +21,7 @@ export default class MessageProcessorFactory {
         try {
             await handler(messageData.value)
         } catch (error) {
-            console.error(error)
+            throw error
         }
     }
 
@@ -60,10 +60,12 @@ export default class MessageProcessorFactory {
             }
 
             await this.processMessage(data)
-
-            await eachBatchPayload.commitOffsetsIfNecessary()
-            await eachBatchPayload.heartbeat()
+            logger.info('Processing batch...')
         }
+
+        await eachBatchPayload.commitOffsetsIfNecessary()
+        await eachBatchPayload.heartbeat()
+        logger.info('Committing offsets...')
     }
 
     public getTopics(): Topic[] {

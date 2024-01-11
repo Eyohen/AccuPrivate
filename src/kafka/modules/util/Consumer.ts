@@ -1,10 +1,8 @@
-import { Consumer, ConsumerSubscribeTopics, EachMessageHandler, EachMessagePayload } from 'kafkajs'
+import { Consumer } from 'kafkajs'
 import logger from '../../../utils/Logger'
 import MessageProcessorFactory from './MessageProcessor'
 import Kafka from '../../config'
-import { KafkaTopics, MessagePayload, Topic } from './Interface'
-import { v4 as uuid } from 'uuid'
-import { TOPICS } from '../../Constants'
+import { KafkaTopics, MessagePayload } from './Interface'
 
 export default class ConsumerFactory {
     private kafkaConsumer: Consumer
