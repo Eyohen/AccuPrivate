@@ -2,7 +2,7 @@ import { Message, ProducerBatch, TopicMessages } from 'kafkajs'
 import Kafka from '../../config'
 import logger from '../../../utils/Logger'
 import { TOPICS } from '../../Constants'
-import { PublisherEventAndParameters, PublisherParamsUnion, Topic } from './Interface'
+import { PublisherParamsUnion } from './Interface'
 
 interface CustomMessageFormat { a: string }
 
@@ -24,11 +24,14 @@ export default class ProducerFactory {
 
     static async sendMessage({ topic, message }: PublisherParamsUnion) {
         logger.info('Sending message to topic: ' + topic)
-        // logger.info('Message: '+ JSON.stringify(message))   
-        await this.producer.send({
-            topic: topic,
-            messages: [
-                { value: JSON.stringify(message) }
+        await this.producer.sendBatch({
+            topicMessages: [
+                {
+                    topic: topic,
+                    messages: [
+                        { value: JSON.stringify(message) }
+                    ]
+                }
             ]
         })
     }
