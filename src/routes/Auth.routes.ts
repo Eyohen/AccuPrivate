@@ -19,6 +19,7 @@ router
     .post('/login', PublicAuthController.login)
     .post('/login/confirm', basicAuth('otp'), AuthenticatedController(PublicAuthController.completeLogin))
     .post('/login/admin', PublicAuthController.login)
+    .post('/login/customer', PublicAuthController.login)
     .patch('/login/otp-req', basicAuth('access'), AuthenticatedController(PublicAuthController.updateLoginOTPRequirement))
     .post('/deactivate', basicAuth('access'), RBACMiddelware.validateRole([RoleEnum.SuperAdmin]), AuthenticatedController(AdminAuthController.deactivatePartner))
     .post('/activate', basicAuth('access'), RBACMiddelware.validateRole([RoleEnum.SuperAdmin]), AuthenticatedController(AdminAuthController.activatePartner))

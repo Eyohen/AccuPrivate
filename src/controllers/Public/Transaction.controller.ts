@@ -141,7 +141,14 @@ export default class TransactionController {
         ) || [RoleEnum.SuperAdmin].includes(
             req.user.user.entity.role,
         ) ;
-        if (!requestWasMadeByAnAdmin) {
+
+        const requestWasMadeByCustomer = [RoleEnum.EndUser].includes(
+            req.user.user.entity.role,
+        )
+        if(requestWasMadeByCustomer){
+            query.where.userId = req.user.user.entity.userId
+        }
+        if (!requestWasMadeByAnAdmin && !requestWasMadeByCustomer) {
             query.where.partnerId = req.user.user.profile.id;
         }
 
