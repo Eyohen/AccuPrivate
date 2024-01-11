@@ -48,6 +48,27 @@ export default class MessageProcessorFactory {
             const prefix = `${batch.topic}[${batch.partition} | ${message.offset}] / ${message.timestamp}`;
             logger.info(`- ${prefix} ${message.key}#${message.value}`);
         }
+
+        const lastOffset = batch.messages[batch.messages.length - 1].offset;
+        logger.info(`Committing offset ${lastOffset}`);
+
+        const data: CustomMessageFormat = {
+            topic: batch.topic as Topic,
+            partition: batch.partition,
+            offset: lastOffset,
+            value: JSON.parse(batch.messages[0].value?.toString() ?? '{}'),
+            timestamp: batch.messages[0].timestamp,
+            headers: batch.messages[0].headers,
+        }
+
+        await this.processMessage(data)
+        console.log('processed message')
+
+        setTimeout(async () => {
+            console.log('inside batch')
+            await eachBatchPayload.commitOffsetsIfNecessary()
+            await eachBatchPayload.heartbeat()
+        }, 5000)
     }
 
     public getTopics(): Topic[] {
