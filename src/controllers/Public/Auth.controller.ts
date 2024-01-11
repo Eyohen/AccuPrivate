@@ -384,10 +384,19 @@ export default class AuthController {
             throw new InternalServerError('Role not found for user')
         }
 
+        //for admins 
         const requestWasMadeToAdminRoute = req.url === '/login/admin'
         const userIsAdmin = [RoleEnum.SuperAdmin, RoleEnum.Admin].includes(role.name)
         const unauthorizedAccess = (requestWasMadeToAdminRoute && !userIsAdmin) || (!requestWasMadeToAdminRoute && userIsAdmin)
         if (unauthorizedAccess) {
+            throw new ForbiddenError('Unauthorized access to current login route')
+        }
+
+        //for customer
+        const requestWasMadeToCustomerRoute = req.url === '/login/customer'
+        const userIsCustomer = [RoleEnum.EndUser].includes(role.name)
+        const unauthorizedAccessCustomer = (requestWasMadeToCustomerRoute && !userIsCustomer) || (!requestWasMadeToCustomerRoute && userIsCustomer)
+        if (unauthorizedAccessCustomer) {
             throw new ForbiddenError('Unauthorized access to current login route')
         }
 
@@ -569,7 +578,7 @@ export default class AuthController {
         }
 
         const returnData = role === 'PARTNER'
-            ? { partner: ResponseTrimmer.trimPartner({ ...partner!.dataValues, entity }) }
+            ? { entity: entity.dataValues, partner: ResponseTrimmer.trimPartner({ ...partner!.dataValues, entity }) }
             : { entity: entity.dataValues }
 
         res.status(200).json({
