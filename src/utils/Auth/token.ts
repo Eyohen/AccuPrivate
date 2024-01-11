@@ -13,7 +13,7 @@ import { UUID } from "sequelize";
 interface SaveTokenToCache {
     key: string,
     token: string,
-    expiry?: number
+    expiry?: number,
 }
 
 class TokenUtil {
