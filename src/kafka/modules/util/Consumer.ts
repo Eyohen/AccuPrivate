@@ -36,11 +36,10 @@ export default class ConsumerFactory {
         }
     }
 
-    public async startBatchConsumer(_topic: Topic): Promise<void> {
+    public async startBatchConsumer(): Promise<void> {
         const topic: KafkaTopics = {
-            topics: [_topic],
+            topics: this.messageProcessor.getTopics(),
             fromBeginning: false,
-
         }
 
         try {

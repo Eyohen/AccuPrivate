@@ -44,9 +44,25 @@ export default class MessageProcessorFactory {
 
     public async processEachBatch(eachBatchPayload: EachBatchPayload): Promise<void> {
         const { batch } = eachBatchPayload;
-        for (const message of batch.messages) {
+
+        for (batch.messages.length - 1; batch.messages.length >= 0; batch.messages.length--) {
+            const message = batch.messages[batch.messages.length - 1]
             const prefix = `${batch.topic}[${batch.partition} | ${message.offset}] / ${message.timestamp}`;
             logger.info(`- ${prefix} ${message.key}#${message.value}`);
+
+            const data: CustomMessageFormat = {
+                topic: batch.topic as Topic,
+                partition: batch.partition,
+                offset: message.offset,
+                value: JSON.parse(message.value?.toString() ?? '{}'),
+                timestamp: message.timestamp,
+                headers: message.headers,
+            }
+
+            await this.processMessage(data)
+
+            await eachBatchPayload.commitOffsetsIfNecessary()
+            await eachBatchPayload.heartbeat()
         }
     }
 
