@@ -68,6 +68,7 @@ export default class TransactionController {
             query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit)
         }
         if (partnerId) query.where.partnerId = partnerId
+        if (userId) query.where.userId = userId
 
         const requestWasMadeByAnAdmin = [RoleEnum.Admin].includes(
             req.user.user.entity.role,
@@ -75,7 +76,12 @@ export default class TransactionController {
             req.user.user.entity.role,
         ) ;
         if (!requestWasMadeByAnAdmin) {
-            query.where.partnerId = req.user.user.profile.id;
+            const requestMadeByEnduser = [RoleEnum.EndUser].includes(req.user.user.entity.role)
+            if (requestMadeByEnduser) {
+                query.where.userId = req.user.user.entity.userId;
+            } else {
+                query.where.partnerId = req.user.user.profile.id;
+            }
         }
 
         const transactions: Transaction[] =
@@ -135,7 +141,14 @@ export default class TransactionController {
         ) || [RoleEnum.SuperAdmin].includes(
             req.user.user.entity.role,
         ) ;
-        if (!requestWasMadeByAnAdmin) {
+
+        const requestWasMadeByCustomer = [RoleEnum.EndUser].includes(
+            req.user.user.entity.role,
+        )
+        if(requestWasMadeByCustomer){
+            query.where.userId = req.user.user.entity.userId
+        }
+        if (!requestWasMadeByAnAdmin && !requestWasMadeByCustomer) {
             query.where.partnerId = req.user.user.profile.id;
         }
 
@@ -212,6 +225,11 @@ export default class TransactionController {
             return;
         }
 
+        const partner = await transactionRecord.$get("partner");
+        if (!partner) {
+            throw new InternalServerError("Partner not found");
+        }
+
         const transactionEventService = new TransactionEventService(
             transactionRecord,
             {
@@ -219,7 +237,8 @@ export default class TransactionController {
                 disco: transactionRecord.disco,
                 vendType: transactionRecord.meter.vendType,
             },
-            transactionRecord.superagent
+            transactionRecord.superagent,
+            partner.email
         );
         await transactionEventService.addTokenReceivedEvent(response.data.token);
         await VendorPublisher.publishEventForTokenReceivedFromVendor({

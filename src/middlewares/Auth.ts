@@ -56,18 +56,15 @@ export const validateApiKey = async (req: Request, res: Response, next: NextFunc
 
     (req as any).key = validApiKey // Partners id
 
-
     // Check if this si the current active api key
     const currentActiveApiKey = await TokenUtil.getTokenFromCache(`active_api_key:${validApiKey}`)
-    NODE_ENV === 'development' && console.log({
-        validApiKey,
-        currentActiveApiKey
-    })
+    // NODE_ENV === 'development' && console.log({
+    //     validApiKey,
+    //     currentActiveApiKey
+    // })
     if (!currentActiveApiKey) {
         return next(new UnauthenticatedError('Invalid API key'))
     }
-
-    // console.log(currentActiveApiKey)
 
     // TODO: Disallow api key if user is not yet active
     if (Cypher.decryptString(currentActiveApiKey) !== apiKey) {

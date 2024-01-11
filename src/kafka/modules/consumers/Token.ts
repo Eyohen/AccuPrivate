@@ -5,7 +5,7 @@ import Transaction from "../../../models/Transaction.model";
 import PowerUnitService from "../../../services/PowerUnit.service";
 import TransactionService from "../../../services/Transaction.service";
 import TransactionEventService from "../../../services/TransactionEvent.service";
-import { DISCO_LOGO, MAX_REQUERY_PER_VENDOR } from "../../../utils/Constants";
+import { DISCO_LOGO, MAX_REQUERY_PER_VENDOR, NODE_ENV } from "../../../utils/Constants";
 import logger from "../../../utils/Logger";
 import { TOPICS } from "../../Constants";
 import { VendorPublisher } from "../publishers/Vendor";
@@ -60,8 +60,11 @@ interface ProcessVendRequestReturnData extends Record<Exclude<Transaction['super
 
 const retry = {
     count: 0,
-    limit: 3
+    // limit: 5,
+    retryCountBeforeSwitchingVendor: 3,
 }
+
+const TEST_FAILED = false
 
 const TransactionErrorCodeAndCause = {
     501: TransactionErrorCause.MAINTENANCE_ACCOUNT_ACTIVATION_REQUIRED,
@@ -69,8 +72,9 @@ const TransactionErrorCodeAndCause = {
     202: TransactionErrorCause.TRANSACTION_TIMEDOUT
 }
 
+
 export function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
-    // Use geometric progression to calculate wait time, where R = 2
+    // Use geometric progression  calculate wait time, where R = 2
     const waitTime = 2 ** (retryCount - 1)
     return waitTime
 
@@ -197,8 +201,6 @@ export class TokenHandlerUtil {
             phone: data.phone,
         }
 
-        data.transaction.superagent
-
         switch (data.transaction.superagent) {
             case "BAXI":
                 return await VendorService.baxiVendToken(_data)
@@ -240,7 +242,7 @@ class TokenHandler extends Registry {
         }
 
         await TransactionService.updateSingleTransaction(transaction.id, { superagent: data.newVendor })
-        const transactionEventService = new EventService.transactionEventService(transaction, data.meter, data.newVendor);
+        const transactionEventService = new EventService.transactionEventService(transaction, data.meter, data.newVendor, data.partner.email);
         await transactionEventService.addPowerPurchaseInitiatedEvent(transaction.bankRefId, transaction.amount);
         await VendorPublisher.publishEventForInitiatedPowerPurchase({
             meter: data.meter,
@@ -302,7 +304,8 @@ class TokenHandler extends Registry {
         const transactionEventService = new TransactionEventService(
             transaction,
             eventMessage.meter,
-            data.superAgent
+            data.superAgent,
+            partner.email
         );
         await transactionEventService.addGetTransactionTokenFromVendorInitiatedEvent();
         await transactionEventService.addVendElectricityRequestedFromVendorEvent();
@@ -362,7 +365,7 @@ class TokenHandler extends Registry {
         }
 
         // Transaction timedout from buypower - Requery the transactio at intervals
-        // transactionTimedOutFromBuypower = true // TOGGLE  Use this To test for failed token request - Proceeds to requery transaction
+        transactionTimedOutFromBuypower = TEST_FAILED ?? transactionTimedOutFromBuypower  // TOGGLE  Use this To test for failed token request - Proceeds to requery transaction
         if (transactionTimedOutFromBuypower || !tokenInResponse) {
             return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
                 {
@@ -456,11 +459,10 @@ class TokenHandler extends Registry {
                 address: transaction.meter.address,
             });
 
-        await TransactionService.updateSingleTransaction(data.transactionId, {
+        return await TransactionService.updateSingleTransaction(data.transactionId, {
             status: Status.COMPLETE,
             powerUnitId: powerUnit.id,
         });
-        return;
     }
 
     private static async requeryTransactionForToken(
@@ -485,7 +487,8 @@ class TokenHandler extends Registry {
         const transactionEventService = new TransactionEventService(
             transaction,
             data.meter,
-            data.superAgent
+            data.superAgent,
+            partner.email
         );
         await transactionEventService.addGetTransactionTokenFromVendorInitiatedEvent();
         await VendorPublisher.publishEventForGetTransactionTokenFromVendorInitiated(
@@ -509,7 +512,7 @@ class TokenHandler extends Registry {
          * When requerying a transaction, the response code is 201.
          */
         const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction)
-        // requeryResult.responseCode = 400 //  TOGGLE - Will simulate Unsuccessful Buypower transaction (NOTE Unsuccessful != Failed)
+        requeryResult.responseCode = TEST_FAILED ? 400 : requeryResult.responseCode //  TOGGLE - Will simulate Unsuccessful Buypower transaction (NOTE Unsuccessful != Failed)
         const transactionSuccess = requeryResult.responseCode === 200;
         if (!transactionSuccess) {
             /**
@@ -518,7 +521,7 @@ class TokenHandler extends Registry {
              * If transaction failed, switch to a new vendor
              */
             let transactionFailed = requeryResult.responseCode === 202
-            // transactionFailed = retry.count > 5 // TOGGLE - Will simulate failed buypower transaction
+            transactionFailed = TEST_FAILED ? retry.count > retry.retryCountBeforeSwitchingVendor : transactionFailed // TOGGLE - Will simulate failed buypower transaction
             if (transactionFailed) {
                 return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({
                     meter: data.meter, transaction, transactionEventService

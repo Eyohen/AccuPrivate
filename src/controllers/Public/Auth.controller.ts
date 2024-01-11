@@ -61,7 +61,8 @@ export default class AuthController {
                 login: true,
                 failedTransactions: true,
                 logout: true
-            }
+            },
+            requireOTPOnLogin: false
         }, transaction)
 
         const apiKey = await ApiKeyService.addApiKey({
@@ -111,7 +112,6 @@ export default class AuthController {
     static async otherSignup(req: Request, res: Response, next: NextFunction) {
         const { email, password, roleId } = req.body
 
-
         const role = await RoleService.viewRoleById(roleId)
         if (!role) {
             throw new BadRequestError('Invalid role')
@@ -141,7 +141,8 @@ export default class AuthController {
                 login: true,
                 failedTransactions: true,
                 logout: true
-            }
+            },
+            requireOTPOnLogin: false
         }, transaction)
 
         const entityPassword = await PasswordService.addPassword({
@@ -354,10 +355,17 @@ export default class AuthController {
         })
     }
 
-    static async login(req: Request, res: Response) {
-        const { email, password } = req.body
+    static async initLogin(req: Request, res: Response) {
 
-        const entity = await EntityService.viewSingleEntityByEmail(email)
+    }
+
+    static async login(req: Request, res: Response) {
+        const { email, password, phoneNumber: _phoneNumber } = req.body
+
+        const phoneNumber = _phoneNumber ? _phoneNumber.startsWith('+234') ? _phoneNumber.replace('+234', '0') : _phoneNumber : null
+
+        let entity = email && await EntityService.viewSingleEntityByEmail(email)
+        entity = phoneNumber ? await EntityService.viewSingleEntityByPhoneNumber(phoneNumber) : entity
         if (!entity) {
             throw new BadRequestError('Invalid Email or password')
         }
@@ -365,11 +373,6 @@ export default class AuthController {
         const entityPassword = await entity.$get('password')
         if (!entityPassword) {
             throw new InternalServerError('No password found for authneticate entity')
-        }
-
-        const validPassword = await PasswordService.comparePassword(password, entityPassword.password)
-        if (!validPassword) {
-            throw new BadRequestError('Invalid Email or password')
         }
 
         if (!entity.status.activated) {
@@ -381,10 +384,19 @@ export default class AuthController {
             throw new InternalServerError('Role not found for user')
         }
 
+        //for admins 
         const requestWasMadeToAdminRoute = req.url === '/login/admin'
         const userIsAdmin = [RoleEnum.SuperAdmin, RoleEnum.Admin].includes(role.name)
         const unauthorizedAccess = (requestWasMadeToAdminRoute && !userIsAdmin) || (!requestWasMadeToAdminRoute && userIsAdmin)
         if (unauthorizedAccess) {
+            throw new ForbiddenError('Unauthorized access to current login route')
+        }
+
+        //for customer
+        const requestWasMadeToCustomerRoute = req.url === '/login/customer'
+        const userIsCustomer = [RoleEnum.EndUser].includes(role.name)
+        const unauthorizedAccessCustomer = (requestWasMadeToCustomerRoute && !userIsCustomer) || (!requestWasMadeToCustomerRoute && userIsCustomer)
+        if (unauthorizedAccessCustomer) {
             throw new ForbiddenError('Unauthorized access to current login route')
         }
 
@@ -394,8 +406,26 @@ export default class AuthController {
             throw new InternalServerError('Profile not found')
         }
 
-        const accessToken = await AuthUtil.generateToken({ type: 'access', entity, profile: profile ?? entity, expiry: 60 * 60 * 60 * 60 })
-        const refreshToken = await AuthUtil.generateToken({ type: 'refresh', entity, profile: profile ?? entity, expiry: 60 * 60 * 24 * 30 })
+        let accessToken: string | null = null
+        if (entity.requireOTPOnLogin) {
+            const otpCode = await AuthUtil.generateCode({ type: 'otp', entity, expiry: 60 * 60 * 3 })
+            console.log({ otpCode })
+            accessToken = await AuthUtil.generateToken({ type: 'otp', entity, profile: entity, expiry: 60 * 60 * 3 })
+
+            await EmailService.sendEmail({
+                to: entity.email,
+                text: 'Login authorization code is ' + otpCode,
+                subject: 'Login Authorization'
+            })
+        } else {
+            const validPassword = await PasswordService.comparePassword(password, entityPassword.password)
+            if (!validPassword) {
+                throw new BadRequestError('Invalid Email or password')
+            }
+        }
+
+        const refreshToken = accessToken ? undefined : await AuthUtil.generateToken({ type: 'refresh', entity, profile: profile ?? entity, expiry: 60 * 60 * 60 * 60 })
+        accessToken = accessToken ?? await AuthUtil.generateToken({ type: 'access', entity, profile: profile ?? entity, expiry: 60 * 60 * 24 * 30 })
 
         if ([RoleEnum.TeamMember].includes(entity.role.name)) {
             const memberProfile = profile as TeamMemberProfile
@@ -431,6 +461,44 @@ export default class AuthController {
 
         res.status(200).json({
             status: 'success',
+            message: 'Login request initiated successfully',
+            data: {
+                entity: entity.dataValues,
+                unreadNotificationsCount: (await NotificationService.getUnreadNotifications(entity.id)).length,
+                accessToken,
+                refreshToken
+            }
+        })
+    }
+
+    static async completeLogin(req: AuthenticatedRequest, res: Response) {
+        const { otpCode } = req.body
+
+        const entity = await EntityService.viewSingleEntityByEmail(req.user.user.entity.email)
+        if (!entity) {
+            throw new InternalServerError('Entity not found')
+        }
+
+        const validCode = await AuthUtil.compareCode({ entity, tokenType: 'otp', token: otpCode })
+        if (!validCode) {
+            throw new BadRequestError('Invalid otp code')
+        }
+
+        const profile = await EntityService.getAssociatedProfile(entity)
+        if (!profile && req.user.user.entity.role !== RoleEnum.EndUser) {
+            throw new InternalServerError('Entity not found for authenticated user')
+        }
+
+        console.log({
+            profile: profile?.dataValues,
+            entity: entity.dataValues
+        })
+
+        const accessToken = await AuthUtil.generateToken({ type: 'access', entity, profile: profile ?? entity, expiry: 60 * 60 * 24 * 30 })
+        const refreshToken = await AuthUtil.generateToken({ type: 'refresh', entity, profile: profile ?? entity, expiry: 60 * 60 * 60 * 60 })
+
+        res.status(200).json({
+            status: 'success',
             message: 'Login successful',
             data: {
                 entity: entity.dataValues,
@@ -439,6 +507,44 @@ export default class AuthController {
                 refreshToken
             }
         })
+
+    }
+
+    static async updateLoginOTPRequirement(req: AuthenticatedRequest, res: Response) {
+        const { requireOtp, entityId } = req.body
+
+        let entity = await EntityService.viewSingleEntityByEmail(req.user.user.entity.email)
+        if (!entity) {
+            throw new InternalServerError('Entity record not found for Authenticated user')
+        }
+
+        const requestMadeByPartner = req.user.user.entity.role === RoleEnum.Partner
+        if (requestMadeByPartner && entity.id !== entityId) {
+            const userEntity = await EntityService.viewSingleEntity(entityId)
+            if (!userEntity) {
+                throw new InternalServerError('Entity record not found for user')
+            }
+
+            const profile = await EntityService.getAssociatedProfile(userEntity)
+            if (!profile) {
+                throw new InternalServerError('Profile not found')
+            }
+
+            if (profile instanceof TeamMemberProfile && profile.partnerId !== req.user.user.profile.id) {
+                throw new ForbiddenError('Unauthorized access to user')
+            }
+
+            entity = userEntity
+        }
+
+        await EntityService.updateEntity(entity, { requireOTPOnLogin: requireOtp })
+
+        res.status(200).json({
+            status: 'success',
+            message: 'OTP requirement updated successfully',
+            data: null
+        })
+
     }
 
     static async logout(req: AuthenticatedRequest, res: Response) {
@@ -472,7 +578,7 @@ export default class AuthController {
         }
 
         const returnData = role === 'PARTNER'
-            ? { partner: ResponseTrimmer.trimPartner({ ...partner!.dataValues, entity }) }
+            ? { entity: entity.dataValues, partner: ResponseTrimmer.trimPartner({ ...partner!.dataValues, entity }) }
             : { entity: entity.dataValues }
 
         res.status(200).json({

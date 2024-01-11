@@ -55,7 +55,7 @@ class NotificationHandler extends Registry {
             meterNumber: data.meter.meterNumber,
             vendType: transaction.meter.vendType,
             disco: data.meter.disco,
-        }, transaction.superagent)
+        }, transaction.superagent, transaction.partner.email)
 
         // If you've not notified the partner before, notify them
         if (!notifyPartnerEvent) {
@@ -120,7 +120,7 @@ class NotificationHandler extends Registry {
             meterNumber: data.meter.meterNumber,
             vendType: transaction.meter.vendType,
             disco: data.meter.disco,
-        }, transaction.superagent)
+        }, transaction.superagent, transaction.partner.email)
 
         // If you've not notified the partner before, notify them
         if (!notifyPartnerEvent) {
