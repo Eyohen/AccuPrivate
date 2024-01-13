@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SU_HOST_EMAIL_3 = exports.SU_HOST_EMAIL_2 = exports.SU_HOST_EMAIL_1 = exports.PRIMARY_ROLES = exports.DB_CONFIG = exports.IRECHARGE_VENDOR_CODE = exports.IRECHARGE_PUBLIC_KEY = exports.IRECHARGE_PRIVATE_KEY = exports.DISCO_LOGO = exports.SENDGRID_API_KEY = exports.KAFKA_BROKER = exports.KAFKA_PASSWORD = exports.KAFKA_USERNAME = exports.KAFKA_CLIENT_ID = exports.ONESIGNAL_APP_ID = exports.ONESIGNAL_API_KEY = exports.CLOUDINARY_API_SECRET = exports.CLOUDINARY_API_KEY = exports.CLOUDINARY_CLOUD_NAME = exports.CRYPTO_PASSWORD = exports.CRYPTO_IV = exports.API_KEY_SECRET = exports.REDIS_URL = exports.REDIS_PORT = exports.REDIS_PASSWORD = exports.REDIS_HOST = exports.ENCRYPTION_KEY = exports.JWT_SECRET = exports.LOGO_URL = exports.OAUTH_ACCESS_TOKEN = exports.OAUTH_REFRESH_TOKEN = exports.OAUTH_CLIENT_SECRET = exports.OAUTH_CLIENT_ID = exports.EMAIL_HOST_ADDRESS = exports.EMAIL_PORT = exports.EMAIL_HOST = exports.NODE_ENV = exports.DEFAULT_ELECTRICITY_PROVIDER = exports.BUYPOWER_TOKEN = exports.BUYPOWER_URL = exports.BAXI_TOKEN = exports.BAXI_URL = void 0;
+exports.SU_HOST_EMAIL_3 = exports.SU_HOST_EMAIL_2 = exports.SU_HOST_EMAIL_1 = exports.PRIMARY_ROLES = exports.DB_CONFIG = exports.IRECHARGE_VENDOR_CODE = exports.IRECHARGE_PUBLIC_KEY = exports.IRECHARGE_PRIVATE_KEY = exports.DISCO_LOGO = exports.MAX_REQUERY_PER_VENDOR = exports.SENDGRID_API_KEY = exports.KAFKA_BROKER = exports.KAFKA_PASSWORD = exports.KAFKA_USERNAME = exports.KAFKA_CLIENT_ID = exports.ONESIGNAL_APP_ID = exports.ONESIGNAL_API_KEY = exports.CLOUDINARY_API_SECRET = exports.CLOUDINARY_API_KEY = exports.CLOUDINARY_CLOUD_NAME = exports.CRYPTO_PASSWORD = exports.CRYPTO_IV = exports.API_KEY_SECRET = exports.REDIS_URL = exports.REDIS_PORT = exports.REDIS_PASSWORD = exports.REDIS_HOST = exports.ENCRYPTION_KEY = exports.JWT_SECRET = exports.LOGO_URL = exports.OAUTH_ACCESS_TOKEN = exports.OAUTH_REFRESH_TOKEN = exports.OAUTH_CLIENT_SECRET = exports.OAUTH_CLIENT_ID = exports.EMAIL_HOST_ADDRESS = exports.EMAIL_PORT = exports.EMAIL_HOST = exports.KAFA_LOGS = exports.KAFKA_CA_CERT = exports.KAFKA_ENV = exports.NODE_ENV = exports.DEFAULT_ELECTRICITY_PROVIDER = exports.BUYPOWER_TOKEN = exports.BUYPOWER_URL = exports.BAXI_TOKEN = exports.BAXI_URL = void 0;
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config(); // Load environment variables from .env file
 const deployed = process.env.DEPLOYED;
@@ -15,6 +15,9 @@ exports.BUYPOWER_URL = process.env.BUYPOWER_URL;
 exports.BUYPOWER_TOKEN = process.env.BUYPOWER_TOKEN;
 exports.DEFAULT_ELECTRICITY_PROVIDER = process.env.DEFAULT_ELECTRICITY_PROVIDER;
 exports.NODE_ENV = process.env.NODE_ENV;
+exports.KAFKA_ENV = process.env.KAFKA_ENV;
+exports.KAFKA_CA_CERT = process.env.KAFKA_CA_CERT;
+exports.KAFA_LOGS = process.env.KAFA_LOGS;
 exports.EMAIL_HOST = process.env.EMAIL_HOST;
 exports.EMAIL_PORT = process.env.EMAIL_PORT;
 exports.EMAIL_HOST_ADDRESS = process.env.EMAIL_HOST_ADDRESS;
@@ -42,6 +45,7 @@ exports.KAFKA_USERNAME = process.env.KAFKA_USERNAME;
 exports.KAFKA_PASSWORD = process.env.KAFKA_PASSWORD;
 exports.KAFKA_BROKER = process.env.KAFKA_BROKER;
 exports.SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
+exports.MAX_REQUERY_PER_VENDOR = parseInt(process.env.MAX_REQUERY_PER_VENDOR, 10);
 exports.DISCO_LOGO = {
     abuja: "https://res.cloudinary.com/richiepersonaldev/image/upload/v1699947957/dpijlhj08ard76zao2uk.jpg",
     benin: "https://res.cloudinary.com/richiepersonaldev/image/upload/v1699948367/WhatsApp_Image_2023-11-14_at_08.50.33_zh84o3.jpg",

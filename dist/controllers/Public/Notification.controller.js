@@ -36,7 +36,7 @@ class NotificationController {
             if (page && page != '0' && limit) {
                 query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit);
             }
-            const notifications = yield Notification_service_1.default.viewNotifications();
+            const notifications = yield Notification_service_1.default.viewNotificationWithCustomQuery(query);
             res.status(200).json({
                 status: 'success',
                 message: 'Notifications fetched successfully',

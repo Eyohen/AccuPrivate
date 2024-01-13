@@ -61,14 +61,23 @@ class TransactionController {
             }
             if (partnerId)
                 query.where.partnerId = partnerId;
-            const requestWasMadeByAnAdmin = [Role_model_1.RoleEnum.Admin].includes(req.user.user.entity.role);
+            if (userId)
+                query.where.userId = userId;
+            const requestWasMadeByAnAdmin = [Role_model_1.RoleEnum.Admin].includes(req.user.user.entity.role) || [Role_model_1.RoleEnum.SuperAdmin].includes(req.user.user.entity.role);
             if (!requestWasMadeByAnAdmin) {
-                query.where.partnerId = req.user.user.profile.id;
+                const requestMadeByEnduser = [Role_model_1.RoleEnum.EndUser].includes(req.user.user.entity.role);
+                if (requestMadeByEnduser) {
+                    query.where.userId = req.user.user.entity.userId;
+                }
+                else {
+                    query.where.partnerId = req.user.user.profile.id;
+                }
             }
             const transactions = yield Transaction_service_1.default.viewTransactionsWithCustomQuery(query);
             if (!transactions) {
                 throw new Errors_1.NotFoundError("Transactions not found");
             }
+            const totalAmount = transactions.reduce((acc, curr) => acc + parseInt(curr.amount), 0);
             const paginationData = {
                 page: parseInt(page),
                 limit: parseInt(limit),
@@ -76,11 +85,54 @@ class TransactionController {
                 totalPages: Math.ceil(transactions.length / parseInt(limit))
             };
             const response = {
-                transactions: transactions
+                transactions: transactions,
+                totalAmount
             };
             if (page && page != '0' && limit) {
                 response['pagination'] = paginationData;
             }
+            res.status(200).json({
+                status: 'success',
+                message: 'Transactions retrieved successfully',
+                data: response
+            });
+        });
+    }
+    static getTransactionsKPI(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { page, limit, status, startDate, endDate, userId, disco, superagent, partnerId } = req.query;
+            const query = { where: {} };
+            if (status)
+                query.where.status = status.toUpperCase();
+            if (startDate && endDate)
+                query.where.transactionTimestamp = { [sequelize_1.Op.between]: [new Date(startDate), new Date(endDate)] };
+            if (userId)
+                query.where.userId = userId;
+            if (disco)
+                query.where.disco = disco;
+            if (superagent)
+                query.where.superagent = superagent;
+            if (limit)
+                query.limit = parseInt(limit);
+            if (page && page != '0' && limit) {
+                query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit);
+            }
+            if (partnerId)
+                query.where.partnerId = partnerId;
+            const requestWasMadeByAnAdmin = [Role_model_1.RoleEnum.Admin].includes(req.user.user.entity.role) || [Role_model_1.RoleEnum.SuperAdmin].includes(req.user.user.entity.role);
+            const requestWasMadeByCustomer = [Role_model_1.RoleEnum.EndUser].includes(req.user.user.entity.role);
+            if (requestWasMadeByCustomer) {
+                query.where.userId = req.user.user.entity.userId;
+            }
+            if (!requestWasMadeByAnAdmin && !requestWasMadeByCustomer) {
+                query.where.partnerId = req.user.user.profile.id;
+            }
+            const totalTransactionAmount = yield Transaction_service_1.default.viewTransactionsAmountWithCustomQuery(query);
+            const totalTransactionCount = yield Transaction_service_1.default.viewTransactionsCountWithCustomQuery(query);
+            const response = {
+                totalTransactionAmount,
+                totalTransactionCount
+            };
             res.status(200).json({
                 status: 'success',
                 message: 'Transactions retrieved successfully',
@@ -95,7 +147,6 @@ class TransactionController {
             if (!transactionRecord) {
                 throw new Errors_1.NotFoundError("Transaction record not found");
             }
-            console.log(transactionRecord.superagent);
             if (transactionRecord.superagent !== "BUYPOWERNG") {
                 throw new Errors_1.BadRequestError("Transaction cannot be requery for this superagent");
             }
@@ -127,11 +178,15 @@ class TransactionController {
                 });
                 return;
             }
+            const partner = yield transactionRecord.$get("partner");
+            if (!partner) {
+                throw new Errors_1.InternalServerError("Partner not found");
+            }
             const transactionEventService = new TransactionEvent_service_1.default(transactionRecord, {
                 meterNumber: transactionRecord.meter.meterNumber,
                 disco: transactionRecord.disco,
                 vendType: transactionRecord.meter.vendType,
-            }, transactionRecord.superagent);
+            }, transactionRecord.superagent, partner.email);
             yield transactionEventService.addTokenReceivedEvent(response.data.token);
             yield Vendor_1.VendorPublisher.publishEventForTokenReceivedFromVendor({
                 meter: {

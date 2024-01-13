@@ -42,6 +42,14 @@ __decorate([
     (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.BOOLEAN, allowNull: false }),
     __metadata("design:type", Boolean)
 ], ApiKey.prototype, "active", void 0);
+__decorate([
+    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.DATE, allowNull: false }),
+    __metadata("design:type", Date)
+], ApiKey.prototype, "createdAt", void 0);
+__decorate([
+    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.DATE, allowNull: true }),
+    __metadata("design:type", Date)
+], ApiKey.prototype, "lastUsed", void 0);
 ApiKey = __decorate([
     sequelize_typescript_1.Table
 ], ApiKey);
