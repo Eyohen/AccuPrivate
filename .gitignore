@@ -140,4 +140,13 @@ postgres_data
 confluence-docker-compose.yml
 create_topics.sh
 zk-single-kafka-single.yml
+zk-single-kafka-single-conducktor.yml
 test-api.js
+zk-*.yml
+
+conducktor/*
+conducktor/
+conducktor-docker-compose.yml
+ca-certificate.crt
+user-access-key.key
+user-access-certificate.crt
