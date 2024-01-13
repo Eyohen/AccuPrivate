@@ -21,7 +21,8 @@ export default class ApiController {
             partner_ = await PartnerService.viewSinglePartnerByEmail(entity.email)
             
         }else{
-            const teammember_ = await TeamMemberProfileService.viewSingleTeamMember(entity.email);
+            console.log(entity.email)
+            const teammember_ = await TeamMemberProfileService.viewSingleTeamMemberByEmail(entity.email);
             if(!teammember_) throw new InternalServerError('Authenticated teammember not found')
             partner_ = await PartnerService.viewSinglePartner(teammember_.partnerId) 
         }
@@ -31,7 +32,7 @@ export default class ApiController {
         }
 
         
-        const apiKey = await ApiKeyService.viewActiveApiKeyByPartnerId(profile.id)
+        const apiKey = await ApiKeyService.viewActiveApiKeyByPartnerId(partner_.id)
         if (!apiKey) {
             throw new BadRequestError('API Key not found')
         }
