@@ -7,7 +7,8 @@ import {
     KAFKA_USERNAME,
     NODE_ENV,
     KAFKA_ENV,
-    KAFKA_CA_CERT
+    KAFKA_CA_CERT,
+    KAFA_LOGS
 } from "../../utils/Constants";
 
 const kafkaConfig: kafka.KafkaConfig =
@@ -15,7 +16,7 @@ const kafkaConfig: kafka.KafkaConfig =
         ? {
               clientId: KAFKA_CLIENT_ID,
               brokers: [KAFKA_BROKER],
-              logLevel: 0,
+              logLevel: isNaN(parseInt(KAFA_LOGS))? 0 : parseInt(KAFA_LOGS),
           }
         : KAFKA_ENV === "digitalocean"
         ? {
@@ -32,7 +33,7 @@ const kafkaConfig: kafka.KafkaConfig =
                 password: KAFKA_PASSWORD,
             },
     
-            logLevel: 0
+            logLevel: isNaN(parseInt(KAFA_LOGS))? 0 : parseInt(KAFA_LOGS)
           }
         : {
               clientId: KAFKA_CLIENT_ID,
@@ -44,7 +45,7 @@ const kafkaConfig: kafka.KafkaConfig =
                   username: KAFKA_USERNAME,
                   password: KAFKA_PASSWORD,
               },
-              logLevel: 0,
+              logLevel: isNaN(parseInt(KAFA_LOGS))? 0 : parseInt(KAFA_LOGS),
           };
 console.log(KAFKA_ENV)
 const Kafka = new kafka.Kafka(kafkaConfig);
