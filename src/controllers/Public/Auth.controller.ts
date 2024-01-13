@@ -519,7 +519,7 @@ export default class AuthController {
         }
 
         const requestMadeByPartner = req.user.user.entity.role === RoleEnum.Partner
-        if (requestMadeByPartner && entity.id !== entityId) {
+        if (requestMadeByPartner && entityId && entity?.id !== entityId) {
             const userEntity = await EntityService.viewSingleEntity(entityId)
             if (!userEntity) {
                 throw new InternalServerError('Entity record not found for user')

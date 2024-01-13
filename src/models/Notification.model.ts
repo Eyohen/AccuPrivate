@@ -8,6 +8,7 @@ import {
   BelongsTo,
   HasOne,
   ForeignKey,
+  BeforeCreate,
 } from "sequelize-typescript";
 import Entity from "./Entity/Entity.model";
 import Event from "./Event.model";
@@ -51,7 +52,7 @@ export default class Notification extends Model<INotification | Notification> {
   @Column({
     type: DataType.DATE,
     allowNull: false,
-    defaultValue: new NigerianDate().getCurrentNigerianDate(),
+    defaultValue: new Date(),
   })
   createdAt: Date;
 

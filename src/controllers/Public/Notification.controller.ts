@@ -35,7 +35,7 @@ export default class NotificationController {
             query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit)
         }
 
-        const notifications = await NotificationService.viewNotifications()
+        const notifications = await NotificationService.viewNotificationWithCustomQuery(query)
 
         res.status(200).json({
             status: 'success',
