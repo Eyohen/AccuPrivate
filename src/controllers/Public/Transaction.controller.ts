@@ -1,7 +1,5 @@
 import { Request, Response } from "express";
-import Transaction, {
-    ITransaction,
-} from "../../models/Transaction.model";
+import Transaction, { ITransaction } from "../../models/Transaction.model";
 import TransactionService from "../../services/Transaction.service";
 import {
     BadRequestError,
@@ -16,7 +14,8 @@ import PartnerService from "../../services/Entity/Profiles/PartnerProfile.servic
 import { RoleEnum } from "../../models/Role.model";
 import TransactionEventService from "../../services/TransactionEvent.service";
 import { VendorPublisher } from "../../kafka/modules/publishers/Vendor";
-import { Op } from 'sequelize'
+import { Op } from "sequelize";
+import { TeamMemberProfileService } from "../../services/Entity/Profiles";
 
 interface getTransactionsRequestBody extends ITransaction {
     page: `${number}`;
@@ -32,10 +31,15 @@ interface getTransactionsRequestBody extends ITransaction {
 
 export default class TransactionController {
     static async getTransactionInfo(req: Request, res: Response) {
-        const { bankRefId, transactionId } = req.query as Record<string, string>;
+        const { bankRefId, transactionId } = req.query as Record<
+            string,
+            string
+        >;
 
         const transaction: Transaction | null = bankRefId
-            ? await TransactionService.viewSingleTransactionByBankRefID(bankRefId)
+            ? await TransactionService.viewSingleTransactionByBankRefID(
+                  bankRefId
+              )
             : await TransactionService.viewSingleTransaction(transactionId);
         if (!transaction) {
             throw new NotFoundError("Transaction not found");
@@ -52,36 +56,62 @@ export default class TransactionController {
 
     static async getTransactions(req: AuthenticatedRequest, res: Response) {
         const {
-            page, limit, status, startDate, endDate,
-            userId, disco, superagent, partnerId
-        } = req.query as any as getTransactionsRequestBody
+            page,
+            limit,
+            status,
+            startDate,
+            endDate,
+            userId,
+            disco,
+            superagent,
+            partnerId,
+        } = req.query as any as getTransactionsRequestBody;
 
-        const query = { where: {} } as any
+        const query = { where: {} } as any;
 
-        if (status) query.where.status = status
-        if (startDate && endDate) query.where.transactionTimestamp = { [Op.between]: [new Date(startDate), new Date(endDate)] }
-        if (userId) query.where.userId = userId
-        if (disco) query.where.disco = disco
-        if (superagent) query.where.superagent = superagent
-        if (limit) query.limit = parseInt(limit)
-        if (page && page != '0' && limit) {
-            query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit)
+        if (status) query.where.status = status;
+        if (startDate && endDate)
+            query.where.transactionTimestamp = {
+                [Op.between]: [new Date(startDate), new Date(endDate)],
+            };
+        if (userId) query.where.userId = userId;
+        if (disco) query.where.disco = disco;
+        if (superagent) query.where.superagent = superagent;
+        if (limit) query.limit = parseInt(limit);
+        if (page && page != "0" && limit) {
+            query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit);
         }
-        if (partnerId) query.where.partnerId = partnerId
-        if (userId) query.where.userId = userId
+        if (partnerId) query.where.partnerId = partnerId;
+        if (userId) query.where.userId = userId;
 
-        const requestWasMadeByAnAdmin = [RoleEnum.Admin].includes(
-            req.user.user.entity.role,
-        ) || [RoleEnum.SuperAdmin].includes(
-            req.user.user.entity.role,
-        ) ;
+        const requestWasMadeByAnAdmin =
+            [RoleEnum.Admin].includes(req.user.user.entity.role) ||
+            [RoleEnum.SuperAdmin].includes(req.user.user.entity.role);
         if (!requestWasMadeByAnAdmin) {
-            const requestMadeByEnduser = [RoleEnum.EndUser].includes(req.user.user.entity.role)
+            const requestMadeByEnduser = [RoleEnum.EndUser].includes(
+                req.user.user.entity.role
+            );
             if (requestMadeByEnduser) {
                 query.where.userId = req.user.user.entity.userId;
             } else {
                 query.where.partnerId = req.user.user.profile.id;
             }
+        }
+
+        //To show Partner Data to Teammember
+
+        const requestWasMadeByTeamMember = [RoleEnum.TeamMember].includes(
+            req.user.user.entity.role
+        );
+
+        if (requestWasMadeByTeamMember) {
+            const _teamMember =
+                await TeamMemberProfileService.viewSingleTeamMember(
+                    req.user.user.entity.teamMemberProfileId || ""
+                );
+            query.where.partnerId = _teamMember?.partnerId;
+        } else {
+            query.where.partnerId = req.user.user.profile.id;
         }
 
         const transactions: Transaction[] =
@@ -92,104 +122,125 @@ export default class TransactionController {
 
         const totalAmount = transactions.reduce(
             (acc, curr) => acc + parseInt(curr.amount),
-            0,
+            0
         );
 
         const paginationData = {
             page: parseInt(page),
             limit: parseInt(limit),
             totalCount: transactions.length,
-            totalPages: Math.ceil(transactions.length / parseInt(limit))
-        }
+            totalPages: Math.ceil(transactions.length / parseInt(limit)),
+        };
 
         const response = {
             transactions: transactions,
-            totalAmount
-        } as any
+            totalAmount,
+        } as any;
 
-        if (page && page != '0' && limit) {
-            response['pagination'] = paginationData
+        if (page && page != "0" && limit) {
+            response["pagination"] = paginationData;
         }
 
         res.status(200).json({
-            status: 'success',
-            message: 'Transactions retrieved successfully',
-            data: response
-        })
+            status: "success",
+            message: "Transactions retrieved successfully",
+            data: response,
+        });
     }
     static async getTransactionsKPI(req: AuthenticatedRequest, res: Response) {
         const {
-            page, limit, status, startDate, endDate,
-            userId, disco, superagent, partnerId
-        } = req.query as any as getTransactionsRequestBody
+            page,
+            limit,
+            status,
+            startDate,
+            endDate,
+            userId,
+            disco,
+            superagent,
+            partnerId,
+        } = req.query as any as getTransactionsRequestBody;
 
-        const query = { where: {} } as any
+        const query = { where: {} } as any;
 
-        if (status) query.where.status = status.toUpperCase()
-        if (startDate && endDate) query.where.transactionTimestamp = { [Op.between]: [new Date(startDate), new Date(endDate)] }
-        if (userId) query.where.userId = userId
-        if (disco) query.where.disco = disco
-        if (superagent) query.where.superagent = superagent
-        if (limit) query.limit = parseInt(limit)
-        if (page && page != '0' && limit) {
-            query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit)
+        if (status) query.where.status = status.toUpperCase();
+        if (startDate && endDate)
+            query.where.transactionTimestamp = {
+                [Op.between]: [new Date(startDate), new Date(endDate)],
+            };
+        if (userId) query.where.userId = userId;
+        if (disco) query.where.disco = disco;
+        if (superagent) query.where.superagent = superagent;
+        if (limit) query.limit = parseInt(limit);
+        if (page && page != "0" && limit) {
+            query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit);
         }
-        if (partnerId) query.where.partnerId = partnerId
+        if (partnerId) query.where.partnerId = partnerId;
 
-        const requestWasMadeByAnAdmin = [RoleEnum.Admin].includes(
-            req.user.user.entity.role,
-        ) || [RoleEnum.SuperAdmin].includes(
-            req.user.user.entity.role,
-        ) ;
+        const requestWasMadeByAnAdmin =
+            [RoleEnum.Admin].includes(req.user.user.entity.role) ||
+            [RoleEnum.SuperAdmin].includes(req.user.user.entity.role);
 
         const requestWasMadeByCustomer = [RoleEnum.EndUser].includes(
-            req.user.user.entity.role,
-        )
-        if(requestWasMadeByCustomer){
-            query.where.userId = req.user.user.entity.userId
+            req.user.user.entity.role
+        );
+        if (requestWasMadeByCustomer) {
+            query.where.userId = req.user.user.entity.userId;
         }
         if (!requestWasMadeByAnAdmin && !requestWasMadeByCustomer) {
-            query.where.partnerId = req.user.user.profile.id;
+            //To show Partner Data to Teammember
+
+            const requestWasMadeByTeamMember = [RoleEnum.TeamMember].includes(
+                req.user.user.entity.role
+            );
+
+            if (requestWasMadeByTeamMember) {
+                const _teamMember = await TeamMemberProfileService.viewSingleTeamMember(
+                        req.user.user.entity.teamMemberProfileId || ""
+                    );
+                query.where.partnerId = _teamMember?.partnerId;
+            } else {
+                query.where.partnerId = req.user.user.profile.id;
+            }
         }
 
-
-        const totalTransactionAmount: any = await TransactionService.viewTransactionsAmountWithCustomQuery(query)
-        const totalTransactionCount : number = await TransactionService.viewTransactionsCountWithCustomQuery(query)
-        
-        
-
-       
-        
-
-        
+        const totalTransactionAmount: any =
+            await TransactionService.viewTransactionsAmountWithCustomQuery(
+                query
+            );
+        const totalTransactionCount: number =
+            await TransactionService.viewTransactionsCountWithCustomQuery(
+                query
+            );
 
         const response = {
             totalTransactionAmount,
-            totalTransactionCount
-        }
+            totalTransactionCount,
+        };
 
         res.status(200).json({
-            status: 'success',
-            message: 'Transactions retrieved successfully',
-            data: response
-        })
+            status: "success",
+            message: "Transactions retrieved successfully",
+            data: response,
+        });
     }
 
     static async requeryTimedOutTransaction(
         req: AuthenticatedRequest,
-        res: Response,
+        res: Response
     ) {
         const { bankRefId }: { bankRefId: string } = req.query as any;
 
         let transactionRecord =
-            await TransactionService.viewSingleTransactionByBankRefID(bankRefId);
+            await TransactionService.viewSingleTransactionByBankRefID(
+                bankRefId
+            );
         if (!transactionRecord) {
             throw new NotFoundError("Transaction record not found");
         }
 
         if (transactionRecord.superagent !== "BUYPOWERNG") {
             throw new BadRequestError(
-                "Transaction cannot be requery for this superagent",
+                "Transaction cannot be requery for this superagent"
             );
         }
 
@@ -202,13 +253,19 @@ export default class TransactionController {
             const transactionIsPending = response.responseCode === 201;
 
             if (transactionFailed)
-                await TransactionService.updateSingleTransaction(transactionRecord.id, {
-                    status: Status.FAILED,
-                });
+                await TransactionService.updateSingleTransaction(
+                    transactionRecord.id,
+                    {
+                        status: Status.FAILED,
+                    }
+                );
             else if (transactionIsPending)
-                await TransactionService.updateSingleTransaction(transactionRecord.id, {
-                    status: Status.PENDING,
-                });
+                await TransactionService.updateSingleTransaction(
+                    transactionRecord.id,
+                    {
+                        status: Status.PENDING,
+                    }
+                );
 
             res.status(200).json({
                 status: "success",
@@ -218,7 +275,8 @@ export default class TransactionController {
                     requeryStatusMessage: transactionFailed
                         ? "Transaction failed"
                         : "Transaction pending",
-                    transaction: ResponseTrimmer.trimTransaction(transactionRecord),
+                    transaction:
+                        ResponseTrimmer.trimTransaction(transactionRecord),
                 },
             });
 
@@ -240,7 +298,9 @@ export default class TransactionController {
             transactionRecord.superagent,
             partner.email
         );
-        await transactionEventService.addTokenReceivedEvent(response.data.token);
+        await transactionEventService.addTokenReceivedEvent(
+            response.data.token
+        );
         await VendorPublisher.publishEventForTokenReceivedFromVendor({
             meter: {
                 id: transactionRecord.meter.id,
@@ -274,7 +334,7 @@ export default class TransactionController {
 
     static async getYesterdaysTransactions(
         req: AuthenticatedRequest,
-        res: Response,
+        res: Response
     ) {
         const { status } = req.query as any as {
             status: "COMPLETED" | "FAILED" | "PENDING";
@@ -290,14 +350,14 @@ export default class TransactionController {
 
         const transactions = status
             ? await TransactionService.viewTransactionsForYesterdayByStatus(
-                partner.id,
-                status.toUpperCase() as typeof status,
-            )
+                  partner.id,
+                  status.toUpperCase() as typeof status
+              )
             : await TransactionService.viewTransactionForYesterday(partner.id);
 
         const totalAmount = transactions.reduce(
             (acc, curr) => acc + parseInt(curr.amount),
-            0,
+            0
         );
 
         res.status(200).json({
@@ -307,4 +367,3 @@ export default class TransactionController {
         });
     }
 }
-
