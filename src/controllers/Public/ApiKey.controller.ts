@@ -17,7 +17,7 @@ export default class ApiController {
             throw new ForbiddenError('Only partners or partner\'s members can access this resource')
         }
         let partner_ : PartnerProfile | null
-        if(entity.role !== 'PARTNER'){
+        if(entity.role === 'PARTNER'){
             partner_ = await PartnerService.viewSinglePartnerByEmail(entity.email)
             
         }else{
