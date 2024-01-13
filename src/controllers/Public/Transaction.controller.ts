@@ -91,28 +91,27 @@ export default class TransactionController {
             const requestMadeByEnduser = [RoleEnum.EndUser].includes(
                 req.user.user.entity.role
             );
+            const requestWasMadeByTeamMember = [RoleEnum.TeamMember].includes(
+                req.user.user.entity.role
+            );
+
             if (requestMadeByEnduser) {
                 query.where.userId = req.user.user.entity.userId;
-            } else {
+            } else if(requestWasMadeByTeamMember){
+                //To show Partner Data to Teammember
+                const _teamMember =
+                    await TeamMemberProfileService.viewSingleTeamMember(
+                        req.user.user.entity.teamMemberProfileId || ""
+                    );
+                query.where.partnerId = _teamMember?.partnerId;
+            }else {
                 query.where.partnerId = req.user.user.profile.id;
             }
         }
 
         //To show Partner Data to Teammember
 
-        const requestWasMadeByTeamMember = [RoleEnum.TeamMember].includes(
-            req.user.user.entity.role
-        );
-
-        if (requestWasMadeByTeamMember) {
-            const _teamMember =
-                await TeamMemberProfileService.viewSingleTeamMember(
-                    req.user.user.entity.teamMemberProfileId || ""
-                );
-            query.where.partnerId = _teamMember?.partnerId;
-        } else {
-            query.where.partnerId = req.user.user.profile.id;
-        }
+        
 
         const transactions: Transaction[] =
             await TransactionService.viewTransactionsWithCustomQuery(query);
