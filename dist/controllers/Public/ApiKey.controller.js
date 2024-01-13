@@ -39,7 +39,9 @@ class ApiController {
                 message: 'API Keys retrieved successfully',
                 data: {
                     apiKey: apiKey.key,
-                    secretKey: secKeyInCache
+                    secretKey: secKeyInCache,
+                    createdAt: apiKey.createdAt,
+                    lastUsed: apiKey.lastUsed
                 }
             });
         });
@@ -55,12 +57,18 @@ class ApiController {
             const secKeyInCache = Cypher_1.default.encryptString(sec);
             yield Token_1.TokenUtil.saveTokenToCache({ key: secKeyInCache, token: Cypher_1.default.encryptString(key) });
             yield ApiKey_service_1.default.setCurrentActiveApiKeyInCache(partner, key);
+            const apiKey = yield ApiKey_service_1.default.viewActiveApiKeyByPartnerId(partner.id);
+            if (!apiKey) {
+                throw new Errors_1.InternalServerError('API key not found for user');
+            }
             res.status(200).json({
                 status: 'success',
                 message: 'Generated API keys successfully',
                 data: {
                     apiKey: key,
-                    secretKey: secKeyInCache
+                    secretKey: secKeyInCache,
+                    createdAt: apiKey.createdAt,
+                    lastUsed: apiKey.lastUsed
                 }
             });
         });

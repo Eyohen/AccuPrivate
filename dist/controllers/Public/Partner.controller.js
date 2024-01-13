@@ -83,7 +83,8 @@ class PartnerProfileController {
                     login: true,
                     failedTransactions: true,
                     logout: true
-                }
+                },
+                requireOTPOnLogin: false
             }, transaction);
             const apiKey = yield ApiKey_service_1.default.addApiKey({
                 partnerId: newPartner.id,
@@ -163,7 +164,6 @@ class PartnerProfileController {
                 item.sec = undefined;
                 return item;
             });
-            console.log(partners[0].key, 'Yes');
             const _stats = [];
             //adding partner Statics here        
             for (let index = 0; index < partners.length; index++) {

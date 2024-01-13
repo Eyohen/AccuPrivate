@@ -15,42 +15,30 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // Import necessary modules and dependencies
 const sequelize_typescript_1 = require("sequelize-typescript");
 const PartnerProfile_model_1 = __importDefault(require("./Entity/Profiles/PartnerProfile.model"));
-// Define the Sequelize model for the "ApiKey" table
-let ApiKey = class ApiKey extends sequelize_typescript_1.Model {
+// Define the "Partner" table model
+let WebHook = class WebHook extends sequelize_typescript_1.Model {
 };
 __decorate([
     (0, sequelize_typescript_1.IsUUID)(4),
     sequelize_typescript_1.PrimaryKey,
     sequelize_typescript_1.Column,
     __metadata("design:type", String)
-], ApiKey.prototype, "id", void 0);
+], WebHook.prototype, "id", void 0);
 __decorate([
+    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.STRING, allowNull: true }),
+    __metadata("design:type", String)
+], WebHook.prototype, "url", void 0);
+__decorate([
+    (0, sequelize_typescript_1.IsUUID)(4),
+    (0, sequelize_typescript_1.ForeignKey)(() => PartnerProfile_model_1.default),
     (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.STRING, allowNull: false }),
     __metadata("design:type", String)
-], ApiKey.prototype, "key", void 0);
-__decorate([
-    (0, sequelize_typescript_1.ForeignKey)(() => PartnerProfile_model_1.default),
-    (0, sequelize_typescript_1.IsUUID)(4),
-    sequelize_typescript_1.Column,
-    __metadata("design:type", String)
-], ApiKey.prototype, "partnerId", void 0);
+], WebHook.prototype, "partnerId", void 0);
 __decorate([
     (0, sequelize_typescript_1.BelongsTo)(() => PartnerProfile_model_1.default),
     __metadata("design:type", PartnerProfile_model_1.default)
-], ApiKey.prototype, "PartnerProfile", void 0);
-__decorate([
-    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.BOOLEAN, allowNull: false }),
-    __metadata("design:type", Boolean)
-], ApiKey.prototype, "active", void 0);
-__decorate([
-    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.DATE, allowNull: false }),
-    __metadata("design:type", Date)
-], ApiKey.prototype, "createdAt", void 0);
-__decorate([
-    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.DATE, allowNull: true }),
-    __metadata("design:type", Date)
-], ApiKey.prototype, "lastUsed", void 0);
-ApiKey = __decorate([
+], WebHook.prototype, "partner", void 0);
+WebHook = __decorate([
     sequelize_typescript_1.Table
-], ApiKey);
-exports.default = ApiKey;
+], WebHook);
+exports.default = WebHook;

@@ -21,6 +21,7 @@ const sequelize_typescript_1 = require("sequelize-typescript");
 Object.defineProperty(exports, "Sequelize", { enumerable: true, get: function () { return sequelize_typescript_1.Sequelize; } });
 const Logger_1 = __importDefault(require("../utils/Logger"));
 const Constants_1 = require("../utils/Constants");
+console.log(Constants_1.DB_CONFIG.URL);
 // Create a new Sequelize instance for database connection and add Models
 const Database = new sequelize_typescript_1.Sequelize(Constants_1.DB_CONFIG.URL, {
     logging: false
@@ -49,6 +50,7 @@ function initiateDB(db) {
 exports.initiateDB = initiateDB;
 const redisClient = new ioredis_1.default(Constants_1.REDIS_URL);
 exports.redisClient = redisClient;
+console.log(Constants_1.REDIS_URL);
 redisClient.on('error', (error) => {
     Logger_1.default.info('An error occured while connecting to REDIS');
     console.error(error);

@@ -79,7 +79,8 @@ class TeamMemberProfileController {
                     login: false,
                     logout: false,
                     failedTransactions: false
-                }
+                },
+                requireOTPOnLogin: false
             }, transaction);
             const password = (0, uuid_1.v4)();
             const entityPasswrod = yield Password_service_1.default.addPassword({

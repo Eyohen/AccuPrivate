@@ -24,6 +24,7 @@ var RoleEnum;
     RoleEnum["Partner"] = "PARTNER";
     RoleEnum["TeamMember"] = "TEAMMEMBER";
     RoleEnum["SuperAdmin"] = "SUPERADMIN";
+    RoleEnum["EndUser"] = "ENDUSER";
 })(RoleEnum || (exports.RoleEnum = RoleEnum = {}));
 let Role = class Role extends sequelize_typescript_1.Model {
 };

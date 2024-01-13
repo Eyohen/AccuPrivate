@@ -104,5 +104,13 @@ class AuthUtil {
             yield TokenUtil.deleteTokenFromCache(tokenKey);
         });
     }
+    static clear({ entity }) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.deleteToken({ entity, tokenType: 'access', tokenClass: 'token' });
+            yield this.deleteToken({ entity, tokenType: 'refresh', tokenClass: 'token' });
+            yield this.deleteToken({ entity, tokenType: 'passwordreset', tokenClass: 'code' });
+            yield this.deleteToken({ entity, tokenType: 'emailverification', tokenClass: 'code' });
+        });
+    }
 }
 exports.AuthUtil = AuthUtil;

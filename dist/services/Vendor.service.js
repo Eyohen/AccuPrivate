@@ -42,11 +42,11 @@ const querystring_1 = __importDefault(require("querystring"));
 const Constants_1 = require("../utils/Constants");
 const Logger_1 = __importDefault(require("../utils/Logger"));
 const crypto_1 = __importDefault(require("crypto"));
+const Helper_1 = require("../utils/Helper");
 class Vendor {
 }
 class IRechargeVendorService {
     static generateHash(combinedString) {
-        console.log(Constants_1.IRECHARGE_PRIVATE_KEY);
         const hash = crypto_1.default.createHmac('sha1', Constants_1.IRECHARGE_PRIVATE_KEY).update(combinedString).digest('hex');
         return hash;
     }
@@ -58,20 +58,8 @@ class IRechargeVendorService {
     }
     static validateMeter({ disco, reference, meterNumber }) {
         return __awaiter(this, void 0, void 0, function* () {
-            const combinedString = this.VENDOR_CODE + "|" + '12434324234234234' + "|" + meterNumber + "|" + disco + "|" + this.PUBLIC_KEY;
+            const combinedString = this.VENDOR_CODE + "|" + reference + "|" + meterNumber + "|" + disco + "|" + this.PUBLIC_KEY;
             const hash = this.generateHash(combinedString);
-            console.log({
-                vendor_code: this.VENDOR_CODE,
-                reference_id: reference,
-                meter: meterNumber,
-                disco,
-                response_format: 'json',
-                hash,
-                privateKey: this.PRIVATE_KEY,
-                publicKey: this.PUBLIC_KEY,
-                combinedString,
-                combinedStringHash: hash
-            });
             const response = yield this.client.get(`/get_meter_info.php/?vendor_code=${this.VENDOR_CODE}&reference_id=${reference}&meter=${meterNumber}&disco=${disco}&response_format=json&hash=${hash}`);
             return response.data;
         });
@@ -95,6 +83,66 @@ IRechargeVendorService.client = axios_1.default.create({
     baseURL: Constants_1.NODE_ENV === 'production' ? "https://irecharge.com.ng/pwr_api_live/v2" : "https://irecharge.com.ng/pwr_api_sandbox/v2"
 });
 IRechargeVendorService.VENDOR_CODE = Constants_1.IRECHARGE_VENDOR_CODE;
+class BaxipaySeed {
+    static generateDataForSuccessfulVend(reference, amount) {
+        const statuses = ['success', 'failure', 'pending'];
+        const transactionStatuses = ['completed', 'pending', 'failed'];
+        const statusCode = Math.floor(Math.random() * 1000).toString();
+        const tokenAmount = Math.random() > 0.5 ? null : Math.floor(Math.random() * 100);
+        const amountOfPower = amount;
+        const feesAmount = Math.floor(Math.random() * 10);
+        const feeder = 'Feeder Name';
+        const dssName = 'DSS Name';
+        const serviceBand = 'Service Band';
+        const message = Math.random() > 0.5 ? 'Transaction successful' : 'Transaction failed';
+        const token = (0, Helper_1.generateRandomToken)();
+        const exchangeReference = 'Exchange Ref';
+        const tariff = 'Tariff Type';
+        const power = 'Power Type';
+        const status = 'OK';
+        const providerMessage = 'Provider Message';
+        const baxiReference = Math.floor(Math.random() * 100000);
+        return {
+            source: 'BAXI',
+            status: statuses[Math.floor(Math.random() * statuses.length)],
+            statusCode: statusCode,
+            message: message,
+            data: {
+                transactionStatus: transactionStatuses[Math.floor(Math.random() * transactionStatuses.length)],
+                transactionReference: reference,
+                statusCode: statusCode,
+                transactionMessage: message,
+                tokenCode: 'Token Code',
+                tokenAmount: tokenAmount,
+                amountOfPower: amountOfPower,
+                rawOutput: {
+                    fees: [
+                        {
+                            amount: feesAmount,
+                            kind: 'Kind of Fee',
+                            description: 'Fee Description',
+                            taxAmount: Math.floor(Math.random() * 5)
+                        }
+                    ],
+                    feeder: feeder,
+                    dssName: dssName,
+                    serviceBand: serviceBand,
+                    message: message,
+                    token: token,
+                    rate: 'Exchange Rate',
+                    exchangeReference: exchangeReference,
+                    tariff: tariff,
+                    power: power,
+                    status: status,
+                    statusCode: statusCode
+                },
+                provider_message: providerMessage,
+                baxiReference: baxiReference
+            },
+            responseCode: 200
+        };
+    }
+}
 // Define the VendorService class for handling provider-related operations
 class VendorService {
     static generateToken() {
@@ -121,10 +169,17 @@ class VendorService {
                     agentId: 'baxi',
                     agentReference: reference
                 });
+                response.data.data.rawOutput.token = Constants_1.NODE_ENV === 'development'
+                    ? (0, Helper_1.generateRandomToken)()
+                    : response.data.data.rawOutput.token;
                 return Object.assign(Object.assign({}, response.data), { source: 'BAXI' });
             }
             catch (error) {
-                Logger_1.default.error(error);
+                if (Constants_1.NODE_ENV === 'development') {
+                    // This is because baxi API currently has been failing on dev mode
+                    const res = BaxipaySeed.generateDataForSuccessfulVend(reference, amount);
+                    return res;
+                }
                 throw new Error(error.message);
             }
         });
@@ -143,12 +198,14 @@ class VendorService {
                         responseCode: 200
                     };
                 }
-                return {
-                    source: 'BAXI',
-                    status: false,
-                    message: responseData.message,
-                    responseCode: 202
-                };
+                return Constants_1.NODE_ENV === 'development'
+                    ? BaxipaySeed.generateDataForSuccessfulVend(reference, '10000')
+                    : {
+                        source: 'BAXI',
+                        status: false,
+                        message: responseData.message,
+                        responseCode: 202
+                    };
             }
             catch (error) {
                 throw error;
@@ -168,6 +225,7 @@ class VendorService {
                 return response.data.data;
             }
             catch (error) {
+                console.log(error.response);
                 throw new Error(error.message);
             }
         });
@@ -175,7 +233,7 @@ class VendorService {
     static baxiFetchAvailableDiscos() {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const response = yield this.baxiAxios().get('/billers');
+                const response = yield this.baxiAxios().get('/electricity/billers');
                 const responseData = response.data;
                 const providers = [];
                 for (const provider of responseData.data.providers) {
@@ -191,8 +249,7 @@ class VendorService {
                 return providers;
             }
             catch (error) {
-                Logger_1.default.error(error);
-                throw new Error();
+                throw error;
             }
         });
     }
@@ -210,6 +267,7 @@ class VendorService {
                 return false;
             }
             catch (error) {
+                console.error(error);
                 Logger_1.default.error(error);
                 throw new Error();
             }
@@ -237,7 +295,7 @@ class VendorService {
     }
     // Static method for vending a token with BuyPower
     static buyPowerVendToken(body) {
-        var _a, _b;
+        var _a, _b, _c, _d, _e;
         return __awaiter(this, void 0, void 0, function* () {
             // Define data to be sent in the POST request
             const postData = {
@@ -260,8 +318,9 @@ class VendorService {
             }
             catch (error) {
                 if (error instanceof axios_1.AxiosError) {
-                    if (((_b = (_a = error.response) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.message) === "An unexpected error occurred. Please requery.") {
-                        Logger_1.default.error(error.message, { meta: { stack: error.stack, responseData: error.response.data } });
+                    const requery = ((_b = (_a = error.response) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.message) === "An unexpected error occurred. Please requery." || ((_d = (_c = error.response) === null || _c === void 0 ? void 0 : _c.data) === null || _d === void 0 ? void 0 : _d.responseCode) === 500;
+                    if (requery) {
+                        Logger_1.default.error(error.message, { meta: { stack: error.stack, responseData: (_e = error.response) === null || _e === void 0 ? void 0 : _e.data } });
                         throw new Error('Transaction timeout');
                     }
                 }

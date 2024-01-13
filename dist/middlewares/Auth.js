@@ -18,6 +18,8 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const Constants_1 = require("../utils/Constants");
 const Errors_1 = require("../utils/Errors");
 const Cypher_1 = __importDefault(require("../utils/Cypher"));
+const ApiKey_service_1 = __importDefault(require("../services/ApiKey.service "));
+const Logger_1 = __importDefault(require("../utils/Logger"));
 const basicAuth = function (tokenType) {
     return (req, res, next) => __awaiter(this, void 0, void 0, function* () {
         const authHeader = req.headers.authorization;
@@ -56,21 +58,23 @@ const validateApiKey = (req, res, next) => __awaiter(void 0, void 0, void 0, fun
         return next(new Errors_1.UnauthenticatedError('Invalid API key'));
     }
     ;
-    req.key = validApiKey;
+    req.key = validApiKey; // Partners id
     // Check if this si the current active api key
     const currentActiveApiKey = yield Token_1.TokenUtil.getTokenFromCache(`active_api_key:${validApiKey}`);
-    console.log({
-        validApiKey,
-        currentActiveApiKey
-    });
+    // NODE_ENV === 'development' && console.log({
+    //     validApiKey,
+    //     currentActiveApiKey
+    // })
     if (!currentActiveApiKey) {
         return next(new Errors_1.UnauthenticatedError('Invalid API key'));
     }
-    // console.log(currentActiveApiKey)
     // TODO: Disallow api key if user is not yet active
     if (Cypher_1.default.decryptString(currentActiveApiKey) !== apiKey) {
         return next(new Errors_1.UnauthenticatedError('Invalid API key'));
     }
+    ApiKey_service_1.default.updateLastUsedTime(validApiKey).catch((e) => {
+        Logger_1.default.info('Error updating last used time for api key');
+    });
     next();
 });
 exports.validateApiKey = validateApiKey;

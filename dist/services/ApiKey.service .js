@@ -67,5 +67,14 @@ class ApiKeyService {
             return key ? Cypher_1.default.decryptString(key) : null;
         });
     }
+    static updateLastUsedTime(partnerId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const activeApiKey = yield ApiKeyService.viewActiveApiKeyByPartnerId(partnerId);
+            if (!activeApiKey) {
+                throw new Error('Api key not found');
+            }
+            yield activeApiKey.update({ lastUsed: new Date() });
+        });
+    }
 }
 exports.default = ApiKeyService;

@@ -62,20 +62,12 @@ __decorate([
 ], Notification.prototype, "entity", void 0);
 __decorate([
     (0, sequelize_typescript_1.Column)({
-        type: sequelize_typescript_1.DataType.DATE,
+        type: sequelize_typescript_1.DataType.STRING,
         allowNull: false,
-        defaultValue: new Date_1.NigerianDate().getCurrentNigerianDate(),
+        defaultValue: new Date_1.NigerianDate().getCurrentNigerianDate().toString(),
     }),
-    __metadata("design:type", Date)
-], Notification.prototype, "createdAt", void 0);
-__decorate([
-    (0, sequelize_typescript_1.Column)({
-        type: sequelize_typescript_1.DataType.DATE,
-        allowNull: false,
-        defaultValue: new Date_1.NigerianDate().getCurrentNigerianDate(),
-    }),
-    __metadata("design:type", Date)
-], Notification.prototype, "updatedAt", void 0);
+    __metadata("design:type", String)
+], Notification.prototype, "timeStamp", void 0);
 Notification = __decorate([
     sequelize_typescript_1.Table
 ], Notification);

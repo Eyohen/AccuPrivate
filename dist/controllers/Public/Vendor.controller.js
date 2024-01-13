@@ -150,11 +150,11 @@ class VendorControllerValdator {
 class VendorControllerUtil {
     static replayRequestToken({ transaction, meterInfo, previousRetryEvent }) {
         return __awaiter(this, void 0, void 0, function* () {
-            const transactionEventService = new TransactionEvent_service_1.default(transaction, meterInfo, transaction.superagent);
+            const transactionEventService = new TransactionEvent_service_1.default(transaction, meterInfo, transaction.superagent, transaction.partner.email);
             const eventPayload = JSON.parse(previousRetryEvent.payload);
             yield Token_1.TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor({
                 eventService: transactionEventService,
-                eventMessage: {
+                eventData: {
                     meter: {
                         meterNumber: meterInfo.meterNumber,
                         disco: transaction.disco,
@@ -167,6 +167,8 @@ class VendorControllerUtil {
                         cause: Interface_1.TransactionErrorCause.UNKNOWN
                     },
                 },
+                tokenInResponse: null,
+                transactionTimedOutFromBuypower: false,
                 superAgent: transaction.superagent,
                 retryCount: eventPayload.retryCount + 1
             });
@@ -174,7 +176,7 @@ class VendorControllerUtil {
     }
     static replayWebhookNotification({ transaction, meterInfo }) {
         return __awaiter(this, void 0, void 0, function* () {
-            const transactionEventService = new TransactionEvent_service_1.default(transaction, meterInfo, transaction.superagent);
+            const transactionEventService = new TransactionEvent_service_1.default(transaction, meterInfo, transaction.superagent, transaction.partner.email);
             const user = yield transaction.$get('user');
             if (!user) {
                 throw new Errors_1.InternalServerError('User not found');
@@ -228,7 +230,7 @@ class VendorControllerUtil {
                 meterNumber: powerUnit.meter.meterNumber,
                 disco: transaction.disco,
                 vendType: powerUnit.meter.vendType,
-            }, transaction.superagent);
+            }, transaction.superagent, partner.email);
             yield transactionEventService.addTokenSentToPartnerRetryEvent();
             yield Vendor_1.VendorPublisher.publishEventForTokenSentToPartnerRetry({
                 meter: {
@@ -282,7 +284,7 @@ class VendorController {
                 disco: disco,
                 partnerId: partnerId,
             });
-            const transactionEventService = new Event_service_1.default.transactionEventService(transaction, { meterNumber, disco, vendType }, superagent);
+            const transactionEventService = new Event_service_1.default.transactionEventService(transaction, { meterNumber, disco, vendType }, superagent, transaction.partner.email);
             yield transactionEventService.addMeterValidationRequestedEvent();
             Vendor_1.VendorPublisher.publishEventForMeterValidationRequested({
                 meter: { meterNumber, disco, vendType },
@@ -388,7 +390,7 @@ class VendorController {
                 vendType: meter.vendType,
                 id: meter.id,
             };
-            const transactionEventService = new Event_service_1.default.transactionEventService(transaction, meterInfo, transaction.superagent);
+            const transactionEventService = new Event_service_1.default.transactionEventService(transaction, meterInfo, transaction.superagent, transaction.partner.email);
             yield transactionEventService.addPowerPurchaseInitiatedEvent(bankRefId, amount);
             const { user, partnerEntity } = yield VendorControllerValdator.requestToken({ bankRefId, transactionId });
             yield Transaction_service_1.default.updateSingleTransaction(transactionId, {
@@ -622,7 +624,7 @@ class VendorController {
                 meterNumber: meter.meterNumber,
                 disco: transaction.disco,
                 vendType: meter.vendType,
-            }, transaction.superagent).addPartnerTransactionCompleteEvent();
+            }, transaction.superagent, transaction.partner.email).addPartnerTransactionCompleteEvent();
             res.status(200).json({
                 status: "success",
                 message: "Payment confirmed successfully",

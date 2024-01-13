@@ -73,6 +73,7 @@ class AuthController {
                 subject: 'Account Activation',
                 html: yield new Email_1.EmailTemplate().accountActivation(entity.email)
             });
+            yield Token_1.AuthUtil.clear({ entity });
             res.status(200).json({
                 status: 'success',
                 message: 'Activated user successfully',
@@ -98,7 +99,8 @@ class AuthController {
             if (role.name === Role_model_1.RoleEnum.SuperAdmin) {
                 throw new Errors_1.ForbiddenError('Unauthorized access');
             }
-            yield entity.update({ status: Object.assign(Object.assign({}, entity.status), { activated: true }) });
+            yield entity.update({ status: Object.assign(Object.assign({}, entity.status), { activated: false }) });
+            yield Token_1.AuthUtil.clear({ entity });
             yield Email_1.default.sendEmail({
                 to: entity.email,
                 subject: 'Account Activation',
@@ -140,7 +142,7 @@ class AuthController {
             Email_1.default.sendEmail({
                 to: Constants_1.SU_HOST_EMAIL_1,
                 html: yield (new Email_1.EmailTemplate().suAccountActivation({
-                    email: Constants_1.SU_HOST_EMAIL_1,
+                    email: email,
                     authorizationCode: activationCode1,
                 })),
                 subject: 'Super Admin account activation request'
@@ -148,7 +150,7 @@ class AuthController {
             Email_1.default.sendEmail({
                 to: Constants_1.SU_HOST_EMAIL_2,
                 html: yield (new Email_1.EmailTemplate().suAccountActivation({
-                    email: Constants_1.SU_HOST_EMAIL_2,
+                    email: email,
                     authorizationCode: activationCode2,
                 })),
                 subject: 'Super Admin account activation request'
@@ -156,7 +158,7 @@ class AuthController {
             Email_1.default.sendEmail({
                 to: Constants_1.SU_HOST_EMAIL_3,
                 html: yield (new Email_1.EmailTemplate().suAccountActivation({
-                    email: Constants_1.SU_HOST_EMAIL_3,
+                    email: email,
                     authorizationCode: activationCode3,
                 })),
                 subject: 'Super Admin account activation request'
@@ -243,7 +245,7 @@ class AuthController {
             }
             const deactivationCode = yield Token_1.AuthUtil.generateCode({ type: 'su_activation', entity, expiry: 5 * 60 * 60 });
             const [deactivationCode1, deactivationCode2, deactivationCode3] = deactivationCode.split(':');
-            console.log({
+            Constants_1.NODE_ENV === 'development' && console.log({
                 deactivationCode1,
                 deactivationCode2,
                 deactivationCode3
@@ -252,7 +254,7 @@ class AuthController {
             Email_1.default.sendEmail({
                 to: Constants_1.SU_HOST_EMAIL_1,
                 html: yield (new Email_1.EmailTemplate().suDeAccountActivation({
-                    email: Constants_1.SU_HOST_EMAIL_1,
+                    email: email,
                     authorizationCode: deactivationCode1,
                 })),
                 subject: 'Super Admin account deactivation request'
@@ -260,7 +262,7 @@ class AuthController {
             Email_1.default.sendEmail({
                 to: Constants_1.SU_HOST_EMAIL_2,
                 html: yield (new Email_1.EmailTemplate().suDeAccountActivation({
-                    email: Constants_1.SU_HOST_EMAIL_2,
+                    email: email,
                     authorizationCode: deactivationCode2,
                 })),
                 subject: 'Super Admin account deactivation request'
@@ -268,7 +270,7 @@ class AuthController {
             Email_1.default.sendEmail({
                 to: Constants_1.SU_HOST_EMAIL_3,
                 html: yield (new Email_1.EmailTemplate().suDeAccountActivation({
-                    email: Constants_1.SU_HOST_EMAIL_3,
+                    email: email,
                     authorizationCode: deactivationCode3,
                 })),
                 subject: 'Super Admin account deactivation request'
