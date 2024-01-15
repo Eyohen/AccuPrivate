@@ -20,14 +20,12 @@ class NotificationHandler extends Registry {
         logger.info('Inside notification handler')
         const transaction = await TransactionService.viewSingleTransaction(data.transactionId)
         if (!transaction) {
-            logger.error(`Error fetching transaction with id ${data.transactionId}`)
-            return
+            throw new Error(`Error fetching transaction with id ${data.transactionId}`)
         }
 
         const partnerEntity = await EntityService.viewSingleEntityByEmail(transaction.partner.email)
         if (!partnerEntity) {
-            logger.error(`Error fetching partner with email ${transaction.partner.email}`)
-            return
+            throw new Error(`Error fetching partner with email ${transaction.partner.email}`)
         }
 
         // Add notification successfull transaction
@@ -86,14 +84,12 @@ class NotificationHandler extends Registry {
         logger.info('Inside notification handler')
         const transaction = await TransactionService.viewSingleTransaction(data.transactionId)
         if (!transaction) {
-            logger.error(`Error fetching transaction with id ${data.transactionId}`)
-            return
+            throw new Error(`Error fetching transaction with id ${data.transactionId}`)
         }
 
         const partnerEntity = await EntityService.viewSingleEntityByEmail(transaction.partner.email)
         if (!partnerEntity) {
-            logger.error(`Error fetching partner with email ${transaction.partner.email}`)
-            return
+            throw new Error(`Error fetching partner with email ${transaction.partner.email}`)
         }
 
         // Add notification successfull transaction

@@ -265,10 +265,9 @@ class TokenHandler extends Registry {
             data.transactionId,
         );
         if (!transaction) {
-            logger.error(
+            throw new Error(
                 `Error fetching transaction with id ${data.transactionId}`,
             );
-            return;
         }
 
         const { user, meter, partner } = transaction;
