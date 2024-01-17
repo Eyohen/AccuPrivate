@@ -369,7 +369,7 @@ export default class VendorController {
                 amount: "0",
                 status: Status.PENDING,
                 superagent: superagent,
-                paymentType: PaymentType.PAYMENT,
+                paymentType: PaymentType.PAYMENT, 
                 transactionTimestamp: new Date(),
                 disco: disco,
                 partnerId: partnerId,
@@ -480,6 +480,7 @@ export default class VendorController {
             transactionId: transaction.id,
             meter: { meterNumber, disco, vendType, id: meter.id },
         })
+
     }
 
     static async requestToken(req: Request, res: Response, next: NextFunction) {
