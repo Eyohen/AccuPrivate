@@ -41,7 +41,12 @@ export default class AuthController {
             throw new BadRequestError('Email has been used before')
         }
 
+
+
         const transaction = await Database.transaction()
+
+
+        try{
 
         const newPartner = await PartnerService.addPartner({
             id: uuidv4(),
@@ -98,7 +103,6 @@ export default class AuthController {
             subject: 'Succesful Email Verification',
             html: await new EmailTemplate().awaitActivation(newPartner.email)
         })
-
         res.status(201).json({
             status: 'success',
             message: 'Partner created successfully',
@@ -107,6 +111,13 @@ export default class AuthController {
                 accessToken,
             }
         })
+        }catch(err){
+            transaction.rollback()
+        res.status(500).json({
+            status: 'failed',
+            message: 'Partner created unsuccessfully',
+        })
+        }
     }
 
     static async otherSignup(req: Request, res: Response, next: NextFunction) {
@@ -129,6 +140,8 @@ export default class AuthController {
 
         const transaction = await Database.transaction()
 
+
+        try{
         const entity = await EntityService.addEntity({
             id: uuidv4(),
             email,
@@ -171,6 +184,13 @@ export default class AuthController {
                 accessToken,
             }
         })
+        }catch(err){
+            transaction.rollback()
+            res.status(500).json({
+                status: 'failed',
+                message: 'User creation unsuccessfully',
+            })
+        }
     }
 
     static async verifyEmail(req: AuthenticatedRequest, res: Response, next: NextFunction) {
