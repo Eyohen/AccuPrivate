@@ -10,38 +10,45 @@ import PasswordService from "./Password.service";
 import { UUIDV4 } from "sequelize";
 export default class UserService {
 
-    static async addUserIfNotExists(user: IUser): Promise<User> {
+    static async addUserIfNotExists(user: IUser): Promise<User | void> {
         const transaction = await Database.transaction()
 
-        const existingUser: User | null = await User.findOne({ where: { phoneNumber: user.phoneNumber } })
-        if (existingUser) {
-            return existingUser
+        try{
+            const existingUser: User | null = await User.findOne({ where: { phoneNumber: user.phoneNumber } })
+            if (existingUser) {
+                return existingUser
+            }
+            const newUser: User = User.build(user)
+            await newUser.save({ transaction })
+    
+            const entity = await EntityService.addEntity({
+                email: user.email,
+                userId: newUser.id,
+                id: randomUUID(),
+                role: RoleEnum.EndUser,
+                status: {
+                    emailVerified: true,
+                    activated: true,
+                },
+                requireOTPOnLogin: true,
+                phoneNumber: user.phoneNumber,
+            }, transaction)
+    
+            const password = await PasswordService.addPassword({
+                id: randomUUID(),
+                entityId: entity.id,
+                password: randomUUID()
+            }, transaction)
+    
+            await transaction.commit()
+            return newUser
+        }catch(er){
+            transaction.rollback()
+            throw Error("Commit Failed")
         }
-        const newUser: User = User.build(user)
-        await newUser.save({ transaction })
+       
 
-        const entity = await EntityService.addEntity({
-            email: user.email,
-            userId: newUser.id,
-            id: randomUUID(),
-            role: RoleEnum.EndUser,
-            status: {
-                emailVerified: true,
-                activated: true,
-            },
-            requireOTPOnLogin: true,
-            phoneNumber: user.phoneNumber,
-        }, transaction)
-
-        const password = await PasswordService.addPassword({
-            id: randomUUID(),
-            entityId: entity.id,
-            password: randomUUID()
-        }, transaction)
-
-        await transaction.commit()
-
-        return newUser
+        
     }
 
     static async addUser(user: ICreateUser): Promise<User> {
