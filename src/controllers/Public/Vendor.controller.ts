@@ -418,7 +418,12 @@ export default class VendorController {
             phoneNumber: phoneNumber,
         });
 
-        await transaction.update({ userId: user.id });
+
+        if (!user)
+            throw new InternalServerError("An error occured while validating meter");
+
+
+        await transaction.update({ userId: user?.id });
         await transactionEventService.addCRMUserConfirmedEvent({ user: userInfo });
         CRMPublisher.publishEventForConfirmedUser({
             user: userInfo,

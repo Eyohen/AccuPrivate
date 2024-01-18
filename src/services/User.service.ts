@@ -10,17 +10,15 @@ import PasswordService from "./Password.service";
 import { UUIDV4 } from "sequelize";
 export default class UserService {
 
-    static async addUserIfNotExists(user: IUser): Promise<User | void> {
+    static async addUserIfNotExists(user: IUser): Promise<User| void> {
         const transaction = await Database.transaction()
-
+        const existingUser: User | null = await User.findOne({ where: { phoneNumber: user.phoneNumber } })
+        if (existingUser) {
+            return existingUser
+        }
+        const newUser: User = User.build(user)
         try{
-            const existingUser: User | null = await User.findOne({ where: { phoneNumber: user.phoneNumber } })
-            if (existingUser) {
-                return existingUser
-            }
-            const newUser: User = User.build(user)
             await newUser.save({ transaction })
-    
             const entity = await EntityService.addEntity({
                 email: user.email,
                 userId: newUser.id,
@@ -44,8 +42,8 @@ export default class UserService {
             return newUser
         }catch(er){
             transaction.rollback()
-            throw Error("Commit Failed")
         }
+
        
 
         
