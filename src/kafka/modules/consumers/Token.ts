@@ -20,6 +20,7 @@ import MessageProcessor from "../util/MessageProcessor";
 import { v4 as uuidv4 } from "uuid";
 import EventService from "../../../services/Event.service";
 import VendorService from "../../../services/Vendor.service";
+import { generateRandomToken } from "../../../utils/Helper";
 
 interface EventMessage {
     meter: {
@@ -438,6 +439,9 @@ class TokenHandler extends Registry {
                 data.transactionId,
             );
 
+        // BuyPower returnes the same token on test mode, this causes a conflict when trying to update the power unit
+        data.meter.token = NODE_ENV === 'development' ? data.meter.token === '0000-0000-0000-0000-0000' ? generateRandomToken() : data.meter.token : data.meter.token
+        
         const discoLogo =
             DISCO_LOGO[data.meter.disco as keyof typeof DISCO_LOGO];
         powerUnit = powerUnit
