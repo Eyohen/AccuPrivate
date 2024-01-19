@@ -24,16 +24,19 @@ export default class ProducerFactory {
 
     static async sendMessage({ topic, message }: PublisherParamsUnion) {
         logger.info('Sending message to topic: ' + topic)
-        await this.producer.sendBatch({
-            topicMessages: [
-                {
-                    topic: topic,
-                    messages: [
-                        { value: JSON.stringify(message) }
-                    ]
-                }
-            ]
-        })
+        try {
+
+            await this.producer.send({
+                topic: topic,
+                messages: [
+                    {
+                        value: JSON.stringify(message)
+                    }
+                ]
+            })
+        } catch (error) {
+            logger.warn(error)
+        }
     }
 
     static async sendBatch({ messages, topic }: { messages: Array<CustomMessageFormat>, topic: keyof typeof TOPICS }): Promise<void> {
