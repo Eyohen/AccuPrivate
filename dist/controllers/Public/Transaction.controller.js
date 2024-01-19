@@ -22,6 +22,7 @@ const Role_model_1 = require("../../models/Role.model");
 const TransactionEvent_service_1 = __importDefault(require("../../services/TransactionEvent.service"));
 const Vendor_1 = require("../../kafka/modules/publishers/Vendor");
 const sequelize_1 = require("sequelize");
+const Profiles_1 = require("../../services/Entity/Profiles");
 class TransactionController {
     static getTransactionInfo(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -42,12 +43,14 @@ class TransactionController {
     }
     static getTransactions(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { page, limit, status, startDate, endDate, userId, disco, superagent, partnerId } = req.query;
+            const { page, limit, status, startDate, endDate, userId, disco, superagent, partnerId, } = req.query;
             const query = { where: {} };
             if (status)
                 query.where.status = status;
             if (startDate && endDate)
-                query.where.transactionTimestamp = { [sequelize_1.Op.between]: [new Date(startDate), new Date(endDate)] };
+                query.where.transactionTimestamp = {
+                    [sequelize_1.Op.between]: [new Date(startDate), new Date(endDate)],
+                };
             if (userId)
                 query.where.userId = userId;
             if (disco)
@@ -56,23 +59,31 @@ class TransactionController {
                 query.where.superagent = superagent;
             if (limit)
                 query.limit = parseInt(limit);
-            if (page && page != '0' && limit) {
+            if (page && page != "0" && limit) {
                 query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit);
             }
             if (partnerId)
                 query.where.partnerId = partnerId;
             if (userId)
                 query.where.userId = userId;
-            const requestWasMadeByAnAdmin = [Role_model_1.RoleEnum.Admin].includes(req.user.user.entity.role) || [Role_model_1.RoleEnum.SuperAdmin].includes(req.user.user.entity.role);
+            const requestWasMadeByAnAdmin = [Role_model_1.RoleEnum.Admin].includes(req.user.user.entity.role) ||
+                [Role_model_1.RoleEnum.SuperAdmin].includes(req.user.user.entity.role);
             if (!requestWasMadeByAnAdmin) {
                 const requestMadeByEnduser = [Role_model_1.RoleEnum.EndUser].includes(req.user.user.entity.role);
+                const requestWasMadeByTeamMember = [Role_model_1.RoleEnum.TeamMember].includes(req.user.user.entity.role);
                 if (requestMadeByEnduser) {
                     query.where.userId = req.user.user.entity.userId;
+                }
+                else if (requestWasMadeByTeamMember) {
+                    //To show Partner Data to Teammember
+                    const _teamMember = yield Profiles_1.TeamMemberProfileService.viewSingleTeamMember(req.user.user.entity.teamMemberProfileId || "");
+                    query.where.partnerId = _teamMember === null || _teamMember === void 0 ? void 0 : _teamMember.partnerId;
                 }
                 else {
                     query.where.partnerId = req.user.user.profile.id;
                 }
             }
+            //To show Partner Data to Teammember
             const transactions = yield Transaction_service_1.default.viewTransactionsWithCustomQuery(query);
             if (!transactions) {
                 throw new Errors_1.NotFoundError("Transactions not found");
@@ -82,30 +93,32 @@ class TransactionController {
                 page: parseInt(page),
                 limit: parseInt(limit),
                 totalCount: transactions.length,
-                totalPages: Math.ceil(transactions.length / parseInt(limit))
+                totalPages: Math.ceil(transactions.length / parseInt(limit)),
             };
             const response = {
                 transactions: transactions,
-                totalAmount
+                totalAmount,
             };
-            if (page && page != '0' && limit) {
-                response['pagination'] = paginationData;
+            if (page && page != "0" && limit) {
+                response["pagination"] = paginationData;
             }
             res.status(200).json({
-                status: 'success',
-                message: 'Transactions retrieved successfully',
-                data: response
+                status: "success",
+                message: "Transactions retrieved successfully",
+                data: response,
             });
         });
     }
     static getTransactionsKPI(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { page, limit, status, startDate, endDate, userId, disco, superagent, partnerId } = req.query;
+            const { page, limit, status, startDate, endDate, userId, disco, superagent, partnerId, } = req.query;
             const query = { where: {} };
             if (status)
                 query.where.status = status.toUpperCase();
             if (startDate && endDate)
-                query.where.transactionTimestamp = { [sequelize_1.Op.between]: [new Date(startDate), new Date(endDate)] };
+                query.where.transactionTimestamp = {
+                    [sequelize_1.Op.between]: [new Date(startDate), new Date(endDate)],
+                };
             if (userId)
                 query.where.userId = userId;
             if (disco)
@@ -114,29 +127,38 @@ class TransactionController {
                 query.where.superagent = superagent;
             if (limit)
                 query.limit = parseInt(limit);
-            if (page && page != '0' && limit) {
+            if (page && page != "0" && limit) {
                 query.offset = Math.abs(parseInt(page) - 1) * parseInt(limit);
             }
             if (partnerId)
                 query.where.partnerId = partnerId;
-            const requestWasMadeByAnAdmin = [Role_model_1.RoleEnum.Admin].includes(req.user.user.entity.role) || [Role_model_1.RoleEnum.SuperAdmin].includes(req.user.user.entity.role);
+            const requestWasMadeByAnAdmin = [Role_model_1.RoleEnum.Admin].includes(req.user.user.entity.role) ||
+                [Role_model_1.RoleEnum.SuperAdmin].includes(req.user.user.entity.role);
             const requestWasMadeByCustomer = [Role_model_1.RoleEnum.EndUser].includes(req.user.user.entity.role);
             if (requestWasMadeByCustomer) {
                 query.where.userId = req.user.user.entity.userId;
             }
             if (!requestWasMadeByAnAdmin && !requestWasMadeByCustomer) {
-                query.where.partnerId = req.user.user.profile.id;
+                //To show Partner Data to Teammember
+                const requestWasMadeByTeamMember = [Role_model_1.RoleEnum.TeamMember].includes(req.user.user.entity.role);
+                if (requestWasMadeByTeamMember) {
+                    const _teamMember = yield Profiles_1.TeamMemberProfileService.viewSingleTeamMember(req.user.user.entity.teamMemberProfileId || "");
+                    query.where.partnerId = _teamMember === null || _teamMember === void 0 ? void 0 : _teamMember.partnerId;
+                }
+                else {
+                    query.where.partnerId = req.user.user.profile.id;
+                }
             }
             const totalTransactionAmount = yield Transaction_service_1.default.viewTransactionsAmountWithCustomQuery(query);
             const totalTransactionCount = yield Transaction_service_1.default.viewTransactionsCountWithCustomQuery(query);
             const response = {
                 totalTransactionAmount,
-                totalTransactionCount
+                totalTransactionCount,
             };
             res.status(200).json({
-                status: 'success',
-                message: 'Transactions retrieved successfully',
-                data: response
+                status: "success",
+                message: "Transactions retrieved successfully",
+                data: response,
             });
         });
     }

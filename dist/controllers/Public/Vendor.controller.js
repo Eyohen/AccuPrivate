@@ -319,7 +319,9 @@ class VendorController {
                 name: response.name,
                 phoneNumber: phoneNumber,
             });
-            yield transaction.update({ userId: user.id });
+            if (!user)
+                throw new Errors_1.InternalServerError("An error occured while validating meter");
+            yield transaction.update({ userId: user === null || user === void 0 ? void 0 : user.id });
             yield transactionEventService.addCRMUserConfirmedEvent({ user: userInfo });
             Crm_1.CRMPublisher.publishEventForConfirmedUser({
                 user: userInfo,

@@ -8,8 +8,18 @@ const fs_1 = require("fs");
 const Constants_1 = require("../../utils/Constants");
 const kafkaConfig = Constants_1.NODE_ENV === "development"
     ? {
+        //   clientId: KAFKA_CLIENT_ID,
+        //   brokers: [KAFKA_BROKER],
+        //   logLevel: isNaN(parseInt(KAFA_LOGS))? 0 : parseInt(KAFA_LOGS),
         clientId: Constants_1.KAFKA_CLIENT_ID,
         brokers: [Constants_1.KAFKA_BROKER],
+        connectionTimeout: 450000,
+        ssl: true,
+        sasl: {
+            mechanism: "plain",
+            username: Constants_1.KAFKA_USERNAME,
+            password: Constants_1.KAFKA_PASSWORD,
+        },
         logLevel: isNaN(parseInt(Constants_1.KAFA_LOGS)) ? 0 : parseInt(Constants_1.KAFA_LOGS),
     }
     : Constants_1.KAFKA_ENV === "digitalocean"

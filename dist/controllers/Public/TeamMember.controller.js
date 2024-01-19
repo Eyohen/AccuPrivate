@@ -61,48 +61,57 @@ class TeamMemberProfileController {
                 throw new Errors_1.BadRequestError('Invalid role');
             }
             const transaction = yield models_1.Database.transaction();
-            const teamMemberProfile = yield TeamMemberProfile_service_1.default.addTeamMemberProfile({
-                id: (0, uuid_1.v4)(),
-                partnerId: profile.id,
-                name
-            }, transaction);
-            const entity = yield Entity_service_1.default.addEntity({
-                id: (0, uuid_1.v4)(),
-                email: email,
-                status: {
-                    activated: true,
-                    emailVerified: false
-                },
-                role: role.name,
-                teamMemberProfileId: teamMemberProfile.id,
-                notificationSettings: {
-                    login: false,
-                    logout: false,
-                    failedTransactions: false
-                },
-                requireOTPOnLogin: false
-            }, transaction);
-            const password = (0, uuid_1.v4)();
-            const entityPasswrod = yield Password_service_1.default.addPassword({
-                id: (0, uuid_1.v4)(),
-                password,
-                entityId: entity.id
-            }, transaction);
-            Email_1.default.sendEmail({
-                to: email,
-                subject: 'Team Invitation',
-                html: yield new Email_1.EmailTemplate().inviteTeamMember({ email, password })
-            });
-            // Commit transaction
-            yield transaction.commit();
-            // Generate token for team member
-            res.status(200).json({
-                status: 'success',
-                message: 'Team member invited successfully',
-                data: {
-                    teamMember: Object.assign(Object.assign({}, teamMemberProfile.dataValues), { entity: entity.dataValues }),
-                }
-            });
+            try {
+                const teamMemberProfile = yield TeamMemberProfile_service_1.default.addTeamMemberProfile({
+                    id: (0, uuid_1.v4)(),
+                    partnerId: profile.id,
+                    name
+                }, transaction);
+                const entity = yield Entity_service_1.default.addEntity({
+                    id: (0, uuid_1.v4)(),
+                    email: email,
+                    status: {
+                        activated: true,
+                        emailVerified: false
+                    },
+                    role: role.name,
+                    teamMemberProfileId: teamMemberProfile.id,
+                    notificationSettings: {
+                        login: false,
+                        logout: false,
+                        failedTransactions: false
+                    },
+                    requireOTPOnLogin: false
+                }, transaction);
+                const password = (0, uuid_1.v4)();
+                const entityPasswrod = yield Password_service_1.default.addPassword({
+                    id: (0, uuid_1.v4)(),
+                    password,
+                    entityId: entity.id
+                }, transaction);
+                Email_1.default.sendEmail({
+                    to: email,
+                    subject: 'Team Invitation',
+                    html: yield new Email_1.EmailTemplate().inviteTeamMember({ email, password })
+                });
+                // Commit transaction
+                yield transaction.commit();
+                // Generate token for team member
+                res.status(200).json({
+                    status: 'success',
+                    message: 'Team member invited successfully',
+                    data: {
+                        teamMember: Object.assign(Object.assign({}, teamMemberProfile.dataValues), { entity: entity.dataValues }),
+                    }
+                });
+            }
+            catch (err) {
+                yield transaction.rollback();
+                res.status(500).json({
+                    status: 'failed',
+                    message: 'Team member not invited successfully',
+                });
+            }
         });
     }
     static getTeamMembers(req, res, next) {
@@ -168,16 +177,25 @@ class TeamMemberProfileController {
                 throw new Errors_1.BadRequestError('Entity not found');
             }
             const transaction = yield models_1.Database.transaction();
-            yield Entity_service_1.default.deleteEntity(entity, transaction);
-            yield TeamMemberProfile_service_1.default.deleteTeamMember(teamMemberProfile, transaction);
-            yield transaction.commit();
-            res.status(200).json({
-                status: 'success',
-                message: 'Team member deleted successfully',
-                data: {
-                    teamMember: teamMemberProfile
-                }
-            });
+            try {
+                yield Entity_service_1.default.deleteEntity(entity, transaction);
+                yield TeamMemberProfile_service_1.default.deleteTeamMember(teamMemberProfile, transaction);
+                yield transaction.commit();
+                res.status(200).json({
+                    status: 'success',
+                    message: 'Team member deleted successfully',
+                    data: {
+                        teamMember: teamMemberProfile
+                    }
+                });
+            }
+            catch (err) {
+                yield transaction.rollback();
+                res.status(500).json({
+                    status: 'failed',
+                    message: 'Team member not deleted successfully',
+                });
+            }
         });
     }
 }

@@ -53,25 +53,31 @@ class MessageProcessorFactory {
     processEachBatch(eachBatchPayload) {
         var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
-            const { batch } = eachBatchPayload;
-            for (batch.messages.length - 1; batch.messages.length >= 0; batch.messages.length--) {
-                const message = batch.messages[batch.messages.length - 1];
-                const prefix = `${batch.topic}[${batch.partition} | ${message.offset}] / ${message.timestamp}`;
-                Logger_1.default.info(`- ${prefix} ${message.key}#${message.value}`);
-                const data = {
-                    topic: batch.topic,
-                    partition: batch.partition,
-                    offset: message.offset,
-                    value: JSON.parse((_b = (_a = message.value) === null || _a === void 0 ? void 0 : _a.toString()) !== null && _b !== void 0 ? _b : '{}'),
-                    timestamp: message.timestamp,
-                    headers: message.headers,
-                };
-                yield this.processMessage(data);
-                Logger_1.default.info('Processing batch...');
+            try {
+                const { batch } = eachBatchPayload;
+                for (let i = 0; i < batch.messages.length; i++) {
+                    const message = batch.messages[i];
+                    const prefix = `${batch.topic}[${batch.partition} | ${message.offset}] / ${message.timestamp}`;
+                    Logger_1.default.info(`- ${prefix} ${message.key}#${message.value}`);
+                    const data = {
+                        topic: batch.topic,
+                        partition: batch.partition,
+                        offset: message.offset,
+                        value: JSON.parse((_b = (_a = message.value) === null || _a === void 0 ? void 0 : _a.toString()) !== null && _b !== void 0 ? _b : '{}'),
+                        timestamp: message.timestamp,
+                        headers: message.headers,
+                    };
+                    yield this.processMessage(data);
+                    Logger_1.default.info('Message processed successfully');
+                    eachBatchPayload.resolveOffset(message.offset); // Commit offset
+                }
+                yield eachBatchPayload.commitOffsetsIfNecessary();
+                yield eachBatchPayload.heartbeat();
+                Logger_1.default.info('Committing offsets...');
             }
-            yield eachBatchPayload.commitOffsetsIfNecessary();
-            yield eachBatchPayload.heartbeat();
-            Logger_1.default.info('Committing offsets...');
+            catch (error) {
+                Logger_1.default.warn(error.message);
+            }
         });
     }
     getTopics() {

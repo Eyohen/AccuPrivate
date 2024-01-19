@@ -72,62 +72,71 @@ class AuthController {
                 throw new Errors_1.BadRequestError('Email has been used before');
             }
             const transaction = yield index_1.Database.transaction();
-            const newPartner = yield PartnerProfile_service_1.default.addPartner({
-                id: (0, uuid_1.v4)(),
-                email,
-            }, transaction);
-            const entity = yield Entity_service_1.default.addEntity({
-                id: (0, uuid_1.v4)(),
-                email,
-                status: {
-                    activated: false,
-                    emailVerified: false
-                },
-                partnerProfileId: newPartner.id,
-                role: Role_model_1.RoleEnum.Partner,
-                notificationSettings: {
-                    login: true,
-                    failedTransactions: true,
-                    logout: true
-                },
-                requireOTPOnLogin: false
-            }, transaction);
-            const apiKey = yield ApiKey_service_1.default.addApiKey({
-                partnerId: newPartner.id,
-                key: newPartner.key,
-                active: true,
-                id: (0, uuid_1.v4)()
-            }, transaction);
-            const secKeyInCache = Cypher_1.default.encryptString(newPartner.sec);
-            yield Token_1.TokenUtil.saveTokenToCache({ key: secKeyInCache, token: Cypher_1.default.encryptString(newPartner.key) });
-            yield ApiKey_service_1.default.setCurrentActiveApiKeyInCache(newPartner, apiKey.key.toString());
-            const partnerPassword = yield Password_service_1.default.addPassword({
-                id: (0, uuid_1.v4)(),
-                entityId: entity.id,
-                password
-            }, transaction);
-            yield Webhook_service_1.default.addWebhook({
-                id: (0, uuid_1.v4)(),
-                partnerId: newPartner.id,
-            }, transaction);
-            yield entity.update({ status: Object.assign(Object.assign({}, entity.status), { emailVerified: true }) });
-            const accessToken = yield Token_1.AuthUtil.generateToken({ type: 'emailverification', entity, profile: newPartner, expiry: 60 * 10 });
-            const otpCode = yield Token_1.AuthUtil.generateCode({ type: 'emailverification', entity, expiry: 60 * 10 });
-            yield transaction.commit();
-            Logger_1.default.info(otpCode);
-            yield Email_1.default.sendEmail({
-                to: newPartner.email,
-                subject: 'Succesful Email Verification',
-                html: yield new Email_1.EmailTemplate().awaitActivation(newPartner.email)
-            });
-            res.status(201).json({
-                status: 'success',
-                message: 'Partner created successfully',
-                data: {
-                    partner: ResponseTrimmer_1.default.trimPartner(Object.assign(Object.assign({}, newPartner.dataValues), { entity })),
-                    accessToken,
-                }
-            });
+            try {
+                const newPartner = yield PartnerProfile_service_1.default.addPartner({
+                    id: (0, uuid_1.v4)(),
+                    email,
+                }, transaction);
+                const entity = yield Entity_service_1.default.addEntity({
+                    id: (0, uuid_1.v4)(),
+                    email,
+                    status: {
+                        activated: false,
+                        emailVerified: false
+                    },
+                    partnerProfileId: newPartner.id,
+                    role: Role_model_1.RoleEnum.Partner,
+                    notificationSettings: {
+                        login: true,
+                        failedTransactions: true,
+                        logout: true
+                    },
+                    requireOTPOnLogin: false
+                }, transaction);
+                const apiKey = yield ApiKey_service_1.default.addApiKey({
+                    partnerId: newPartner.id,
+                    key: newPartner.key,
+                    active: true,
+                    id: (0, uuid_1.v4)()
+                }, transaction);
+                const secKeyInCache = Cypher_1.default.encryptString(newPartner.sec);
+                yield Token_1.TokenUtil.saveTokenToCache({ key: secKeyInCache, token: Cypher_1.default.encryptString(newPartner.key) });
+                yield ApiKey_service_1.default.setCurrentActiveApiKeyInCache(newPartner, apiKey.key.toString());
+                const partnerPassword = yield Password_service_1.default.addPassword({
+                    id: (0, uuid_1.v4)(),
+                    entityId: entity.id,
+                    password
+                }, transaction);
+                yield Webhook_service_1.default.addWebhook({
+                    id: (0, uuid_1.v4)(),
+                    partnerId: newPartner.id,
+                }, transaction);
+                yield entity.update({ status: Object.assign(Object.assign({}, entity.status), { emailVerified: true }) });
+                const accessToken = yield Token_1.AuthUtil.generateToken({ type: 'emailverification', entity, profile: newPartner, expiry: 60 * 10 });
+                const otpCode = yield Token_1.AuthUtil.generateCode({ type: 'emailverification', entity, expiry: 60 * 10 });
+                yield transaction.commit();
+                Logger_1.default.info(otpCode);
+                yield Email_1.default.sendEmail({
+                    to: newPartner.email,
+                    subject: 'Succesful Email Verification',
+                    html: yield new Email_1.EmailTemplate().awaitActivation(newPartner.email)
+                });
+                res.status(201).json({
+                    status: 'success',
+                    message: 'Partner created successfully',
+                    data: {
+                        partner: ResponseTrimmer_1.default.trimPartner(Object.assign(Object.assign({}, newPartner.dataValues), { entity })),
+                        accessToken,
+                    }
+                });
+            }
+            catch (err) {
+                transaction.rollback();
+                res.status(500).json({
+                    status: 'failed',
+                    message: 'Partner created unsuccessfully',
+                });
+            }
         });
     }
     static otherSignup(req, res, next) {
@@ -146,44 +155,53 @@ class AuthController {
                 throw new Errors_1.BadRequestError('Invalid password');
             }
             const transaction = yield index_1.Database.transaction();
-            const entity = yield Entity_service_1.default.addEntity({
-                id: (0, uuid_1.v4)(),
-                email,
-                status: {
-                    activated: false,
-                    emailVerified: false
-                },
-                role: role.name,
-                notificationSettings: {
-                    login: true,
-                    failedTransactions: true,
-                    logout: true
-                },
-                requireOTPOnLogin: false
-            }, transaction);
-            const entityPassword = yield Password_service_1.default.addPassword({
-                id: (0, uuid_1.v4)(),
-                entityId: entity.id,
-                password
-            }, transaction);
-            yield entity.update({ status: Object.assign(Object.assign({}, entity.status), { emailVerified: true }) });
-            const accessToken = yield Token_1.AuthUtil.generateToken({ type: 'emailverification', entity, profile: entity, expiry: 60 * 10 });
-            const otpCode = yield Token_1.AuthUtil.generateCode({ type: 'emailverification', entity, expiry: 60 * 10 });
-            yield transaction.commit();
-            Logger_1.default.info(otpCode);
-            yield Email_1.default.sendEmail({
-                to: entity.email,
-                subject: 'Succesful Email Verification',
-                html: yield new Email_1.EmailTemplate().awaitActivation(entity.email)
-            });
-            res.status(201).json({
-                status: 'success',
-                message: 'User created successfully',
-                data: {
-                    entity: entity.dataValues,
-                    accessToken,
-                }
-            });
+            try {
+                const entity = yield Entity_service_1.default.addEntity({
+                    id: (0, uuid_1.v4)(),
+                    email,
+                    status: {
+                        activated: false,
+                        emailVerified: false
+                    },
+                    role: role.name,
+                    notificationSettings: {
+                        login: true,
+                        failedTransactions: true,
+                        logout: true
+                    },
+                    requireOTPOnLogin: false
+                }, transaction);
+                const entityPassword = yield Password_service_1.default.addPassword({
+                    id: (0, uuid_1.v4)(),
+                    entityId: entity.id,
+                    password
+                }, transaction);
+                yield entity.update({ status: Object.assign(Object.assign({}, entity.status), { emailVerified: true }) });
+                const accessToken = yield Token_1.AuthUtil.generateToken({ type: 'emailverification', entity, profile: entity, expiry: 60 * 10 });
+                const otpCode = yield Token_1.AuthUtil.generateCode({ type: 'emailverification', entity, expiry: 60 * 10 });
+                yield transaction.commit();
+                Logger_1.default.info(otpCode);
+                yield Email_1.default.sendEmail({
+                    to: entity.email,
+                    subject: 'Succesful Email Verification',
+                    html: yield new Email_1.EmailTemplate().awaitActivation(entity.email)
+                });
+                res.status(201).json({
+                    status: 'success',
+                    message: 'User created successfully',
+                    data: {
+                        entity: entity.dataValues,
+                        accessToken,
+                    }
+                });
+            }
+            catch (err) {
+                transaction.rollback();
+                res.status(500).json({
+                    status: 'failed',
+                    message: 'User creation unsuccessfully',
+                });
+            }
         });
     }
     static verifyEmail(req, res, next) {
@@ -499,6 +517,24 @@ class AuthController {
                 entity = userEntity;
             }
             yield Entity_service_1.default.updateEntity(entity, { requireOTPOnLogin: requireOtp });
+            if (entity.role.name === Role_model_1.RoleEnum.Partner) {
+                // Update the same for all teammembers under partner
+                const partner = yield entity.$get('partnerProfile');
+                if (!partner) {
+                    throw new Errors_1.InternalServerError('Partner not found');
+                }
+                const teamMembers = yield partner.$get('teamMembers');
+                if (!teamMembers) {
+                    throw new Errors_1.InternalServerError('Team members not found');
+                }
+                for (const member of teamMembers) {
+                    const memberEntity = yield member.$get('entity');
+                    if (!memberEntity) {
+                        throw new Errors_1.InternalServerError('Entity not found for team member');
+                    }
+                    yield Entity_service_1.default.updateEntity(memberEntity, { requireOTPOnLogin: requireOtp });
+                }
+            }
             res.status(200).json({
                 status: 'success',
                 message: 'OTP requirement updated successfully',

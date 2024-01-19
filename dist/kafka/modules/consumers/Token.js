@@ -29,6 +29,7 @@ const MessageProcessor_1 = __importDefault(require("../util/MessageProcessor"));
 const uuid_1 = require("uuid");
 const Event_service_1 = __importDefault(require("../../../services/Event.service"));
 const Vendor_service_1 = __importDefault(require("../../../services/Vendor.service"));
+const Helper_1 = require("../../../utils/Helper");
 const retry = {
     count: 0,
     // limit: 5,
@@ -345,6 +346,8 @@ class TokenHandler extends Interface_1.Registry {
             }
             // If successful, check if a power unit exists for the transaction, if none exists, create one
             let powerUnit = yield PowerUnit_service_1.default.viewSinglePowerUnitByTransactionId(data.transactionId);
+            // BuyPower returnes the same token on test mode, this causes a conflict when trying to update the power unit
+            data.meter.token = Constants_1.NODE_ENV === 'development' ? data.meter.token === '0000-0000-0000-0000-0000' ? (0, Helper_1.generateRandomToken)() : data.meter.token : data.meter.token;
             const discoLogo = Constants_1.DISCO_LOGO[data.meter.disco];
             powerUnit = powerUnit
                 ? yield PowerUnit_service_1.default.updateSinglePowerUnit(powerUnit.id, {

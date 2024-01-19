@@ -64,61 +64,70 @@ class PartnerProfileController {
                 throw new Errors_1.BadRequestError('Email has been used before');
             }
             const transaction = yield models_1.Database.transaction();
-            const newPartner = yield PartnerProfile_service_1.default.addPartner({
-                id: (0, uuid_1.v4)(),
-                email,
-                companyName,
-                address
-            }, transaction);
-            const entity = yield Entity_service_1.default.addEntity({
-                id: (0, uuid_1.v4)(),
-                email,
-                status: {
-                    activated: false,
-                    emailVerified: false
-                },
-                partnerProfileId: newPartner.id,
-                role: Role_model_1.RoleEnum.Partner,
-                notificationSettings: {
-                    login: true,
-                    failedTransactions: true,
-                    logout: true
-                },
-                requireOTPOnLogin: false
-            }, transaction);
-            const apiKey = yield ApiKey_service_1.default.addApiKey({
-                partnerId: newPartner.id,
-                key: newPartner.key,
-                active: true,
-                id: (0, uuid_1.v4)()
-            }, transaction);
-            const secKeyInCache = Cypher_1.default.encryptString(newPartner.sec);
-            yield Token_1.TokenUtil.saveTokenToCache({ key: secKeyInCache, token: Cypher_1.default.encryptString(newPartner.key) });
-            yield ApiKey_service_1.default.setCurrentActiveApiKeyInCache(newPartner, apiKey.key.toString());
-            const password = (0, uuid_1.v4)();
-            const partnerPassword = yield Password_service_1.default.addPassword({
-                id: (0, uuid_1.v4)(),
-                entityId: entity.id,
-                password,
-            }, transaction);
-            yield Webhook_service_1.default.addWebhook({
-                id: (0, uuid_1.v4)(),
-                partnerId: newPartner.id,
-            }, transaction);
-            yield transaction.commit();
-            yield entity.update({ status: Object.assign(Object.assign({}, entity.status), { emailVerified: true }) });
-            yield Email_1.default.sendEmail({
-                to: newPartner.email,
-                subject: 'Partner invitation',
-                html: yield new Email_1.EmailTemplate().invitePartner({ email: newPartner.email, password })
-            });
-            res.status(200).json({
-                status: 'success',
-                message: 'Partner invited successfully',
-                data: {
-                    partner: ResponseTrimmer_1.default.trimPartner(Object.assign(Object.assign({}, newPartner.dataValues), { entity })),
-                }
-            });
+            try {
+                const newPartner = yield PartnerProfile_service_1.default.addPartner({
+                    id: (0, uuid_1.v4)(),
+                    email,
+                    companyName,
+                    address
+                }, transaction);
+                const entity = yield Entity_service_1.default.addEntity({
+                    id: (0, uuid_1.v4)(),
+                    email,
+                    status: {
+                        activated: false,
+                        emailVerified: false
+                    },
+                    partnerProfileId: newPartner.id,
+                    role: Role_model_1.RoleEnum.Partner,
+                    notificationSettings: {
+                        login: true,
+                        failedTransactions: true,
+                        logout: true
+                    },
+                    requireOTPOnLogin: false
+                }, transaction);
+                const apiKey = yield ApiKey_service_1.default.addApiKey({
+                    partnerId: newPartner.id,
+                    key: newPartner.key,
+                    active: true,
+                    id: (0, uuid_1.v4)()
+                }, transaction);
+                const secKeyInCache = Cypher_1.default.encryptString(newPartner.sec);
+                yield Token_1.TokenUtil.saveTokenToCache({ key: secKeyInCache, token: Cypher_1.default.encryptString(newPartner.key) });
+                yield ApiKey_service_1.default.setCurrentActiveApiKeyInCache(newPartner, apiKey.key.toString());
+                const password = (0, uuid_1.v4)();
+                const partnerPassword = yield Password_service_1.default.addPassword({
+                    id: (0, uuid_1.v4)(),
+                    entityId: entity.id,
+                    password,
+                }, transaction);
+                yield Webhook_service_1.default.addWebhook({
+                    id: (0, uuid_1.v4)(),
+                    partnerId: newPartner.id,
+                }, transaction);
+                yield transaction.commit();
+                yield entity.update({ status: Object.assign(Object.assign({}, entity.status), { emailVerified: true }) });
+                yield Email_1.default.sendEmail({
+                    to: newPartner.email,
+                    subject: 'Partner invitation',
+                    html: yield new Email_1.EmailTemplate().invitePartner({ email: newPartner.email, password })
+                });
+                res.status(200).json({
+                    status: 'success',
+                    message: 'Partner invited successfully',
+                    data: {
+                        partner: ResponseTrimmer_1.default.trimPartner(Object.assign(Object.assign({}, newPartner.dataValues), { entity })),
+                    }
+                });
+            }
+            catch (err) {
+                transaction.rollback();
+                res.status(500).json({
+                    status: 'failed',
+                    message: 'Partner invited not successfully',
+                });
+            }
         });
     }
     static getPartnerInfo(req, res, next) {

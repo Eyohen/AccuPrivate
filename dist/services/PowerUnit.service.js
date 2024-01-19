@@ -16,6 +16,7 @@ const PowerUnit_model_1 = __importDefault(require("../models/PowerUnit.model"));
 class PowerUnitService {
     static addPowerUnit(powerUnit) {
         return __awaiter(this, void 0, void 0, function* () {
+            console.log('powerUnit: ', powerUnit);
             const newPowerUnit = PowerUnit_model_1.default.build(powerUnit);
             yield newPowerUnit.save();
             return newPowerUnit;

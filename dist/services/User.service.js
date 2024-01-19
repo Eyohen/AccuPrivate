@@ -27,26 +27,31 @@ class UserService {
                 return existingUser;
             }
             const newUser = User_model_1.default.build(user);
-            yield newUser.save({ transaction });
-            const entity = yield Entity_service_1.default.addEntity({
-                email: user.email,
-                userId: newUser.id,
-                id: (0, crypto_1.randomUUID)(),
-                role: Role_model_1.RoleEnum.EndUser,
-                status: {
-                    emailVerified: true,
-                    activated: true,
-                },
-                requireOTPOnLogin: true,
-                phoneNumber: user.phoneNumber,
-            }, transaction);
-            const password = yield Password_service_1.default.addPassword({
-                id: (0, crypto_1.randomUUID)(),
-                entityId: entity.id,
-                password: (0, crypto_1.randomUUID)()
-            }, transaction);
-            yield transaction.commit();
-            return newUser;
+            try {
+                yield newUser.save({ transaction });
+                const entity = yield Entity_service_1.default.addEntity({
+                    email: user.email,
+                    userId: newUser.id,
+                    id: (0, crypto_1.randomUUID)(),
+                    role: Role_model_1.RoleEnum.EndUser,
+                    status: {
+                        emailVerified: true,
+                        activated: true,
+                    },
+                    requireOTPOnLogin: true,
+                    phoneNumber: user.phoneNumber,
+                }, transaction);
+                const password = yield Password_service_1.default.addPassword({
+                    id: (0, crypto_1.randomUUID)(),
+                    entityId: entity.id,
+                    password: (0, crypto_1.randomUUID)()
+                }, transaction);
+                yield transaction.commit();
+                return newUser;
+            }
+            catch (er) {
+                transaction.rollback();
+            }
         });
     }
     static addUser(user) {

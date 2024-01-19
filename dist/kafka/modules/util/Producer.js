@@ -33,16 +33,19 @@ class ProducerFactory {
     static sendMessage({ topic, message }) {
         return __awaiter(this, void 0, void 0, function* () {
             Logger_1.default.info('Sending message to topic: ' + topic);
-            yield this.producer.sendBatch({
-                topicMessages: [
-                    {
-                        topic: topic,
-                        messages: [
-                            { value: JSON.stringify(message) }
-                        ]
-                    }
-                ]
-            });
+            try {
+                yield this.producer.send({
+                    topic: topic,
+                    messages: [
+                        {
+                            value: JSON.stringify(message)
+                        }
+                    ]
+                });
+            }
+            catch (error) {
+                Logger_1.default.warn(error);
+            }
         });
     }
     static sendBatch({ messages, topic }) {

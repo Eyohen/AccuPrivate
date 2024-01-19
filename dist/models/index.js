@@ -24,7 +24,12 @@ const Constants_1 = require("../utils/Constants");
 console.log(Constants_1.DB_CONFIG.URL);
 // Create a new Sequelize instance for database connection and add Models
 const Database = new sequelize_typescript_1.Sequelize(Constants_1.DB_CONFIG.URL, {
-    logging: false
+    logging: false,
+    pool: {
+        max: 20,
+        min: 1,
+        idle: 10000,
+    }
 });
 exports.Database = Database;
 // Asynchronous function to initiate the database connection

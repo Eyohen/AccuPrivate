@@ -55,13 +55,11 @@ class NotificationHandler extends Interface_1.Registry {
             Logger_1.default.info('Inside notification handler');
             const transaction = yield Transaction_service_1.default.viewSingleTransaction(data.transactionId);
             if (!transaction) {
-                Logger_1.default.error(`Error fetching transaction with id ${data.transactionId}`);
-                return;
+                throw new Error(`Error fetching transaction with id ${data.transactionId}`);
             }
             const partnerEntity = yield Entity_service_1.default.viewSingleEntityByEmail(transaction.partner.email);
             if (!partnerEntity) {
-                Logger_1.default.error(`Error fetching partner with email ${transaction.partner.email}`);
-                return;
+                throw new Error(`Error fetching partner with email ${transaction.partner.email}`);
             }
             // Add notification successfull transaction
             const notification = yield Notification_service_1.default.addNotification({
@@ -113,13 +111,11 @@ class NotificationHandler extends Interface_1.Registry {
             Logger_1.default.info('Inside notification handler');
             const transaction = yield Transaction_service_1.default.viewSingleTransaction(data.transactionId);
             if (!transaction) {
-                Logger_1.default.error(`Error fetching transaction with id ${data.transactionId}`);
-                return;
+                throw new Error(`Error fetching transaction with id ${data.transactionId}`);
             }
             const partnerEntity = yield Entity_service_1.default.viewSingleEntityByEmail(transaction.partner.email);
             if (!partnerEntity) {
-                Logger_1.default.error(`Error fetching partner with email ${transaction.partner.email}`);
-                return;
+                throw new Error(`Error fetching partner with email ${transaction.partner.email}`);
             }
             // Add notification successfull transaction
             const notification = yield Notification_service_1.default.addNotification({
