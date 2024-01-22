@@ -5,7 +5,7 @@ import Transaction from "../../../models/Transaction.model";
 import PowerUnitService from "../../../services/PowerUnit.service";
 import TransactionService from "../../../services/Transaction.service";
 import TransactionEventService from "../../../services/TransactionEvent.service";
-import { DISCO_LOGO, MAX_REQUERY_PER_VENDOR, NODE_ENV } from "../../../utils/Constants";
+import { DISCO_LOGO, LOGO_URL, MAX_REQUERY_PER_VENDOR, NODE_ENV } from "../../../utils/Constants";
 import logger from "../../../utils/Logger";
 import { TOPICS } from "../../Constants";
 import { VendorPublisher } from "../publishers/Vendor";
@@ -64,10 +64,10 @@ interface ProcessVendRequestReturnData extends Record<Transaction['superagent'],
 const retry = {
     count: 0,
     // limit: 5,
-    retryCountBeforeSwitchingVendor: 3,
+    retryCountBeforeSwitchingVendor: 2,
 }
 
-const TEST_FAILED = NODE_ENV === 'production' ? false : true // TOGGLE - Will simulate failed transaction
+const TEST_FAILED = NODE_ENV === 'production' ? false : false // TOGGLE - Will simulate failed transaction
 
 const TransactionErrorCodeAndCause = {
     501: TransactionErrorCause.MAINTENANCE_ACCOUNT_ACTIVATION_REQUIRED,
@@ -80,7 +80,6 @@ export function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
     // Use geometric progression  calculate wait time, where R = 2
     const waitTime = 2 ** (retryCount - 1)
     return waitTime
-
 }
 
 export class TokenHandlerUtil {
@@ -125,12 +124,7 @@ export class TokenHandlerUtil {
         logger.info(
             `Retrying transaction with id ${eventData.transactionId} from vendor`,
         );
-        console.log(`
-        
-            ${retryCount}
-        
-        
-        `)
+
         await eventService.addGetTransactionTokenRequestedFromVendorRetryEvent(_eventMessage.error, retryCount);
         const eventMetaData = {
             transactionId: eventData.transactionId,
@@ -150,7 +144,6 @@ export class TokenHandlerUtil {
                 }, (time - i) * 1000)
             }
         }
-        console.log({ waitTime: eventMetaData.waitTime })
         countDownTimer(eventMetaData.waitTime);
 
         // Publish event in increasing intervals of seconds i.e 1, 2, 4, 8, 16, 32, 64, 128, 256, 512
@@ -215,7 +208,6 @@ export class TokenHandlerUtil {
             accessToken: data.accessToken
         }
 
-        console.log({ _data })
         switch (data.transaction.superagent) {
             case "BAXI":
                 return await VendorService.baxiVendToken(_data)
@@ -480,7 +472,7 @@ class TokenHandler extends Registry {
         data.meter.token = NODE_ENV === 'development' ? data.meter.token === '0000-0000-0000-0000-0000' ? generateRandomToken() : data.meter.token : data.meter.token
 
         const discoLogo =
-            DISCO_LOGO[data.meter.disco as keyof typeof DISCO_LOGO];
+            DISCO_LOGO[data.meter.disco as keyof typeof DISCO_LOGO] ?? LOGO_URL
         powerUnit = powerUnit
             ? await PowerUnitService.updateSinglePowerUnit(powerUnit.id, {
                 token: data.meter.token,
@@ -565,8 +557,8 @@ class TokenHandler extends Registry {
         const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' : false
 
         const transactionSuccess = TEST_FAILED ? false : (transactionSuccessFromBuypower || transactionSuccessFromBaxi || transactionSuccessFromIrecharge)
-        console.log({ transactionSuccess, transactionSuccessFromBuypower, transactionSuccessFromBaxi, transactionSuccessFromIrecharge})
-        console.log({ 
+        console.log({ transactionSuccess, transactionSuccessFromBuypower, transactionSuccessFromBaxi, transactionSuccessFromIrecharge })
+        console.log({
             requeryResultFromIrecharge
         })
         if (!transactionSuccess) {

@@ -169,7 +169,6 @@ declare namespace IRechargeVendorService {
     }
 }
 
-
 export class IRechargeVendorService {
     protected static PRIVATE_KEY = IRECHARGE_PRIVATE_KEY
     protected static PUBLIC_KEY = IRECHARGE_PUBLIC_KEY
@@ -410,6 +409,7 @@ export default class VendorService {
             const response = await this.baxiAxios().get<IBaxiGetProviderResponse>('/electricity/billers')
             const responseData = response.data
 
+            console.log(responseData)
             const providers = [] as { name: string, serviceType: 'PREPAID' | 'POSTPAID' }[]
 
             for (const provider of responseData.data.providers) {
@@ -486,7 +486,7 @@ export default class VendorService {
             amount: body.amount,
             phone: body.phone
         }
-        
+
         console.log({ postData })
         if (NODE_ENV === 'development') {
             postData.phone = '08034210294'
@@ -610,6 +610,7 @@ export default class VendorService {
             const response = await this.buyPowerAxios().get<IBuyPowerGetProvidersResponse>('/discos/status')
             const responseData = response.data
 
+            console.log({ responseData })
             for (const key of Object.keys(responseData)) {
                 if (responseData[key as keyof IBuyPowerGetProvidersResponse] === true) {
                     providers.push({
@@ -647,6 +648,8 @@ export default class VendorService {
                 })
 
             }
+
+            console.log({ providers })
 
             return providers
         } catch (error) {
