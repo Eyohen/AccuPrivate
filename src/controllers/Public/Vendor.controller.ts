@@ -71,17 +71,21 @@ class VendorTokenHandler implements Registry {
     private response: () => Response
 
     private async handleTokenReceived(data: PublisherEventAndParameters[TOPICS.TOKEN_RECIEVED_FROM_VENDOR]) {
-        this.response().status(200).send({
-            status: 'success',
-            message: 'Token purchase initiated successfully',
-            data: {
-                transaction: this.transaction,
-                meter: data.meter,
-                token: data.meter.token
-            }
-        })
+        try {
+            this.response().status(200).send({
+                status: 'success',
+                message: 'Token purchase initiated successfully',
+                data: {
+                    transaction: this.transaction,
+                    meter: data.meter,
+                    token: data.meter.token
+                }
+            })
 
-        this.tokenSent = true
+            this.tokenSent = true
+        } catch (error) {
+            logger.error('Error sending token to user')
+        }
     }
 
     constructor(transaction: Transaction, response: Response) {
@@ -136,7 +140,7 @@ class VendorControllerValdator {
         // Check if Disco is Up
         const checKDisco: boolean | Error =
             await VendorService.buyPowerCheckDiscoUp(transactionRecord.disco);
-        if (!checKDisco) throw new BadRequestError("Disco is currently down");
+        if (!checKDisco && transactionRecord.superagent === 'BUYPOWERNG') throw new BadRequestError("Disco is currently down");
 
         // Check if bankRefId has been used before
         const existingTransaction: Transaction | null =
@@ -343,7 +347,12 @@ class VendorControllerUtil {
         } else if (transaction.superagent === 'BAXI') {
             return await VendorService.baxiValidateMeter(disco, meterNumber, vendType)
         } else if (transaction.superagent === 'IRECHARGE') {
-            return await VendorService.irechargeValidateMeter(disco, meterNumber, transaction.reference)
+            const response = await VendorService.irechargeValidateMeter(disco, meterNumber, transaction.reference)
+            return {
+                name: response.customer.address,
+                address: response.customer.address,
+                access_token: response.access_token
+            }
         } else {
             throw new BadRequestError('Invalid superagent')
         }
@@ -369,7 +378,7 @@ export default class VendorController {
                 amount: "0",
                 status: Status.PENDING,
                 superagent: superagent,
-                paymentType: PaymentType.PAYMENT, 
+                paymentType: PaymentType.PAYMENT,
                 transactionTimestamp: new Date(),
                 disco: disco,
                 partnerId: partnerId,
@@ -396,6 +405,7 @@ export default class VendorController {
             id: uuidv4(),
         };
 
+        console.log(response)
         await transactionEventService.addMeterValidationReceivedEvent({ user: userInfo });
         VendorPublisher.publishEventForMeterValidationReceived({
             meter: { meterNumber, disco, vendType },
@@ -423,7 +433,7 @@ export default class VendorController {
             throw new InternalServerError("An error occured while validating meter");
 
 
-        await transaction.update({ userId: user?.id });
+        await transaction.update({ userId: user?.id, irecharge_token: (response as any).access_token});
         await transactionEventService.addCRMUserConfirmedEvent({ user: userInfo });
         CRMPublisher.publishEventForConfirmedUser({
             user: userInfo,

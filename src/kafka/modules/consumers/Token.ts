@@ -47,16 +47,18 @@ interface TriggerRequeryTransactionTokenProps {
 }
 
 interface TokenPurchaseData {
-    transaction: Omit<Transaction, 'superagent'> & { superagent: Exclude<Transaction['superagent'], 'IRECHARGE'> };
+    transaction: Transaction;
     meterNumber: string,
     disco: string,
     vendType: 'PREPAID' | 'POSTPAID',
     phone: string,
+    accessToken: string
 }
 
-interface ProcessVendRequestReturnData extends Record<Exclude<Transaction['superagent'], 'IRECHARGE'>, Record<string, any>> {
+interface ProcessVendRequestReturnData extends Record<Transaction['superagent'], Record<string, any>> {
     'BAXI': Awaited<ReturnType<typeof VendorService.baxiVendToken>>
-    'BUYPOWERNG': Awaited<ReturnType<typeof VendorService.buyPowerVendToken>>
+    'BUYPOWERNG': Awaited<ReturnType<typeof VendorService.buyPowerVendToken>>,
+    'IRECHARGE': Awaited<ReturnType<typeof VendorService.irechargeVendToken>>
 }
 
 const retry = {
@@ -193,6 +195,10 @@ export class TokenHandlerUtil {
     }
 
     static async processVendRequest(data: TokenPurchaseData): Promise<ProcessVendRequestReturnData[typeof data.transaction.superagent]> {
+        console.log({ transaction: data.transaction })
+        const user = await data.transaction.$get('user')
+        if (!user) throw new Error('User not found for transaction')
+
         const _data = {
             reference: data.transaction.reference,
             meterNumber: data.meterNumber,
@@ -200,13 +206,18 @@ export class TokenHandlerUtil {
             vendType: data.vendType,
             amount: data.transaction.amount,
             phone: data.phone,
+            email: user.email,
+            accessToken: data.accessToken
         }
 
+        console.log({ _data})
         switch (data.transaction.superagent) {
             case "BAXI":
                 return await VendorService.baxiVendToken(_data)
             case "BUYPOWERNG":
                 return await VendorService.buyPowerVendToken(_data).catch((e) => e)
+            case "IRECHARGE":
+                return await VendorService.irechargeVendToken(_data)
             default:
                 throw new Error("Invalid superagent");
         }
@@ -218,6 +229,8 @@ export class TokenHandlerUtil {
                 return await VendorService.baxiRequeryTransaction({ reference: transaction.reference })
             case 'BUYPOWERNG':
                 return await VendorService.buyPowerRequeryTransaction({ reference: transaction.reference })
+            case 'IRECHARGE':
+                return await VendorService.irechargeRequeryTransaction({ accessToken: transaction.irecharge_token, serviceType: 'power' })
             default:
                 throw new Error('Unsupported superagent')
         }
@@ -274,9 +287,9 @@ class TokenHandler extends Registry {
 
         const { user, meter, partner } = transaction;
 
-        if (transaction.superagent === 'IRECHARGE') {
-            throw 'Unsupported superagent'
-        }
+        // if (transaction.superagent === 'IRECHARGE') {
+        //     throw 'Unsupported superagent'
+        // }
 
         // Purchase token from vendor
         const tokenInfo = await TokenHandlerUtil.processVendRequest({
@@ -285,6 +298,7 @@ class TokenHandler extends Registry {
             disco: transaction.disco,
             vendType: meter.vendType,
             phone: user.phoneNumber,
+            accessToken: transaction.irecharge_token
         });
 
         const eventMessage = {
@@ -320,7 +334,7 @@ class TokenHandler extends Registry {
                  * 501 - Maintenance error
                  * 500 - Unexpected error - Please requery
                  */
-                // If error is due to timeout, trigger event to requery transaction later
+                // If error is due to timeout, trigger event to requery transactioPn later
                 let responseCode = tokenInfo.response?.data.responseCode as keyof typeof TransactionErrorCodeAndCause;
                 responseCode = tokenInfo.message === 'Transaction timeout' ? 202 : responseCode
 
@@ -441,7 +455,7 @@ class TokenHandler extends Registry {
 
         // BuyPower returnes the same token on test mode, this causes a conflict when trying to update the power unit
         data.meter.token = NODE_ENV === 'development' ? data.meter.token === '0000-0000-0000-0000-0000' ? generateRandomToken() : data.meter.token : data.meter.token
-        
+
         const discoLogo =
             DISCO_LOGO[data.meter.disco as keyof typeof DISCO_LOGO];
         powerUnit = powerUnit

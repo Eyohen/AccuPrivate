@@ -1,5 +1,5 @@
 // Import necessary modules and dependencies
-import { Table, Column, Model, DataType, IsUUID, PrimaryKey, ForeignKey, BelongsTo, HasMany, HasOne } from "sequelize-typescript";
+import { Table, Column, Model, DataType, IsUUID, PrimaryKey, ForeignKey, BelongsTo, HasMany, HasOne, BeforeCreate } from "sequelize-typescript";
 import User from "./User.model";
 import Partner from "./Entity/Profiles/PartnerProfile.model";
 import Event from "./Event.model";
@@ -65,6 +65,10 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     @Column({ type: DataType.STRING, allowNull: true, defaultValue: () => generateRandomString(10) })
     reference: string;
 
+
+    @Column({ type: DataType.STRING, allowNull: true })
+    irecharge_token: string
+
     // Foreign key for the associated User
     @ForeignKey(() => User)
     @IsUUID(4)
@@ -122,6 +126,15 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     })
     updatedAt: Date;
 
+    @BeforeCreate
+    static async checkIfAccesstokenExistForIRecharge(transaction: Transaction) {
+        if (transaction.superagent === 'IRECHARGE') {
+            if (!transaction.irecharge_token) {
+                // throw new Error('irecharge_token is required')
+            }
+        }
+    }
+
 }
 
 
@@ -140,6 +153,7 @@ export interface ITransaction {
     partnerId?: string; // Unique identifier of the Partner associated with the transaction
     meterId?: string; // Unique identifier of the Meter associated with the transaction
     reference: string
+    irecharge_token?: string
 }
 
 // Define an interface representing the creation of a transaction (ICreateTransaction).

@@ -7,7 +7,7 @@ import logger from "../utils/Logger";
 import { v4 as UUIDV4 } from 'uuid'
 import crypto from 'crypto'
 import Transaction from "../models/Transaction.model";
-import { generateRandomToken } from "../utils/Helper";
+import { generateRandomString, generateRandomToken, generateRandonNumbers } from "../utils/Helper";
 import { response } from "express";
 
 export interface PurchaseResponse extends BaseResponse {
@@ -104,6 +104,31 @@ interface FailedResponseForBuyPowerRequery {
     responseCode: 202
 }
 
+interface IRechargeSuccessfulVendResponse {
+    source: 'IRECHARGE'
+    status: '00',
+    message: 'Successful',
+    wallet_balance: string,
+    ref: string,
+    amount: number,
+    units: `${number}`,
+    meter_token: string,
+    address: string,
+    response_hash: string
+}
+
+interface IRechargeMeterValidationResponse {
+    status: '00';
+    message: string;
+    access_token: string;
+    customer: {
+        name: string;
+        address: string;
+        util: string;
+        minimumAmount: string;
+    };
+    response_hash: string;
+}
 
 type BuypowerRequeryResponse = _RequeryBuypowerSuccessResponse | InprogressResponseForBuyPowerRequery | FailedResponseForBuyPowerRequery
 
@@ -133,6 +158,7 @@ declare namespace IRechargeVendorService {
     }
 }
 
+
 export class IRechargeVendorService {
     protected static PRIVATE_KEY = IRECHARGE_PRIVATE_KEY
     protected static PUBLIC_KEY = IRECHARGE_PUBLIC_KEY
@@ -152,20 +178,60 @@ export class IRechargeVendorService {
         return response.data
     }
 
-    static async validateMeter({ disco, reference, meterNumber }: { disco: string, meterNumber: string, reference: string }): Promise<any> {
+    static async validateMeter({ disco, reference, meterNumber }: { disco: string, meterNumber: string, reference: string }) {
+        reference = NODE_ENV === 'development' ? generateRandonNumbers(12) : reference
+        meterNumber = NODE_ENV === 'development' ? '1234567890' : meterNumber
+
+        console.log(reference, meterNumber)
         const combinedString = this.VENDOR_CODE + "|" + reference + "|" + meterNumber + "|" + disco + "|" + this.PUBLIC_KEY
         const hash = this.generateHash(combinedString)
 
-        const response = await this.client.get(`/get_meter_info.php/?vendor_code=${this.VENDOR_CODE}&reference_id=${reference}&meter=${meterNumber}&disco=${disco}&response_format=json&hash=${hash}`)
+        const response = await this.client.get<IRechargeMeterValidationResponse>(`/get_meter_info.php/?vendor_code=${this.VENDOR_CODE}&reference_id=${reference}&meter=${meterNumber}&disco=${disco}&response_format=json&hash=${hash}`)
 
         return response.data
     };
 
-    static async vend(disco: string, meterNumber: string, vendType: "PREPAID" | "POSTPAID"): Promise<any> {
+    static async vend({ disco, reference, meterNumber, accessToken, amount, phone, email }: { disco: string, meterNumber: string, vendType: "PREPAID" | "POSTPAID", reference: string, accessToken: string, phone: string, email: string, amount: number }): Promise<any> {
+        reference = NODE_ENV === 'development' ? generateRandonNumbers(12) : reference
+        meterNumber = NODE_ENV === 'development' ? '1234567890' : meterNumber
 
+        const combinedString = this.VENDOR_CODE + "|" + reference + "|" + meterNumber + "|" + disco + "|" + amount + "|" + accessToken + "|" + this.PUBLIC_KEY
+        const hash = this.generateHash(combinedString)
+
+        const response = await this.client.get<IRechargeSuccessfulVendResponse>('/vend_power.php', {
+            params: {
+                vendor_code: this.VENDOR_CODE,
+                reference_id: reference,
+                meter: meterNumber,
+                disco,
+                amount,
+                email,
+                phone,
+                access_token: accessToken,
+                response_format: 'json',
+                hash
+            }
+        })
+
+        console.log(response)
+        return { ...response.data, source: 'IRECHARGE' }
     };
 
-    static async requery(disco: string, meterNumber: string, vendType: "PREPAID" | "POSTPAID"): Promise<any> {
+    static async requery({ accessToken, serviceType }: { accessToken: string, serviceType: string }) {
+        const combinedString = this.VENDOR_CODE + "|" + accessToken + "|" + this.PUBLIC_KEY
+        const hash = this.generateHash(combinedString)
+
+        const response = await this.client.get('/requery.php', {
+            params: {
+                vendor_code: this.VENDOR_CODE,
+                access_token: accessToken,
+                type: serviceType,
+                response_format: 'json',
+                hash
+            }
+        })
+
+        return response
 
     };
 }
@@ -267,10 +333,10 @@ export default class VendorService {
                 agentReference: reference
             })
 
-            response.data.data.rawOutput.token = NODE_ENV === 'development' 
-                ? generateRandomToken() 
+            response.data.data.rawOutput.token = NODE_ENV === 'development'
+                ? generateRandomToken()
                 : response.data.data.rawOutput.token
-                
+
             return { ...response.data, source: 'BAXI' as const }
         } catch (error: any) {
             if (NODE_ENV === 'development') {
@@ -580,6 +646,30 @@ export default class VendorService {
 
     static async irechargeValidateMeter(disco: string, meterNumber: string, reference: string) {
         const response = await IRechargeVendorService.validateMeter({ disco, meterNumber, reference })
+        return response
+    }
+
+    static async irechargeVendToken(body: IVendToken & { email: string, accessToken: string }): Promise<IRechargeSuccessfulVendResponse> {
+        const {
+            reference,
+            meterNumber,
+            disco,
+            amount,
+            phone,
+            vendType,
+            accessToken,
+            email
+        } = body
+
+        const response = await IRechargeVendorService.vend({ disco, reference, meterNumber, accessToken, amount: parseInt(amount, 10), phone, email, vendType })
+        return response
+    }
+
+    static async irechargeRequeryTransaction({ serviceType, accessToken }: { accessToken: string, serviceType: 'power' | 'airtime' | 'data' | 'tv' }) {
+        console.log({ serviceType, accessToken })
+        const response = await IRechargeVendorService.requery({ serviceType, accessToken })
+
+        console.log({ response })
         return response
     }
 }
