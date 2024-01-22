@@ -51,6 +51,15 @@ class EntityService {
             return entity;
         });
     }
+    static viewSingleEntityByPhoneNumber(phoneNumber) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const entity = yield Entity_model_1.default.findOne({ where: { phoneNumber }, include: [Role_model_1.default] });
+            if (!entity) {
+                return null;
+            }
+            return entity;
+        });
+    }
     static updateEntity(entity, dataToUpdate) {
         return __awaiter(this, void 0, void 0, function* () {
             yield entity.update(dataToUpdate);

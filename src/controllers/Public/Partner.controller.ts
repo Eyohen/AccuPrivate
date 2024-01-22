@@ -33,7 +33,12 @@ export default class PartnerProfileController {
             throw new BadRequestError('Email has been used before')
         }
 
+
+
         const transaction = await Database.transaction()
+
+
+        try{
 
         const newPartner = await PartnerService.addPartner({
             id: uuidv4(),
@@ -99,6 +104,14 @@ export default class PartnerProfileController {
                 partner: ResponseTrimmer.trimPartner({ ...newPartner.dataValues, entity }),
             }
         })
+
+        }catch(err){
+            transaction.rollback()
+            res.status(500).json({
+                status: 'failed',
+                message: 'Partner invited not successfully',
+            })
+        }
     }
 
     static async getPartnerInfo(req: AuthenticatedRequest, res: Response, next: NextFunction) {

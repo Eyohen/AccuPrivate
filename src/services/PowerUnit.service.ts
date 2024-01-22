@@ -3,6 +3,7 @@ import { ICreatePowerUnit } from "../models/PowerUnit.model";
 export default class PowerUnitService {
 
     static async addPowerUnit(powerUnit: ICreatePowerUnit): Promise<PowerUnit> {
+        console.log('powerUnit: ', powerUnit)
         const newPowerUnit: PowerUnit = PowerUnit.build(powerUnit)
         await newPowerUnit.save()
         return newPowerUnit

@@ -28,6 +28,7 @@ var Status;
     Status["COMPLETE"] = "COMPLETE";
     Status["PENDING"] = "PENDING";
     Status["FAILED"] = "FAILED";
+    Status["FLAGGED"] = "FLAGGED";
 })(Status || (exports.Status = Status = {}));
 var PaymentType;
 (function (PaymentType) {

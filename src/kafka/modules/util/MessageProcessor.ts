@@ -46,8 +46,8 @@ export default class MessageProcessorFactory {
         try {
             const { batch } = eachBatchPayload;
 
-            for (batch.messages.length - 1; batch.messages.length >= 0; batch.messages.length--) {
-                const message = batch.messages[batch.messages.length - 1]
+            for (let i = 0; i < batch.messages.length; i++) {
+                const message = batch.messages[i]
                 const prefix = `${batch.topic}[${batch.partition} | ${message.offset}] / ${message.timestamp}`;
                 logger.info(`- ${prefix} ${message.key}#${message.value}`);
 
@@ -61,15 +61,17 @@ export default class MessageProcessorFactory {
                 }
 
                 await this.processMessage(data)
-                // logger.info('Processing batch...')
-                // process.exit(0)
+                logger.info('Message processed successfully')
+                eachBatchPayload.resolveOffset(message.offset)  // Commit offset
             }
 
             await eachBatchPayload.commitOffsetsIfNecessary()
             await eachBatchPayload.heartbeat()
             logger.info('Committing offsets...')
+
         } catch (error) {
-            logger.error(error)
+            console.error(error)
+            logger.warn((error as any).message)
         }
     }
 

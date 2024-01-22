@@ -12,17 +12,46 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const crypto_1 = require("crypto");
+const models_1 = require("../models");
 const User_model_1 = __importDefault(require("../models/User.model"));
+const Entity_service_1 = __importDefault(require("./Entity/Entity.service"));
+const Role_model_1 = require("../models/Role.model");
+const Password_service_1 = __importDefault(require("./Password.service"));
 class UserService {
     static addUserIfNotExists(user) {
         return __awaiter(this, void 0, void 0, function* () {
-            const existingUser = yield User_model_1.default.findOne({ where: { email: user.email, phoneNumber: user.phoneNumber } });
+            const transaction = yield models_1.Database.transaction();
+            const existingUser = yield User_model_1.default.findOne({ where: { phoneNumber: user.phoneNumber } });
             if (existingUser) {
                 return existingUser;
             }
             const newUser = User_model_1.default.build(user);
-            yield newUser.save();
-            return newUser;
+            try {
+                yield newUser.save({ transaction });
+                const entity = yield Entity_service_1.default.addEntity({
+                    email: user.email,
+                    userId: newUser.id,
+                    id: (0, crypto_1.randomUUID)(),
+                    role: Role_model_1.RoleEnum.EndUser,
+                    status: {
+                        emailVerified: true,
+                        activated: true,
+                    },
+                    requireOTPOnLogin: true,
+                    phoneNumber: user.phoneNumber,
+                }, transaction);
+                const password = yield Password_service_1.default.addPassword({
+                    id: (0, crypto_1.randomUUID)(),
+                    entityId: entity.id,
+                    password: (0, crypto_1.randomUUID)()
+                }, transaction);
+                yield transaction.commit();
+                return newUser;
+            }
+            catch (er) {
+                transaction.rollback();
+            }
         });
     }
     static addUser(user) {

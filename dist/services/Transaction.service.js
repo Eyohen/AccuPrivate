@@ -22,11 +22,19 @@ const User_model_1 = __importDefault(require("../models/User.model"));
 const Meter_model_1 = __importDefault(require("../models/Meter.model"));
 const sequelize_1 = require("sequelize");
 const Helper_1 = require("../utils/Helper");
+const sequelize_typescript_1 = require("sequelize-typescript");
 // Define the TransactionService class for handling transaction-related operations
 class TransactionService {
     static addTransactionWithoutValidatingUserRelationship(transaction) {
-        const transactionData = Transaction_model_1.default.build(Object.assign(Object.assign({}, transaction), { reference: (0, Helper_1.generateRandomString)(10) }));
-        return transactionData.save({ validate: false });
+        return __awaiter(this, void 0, void 0, function* () {
+            const transactionData = Transaction_model_1.default.build(Object.assign(Object.assign({}, transaction), { reference: (0, Helper_1.generateRandomString)(10) }));
+            yield transactionData.save({ validate: false });
+            const _transaction = yield TransactionService.viewSingleTransaction(transactionData.id);
+            if (!_transaction) {
+                throw new Error("Error fetching transaction");
+            }
+            return _transaction;
+        });
     }
     // Static method for adding a new transaction
     static addTransaction(transaction) {
@@ -63,6 +71,24 @@ class TransactionService {
             return transactions;
         });
     }
+    static viewTransactionsCountWithCustomQuery(query) {
+        return __awaiter(this, void 0, void 0, function* () {
+            // Retrieve all transactions from the database
+            // Sort from latest
+            const transactionCount = (yield Transaction_model_1.default.count(Object.assign({}, query)));
+            return transactionCount;
+        });
+    }
+    static viewTransactionsAmountWithCustomQuery(query) {
+        return __awaiter(this, void 0, void 0, function* () {
+            // Retrieve all transactions from the database
+            // Sort from latest
+            const transactionCount = (yield Transaction_model_1.default.findAll(Object.assign(Object.assign({}, query), { attributes: [
+                    [sequelize_typescript_1.Sequelize.fn('sum', sequelize_typescript_1.Sequelize.cast(sequelize_typescript_1.Sequelize.col('amount'), 'DECIMAL')), 'total_amount'],
+                ] })));
+            return transactionCount;
+        });
+    }
     // Static method for viewing a single transaction by UUID
     static viewSingleTransaction(uuid) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -95,20 +121,15 @@ class TransactionService {
     static viewTransactionForYesterday(partnerId) {
         return __awaiter(this, void 0, void 0, function* () {
             const yesterdayDate = new Date();
-            yesterdayDate.setDate(yesterdayDate.getDate() - 5);
-            const currentDate = new Date();
-            console.log(yesterdayDate);
-            console.log(new Date());
-            console.log(partnerId);
+            yesterdayDate.setDate(yesterdayDate.getDate() - 1);
             const transactions = yield Transaction_model_1.default.findAll({
                 where: {
-                    // partnerId: partnerId,
+                    partnerId: partnerId,
                     transactionTimestamp: {
-                        [sequelize_1.Op.between]: [yesterdayDate, currentDate],
+                        [sequelize_1.Op.between]: [yesterdayDate, new Date()],
                     },
                 },
             });
-            // console.log(transactions)
             return transactions;
         });
     }
@@ -121,7 +142,7 @@ class TransactionService {
                     partnerId: partnerId,
                     status,
                     transactionTimestamp: {
-                        $between: [yesterdayDate, new Date()],
+                        [sequelize_1.Op.between]: [yesterdayDate, new Date()],
                     },
                 },
             });

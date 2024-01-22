@@ -43,12 +43,16 @@ const PartnerProfile_model_1 = __importDefault(require("./Profiles/PartnerProfil
 const TeamMemberProfile_model_1 = __importDefault(require("./Profiles/TeamMemberProfile.model"));
 const Notification_model_1 = __importDefault(require("../Notification.model"));
 const Complaint_model_1 = __importDefault(require("../Complaint.model"));
+const User_model_1 = __importDefault(require("../User.model"));
 // Define the "Entity" table model
 let Entity = class Entity extends sequelize_typescript_1.Model {
     static ensureProfileIdIsSet(instance) {
         if ([Role_model_1.RoleEnum.Partner, Role_model_1.RoleEnum.TeamMember].includes(instance.roleId)) {
             if (!instance.teamMemberProfileId && !instance.partnerProfileId) {
                 throw new Error('Either teamMemberProfileId or partnerProfileId must be set.');
+            }
+            if (!instance.notificationSettings) {
+                throw new Error('Notification settings is required for partner or teammembers');
             }
         }
     }
@@ -95,13 +99,31 @@ __decorate([
     __metadata("design:type", String)
 ], Entity.prototype, "partnerProfileId", void 0);
 __decorate([
-    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.JSONB, allowNull: false, defaultValue: { login: true, logout: true, failedTransactions: true } }),
+    (0, sequelize_typescript_1.ForeignKey)(() => User_model_1.default),
+    (0, sequelize_typescript_1.IsUUID)(4),
+    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.STRING, allowNull: true }),
+    __metadata("design:type", String)
+], Entity.prototype, "userId", void 0);
+__decorate([
+    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.JSONB, allowNull: true, defaultValue: { login: true, logout: true, failedTransactions: true } }),
     __metadata("design:type", Object)
 ], Entity.prototype, "notificationSettings", void 0);
+__decorate([
+    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.BOOLEAN, defaultValue: false }),
+    __metadata("design:type", Boolean)
+], Entity.prototype, "requireOTPOnLogin", void 0);
+__decorate([
+    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.STRING, allowNull: true }),
+    __metadata("design:type", String)
+], Entity.prototype, "phoneNumber", void 0);
 __decorate([
     (0, sequelize_typescript_1.BelongsTo)(() => Role_model_1.default),
     __metadata("design:type", Role_model_1.default)
 ], Entity.prototype, "role", void 0);
+__decorate([
+    (0, sequelize_typescript_1.BelongsTo)(() => User_model_1.default),
+    __metadata("design:type", User_model_1.default)
+], Entity.prototype, "user", void 0);
 __decorate([
     (0, sequelize_typescript_1.BelongsTo)(() => PartnerProfile_model_1.default),
     __metadata("design:type", Object)
