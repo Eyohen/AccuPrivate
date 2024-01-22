@@ -502,6 +502,10 @@ export default class VendorController {
         const { transactionId, bankRefId, bankComment, amount, vendType } =
             req.query as Record<string, any>;
 
+        if (amount < 500) {
+            throw new BadRequestError("Amount must be greater than 500");
+        }
+        
         const transaction: Transaction | null =
             await TransactionService.viewSingleTransaction(transactionId);
         if (!transaction) {

@@ -82,7 +82,7 @@ interface _RequeryBuypowerSuccessResponse extends BaseResponse {
     }
 }
 
-interface SuccessResponseForBuyPowerRequery extends BaseResponse {
+export interface SuccessResponseForBuyPowerRequery extends BaseResponse {
     source: 'BUYPOWERNG'
     status: true,
     message: string,
@@ -106,7 +106,7 @@ interface FailedResponseForBuyPowerRequery {
 
 interface IRechargeSuccessfulVendResponse {
     source: 'IRECHARGE'
-    status: '00',
+    status: '00' | '15' | '43', // there are other response codes, but these are the only necessary ones. only '00' will have the response data shown below
     message: 'Successful',
     wallet_balance: string,
     ref: string,
@@ -115,6 +115,17 @@ interface IRechargeSuccessfulVendResponse {
     meter_token: string,
     address: string,
     response_hash: string
+}
+
+interface IRechargeRequeryResponse {
+    source: 'IRECHARGE',
+    status: '00' | '15' | '43',
+    vend_status: 'successful',
+    vend_code: '00',
+    token: string,
+    units: `${number}`,
+    response_hash: string
+
 }
 
 interface IRechargeMeterValidationResponse {
@@ -182,7 +193,6 @@ export class IRechargeVendorService {
         reference = NODE_ENV === 'development' ? generateRandonNumbers(12) : reference
         meterNumber = NODE_ENV === 'development' ? '1234567890' : meterNumber
 
-        console.log(reference, meterNumber)
         const combinedString = this.VENDOR_CODE + "|" + reference + "|" + meterNumber + "|" + disco + "|" + this.PUBLIC_KEY
         const hash = this.generateHash(combinedString)
 
@@ -193,6 +203,7 @@ export class IRechargeVendorService {
 
     static async vend({ disco, reference, meterNumber, accessToken, amount, phone, email }: { disco: string, meterNumber: string, vendType: "PREPAID" | "POSTPAID", reference: string, accessToken: string, phone: string, email: string, amount: number }): Promise<any> {
         reference = NODE_ENV === 'development' ? generateRandonNumbers(12) : reference
+        amount = NODE_ENV === 'development' ? 500 : amount  // IRecharge has a minimum amount of 500 naira and the wallet balance is limited
         meterNumber = NODE_ENV === 'development' ? '1234567890' : meterNumber
 
         const combinedString = this.VENDOR_CODE + "|" + reference + "|" + meterNumber + "|" + disco + "|" + amount + "|" + accessToken + "|" + this.PUBLIC_KEY
@@ -213,7 +224,6 @@ export class IRechargeVendorService {
             }
         })
 
-        console.log(response)
         return { ...response.data, source: 'IRECHARGE' }
     };
 
@@ -221,7 +231,7 @@ export class IRechargeVendorService {
         const combinedString = this.VENDOR_CODE + "|" + accessToken + "|" + this.PUBLIC_KEY
         const hash = this.generateHash(combinedString)
 
-        const response = await this.client.get('/requery.php', {
+        const response = await this.client.get<IRechargeRequeryResponse>('/vend_status.php', {
             params: {
                 vendor_code: this.VENDOR_CODE,
                 access_token: accessToken,
@@ -231,7 +241,8 @@ export class IRechargeVendorService {
             }
         })
 
-        return response
+        console.log({ data: response.data })
+        return { ...response.data, source: 'IRECHARGE' }
 
     };
 }
@@ -475,7 +486,8 @@ export default class VendorService {
             amount: body.amount,
             phone: body.phone
         }
-
+        
+        console.log({ postData })
         if (NODE_ENV === 'development') {
             postData.phone = '08034210294'
             postData.meter = '12345678910'
