@@ -31,12 +31,12 @@ class WebhookHandlerRequestValidator {
         data: PublisherEventAndParameters[TOPICS.TOKEN_RECIEVED_FROM_VENDOR],
     ): Promise<
         | {
-              transaction: Transaction;
-              partnerProfile: PartnerProfile;
-              meter: Meter;
-              user: User;
-              webhook: WebHook;
-          }
+            transaction: Transaction;
+            partnerProfile: PartnerProfile;
+            meter: Meter;
+            user: User;
+            webhook: WebHook;
+        }
         | Error
     > {
         try {
@@ -93,6 +93,73 @@ class WebhookHandlerRequestValidator {
             return error;
         }
     }
+
+    static async validateIncomingWebhookEventRequestForAirtime(
+        data: PublisherEventAndParameters[TOPICS.AIRTIME_RECEIVED_FROM_VENDOR],
+    ): Promise<
+        | {
+            transaction: Transaction;
+            partnerProfile: PartnerProfile;
+            phone: { phoneNumber: string },
+            user: { name?: string; address?: string; phoneNumber: string; email: string };
+            webhook: WebHook;
+        }
+        | Error
+    > {
+        try {
+            const transaction = await TransactionService.viewSingleTransaction(
+                data.transactionId,
+            );
+            if (!transaction) {
+                throw new Error(
+                    `Error fetching transaction with id ${data.transactionId}`,
+                );
+            }
+
+            const user = await transaction.$get("user");
+            if (!user) {
+                throw new Error(
+                    "User not found for transaction with id " + transaction.id,
+                );
+            }
+            const partnerProfile =
+                await PartnerProfileService.viewSinglePartnerByEmail(
+                    transaction.partner.email,
+                );
+            if (!partnerProfile) {
+                throw new Error(
+                    `Error fetching partner with email ${transaction.partner.email}`,
+                );
+            }
+
+            const meter = await transaction.$get("meter");
+            if (!meter) {
+                throw new Error(
+                    `No meter found for transaction id ${transaction.id}`,
+                );
+            }
+
+            const webhook = await WebhookService.viewWebhookByPartnerId(
+                partnerProfile.id,
+            );
+            if (!webhook) {
+                throw new Error(
+                    `Error fetching webhook for partner with id ${partnerProfile.id}`,
+                );
+            }
+
+            return {
+                transaction,
+                partnerProfile,
+                webhook,
+                user,
+                phone: data.phone,
+            };
+        } catch (error: Error | any) {
+            logger.error(error.message);
+            return error;
+        }
+    }
 }
 
 type WebhookEventRequestParams = {
@@ -107,6 +174,29 @@ class WebhookParamsBase {
     transactionId: string;
 }
 
+class WebhookParamsBaseForAirtime {
+    phone: { phoneNumber: string; amount: number; }
+    user: {
+        name?: string;
+        address?: string;
+        phoneNumber: string;
+        email: string;
+    };
+    partner: {
+        email: string;
+    };
+    transactionId: string;
+}
+
+interface WebhookParamsBaseForAirtime {
+    Retry: RetryWebhookParamsForAirtime;
+    FirstTime: WebhookParamsBaseForAirtime;
+}
+
+class RetryWebhookParamsForAirtime extends WebhookParamsBaseForAirtime {
+    retryCount: number;
+}
+
 class RetryWebhookParams extends WebhookParamsBase {
     retryCount: number;
 }
@@ -115,14 +205,118 @@ enum Status {
     RETRY = "Retry",
     FIRST_TIME = "FirstTime",
 }
+
 class WebhookHandler extends Registry {
     private static async handleWebhookRequest<T extends Status>(
-        data: WebhookEventRequestParams[T],
+        data: WebhookEventRequestParams[T]
     ) {
         const validationData =
             await WebhookHandlerRequestValidator.validateIncomingWebhookEventRequest(
                 data,
             );
+        if (validationData instanceof Error) {
+            logger.info(
+                `A error occured while validating new webhook request for transaction with id ${data.transactionId}`,
+            );
+            return;
+        }
+
+        const { transaction, partnerProfile, meter, user, webhook } =
+            validationData;
+        const transactionEventService = new TransactionEventService(
+            transaction,
+            {
+                meterNumber: transaction.meter.meterNumber,
+                disco: transaction.disco,
+                vendType: transaction.meter.vendType,
+            },
+            transaction.superagent,
+            transaction.partner.email,
+        );
+
+        try {
+            const notifyPartnerEvent =
+                await EventService.viewSingleEventByTransactionIdAndType(
+                    transaction.id,
+                    TOPICS.WEBHOOK_NOTIFICATION_SENT_TO_PARTNER,
+                );
+            if (notifyPartnerEvent) {
+                logger.info(
+                    `Webhook notification already sent for transaction with id ${transaction.id}`,
+                );
+                return;
+            }
+
+            const powerUnit = await transaction.$get("powerUnit");
+
+            // TODO: Add webhook case for failed transaction
+            const transactionNotificationData = {
+                status: "SUCCESS",
+                data: {
+                    transaction: {
+                        reference: transaction.bankRefId,
+                        comment: transaction.bankComment,
+                        amount: transaction.amount,
+                        date: transaction.createdAt,
+                        powerUnit: powerUnit,
+                        meter: data.meter,
+                        user: data.user,
+                    },
+                    token: data.meter.token,
+                },
+            };
+            const response = await WebhookService.sendWebhookNotification(
+                webhook,
+                transactionNotificationData,
+            ).catch((e) => e);
+
+            await transactionEventService.addWebHookNotificationSentEvent();
+            const webhookUrlNotSet =
+                response instanceof Error &&
+                response.message === "Webhook url not found";
+            if (webhookUrlNotSet) {
+                logger.error(
+                    `Webhook url not set for Partner - Notification can't be sent`,
+                );
+                return;
+            }
+
+            const axiosError = response instanceof AxiosError;
+            if (axiosError) {
+                // TODO: Setup request for a later time
+                logger.info(
+                    "No response from the user, setting up request for a later time",
+                );
+                return;
+            }
+
+            await transactionEventService.addWebHookNotificationConfirmedEvent();
+        } catch (error: Error | any) {
+            const metaData = {
+                url: webhook.url,
+                token: data.meter.token,
+                meter: transaction.meter,
+                retryCount:
+                    data instanceof RetryWebhookParams ? data.retryCount : null,
+            };
+
+            //     await this.scheduleNextWebhookNotification(
+            //         transactionEventService,
+            //         metaData,
+            //     );
+        }
+    }
+
+    private static async handleWebhookRequestForAirtime<T extends Status>(
+        data: WebhookParamsBaseForAirtime[T],
+    ): Promise<void> {
+        const validationData =
+            await WebhookHandlerRequestValidator.validateIncomingWebhookEventRequestForAirtime({
+                transactionId: data.transactionId,
+                partner: data.partner,
+                phone: data.phone,
+                user: data.user,
+            });
         if (validationData instanceof Error) {
             logger.info(
                 `A error occured while validating new webhook request for transaction with id ${data.transactionId}`,
@@ -278,6 +472,7 @@ class WebhookHandler extends Registry {
             .handleWebhookRequest<Status.FIRST_TIME>,
         [TOPICS.WEBHOOK_NOTIFICATION_TO_PARTNER_RETRY]: this
             .handleWebhookRequest<Status.RETRY>,
+        [TOPICS.AIRTIME_RECEIVED_FROM_VENDOR]: this.handleWebhookRequestForAirtime<Status.FIRST_TIME>,
     };
 }
 
