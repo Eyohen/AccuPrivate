@@ -319,6 +319,30 @@ export class AirtimeTransactionEventService {
         return EventService.addEvent(event);
     }
 
+    public async addAirtimeTranasctionRequeryInitiated(): Promise<Event> {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.AIRTIME_TRANSACTION_REQUERY_INITIATED,
+            eventText: TOPICS.AIRTIME_TRANSACTION_REQUERY_INITIATED,
+            payload: JSON.stringify({
+                phone: {
+                    phoneNumber: this.phoneNumber,
+                    amount: this.transaction.amount,
+                },
+                transactionId: this.transaction.id,
+                disco: this.transaction.disco,
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+            }),
+            source: this.transaction.superagent.toUpperCase(),
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.PENDING,
+        }
+
+        return EventService.addEvent(event);
+    }
+
 }
 
 export default class TransactionEventService {

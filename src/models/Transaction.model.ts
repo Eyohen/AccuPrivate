@@ -83,7 +83,7 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     userId: string;
 
     @Column({ type: DataType.ENUM, values: Object.values(TransactionType), allowNull: true })
-    transactionType: string
+    transactionType: TransactionType
 
     // Belongs to a User
     @BelongsTo(() => User)

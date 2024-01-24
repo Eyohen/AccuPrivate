@@ -102,7 +102,7 @@ type WebhookEventRequestParams = {
 
 class WebhookParamsBase {
     meter: MeterInfo & { id: string; token: string };
-    user: { name: string; address: string; phoneNumber: string; email: string };
+    user: { name?: string; address?: string; phoneNumber: string; email: string };
     partner: { email: string };
     transactionId: string;
 }

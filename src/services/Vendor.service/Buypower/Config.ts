@@ -1,5 +1,6 @@
 import axios from "axios";
 import { BUYPOWER_TOKEN, BUYPOWER_URL, NODE_ENV } from "../../../utils/Constants";
+import { BaseResponse } from "../../../utils/Interface";
 
 interface _RequeryBuypowerSuccessResponse extends BaseResponse {
     source: 'BUYPOWERNG';

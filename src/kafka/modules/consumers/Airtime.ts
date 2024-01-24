@@ -248,7 +248,7 @@ class TokenHandler extends Registry {
         })
     }
 
-    private static async handleTokenRequest(
+    private static async handleAirtimeRequest(
         data: PublisherEventAndParameters[TOPICS.AIRTIME_PURCHASE_INITIATED_BY_CUSTOMER],
     ) {
         console.log({
@@ -382,7 +382,7 @@ class TokenHandler extends Registry {
         });
     }
 
-    private static async handleTokenReceived(
+    private static async handleAirtimeRecievd(
         data: PublisherEventAndParameters[TOPICS.AIRTIME_RECEIVED_FROM_VENDOR],
     ) {
         const transaction = await TransactionService.viewSingleTransaction(
@@ -423,7 +423,7 @@ class TokenHandler extends Registry {
         });
     }
 
-    private static async requeryTransactionForToken(
+    private static async requeryTransaction(
         data: PublisherEventAndParameters[TOPICS.GET_AIRTIME_FROM_VENDOR_RETRY],
     ) {
         retry.count = data.retryCount;
@@ -451,15 +451,7 @@ class TokenHandler extends Registry {
             partner.email,
             data.phone.phoneNumber
         );
-        await transactionEventService.();
-        await VendorPublisher.publishEventForGetTransactionTokenFromVendorInitiated(
-            {
-                transactionId: transaction.id,
-                meter: data.meter,
-                timeStamp: new Date(),
-                superAgent: data.superAgent
-            },
-        );
+        await transactionEventService.addAirtimeTranasctionRequeryInitiated();
 
         // Requery transaction from provider and update transaction status
         /**
@@ -567,9 +559,9 @@ class TokenHandler extends Registry {
     }
 
     static registry = {
-        [TOPICS.AIRTIME_PURCHASE_INITIATED_BY_CUSTOMER]: this.handleTokenRequest,
-        [TOPICS.AIRTIME_RECEIVED_FROM_VENDOR]: this.handleTokenReceived,
-        [TOPICS.GET_AIRTIME_FROM_VENDOR_RETRY]: this.requeryTransactionForToken,
+        [TOPICS.AIRTIME_PURCHASE_INITIATED_BY_CUSTOMER]: this.handleAirtimeRequest,
+        [TOPICS.AIRTIME_RECEIVED_FROM_VENDOR]: this.handleAirtimeRecievd,
+        [TOPICS.GET_AIRTIME_FROM_VENDOR_RETRY]: this.requeryTransaction,
         [TOPICS.AIRTIME_TRANSACTION_REQUERY]: this.retryPowerPurchaseWithNewVendor,
         [TOPICS.RETRY_AIRTIME_PURCHASE_FROM_NEW_VENDOR]: this.retryPowerPurchaseWithNewVendor
     };

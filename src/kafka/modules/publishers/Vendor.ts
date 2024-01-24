@@ -432,6 +432,8 @@ export class VendorPublisher extends ProducerFactory {
             message: {
                 phone: data.phone,
                 transactionId: data.transactionId,
+                partner: data.partner,
+                user: data.user,
             },
         }).catch((e) => {
             logger.error(
