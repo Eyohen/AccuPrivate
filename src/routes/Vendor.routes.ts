@@ -1,5 +1,5 @@
 import express, { Router } from "express";
-import VendorController from "../controllers/Public/Vendor.controller";
+import VendorController from "../controllers/Public/Vendor.controller/Vendor.controller";
 import { validateApiKey } from "../middlewares/Auth";
 import { AuthenticatedController } from "../utils/Interface";
 
