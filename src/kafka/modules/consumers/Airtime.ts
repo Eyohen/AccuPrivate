@@ -193,7 +193,14 @@ export class TokenHandlerUtil {
             // case "BAXI":
             //     return await VendorService.baxiVendToken(_data)
             case "BUYPOWERNG":
-                return await VendorService.purchaseAirtime({ data, vendor: 'BUYPOWERNG' }).then(response => ({ ...response, source: 'BUYPOWERNG' }))
+                return await VendorService.purchaseAirtime({ data: {
+                    accountNumber: data.accountNumber,
+                    phoneNumber: data.phoneNumber,
+                    serviceType: data.serviceProvider,
+                    amount: data.amount,
+                    email: data.email,
+                    reference: data.transaction.reference,
+                }, vendor: 'BUYPOWERNG' }).then(response => ({ ...response, source: 'BUYPOWERNG' }))
             // case "IRECHARGE":
             //     return await VendorService.irechargeVendToken(_data)
             default:
@@ -567,7 +574,7 @@ class TokenHandler extends Registry {
     };
 }
 
-export default class TokenConsumer extends ConsumerFactory {
+export default class AirtimeConsumer extends ConsumerFactory {
     constructor() {
         const messageProcessor = new MessageProcessor(
             TokenHandler.registry,

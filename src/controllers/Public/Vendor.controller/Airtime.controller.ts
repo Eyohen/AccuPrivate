@@ -8,6 +8,7 @@ import Transaction, {
 import { v4 as uuidv4 } from "uuid";
 import UserService from "../../../services/User.service";
 import {
+    DEFAULT_AIRTIME_PROVIDER,
     DEFAULT_ELECTRICITY_PROVIDER,
 } from "../../../utils/Constants";
 import {
@@ -18,24 +19,35 @@ import {
 import { VendorPublisher } from "../../../kafka/modules/publishers/Vendor";
 import { CRMPublisher } from "../../../kafka/modules/publishers/Crm";
 import { AirtimeTransactionEventService } from "../../../services/TransactionEvent.service";
+import { Sequelize } from "sequelize";
+import { Database } from "../../../models";
 
 
 class AirtimeValidator {
-    static async validatePhoneNumber(phoneNumber: string) {
+    static validatePhoneNumber(phoneNumber: string) {
         if (phoneNumber.length !== 11) {
+            throw new BadRequestError("Invalid phone number");
+        }
+
+        if (phoneNumber[0] !== "0") {
+            throw new BadRequestError("Invalid phone number");
+        }
+
+        const regex = new RegExp("^[0-9]+$");
+        if (!regex.test(phoneNumber)) {
             throw new BadRequestError("Invalid phone number");
         }
     }
 
     static validateAirtimeRequest({ phoneNumber, amount, disco }: { phoneNumber: string, amount: string, disco: string }) {
         AirtimeValidator.validatePhoneNumber(phoneNumber);
-        if (amount.length < 3 || amount.length > 5) {
-            throw new BadRequestError("Invalid amount");
-        }
-
         // Check if amount is a number
         if (isNaN(Number(amount))) {
             throw new BadRequestError("Invalid amount");
+        }
+
+        if (parseFloat(amount) < 50) {
+            throw new BadRequestError("Amount must be greater than 50");
         }
 
         if (['9MOBILE', 'AIRTEL', 'GLO', 'MTN', 'ETISALAT'].indexOf(disco.toUpperCase()) === -1) {
@@ -51,16 +63,16 @@ export class AirtimeVendController {
         next: NextFunction
     ) {
         const { phoneNumber, amount, email, disco } = req.body;
-        const superAgent = DEFAULT_ELECTRICITY_PROVIDER;
+        const superAgent = DEFAULT_AIRTIME_PROVIDER;
         // TODO: Add request type for request authenticated by API keys
         const partnerId = (req as any).key
 
         const transaction: Transaction =
             await TransactionService.addTransactionWithoutValidatingUserRelationship({
                 id: uuidv4(),
-                amount: "0",
+                amount: amount,
                 status: Status.PENDING,
-                disco: disco,  
+                disco: disco,
                 superagent: superAgent,
                 paymentType: PaymentType.PAYMENT,
                 transactionTimestamp: new Date(),
@@ -71,7 +83,7 @@ export class AirtimeVendController {
         const transactionEventService = new AirtimeTransactionEventService(transaction, superAgent, partnerId, phoneNumber);
         await transactionEventService.addPhoneNumberValidationRequestedEvent()
 
-        await AirtimeValidator.validateAirtimeRequest({ phoneNumber, amount, disco });
+        AirtimeValidator.validateAirtimeRequest({ phoneNumber, amount, disco });
         await transactionEventService.addPhoneNumberValidationRequestedEvent()
 
         const userInfo = {
@@ -83,14 +95,19 @@ export class AirtimeVendController {
         await transactionEventService.addCRMUserInitiatedEvent({ user: userInfo })
         CRMPublisher.publishEventForInitiatedUser({ user: userInfo, transactionId: transaction.id })
 
-        const user = await UserService.addUserIfNotExists({
-            id: userInfo.id,
-            email: email,
-            phoneNumber: phoneNumber,
-        });
+        const sequelizeTransaction = await Database.transaction()
+        try {
+            const user = await UserService.addUserIfNotExists({
+                id: userInfo.id,
+                email: email,
+                phoneNumber: phoneNumber,
+            }, sequelizeTransaction);
 
-        if (!user) {
-            throw new InternalServerError("Error creating user");
+            await transaction.update({ userId: user.id }, { transaction: sequelizeTransaction })
+            await sequelizeTransaction.commit()
+        } catch (error) {
+            await sequelizeTransaction.rollback()
+            throw error
         }
 
         res.status(200).json({
@@ -127,6 +144,17 @@ export class AirtimeVendController {
             throw new InternalServerError('Partner record not found for already validated request')
         }
 
+        // Check if transaction is already completed    
+        if (transaction.status === Status.COMPLETE) {
+            throw new BadRequestError("Transaction already completed");
+        }
+
+        // Check if reference has been used before
+        const existingTransaction: Transaction | null = await TransactionService.viewSingleTransactionByBankRefID(bankRefId);
+        if (existingTransaction) {
+            throw new BadRequestError("Duplicate reference");
+        }
+
         const transactionEventService = new AirtimeTransactionEventService(transaction, transaction.superagent, transaction.partnerId, user.phoneNumber);
         await transactionEventService.addAirtimePurchaseInitiatedEvent({ amount: transaction.amount })
 
@@ -150,10 +178,7 @@ export class AirtimeVendController {
         res.status(200).json({
             message: "Airtime request sent successfully",
             data: {
-                transaction: {
-                    transactionId: transaction.id,
-                    status: transaction.status,
-                },
+                transaction,
             },
         })
     }

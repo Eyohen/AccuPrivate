@@ -5,7 +5,7 @@ import { BuyPowerApi } from "./Config";
 
 export type BuyPowerAirtimeProvider = 'MTN' | 'GLO' | 'AIRTEL' | '9MOBILE'
 
-interface PurchaseData {
+export interface BuypowerAirtimePurchaseData {
     phoneNumber: string;
     email: string;
     amount: number;
@@ -66,7 +66,7 @@ export default class BuypowerAirtimeApi extends BuyPowerApi {
         return phoneNumber.startsWith('+234') ? `0${phoneNumber.slice(4)}` : phoneNumber
     }
 
-    static async purchase(data: PurchaseData) {
+    static async purchase(data: BuypowerAirtimePurchaseData) {
         const { amount, accountNumber, serviceType, phoneNumber, reference, email } = data
         const phoneNumberToRecharge = this.formatPhoneNumber(accountNumber)
         const phoneNumberForId = this.formatPhoneNumber(phoneNumber)

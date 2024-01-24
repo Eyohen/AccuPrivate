@@ -10,6 +10,7 @@ import Transaction from "../../models/Transaction.model";
 import { generateRandomString, generateRandomToken, generateRandonNumbers } from "../../utils/Helper";
 import { response } from "express";
 import BuypowerApi from "./Buypower";
+import { BuypowerAirtimePurchaseData } from "./Buypower/Airtime.";
 
 export interface PurchaseResponse extends BaseResponse {
     source: 'BUYPOWERNG';
@@ -692,7 +693,7 @@ export default class VendorService {
         return response
     }
 
-    static async purchaseAirtime({ data, vendor }: { data: any, vendor: Transaction['superagent'] }) {
+    static async purchaseAirtime({ data, vendor }: { data: BuypowerAirtimePurchaseData, vendor: Transaction['superagent'] }) {
         switch (vendor) {
             case 'BUYPOWERNG':
                 return await BuypowerApi.Airtime.purchase(data);
