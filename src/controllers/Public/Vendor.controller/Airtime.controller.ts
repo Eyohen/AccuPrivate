@@ -104,7 +104,7 @@ export class AirtimeVendController {
         res: Response,
         next: NextFunction
     ) {
-        const { transactionId, bankRefId, bankComment } = req.body;
+        const { transactionId, bankRefId, bankComment } = req.query as Record<string, string>;
 
         const transaction: Transaction | null =
             await TransactionService.viewSingleTransaction(transactionId);

@@ -35,6 +35,7 @@ import logger from "../../../utils/Logger";
 import { error } from "console";
 import TransactionEventService from "../../../services/TransactionEvent.service";
 import WebhookService from "../../../services/Webhook.service";
+import { AirtimeVendController } from "./Airtime.controller";
 
 interface valideMeterRequestBody {
     meterNumber: string;
@@ -767,7 +768,11 @@ export default class VendorController {
         const transaction =
             await TransactionService.viewSingleTransactionByBankRefID(bankRefId);
         if (!transaction) throw new NotFoundError("Transaction not found");
-
+ 
+        if (transaction.transactionType === TransactionType.AIRTIME) {
+            return await AirtimeVendController.confirmPayment(req, res, next)
+        }
+        
         const meter = await transaction.$get("meter");
         if (!meter)
             throw new InternalServerError("Transaction does not have a meter");

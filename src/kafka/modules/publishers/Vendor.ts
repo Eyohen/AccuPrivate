@@ -402,6 +402,7 @@ export class VendorPublisher extends ProducerFactory {
         });
     }
 
+    // AIRTIME SPECIFIC PUBLISHERS
     static async publshEventForAirtimePurchaseInitiate(
         data: PublisherEventAndParameters[TOPICS.AIRTIME_PURCHASE_INITIATED_BY_CUSTOMER],
     ) {
@@ -479,5 +480,7 @@ export class VendorPublisher extends ProducerFactory {
             return e;
         });
     }
+
+
 }
 
