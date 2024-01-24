@@ -112,7 +112,7 @@ export default class AuthController {
             }
         })
         }catch(err){
-            transaction.rollback()
+            await transaction.rollback()
         res.status(500).json({
             status: 'failed',
             message: 'Partner created unsuccessfully',
@@ -185,7 +185,7 @@ export default class AuthController {
             }
         })
         }catch(err){
-            transaction.rollback()
+            await transaction.rollback()
             res.status(500).json({
                 status: 'failed',
                 message: 'User creation unsuccessfully',

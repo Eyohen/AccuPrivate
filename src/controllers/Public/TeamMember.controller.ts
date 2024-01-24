@@ -77,7 +77,7 @@ export default class TeamMemberProfileController {
             }
         })
         }catch(err){
-            await transaction.rollback()
+            await await transaction.rollback()
             res.status(500).json({
                 status: 'failed',
                 message: 'Team member not invited successfully',
@@ -174,7 +174,7 @@ export default class TeamMemberProfileController {
                 }
             })
         }catch(err){
-            await transaction.rollback()
+            await await transaction.rollback()
             res.status(500).json({
                 status: 'failed',
                 message: 'Team member not deleted successfully',

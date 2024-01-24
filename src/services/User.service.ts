@@ -41,7 +41,7 @@ export default class UserService {
             await transaction.commit()
             return newUser
         }catch(er){
-            transaction.rollback()
+            await transaction.rollback()
         }
 
        
