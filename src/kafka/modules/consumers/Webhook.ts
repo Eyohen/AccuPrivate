@@ -188,7 +188,7 @@ class WebhookParamsBaseForAirtime {
     transactionId: string;
 }
 
-interface WebhookParamsBaseForAirtime {
+interface IWebhookParamsBaseForAirtime {
     Retry: RetryWebhookParamsForAirtime;
     FirstTime: WebhookParamsBaseForAirtime;
 }
@@ -308,7 +308,7 @@ class WebhookHandler extends Registry {
     }
 
     private static async handleWebhookRequestForAirtime<T extends Status>(
-        data: WebhookParamsBaseForAirtime[T],
+        data: IWebhookParamsBaseForAirtime[T] ,
     ): Promise<void> {
         const validationData =
             await WebhookHandlerRequestValidator.validateIncomingWebhookEventRequestForAirtime({
