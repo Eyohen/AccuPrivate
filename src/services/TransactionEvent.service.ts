@@ -51,6 +51,143 @@ class EventPublisher {
     }
 }
 
+export class AirtimeTransactionEventService {
+    private transaction: Transaction;
+    private superAgent: Transaction['superagent']
+    private partner: Transaction['partner']['email']
+    private phoneNumber: string
+
+    constructor(transaction: Transaction, superAgent: Transaction['superagent'], partner: string, phoneNumber: string) {
+        this.transaction = transaction;
+        this.superAgent = superAgent;
+        this.partner = partner
+        this.phoneNumber = phoneNumber
+    }
+
+    public async addPhoneNumberValidationRequestedEvent(): Promise<Event> {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.PHONENUMBER_VALIDATION_REQUESTED_FROM_PARTNER,
+            eventText: TOPICS.PHONENUMBER_VALIDATION_REQUESTED_FROM_PARTNER,
+            payload: JSON.stringify({
+                phoneNumber: this.phoneNumber,
+                superagent: this.superAgent,
+                partnerEmail: this.partner
+            }),
+            source: 'API',
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.COMPLETE,
+        }
+
+        return await EventService.addEvent(event);
+    }
+
+    public async addPhoneNumberValidationSuccessEvent(): Promise<Event> {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.PHONENUMBER_VALIDATION_SUCCESS,
+            eventText: TOPICS.PHONENUMBER_VALIDATION_SUCCESS,
+            payload: JSON.stringify({
+                phoneNumber: this.phoneNumber,
+                superagent: this.superAgent,
+                partnerEmail: this.partner
+            }),
+            source: 'API',
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.COMPLETE,
+        }
+        return await EventService.addEvent(event);
+    }
+
+    public async addCRMUserInitiatedEvent(info: {
+        user: { id: string, name?: string, email: string, phoneNumber: string }
+    }): Promise<Event> {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.CREATE_USER_INITIATED,
+            eventText: TOPICS.CREATE_USER_INITIATED,
+            payload: JSON.stringify({
+                user: {
+                    id: info.user.id,
+                    name: info.user.name,
+                    email: info.user.email,
+                    phoneNumber: info.user.phoneNumber,
+                },
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+            }),
+            source: 'API',
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.COMPLETE,
+        }
+        return EventService.addEvent(event);
+    }
+
+    public async addCRMUserConfirmedEvent(info: ICRMUserInitiatedEventParams): Promise<Event> {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.CREATE_USER_CONFIRMED,
+            eventText: TOPICS.CREATE_USER_CONFIRMED,
+            payload: JSON.stringify({
+                user: {
+                    id: info.user.id,
+                    name: info.user.name,
+                    email: info.user.email,
+                    address: info.user.address,
+                    phoneNumber: info.user.phoneNumber,
+                },
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+            }),
+            source: 'API',
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.COMPLETE,
+        }
+        return EventService.addEvent(event);
+    }
+
+    public async addAirtimePurchaseInitiatedEvent({ amount }: { amount: string }): Promise<Event> {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.AIRTIME_PURCHASE_INITIATED_BY_CUSTOMER,
+            eventText: TOPICS.AIRTIME_PURCHASE_INITIATED_BY_CUSTOMER,
+            payload: JSON.stringify({
+                phoneNumber: this.phoneNumber,
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+                amount: amount
+            }),
+            source: 'API',
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.PENDING,
+        }
+        return EventService.addEvent(event);
+    }
+
+    public addAirtimePurchaseConfirmedEvent(): Promise<Event> {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.AIRTIME_RECEIVED_FROM_VENDOR,
+            eventText: TOPICS.AIRTIME_TRANSACTION_COMPLETE,
+            payload: JSON.stringify({
+                phoneNumber: this.phoneNumber,
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+            }),
+            source: 'API',
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.PENDING,
+        }
+        return EventService.addEvent(event);
+    }
+}
+
 export default class TransactionEventService {
     private transaction: Transaction;
     private meterInfo: EventMeterInfo;

@@ -20,8 +20,8 @@ export interface MeterInfo {
 }
 
 interface User {
-    name: string;
-    address: string;
+    name?: string;
+    address?: string;
     phoneNumber: string;
     email: string;
 }
@@ -130,6 +130,29 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
         transactionId: string;
         meter: MeterInfo;
     };
+
+
+    // Airtime
+    [TOPICS.AIRTIME_PURCHASE_INITIATED_BY_CUSTOMER]: {
+        phone: {
+            phoneNumber: string;
+            amount: number;
+        },
+        user: User;
+        partner: Partner;
+        transactionId: string;
+        superAgent: Transaction['superagent']
+    };
+    [TOPICS.AIRTIME_TRANSACTION_COMPLETE]: {
+        phone: {
+            phoneNumber: string;
+            amount: number;
+        },
+        user: User;
+        partner: Partner;
+        superAgent: Transaction['superagent']
+        transactionId: string;
+    }
 }
 
 export type PublisherParamsUnion = {
