@@ -2,7 +2,7 @@ import { AxiosError } from "axios";
 import EntityService from "../../../services/Entity/Entity.service";
 import EventService from "../../../services/Event.service";
 import TransactionService from "../../../services/Transaction.service";
-import TransactionEventService from "../../../services/TransactionEvent.service";
+import TransactionEventService, { AirtimeTransactionEventService } from "../../../services/TransactionEvent.service";
 import WebhookService from "../../../services/Webhook.service";
 import logger from "../../../utils/Logger";
 import { TOPICS } from "../../Constants";
@@ -129,13 +129,6 @@ class WebhookHandlerRequestValidator {
             if (!partnerProfile) {
                 throw new Error(
                     `Error fetching partner with email ${transaction.partner.email}`,
-                );
-            }
-
-            const meter = await transaction.$get("meter");
-            if (!meter) {
-                throw new Error(
-                    `No meter found for transaction id ${transaction.id}`,
                 );
             }
 
@@ -324,17 +317,13 @@ class WebhookHandler extends Registry {
             return;
         }
 
-        const { transaction, partnerProfile, meter, user, webhook } =
+        const { transaction, partnerProfile, phone, user, webhook } =
             validationData;
-        const transactionEventService = new TransactionEventService(
+        const transactionEventService = new AirtimeTransactionEventService(
             transaction,
-            {
-                meterNumber: transaction.meter.meterNumber,
-                disco: transaction.disco,
-                vendType: transaction.meter.vendType,
-            },
             transaction.superagent,
             transaction.partner.email,
+            phone.phoneNumber,
         );
 
         try {
@@ -361,11 +350,10 @@ class WebhookHandler extends Registry {
                         comment: transaction.bankComment,
                         amount: transaction.amount,
                         date: transaction.createdAt,
-                        powerUnit: powerUnit,
-                        meter: data.meter,
                         user: data.user,
+                        phone: data.phone,
+                        disco: transaction.disco,
                     },
-                    token: data.meter.token,
                 },
             };
             const response = await WebhookService.sendWebhookNotification(
@@ -373,7 +361,7 @@ class WebhookHandler extends Registry {
                 transactionNotificationData,
             ).catch((e) => e);
 
-            await transactionEventService.addWebHookNotificationSentEvent();
+            await transactionEventService.addAirtimeWebhookNotificationSent();
             const webhookUrlNotSet =
                 response instanceof Error &&
                 response.message === "Webhook url not found";
@@ -393,17 +381,19 @@ class WebhookHandler extends Registry {
                 return;
             }
 
-            await transactionEventService.addWebHookNotificationConfirmedEvent();
+            await transactionEventService.addAirtimeWebhookNotificationConfirmed();
         } catch (error: Error | any) {
             const metaData = {
                 url: webhook.url,
-                token: data.meter.token,
-                meter: transaction.meter,
+                phone: {
+                    phoneNumber: phone.phoneNumber,
+                },
                 retryCount:
-                    data instanceof RetryWebhookParams ? data.retryCount : null,
+                data instanceof RetryWebhookParams ? data.retryCount : null,
             };
+            throw error
 
-            //     await this.scheduleNextWebhookNotification(
+            //     await this.scheduleNextWebhookNotification( // TODO: Inplement logic to retry webhook
             //         transactionEventService,
             //         metaData,
             //     );

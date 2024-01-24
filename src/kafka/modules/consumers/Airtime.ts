@@ -64,7 +64,7 @@ const retry = {
     retryCountBeforeSwitchingVendor: 2,
 }
 
-const TEST_FAILED = NODE_ENV === 'production' ? false : false // TOGGLE - Will simulate failed transaction
+const TEST_FAILED = NODE_ENV === 'production' ? false : true // TOGGLE - Will simulate failed transaction
 
 const TransactionErrorCodeAndCause = {
     501: TransactionErrorCause.MAINTENANCE_ACCOUNT_ACTIVATION_REQUIRED,
@@ -229,7 +229,7 @@ export class TokenHandlerUtil {
             IRECHARGE: 'BUYPOWERNG'
         } as const
 
-        return nextVendor[currentVendor]
+        return nextVendor.IRECHARGE
     }
 }
 
@@ -418,11 +418,29 @@ class TokenHandler extends Registry {
         // const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false
         // const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' : false
 
+        const transactionEventService = new AirtimeTransactionEventService(
+            transaction,
+            transaction.superagent,
+            transaction.partner.email,
+            data.phone.phoneNumber,
+        );
         const transactionSuccess = transactionSuccessFromBuypower
         if (!transactionSuccess) {
-            throw new Error(
-                `Error requerying transaction with id ${data.transactionId}`,
-            );
+            await transactionEventService.addAirtimeTransactionRequery()
+            await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor({
+                eventService: transactionEventService,
+                eventData: {
+                    phone: data.phone,
+                    transactionId: data.transactionId,
+                    error: {
+                        code: requeryResultFromBuypower.responseCode,
+                        cause: TransactionErrorCause.TRANSACTION_FAILED
+                    }
+                },
+                retryCount: 1,
+                superAgent: transaction.superagent,
+                transactionTimedOutFromBuypower: false,
+            })
         }
 
         return await TransactionService.updateSingleTransaction(data.transactionId, {
@@ -446,9 +464,8 @@ class TokenHandler extends Registry {
         }
 
         const user = await transaction.$get('user')
-        const meter = await transaction.$get('meter')
         const partner = await transaction.$get('partner')
-        if (!user || !meter || !partner) {
+        if (!user || !partner) {
             throw new Error("Transaction  required relations not found");
         }
 
@@ -525,7 +542,7 @@ class TokenHandler extends Registry {
             }
 
             logger.error(
-                `Error requerying transaction with id ${data.transactionId} `,
+                `Error requerying transaction with id ${data.transactionId} 1213 `,
             );
 
             if (requeryFromNewVendor) {
@@ -570,7 +587,7 @@ class TokenHandler extends Registry {
         [TOPICS.AIRTIME_RECEIVED_FROM_VENDOR]: this.handleAirtimeRecievd,
         [TOPICS.GET_AIRTIME_FROM_VENDOR_RETRY]: this.requeryTransaction,
         [TOPICS.AIRTIME_TRANSACTION_REQUERY]: this.retryPowerPurchaseWithNewVendor,
-        [TOPICS.RETRY_AIRTIME_PURCHASE_FROM_NEW_VENDOR]: this.retryPowerPurchaseWithNewVendor
+        [TOPICS.AIRTIME_PURCHASE_RETRY_FROM_NEW_VENDOR]: this.retryPowerPurchaseWithNewVendor,
     };
 }
 

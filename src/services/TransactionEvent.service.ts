@@ -343,6 +343,100 @@ export class AirtimeTransactionEventService {
         return EventService.addEvent(event);
     }
 
+    public async addAirtimeWebhookNotificationSent(): Promise<Event> {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.WEBHOOK_NOTIFICATION_SENT_TO_PARTNER,
+            eventText: TOPICS.WEBHOOK_NOTIFICATION_SENT_TO_PARTNER,
+            payload: JSON.stringify({
+                phone: {
+                    phoneNumber: this.phoneNumber,
+                    amount: this.transaction.amount,
+                },
+                transactionId: this.transaction.id,
+                disco: this.transaction.disco,
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+            }),
+            source: this.transaction.superagent.toUpperCase(),
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.PENDING,
+        }
+
+        return EventService.addEvent(event);
+    }
+
+    public async addAirtimeWebhookNotificationConfirmed(): Promise<Event> {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.WEBHOOK_NOTIFICATION_CONFIRMED_FROM_PARTNER,
+            eventText: TOPICS.WEBHOOK_NOTIFICATION_CONFIRMED_FROM_PARTNER,
+            payload: JSON.stringify({
+                phone: {
+                    phoneNumber: this.phoneNumber,
+                    amount: this.transaction.amount,
+                },
+                transactionId: this.transaction.id,
+                disco: this.transaction.disco,
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+            }),
+            source: this.transaction.superagent.toUpperCase(),
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.COMPLETE,
+        }
+
+        return EventService.addEvent(event);
+    }
+
+    public async addAirtimeSentToPartner(): Promise<Event> {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.AIRTIME_SENT_TO_PARTNER,
+            eventText: TOPICS.AIRTIME_SENT_TO_PARTNER,
+            payload: JSON.stringify({
+                phone: {
+                    phoneNumber: this.phoneNumber,
+                    amount: this.transaction.amount,
+                },
+                transactionId: this.transaction.id,
+                disco: this.transaction.disco,
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+            }),
+            source: this.transaction.superagent.toUpperCase(),
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.COMPLETE,
+        }
+        return EventService.addEvent(event);
+    }
+
+    public async addAirtimeSentToUserEmail(): Promise<Event> {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.AIRTIME_SENT_TO_USER_EMAIL,
+            eventText: TOPICS.AIRTIME_SENT_TO_USER_EMAIL,
+            payload: JSON.stringify({
+                phone: {
+                    phoneNumber: this.phoneNumber,
+                    amount: this.transaction.amount,
+                },
+                transactionId: this.transaction.id,
+                disco: this.transaction.disco,
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+            }),
+            source: this.transaction.superagent.toUpperCase(),
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.COMPLETE,
+        }
+        return EventService.addEvent(event);
+    }
+
 }
 
 export default class TransactionEventService {
