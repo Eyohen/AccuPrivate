@@ -21,6 +21,13 @@ export enum PaymentType {
     PAYMENT = 'PAYMENT'
 }
 
+export enum TransactionType {
+    AIRTIME = 'AIRTIME',
+    ELECTRICITY = 'ELECTRICITY',
+    DATA = 'DATA',
+    CABLE = 'CABLE',
+}
+
 // Define the Sequelize model for the "Transaction" table
 @Table
 export default class Transaction extends Model<ITransaction | Transaction> {
@@ -75,6 +82,9 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     @Column
     userId: string;
 
+    @Column({ type: DataType.ENUM, values: Object.values(TransactionType), allowNull: true })
+    transactionType: string
+
     // Belongs to a User
     @BelongsTo(() => User)
     user: User;
@@ -83,7 +93,7 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     @ForeignKey(() => Partner)
     @IsUUID(4)
     @Column
-    partnerId?: string;
+    partnerId: string;
 
     @ForeignKey(() => Partner)
     @IsUUID(4)
@@ -135,6 +145,15 @@ export default class Transaction extends Model<ITransaction | Transaction> {
         }
     }
 
+    @BeforeCreate
+    static async checkIfDiscoExistForElectricity(transaction: Transaction) {
+        if (transaction.transactionType === TransactionType.ELECTRICITY) {
+            if (!transaction.disco) {
+                throw new Error('disco is required')
+            }
+        }
+    }  
+
 }
 
 
@@ -145,12 +164,13 @@ export interface ITransaction {
     status: Status; // Status of the transaction (e.g., COMPLETE, PENDING, FAILED)
     paymentType: PaymentType; // Type of payment (e.g., REVERSAL, PAYMENT)
     transactionTimestamp: Date; // Timestamp of the transaction
-    disco: string; // Disco associated with the transaction
+    disco?: string; // Disco associated with the transaction
     bankRefId?: string; // Bank reference ID related to the transaction
     bankComment?: string; // Comments or notes from the bank regarding the transaction
     superagent: 'BUYPOWERNG' | 'BAXI' | 'IRECHARGE'; // superagent associated with the transaction
+    transactionType: TransactionType;
     userId: string; // Unique identifier of the user associated with the transaction
-    partnerId?: string; // Unique identifier of the Partner associated with the transaction
+    partnerId: string; // Unique identifier of the Partner associated with the transaction
     meterId?: string; // Unique identifier of the Meter associated with the transaction
     reference: string
     irecharge_token?: string
