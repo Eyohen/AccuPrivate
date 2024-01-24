@@ -10,6 +10,7 @@ export const BAXI_TOKEN: string | undefined = process.env.BAXI_TOKEN
 export const BUYPOWER_URL: string | undefined = process.env.BUYPOWER_URL
 export const BUYPOWER_TOKEN: string | undefined = process.env.BUYPOWER_TOKEN
 export const DEFAULT_ELECTRICITY_PROVIDER = process.env.DEFAULT_ELECTRICITY_PROVIDER as 'BAXI' | 'BUYPOWERNG' | 'IRECHARGE'
+export const DEFAULT_AIRTIME_PROVIDER = process.env.DEFAULT_AIRTIME_PROVIDER as 'BAXI' | 'BUYPOWERNG' | 'IRECHARGE'
 export const NODE_ENV = process.env.NODE_ENV as 'development' | 'production' | 'staging'
 export const KAFKA_ENV = process.env.KAFKA_ENV as string
 export const KAFKA_CA_CERT = process.env.KAFKA_CA_CERT as string
