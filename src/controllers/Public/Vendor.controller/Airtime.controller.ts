@@ -27,7 +27,7 @@ class AirtimeValidator {
         }
     }
 
-    static validateAirtimeRequest({ phoneNumber, amount }: { phoneNumber: string, amount: string }) {
+    static validateAirtimeRequest({ phoneNumber, amount, disco }: { phoneNumber: string, amount: string, disco: string }) {
         AirtimeValidator.validatePhoneNumber(phoneNumber);
         if (amount.length < 3 || amount.length > 5) {
             throw new BadRequestError("Invalid amount");
@@ -36,6 +36,10 @@ class AirtimeValidator {
         // Check if amount is a number
         if (isNaN(Number(amount))) {
             throw new BadRequestError("Invalid amount");
+        }
+
+        if (['9MOBILE', 'AIRTEL', 'GLO', 'MTN', 'ETISALAT'].indexOf(disco.toUpperCase()) === -1) {
+            throw new BadRequestError("Invalid disco");
         }
     }
 }
@@ -67,7 +71,7 @@ export class AirtimeVendController {
         const transactionEventService = new AirtimeTransactionEventService(transaction, superAgent, partnerId, phoneNumber);
         await transactionEventService.addPhoneNumberValidationRequestedEvent()
 
-        await AirtimeValidator.validateAirtimeRequest({ phoneNumber, amount });
+        await AirtimeValidator.validateAirtimeRequest({ phoneNumber, amount, disco });
         await transactionEventService.addPhoneNumberValidationRequestedEvent()
 
         const userInfo = {
