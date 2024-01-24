@@ -71,6 +71,7 @@ export class AirtimeTransactionEventService {
             eventText: TOPICS.PHONENUMBER_VALIDATION_REQUESTED_FROM_PARTNER,
             payload: JSON.stringify({
                 phoneNumber: this.phoneNumber,
+                disco: this.transaction.disco,
                 superagent: this.superAgent,
                 partnerEmail: this.partner
             }),
@@ -90,6 +91,7 @@ export class AirtimeTransactionEventService {
             eventText: TOPICS.PHONENUMBER_VALIDATION_SUCCESS,
             payload: JSON.stringify({
                 phoneNumber: this.phoneNumber,
+                disco: this.transaction.disco,
                 superagent: this.superAgent,
                 partnerEmail: this.partner
             }),
@@ -157,6 +159,7 @@ export class AirtimeTransactionEventService {
             eventText: TOPICS.AIRTIME_PURCHASE_INITIATED_BY_CUSTOMER,
             payload: JSON.stringify({
                 phoneNumber: this.phoneNumber,
+                disco: this.transaction.disco,
                 superagent: this.superAgent,
                 partnerEmail: this.partner,
                 amount: amount
@@ -176,6 +179,7 @@ export class AirtimeTransactionEventService {
             eventText: TOPICS.AIRTIME_TRANSACTION_COMPLETE,
             payload: JSON.stringify({
                 phoneNumber: this.phoneNumber,
+                disco: this.transaction.disco,
                 superagent: this.superAgent,
                 partnerEmail: this.partner,
             }),
@@ -186,6 +190,135 @@ export class AirtimeTransactionEventService {
         }
         return EventService.addEvent(event);
     }
+
+    public addVendAirtimeRequestedFromVendorEvent(): Promise<Event> {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.VEND_AIRTIME_REQUESTED_FROM_VENDOR,
+            eventText: TOPICS.VEND_AIRTIME_REQUESTED_FROM_VENDOR,
+            payload: JSON.stringify({
+                phoneNumber: this.phoneNumber,
+                disco: this.transaction.disco,
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+            }),
+            source: 'API',
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.PENDING,
+        }
+        return EventService.addEvent(event);
+    }
+
+    public addRequestTimedOutEvent(): Promise<Event> {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.REQUEST_TIMEDOUT,
+            eventText: TOPICS.REQUEST_TIMEDOUT,
+            payload: JSON.stringify({
+                phoneNumber: this.phoneNumber,
+                disco: this.transaction.disco,
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+            }),
+            source: 'API',
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.PENDING,
+        }
+        return EventService.addEvent(event);
+    }
+
+    public addGetAirtimeFromVendorRetryEvent(error: { cause: TransactionErrorCause, code: number, }, retryCount: number): Promise<Event> {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY,
+            eventText: TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY,
+            payload: JSON.stringify({
+                transactionId: this.transaction.id,
+                phoneNumber: this.phoneNumber,
+                disco: this.transaction.disco,
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+                error,
+                retryCount
+            }),
+            source: this.transaction.superagent.toUpperCase(),
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.COMPLETE,
+        }
+
+        return EventService.addEvent(event);
+    }
+
+    public async addAirtimePurchaseWithNewVendorEvent({ currentVendor, newVendor }: {
+        currentVendor: Transaction['superagent'], newVendor: Transaction['superagent']
+    }): Promise<Event> {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.RETRY_AIRTIME_PURCHASE_FROM_NEW_VENDOR,
+            eventText: TOPICS.RETRY_AIRTIME_PURCHASE_FROM_NEW_VENDOR,
+            payload: JSON.stringify({
+                transactionId: this.transaction.id,
+                phoneNumber: this.phoneNumber,
+                disco: this.transaction.disco,
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+                currentSuperAgent: currentVendor,
+                newSuperAgent: newVendor,
+            }),
+            source: this.transaction.superagent.toUpperCase(),
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.PENDING,
+        }
+
+        return EventService.addEvent(event);
+    }
+
+    public async addAirtimeReceivedFromVendorEvent(): Promise<Event> {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.AIRTIME_RECEIVED_FROM_VENDOR,
+            eventText: TOPICS.AIRTIME_RECEIVED_FROM_VENDOR,
+            payload: JSON.stringify({
+                transactionId: this.transaction.id,
+                phoneNumber: this.phoneNumber,
+                disco: this.transaction.disco,
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+            }),
+            source: this.transaction.superagent.toUpperCase(),
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.PENDING,
+        }
+
+        return EventService.addEvent(event);
+    }
+
+    public async addAirtimeTransactionRequery(): Promise<Event> {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.AIRTIME_TRANSACTION_REQUERY,
+            eventText: TOPICS.AIRTIME_TRANSACTION_REQUERY,
+            payload: JSON.stringify({
+                transactionId: this.transaction.id,
+                phoneNumber: this.phoneNumber,
+                disco: this.transaction.disco,
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+            }),
+            source: this.transaction.superagent.toUpperCase(),
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.PENDING,
+        }
+
+        return EventService.addEvent(event);
+    }
+
 }
 
 export default class TransactionEventService {
@@ -815,4 +948,6 @@ export default class TransactionEventService {
 
         return EventService.addEvent(event);
     }
+
+
 }

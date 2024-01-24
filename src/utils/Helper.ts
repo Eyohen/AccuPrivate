@@ -20,3 +20,7 @@ export function generateRandonNumbers(length: number) {
 
     return result
 }
+
+export function removeSpacesFromString(string: string) {
+    return string.replace(/\s/g, '')
+}

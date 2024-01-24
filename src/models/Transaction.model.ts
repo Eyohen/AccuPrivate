@@ -154,6 +154,15 @@ export default class Transaction extends Model<ITransaction | Transaction> {
         }
     }  
 
+    @BeforeCreate
+    static async checkDiscoForAirtime(transaction: Transaction) {
+        if (transaction.transactionType === TransactionType.AIRTIME) {
+            if (['MTN', 'GLO', 'AIRTEL', '9MOBILE', 'ETISALAT'].indexOf(transaction.disco.toUpperCase()) === -1) {
+                throw new Error('disco is required')
+            }
+        }
+    }
+
 }
 
 

@@ -435,7 +435,7 @@ export default class VendorController {
             throw new InternalServerError("An error occured while validating meter");
 
 
-        await transaction.update({ userId: user?.id, irecharge_token: (response as any).access_token});
+        await transaction.update({ userId: user?.id, irecharge_token: (response as any).access_token });
         await transactionEventService.addCRMUserConfirmedEvent({ user: userInfo });
         CRMPublisher.publishEventForConfirmedUser({
             user: userInfo,
@@ -506,7 +506,7 @@ export default class VendorController {
         if (amount < 500) {
             throw new BadRequestError("Amount must be greater than 500");
         }
-        
+
         const transaction: Transaction | null =
             await TransactionService.viewSingleTransaction(transactionId);
         if (!transaction) {
@@ -768,11 +768,11 @@ export default class VendorController {
         const transaction =
             await TransactionService.viewSingleTransactionByBankRefID(bankRefId);
         if (!transaction) throw new NotFoundError("Transaction not found");
- 
+
         if (transaction.transactionType === TransactionType.AIRTIME) {
             return await AirtimeVendController.confirmPayment(req, res, next)
         }
-        
+
         const meter = await transaction.$get("meter");
         if (!meter)
             throw new InternalServerError("Transaction does not have a meter");

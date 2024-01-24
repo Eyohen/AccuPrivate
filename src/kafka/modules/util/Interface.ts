@@ -175,13 +175,27 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
         transactionId: string;
     };
     [TOPICS.GET_AIRTIME_FROM_VENDOR_RETRY]: {
-        meter: MeterInfo & { id: string };
+        phone: {
+            phoneNumber: string;
+            amount: number;
+        };
         transactionId: string;
         timeStamp: Date;
         error: { code: number; cause: TransactionErrorCause };
         retryCount: number;
         superAgent: Transaction['superagent'],
         waitTime: number,
+    };
+    [TOPICS.AIRTIME_PURCHASE_RETRY_FROM_NEW_VENDOR]: {
+        phone: {
+            phoneNumber: string;
+            amount: number;
+        },
+        user: User;
+        partner: Partner;
+        transactionId: string;
+        superAgent: Transaction['superagent'],
+        newVendor: Transaction['superagent'],
     };
 }
 

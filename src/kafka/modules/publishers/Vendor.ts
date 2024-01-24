@@ -481,6 +481,51 @@ export class VendorPublisher extends ProducerFactory {
         });
     }
 
+    static async publishEventForGetAirtimeFromVendorRetry(
+        data: PublisherEventAndParameters[TOPICS.GET_AIRTIME_FROM_VENDOR_RETRY],
+    ) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.GET_AIRTIME_FROM_VENDOR_RETRY,
+            message: {
+                phone: data.phone,
+                error: data.error,
+                transactionId: data.transactionId,
+                timeStamp: data.timeStamp,
+                retryCount: data.retryCount,
+                superAgent: data.superAgent,
+                waitTime: data.waitTime
+            },
+        }).catch((e) => {
+            logger.error(
+                `An error occured while publishing ${TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR} event for transaction` +
+                data.transactionId,
+            );
+            return e;
+        });
+    }
+
+    static async publishEventForAirtimePurchaseRetryFromVendorWithNewVendor(
+        data: PublisherEventAndParameters[TOPICS.AIRTIME_PURCHASE_RETRY_FROM_NEW_VENDOR]
+    ) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.AIRTIME_PURCHASE_RETRY_FROM_NEW_VENDOR,
+            message: {
+                phone: data.phone,
+                transactionId: data.transactionId,
+                superAgent: data.superAgent,
+                newVendor: data.newVendor,
+                partner: data.partner,
+                user: data.user
+            }
+        }).catch((e) => {
+            logger.error(
+                `An error occured while publishing ${TOPICS.AIRTIME_PURCHASE_RETRY_FROM_NEW_VENDOR} event for transaction` +
+                data.transactionId,
+            );
+            return e;
+        })
+    }
+
 
 }
 

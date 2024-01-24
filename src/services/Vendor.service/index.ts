@@ -1,14 +1,15 @@
 // Import required modules and types
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
-import { BaseResponse, IBaxiGetProviderResponse, IBaxiPurchaseResponse, IBaxiValidateMeterResponse, IBuyPowerGetProvidersResponse, IBuyPowerValidateMeterResponse, IValidateMeter, IVendToken } from "../utils/Interface";
+import { BaseResponse, IBaxiGetProviderResponse, IBaxiPurchaseResponse, IBaxiValidateMeterResponse, IBuyPowerGetProvidersResponse, IBuyPowerValidateMeterResponse, IValidateMeter, IVendToken } from "../../utils/Interface";
 import querystring from "querystring";
-import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL, IRECHARGE_PUBLIC_KEY, IRECHARGE_PRIVATE_KEY, IRECHARGE_VENDOR_CODE, NODE_ENV } from "../utils/Constants";
-import logger from "../utils/Logger";
+import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL, IRECHARGE_PUBLIC_KEY, IRECHARGE_PRIVATE_KEY, IRECHARGE_VENDOR_CODE, NODE_ENV } from "../../utils/Constants";
+import logger from "../../utils/Logger";
 import { v4 as UUIDV4 } from 'uuid'
 import crypto from 'crypto'
-import Transaction from "../models/Transaction.model";
-import { generateRandomString, generateRandomToken, generateRandonNumbers } from "../utils/Helper";
+import Transaction from "../../models/Transaction.model";
+import { generateRandomString, generateRandomToken, generateRandonNumbers } from "../../utils/Helper";
 import { response } from "express";
+import BuypowerApi from "./Buypower";
 
 export interface PurchaseResponse extends BaseResponse {
     source: 'BUYPOWERNG';
@@ -308,6 +309,9 @@ class BaxipaySeed {
     }
 }
 
+export class VendorAirtimeService {
+
+}
 // Define the VendorService class for handling provider-related operations
 export default class VendorService {
     private static generateToken(): string {
@@ -686,5 +690,14 @@ export default class VendorService {
 
         console.log({ response })
         return response
+    }
+
+    static async purchaseAirtime({ data, vendor }: { data: any, vendor: Transaction['superagent'] }) {
+        switch (vendor) {
+            case 'BUYPOWERNG':
+                return await BuypowerApi.Airtime.purchase(data);
+            default:
+                throw new Error('UNAVAILABLE_VENDOR')
+        }
     }
 }

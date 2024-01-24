@@ -46,7 +46,7 @@ export class AirtimeVendController {
         res: Response,
         next: NextFunction
     ) {
-        const { phoneNumber, amount, email } = req.body;
+        const { phoneNumber, amount, email, disco } = req.body;
         const superAgent = DEFAULT_ELECTRICITY_PROVIDER;
         // TODO: Add request type for request authenticated by API keys
         const partnerId = (req as any).key
@@ -56,6 +56,7 @@ export class AirtimeVendController {
                 id: uuidv4(),
                 amount: "0",
                 status: Status.PENDING,
+                disco: disco,  
                 superagent: superAgent,
                 paymentType: PaymentType.PAYMENT,
                 transactionTimestamp: new Date(),
