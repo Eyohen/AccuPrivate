@@ -1,39 +1,40 @@
 import { NextFunction, Request, Response } from "express";
-import TransactionService from "../../services/Transaction.service";
+import TransactionService from "../../../services/Transaction.service";
 import Transaction, {
     PaymentType,
     Status,
-} from "../../models/Transaction.model";
+    TransactionType,
+} from "../../../models/Transaction.model";
 import { v4 as uuidv4 } from "uuid";
-import UserService from "../../services/User.service";
-import MeterService from "../../services/Meter.service";
-import User from "../../models/User.model";
-import Meter, { IMeter } from "../../models/Meter.model";
-import VendorService from "../../services/Vendor.service";
+import UserService from "../../../services/User.service";
+import MeterService from "../../../services/Meter.service";
+import User from "../../../models/User.model";
+import Meter, { IMeter } from "../../../models/Meter.model";
+import VendorService from "../../../services/Vendor.service";
 import {
     DEFAULT_ELECTRICITY_PROVIDER,
-} from "../../utils/Constants";
+} from "../../../utils/Constants";
 import {
     BadRequestError,
     InternalServerError,
     NotFoundError,
-} from "../../utils/Errors";
-import Entity from "../../models/Entity/Entity.model";
-import EventService from "../../services/Event.service";
-import { AuthenticatedRequest } from "../../utils/Interface";
-import Event, { TokenRetryEventPayload } from "../../models/Event.model";
-import { VendorPublisher } from "../../kafka/modules/publishers/Vendor";
-import { CRMPublisher } from "../../kafka/modules/publishers/Crm";
-import { TokenHandlerUtil } from "../../kafka/modules/consumers/Token";
-import { TOPICS } from "../../kafka/Constants";
-import { PublisherEventAndParameters, Registry, TransactionErrorCause } from "../../kafka/modules/util/Interface";
+} from "../../../utils/Errors";
+import Entity from "../../../models/Entity/Entity.model";
+import EventService from "../../../services/Event.service";
+import { AuthenticatedRequest } from "../../../utils/Interface";
+import Event, { TokenRetryEventPayload } from "../../../models/Event.model";
+import { VendorPublisher } from "../../../kafka/modules/publishers/Vendor";
+import { CRMPublisher } from "../../../kafka/modules/publishers/Crm";
+import { TokenHandlerUtil } from "../../../kafka/modules/consumers/Token";
+import { TOPICS } from "../../../kafka/Constants";
+import { PublisherEventAndParameters, Registry, TransactionErrorCause } from "../../../kafka/modules/util/Interface";
 import { randomUUID } from "crypto";
-import ConsumerFactory from "../../kafka/modules/util/Consumer";
-import MessageProcessorFactory from "../../kafka/modules/util/MessageProcessor";
-import logger from "../../utils/Logger";
+import ConsumerFactory from "../../../kafka/modules/util/Consumer";
+import MessageProcessorFactory from "../../../kafka/modules/util/MessageProcessor";
+import logger from "../../../utils/Logger";
 import { error } from "console";
-import TransactionEventService from "../../services/TransactionEvent.service";
-import WebhookService from "../../services/Webhook.service";
+import TransactionEventService from "../../../services/TransactionEvent.service";
+import WebhookService from "../../../services/Webhook.service";
 
 interface valideMeterRequestBody {
     meterNumber: string;
@@ -382,6 +383,7 @@ export default class VendorController {
                 transactionTimestamp: new Date(),
                 disco: disco,
                 partnerId: partnerId,
+                transactionType: TransactionType.ELECTRICITY
             });
 
         const transactionEventService = new EventService.transactionEventService(
@@ -405,7 +407,6 @@ export default class VendorController {
             id: uuidv4(),
         };
 
-        console.log(response)
         await transactionEventService.addMeterValidationReceivedEvent({ user: userInfo });
         VendorPublisher.publishEventForMeterValidationReceived({
             meter: { meterNumber, disco, vendType },
@@ -495,7 +496,6 @@ export default class VendorController {
             transactionId: transaction.id,
             meter: { meterNumber, disco, vendType, id: meter.id },
         })
-
     }
 
     static async requestToken(req: Request, res: Response, next: NextFunction) {
