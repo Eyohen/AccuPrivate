@@ -70,6 +70,7 @@ export default class MessageProcessorFactory {
             logger.info('Committing offsets...')
 
         } catch (error) {
+            console.error(error)
             logger.warn((error as any).message)
         }
     }

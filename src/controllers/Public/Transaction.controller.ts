@@ -38,8 +38,8 @@ export default class TransactionController {
 
         const transaction: Transaction | null = bankRefId
             ? await TransactionService.viewSingleTransactionByBankRefID(
-                  bankRefId
-              )
+                bankRefId
+            )
             : await TransactionService.viewSingleTransaction(transactionId);
         if (!transaction) {
             throw new NotFoundError("Transaction not found");
@@ -97,21 +97,21 @@ export default class TransactionController {
 
             if (requestMadeByEnduser) {
                 query.where.userId = req.user.user.entity.userId;
-            } else if(requestWasMadeByTeamMember){
+            } else if (requestWasMadeByTeamMember) {
                 //To show Partner Data to Teammember
                 const _teamMember =
                     await TeamMemberProfileService.viewSingleTeamMember(
                         req.user.user.entity.teamMemberProfileId || ""
                     );
                 query.where.partnerId = _teamMember?.partnerId;
-            }else {
+            } else {
                 query.where.partnerId = req.user.user.profile.id;
             }
         }
 
         //To show Partner Data to Teammember
 
-        
+
 
         const transactions: Transaction[] =
             await TransactionService.viewTransactionsWithCustomQuery(query);
@@ -194,8 +194,8 @@ export default class TransactionController {
 
             if (requestWasMadeByTeamMember) {
                 const _teamMember = await TeamMemberProfileService.viewSingleTeamMember(
-                        req.user.user.entity.teamMemberProfileId || ""
-                    );
+                    req.user.user.entity.teamMemberProfileId || ""
+                );
                 query.where.partnerId = _teamMember?.partnerId;
             } else {
                 query.where.partnerId = req.user.user.profile.id;
@@ -349,9 +349,9 @@ export default class TransactionController {
 
         const transactions = status
             ? await TransactionService.viewTransactionsForYesterdayByStatus(
-                  partner.id,
-                  status.toUpperCase() as typeof status
-              )
+                partner.id,
+                status.toUpperCase() as typeof status
+            )
             : await TransactionService.viewTransactionForYesterday(partner.id);
 
         const totalAmount = transactions.reduce(

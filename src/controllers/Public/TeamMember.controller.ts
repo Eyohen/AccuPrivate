@@ -30,13 +30,13 @@ export default class TeamMemberProfileController {
 
         const transaction = await Database.transaction()
 
-        try{
+        try {
             const teamMemberProfile = await TeamMemberProfileService.addTeamMemberProfile({
                 id: uuidv4(),
                 partnerId: profile.id,
                 name
             }, transaction)
-    
+
             const entity = await EntityService.addEntity({
                 id: uuidv4(),
                 email: email,
@@ -53,41 +53,41 @@ export default class TeamMemberProfileController {
                 },
                 requireOTPOnLogin: false
             }, transaction)
-    
+
             const password = uuidv4()
             const entityPasswrod = await PasswordService.addPassword({
                 id: uuidv4(),
                 password,
                 entityId: entity.id
             }, transaction)
-    
+
             EmailService.sendEmail({
                 to: email,
                 subject: 'Team Invitation',
                 html: await new EmailTemplate().inviteTeamMember({ email, password })
             })
             // Commit transaction
-        await transaction.commit()
-        // Generate token for team member
-        res.status(200).json({
-            status: 'success',
-            message: 'Team member invited successfully',
-            data: {
-                teamMember: { ...teamMemberProfile.dataValues, entity: entity.dataValues },
-            }
-        })
-        }catch(err){
+            await transaction.commit()
+            // Generate token for team member
+            res.status(200).json({
+                status: 'success',
+                message: 'Team member invited successfully',
+                data: {
+                    teamMember: { ...teamMemberProfile.dataValues, entity: entity.dataValues },
+                }
+            })
+        } catch (err) {
             await transaction.rollback()
             res.status(500).json({
                 status: 'failed',
                 message: 'Team member not invited successfully',
             })
         }
-        
 
-        
 
-        
+
+
+
     }
 
     static async getTeamMembers(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -161,11 +161,11 @@ export default class TeamMemberProfileController {
         }
 
         const transaction = await Database.transaction()
-        try{
+        try {
             await EntityService.deleteEntity(entity, transaction)
             await TeamMemberProfileService.deleteTeamMember(teamMemberProfile, transaction)
             await transaction.commit()
-    
+
             res.status(200).json({
                 status: 'success',
                 message: 'Team member deleted successfully',
@@ -173,13 +173,13 @@ export default class TeamMemberProfileController {
                     teamMember: teamMemberProfile
                 }
             })
-        }catch(err){
+        } catch (err) {
             await transaction.rollback()
             res.status(500).json({
                 status: 'failed',
                 message: 'Team member not deleted successfully',
             })
         }
-       
+
     }
 }

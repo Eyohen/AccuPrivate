@@ -43,7 +43,7 @@ export class ComplaintController {
                 data: complaints,
             })
         }catch(err){
-            console.log(err)
+            // console.log(err)
             next(new InternalServerError('Sorry Couldn\'t get complaint'))
         }
     }
@@ -124,7 +124,7 @@ export class ComplaintController {
     static async updateComplaint(req: AuthenticatedRequest , res : Response , next : NextFunction){
         const {id} = req.params
         try{
-            console.log(req.body)
+            // console.log(req.body)
 
             const data = await ComplaintService.updateAComplaint(id,req.body)
             if (data?.result && data?.result[0] < 1) {
@@ -165,7 +165,7 @@ export class ComplaintController {
 
     static async getComplaintRely(req: AuthenticatedRequest , res : Response , next : NextFunction){
         const {id} = req.params
-        console.log(id)
+        // console.log(id)
         try{
             
             const data = await ComplaintService.viewListOfComplaintPaginatedRelies(id)

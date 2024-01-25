@@ -46,77 +46,77 @@ export default class AuthController {
         const transaction = await Database.transaction()
 
 
-        try{
+        try {
 
-        const newPartner = await PartnerService.addPartner({
-            id: uuidv4(),
-            email,
-        }, transaction)
+            const newPartner = await PartnerService.addPartner({
+                id: uuidv4(),
+                email,
+            }, transaction)
 
-        const entity = await EntityService.addEntity({
-            id: uuidv4(),
-            email,
-            status: {
-                activated: false,
-                emailVerified: false
-            },
-            partnerProfileId: newPartner.id,
-            role: RoleEnum.Partner,
-            notificationSettings: {
-                login: true,
-                failedTransactions: true,
-                logout: true
-            },
-            requireOTPOnLogin: false
-        }, transaction)
+            const entity = await EntityService.addEntity({
+                id: uuidv4(),
+                email,
+                status: {
+                    activated: false,
+                    emailVerified: false
+                },
+                partnerProfileId: newPartner.id,
+                role: RoleEnum.Partner,
+                notificationSettings: {
+                    login: true,
+                    failedTransactions: true,
+                    logout: true
+                },
+                requireOTPOnLogin: false
+            }, transaction)
 
-        const apiKey = await ApiKeyService.addApiKey({
-            partnerId: newPartner.id,
-            key: newPartner.key,
-            active: true,
-            id: uuidv4()
-        }, transaction)
+            const apiKey = await ApiKeyService.addApiKey({
+                partnerId: newPartner.id,
+                key: newPartner.key,
+                active: true,
+                id: uuidv4()
+            }, transaction)
 
-        const secKeyInCache = Cypher.encryptString(newPartner.sec)
-        await TokenUtil.saveTokenToCache({ key: secKeyInCache, token: Cypher.encryptString(newPartner.key) })
-        await ApiKeyService.setCurrentActiveApiKeyInCache(newPartner, apiKey.key.toString())
+            const secKeyInCache = Cypher.encryptString(newPartner.sec)
+            await TokenUtil.saveTokenToCache({ key: secKeyInCache, token: Cypher.encryptString(newPartner.key) })
+            await ApiKeyService.setCurrentActiveApiKeyInCache(newPartner, apiKey.key.toString())
 
-        const partnerPassword = await PasswordService.addPassword({
-            id: uuidv4(),
-            entityId: entity.id,
-            password
-        }, transaction)
+            const partnerPassword = await PasswordService.addPassword({
+                id: uuidv4(),
+                entityId: entity.id,
+                password
+            }, transaction)
 
-        await WebhookService.addWebhook({
-            id: uuidv4(),
-            partnerId: newPartner.id,
-        }, transaction)
+            await WebhookService.addWebhook({
+                id: uuidv4(),
+                partnerId: newPartner.id,
+            }, transaction)
 
-        await entity.update({ status: { ...entity.status, emailVerified: true } })
-        const accessToken = await AuthUtil.generateToken({ type: 'emailverification', entity, profile: newPartner, expiry: 60 * 10 })
-        const otpCode = await AuthUtil.generateCode({ type: 'emailverification', entity, expiry: 60 * 10 })
-        await transaction.commit()
+            await entity.update({ status: { ...entity.status, emailVerified: true } })
+            const accessToken = await AuthUtil.generateToken({ type: 'emailverification', entity, profile: newPartner, expiry: 60 * 10 })
+            const otpCode = await AuthUtil.generateCode({ type: 'emailverification', entity, expiry: 60 * 10 })
+            await transaction.commit()
 
-        logger.info(otpCode)
-        await EmailService.sendEmail({
-            to: newPartner.email,
-            subject: 'Succesful Email Verification',
-            html: await new EmailTemplate().awaitActivation(newPartner.email)
-        })
-        res.status(201).json({
-            status: 'success',
-            message: 'Partner created successfully',
-            data: {
-                partner: ResponseTrimmer.trimPartner({ ...newPartner.dataValues, entity }),
-                accessToken,
-            }
-        })
-        }catch(err){
+            logger.info(otpCode)
+            await EmailService.sendEmail({
+                to: newPartner.email,
+                subject: 'Succesful Email Verification',
+                html: await new EmailTemplate().awaitActivation(newPartner.email)
+            })
+            res.status(201).json({
+                status: 'success',
+                message: 'Partner created successfully',
+                data: {
+                    partner: ResponseTrimmer.trimPartner({ ...newPartner.dataValues, entity }),
+                    accessToken,
+                }
+            })
+        } catch (err) {
             await transaction.rollback()
-        res.status(500).json({
-            status: 'failed',
-            message: 'Partner created unsuccessfully',
-        })
+            res.status(500).json({
+                status: 'failed',
+                message: 'Partner created unsuccessfully',
+            })
         }
     }
 
@@ -141,50 +141,50 @@ export default class AuthController {
         const transaction = await Database.transaction()
 
 
-        try{
-        const entity = await EntityService.addEntity({
-            id: uuidv4(),
-            email,
-            status: {
-                activated: false,
-                emailVerified: false
-            },
-            role: role.name,
-            notificationSettings: {
-                login: true,
-                failedTransactions: true,
-                logout: true
-            },
-            requireOTPOnLogin: false
-        }, transaction)
+        try {
+            const entity = await EntityService.addEntity({
+                id: uuidv4(),
+                email,
+                status: {
+                    activated: false,
+                    emailVerified: false
+                },
+                role: role.name,
+                notificationSettings: {
+                    login: true,
+                    failedTransactions: true,
+                    logout: true
+                },
+                requireOTPOnLogin: false
+            }, transaction)
 
-        const entityPassword = await PasswordService.addPassword({
-            id: uuidv4(),
-            entityId: entity.id,
-            password
-        }, transaction)
+            const entityPassword = await PasswordService.addPassword({
+                id: uuidv4(),
+                entityId: entity.id,
+                password
+            }, transaction)
 
-        await entity.update({ status: { ...entity.status, emailVerified: true } })
-        const accessToken = await AuthUtil.generateToken({ type: 'emailverification', entity, profile: entity as any, expiry: 60 * 10 })
-        const otpCode = await AuthUtil.generateCode({ type: 'emailverification', entity, expiry: 60 * 10 })
-        await transaction.commit()
+            await entity.update({ status: { ...entity.status, emailVerified: true } })
+            const accessToken = await AuthUtil.generateToken({ type: 'emailverification', entity, profile: entity as any, expiry: 60 * 10 })
+            const otpCode = await AuthUtil.generateCode({ type: 'emailverification', entity, expiry: 60 * 10 })
+            await transaction.commit()
 
-        logger.info(otpCode)
-        await EmailService.sendEmail({
-            to: entity.email,
-            subject: 'Succesful Email Verification',
-            html: await new EmailTemplate().awaitActivation(entity.email)
-        })
+            logger.info(otpCode)
+            await EmailService.sendEmail({
+                to: entity.email,
+                subject: 'Succesful Email Verification',
+                html: await new EmailTemplate().awaitActivation(entity.email)
+            })
 
-        res.status(201).json({
-            status: 'success',
-            message: 'User created successfully',
-            data: {
-                entity: entity.dataValues,
-                accessToken,
-            }
-        })
-        }catch(err){
+            res.status(201).json({
+                status: 'success',
+                message: 'User created successfully',
+                data: {
+                    entity: entity.dataValues,
+                    accessToken,
+                }
+            })
+        } catch (err) {
             await transaction.rollback()
             res.status(500).json({
                 status: 'failed',

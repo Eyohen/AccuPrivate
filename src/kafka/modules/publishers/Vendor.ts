@@ -133,7 +133,7 @@ export class VendorPublisher extends ProducerFactory {
             return e;
         });
     }
-   
+
     static async publishEventForRetryPowerPurchaseWithNewVendor(
         data: PublisherEventAndParameters[TOPICS.RETRY_PURCHASE_FROM_NEW_VENDOR],
     ) {
@@ -157,7 +157,7 @@ export class VendorPublisher extends ProducerFactory {
                 },
                 transactionId: data.transactionId,
                 superAgent: data.superAgent,
-                newVendor: data.newVendor   
+                newVendor: data.newVendor
             },
         }).catch((e) => {
             logger.error(
@@ -354,7 +354,7 @@ export class VendorPublisher extends ProducerFactory {
             return e;
         });
     }
-   
+
     static async publishEventForFailedTokenRequest(
         data: PublisherEventAndParameters[TOPICS.TOKEN_REQUEST_FAILED],
     ) {
@@ -401,5 +401,133 @@ export class VendorPublisher extends ProducerFactory {
             return e;
         });
     }
+
+    // AIRTIME SPECIFIC PUBLISHERS
+    static async publshEventForAirtimePurchaseInitiate(
+        data: PublisherEventAndParameters[TOPICS.AIRTIME_PURCHASE_INITIATED_BY_CUSTOMER],
+    ) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.AIRTIME_PURCHASE_INITIATED_BY_CUSTOMER,
+            message: {
+                phone: data.phone,
+                partner: data.partner,
+                user: data.user,
+                transactionId: data.transactionId,
+                superAgent: data.superAgent
+            },
+        }).catch((e) => {
+            logger.error(
+                `An error occured while publishing  ${TOPICS.AIRTIME_PURCHASE_INITIATED_BY_CUSTOMER} event for transaction` +
+                data.transactionId,
+            );
+            return e;
+        });
+    }
+
+    static async publishEventForAirtimeReceivedFromVendor(
+        data: PublisherEventAndParameters[TOPICS.AIRTIME_RECEIVED_FROM_VENDOR],
+    ) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.AIRTIME_RECEIVED_FROM_VENDOR,
+            message: {
+                phone: data.phone,
+                transactionId: data.transactionId,
+                partner: data.partner,
+                user: data.user,
+            },
+        }).catch((e) => {
+            logger.error(
+                `An error occured while publishing  ${TOPICS.AIRTIME_RECEIVED_FROM_VENDOR} event for transaction` +
+                data.transactionId,
+            );
+            return e;
+        });
+    }
+
+    static async publishEventForAirtimeWebhookNotificationSentToPartner(
+        data: PublisherEventAndParameters[TOPICS.AIRTIME_WEBHOOK_NOTIFICATION_SENT_TO_PARTNER],
+    ) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.AIRTIME_WEBHOOK_NOTIFICATION_SENT_TO_PARTNER,
+            message: {
+                phone: data.phone,
+                transactionId: data.transactionId,
+            },
+        }).catch((e) => {
+            logger.error(
+                `An error occured while publishing  ${TOPICS.AIRTIME_WEBHOOK_NOTIFICATION_SENT_TO_PARTNER} event for transaction` +
+                data.transactionId,
+            );
+            return e;
+        });
+    }
+
+    static async publishEventForAirtimePurchaseComplete(
+        data: PublisherEventAndParameters[TOPICS.AIRTIME_TRANSACTION_COMPLETE],
+    ) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.AIRTIME_TRANSACTION_COMPLETE,
+            message: {
+                phone: data.phone,
+                transactionId: data.transactionId,
+                partner: data.partner,
+                user: data.user,
+                superAgent: data.superAgent
+            },
+        }).catch((e) => {
+            logger.error(
+                `An error occured while publishing  ${TOPICS.AIRTIME_TRANSACTION_COMPLETE} event for transaction` +
+                data.transactionId,
+            );
+            return e;
+        });
+    }
+
+    static async publishEventForGetAirtimeFromVendorRetry(
+        data: PublisherEventAndParameters[TOPICS.GET_AIRTIME_FROM_VENDOR_RETRY],
+    ) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.GET_AIRTIME_FROM_VENDOR_RETRY,
+            message: {
+                phone: data.phone,
+                error: data.error,
+                transactionId: data.transactionId,
+                timeStamp: data.timeStamp,
+                retryCount: data.retryCount,
+                superAgent: data.superAgent,
+                waitTime: data.waitTime
+            },
+        }).catch((e) => {
+            logger.error(
+                `An error occured while publishing ${TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR} event for transaction` +
+                data.transactionId,
+            );
+            return e;
+        });
+    }
+
+    static async publishEventForAirtimePurchaseRetryFromVendorWithNewVendor(
+        data: PublisherEventAndParameters[TOPICS.AIRTIME_PURCHASE_RETRY_FROM_NEW_VENDOR]
+    ) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.AIRTIME_PURCHASE_RETRY_FROM_NEW_VENDOR,
+            message: {
+                phone: data.phone,
+                transactionId: data.transactionId,
+                superAgent: data.superAgent,
+                newVendor: data.newVendor,
+                partner: data.partner,
+                user: data.user
+            }
+        }).catch((e) => {
+            logger.error(
+                `An error occured while publishing ${TOPICS.AIRTIME_PURCHASE_RETRY_FROM_NEW_VENDOR} event for transaction` +
+                data.transactionId,
+            );
+            return e;
+        })
+    }
+
+
 }
 

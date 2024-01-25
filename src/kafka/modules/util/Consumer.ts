@@ -3,6 +3,7 @@ import logger from '../../../utils/Logger'
 import MessageProcessorFactory from './MessageProcessor'
 import Kafka from '../../config'
 import { KafkaTopics, MessagePayload } from './Interface'
+import { randomUUID } from 'crypto'
 
 export default class ConsumerFactory {
     private kafkaConsumer: Consumer
@@ -56,7 +57,8 @@ export default class ConsumerFactory {
     }
 
     private createKafkaConsumer(): Consumer {
-        const consumer = Kafka.consumer({ groupId: this.messageProcessor.getConsumerName() })
+        const uuid = randomUUID()
+        const consumer = Kafka.consumer({ groupId: this.messageProcessor.getConsumerName() + uuid })
         return consumer
     }
 }
