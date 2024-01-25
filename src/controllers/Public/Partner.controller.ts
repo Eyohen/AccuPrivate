@@ -106,7 +106,7 @@ export default class PartnerProfileController {
         })
 
         }catch(err){
-            transaction.rollback()
+            await transaction.rollback()
             res.status(500).json({
                 status: 'failed',
                 message: 'Partner invited not successfully',

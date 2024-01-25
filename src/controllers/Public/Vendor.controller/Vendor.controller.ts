@@ -500,8 +500,10 @@ export default class VendorController {
     }
 
     static async requestToken(req: Request, res: Response, next: NextFunction) {
-        const { transactionId, bankRefId, bankComment, amount, vendType } =
+        const { transactionId, bankComment, amount, vendType } =
             req.query as Record<string, any>;
+
+        const bankRefId = randomUUID()
 
         if (amount < 500) {
             throw new BadRequestError("Amount must be greater than 500");
