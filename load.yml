@@ -1,0 +1,33 @@
+config:
+  target: "http://localhost:3000/api/v0/vendor"
+
+  phases:
+    - duration: 100
+      arrivalCount: 100
+      name: "Warm up"
+  
+scenarios:
+  - flow:
+      - post:
+          url: "/validate/meter"
+          json:
+            meterNumber: "12345678910"
+            venderType: "ELECTRICITY"
+            disco: "AEDC"
+            partnerName: "ZENITH BANK"
+            phoneNumber: "084567834568"
+            email: "neilkwdfghj4@test.com"
+            vendType: "PREPAID"
+          headers:
+            x-api-key: ""
+            x-api-secret: ""
+          capture:
+            - json: "$.data.transaction.transactionId"
+              as: "transactionId"
+      - think: 2
+
+      - get:
+          url: "/token/?transactionId={{ transactionId }}&amount=1500&bankComment=test%20comment&vendType=PREPAID"
+          headers:
+            x-api-key: ""
+            x-api-secret: ""
