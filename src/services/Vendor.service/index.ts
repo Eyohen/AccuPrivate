@@ -225,7 +225,9 @@ export class IRechargeVendorService {
             }
         })
 
-        return { ...response.data, source: 'IRECHARGE' }
+        const responseData = { ...response.data, source: 'IRECHARGE'}
+        responseData.meter_token = NODE_ENV === 'development' ? generateRandomToken() : responseData.meter_token
+        return responseData
     };
 
     static async requery({ accessToken, serviceType }: { accessToken: string, serviceType: string }) {
@@ -242,7 +244,6 @@ export class IRechargeVendorService {
             }
         })
 
-        console.log({ data: response.data })
         return { ...response.data, source: 'IRECHARGE' }
 
     };
@@ -413,8 +414,6 @@ export default class VendorService {
         try {
             const response = await this.baxiAxios().get<IBaxiGetProviderResponse>('/electricity/billers')
             const responseData = response.data
-
-            console.log(responseData)
             const providers = [] as { name: string, serviceType: 'PREPAID' | 'POSTPAID' }[]
 
             for (const provider of responseData.data.providers) {
@@ -492,7 +491,6 @@ export default class VendorService {
             phone: body.phone
         }
 
-        console.log({ postData })
         if (NODE_ENV === 'development') {
             postData.phone = '08034210294'
             postData.meter = '12345678910'
@@ -615,7 +613,6 @@ export default class VendorService {
             const response = await this.buyPowerAxios().get<IBuyPowerGetProvidersResponse>('/discos/status')
             const responseData = response.data
 
-            console.log({ responseData })
             for (const key of Object.keys(responseData)) {
                 if (responseData[key as keyof IBuyPowerGetProvidersResponse] === true) {
                     providers.push({
@@ -654,8 +651,6 @@ export default class VendorService {
 
             }
 
-            console.log({ providers })
-
             return providers
         } catch (error) {
             console.error(error)
@@ -686,10 +681,8 @@ export default class VendorService {
     }
 
     static async irechargeRequeryTransaction({ serviceType, accessToken }: { accessToken: string, serviceType: 'power' | 'airtime' | 'data' | 'tv' }) {
-        console.log({ serviceType, accessToken })
         const response = await IRechargeVendorService.requery({ serviceType, accessToken })
 
-        console.log({ response })
         return response
     }
 

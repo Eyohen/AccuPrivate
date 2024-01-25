@@ -46,10 +46,6 @@ export default class UserService {
             console.log(er)
             throw er
         }
-
-
-
-
     }
 
     static async addUser(user: ICreateUser): Promise<User> {

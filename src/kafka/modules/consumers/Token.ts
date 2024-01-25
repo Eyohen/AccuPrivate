@@ -557,10 +557,6 @@ class TokenHandler extends Registry {
         const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' : false
 
         const transactionSuccess = TEST_FAILED ? false : (transactionSuccessFromBuypower || transactionSuccessFromBaxi || transactionSuccessFromIrecharge)
-        console.log({ transactionSuccess, transactionSuccessFromBuypower, transactionSuccessFromBaxi, transactionSuccessFromIrecharge })
-        console.log({
-            requeryResultFromIrecharge
-        })
         if (!transactionSuccess) {
             /**
              * Transaction may be unsuccessful but it doesn't mean it has failed
@@ -631,7 +627,6 @@ class TokenHandler extends Registry {
         else if (requeryResult.source === 'BAXI') token = requeryResultFromBaxi.data?.rawOutput.token
         else if (requeryResult.source === 'IRECHARGE') token = requeryResultFromIrecharge.token
 
-        console.log({ token })
         if (!token) {
             return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
                 {
