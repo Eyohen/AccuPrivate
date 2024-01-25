@@ -176,6 +176,7 @@ export default class AuthController {
                 html: await new EmailTemplate().awaitActivation(entity.email)
             })
 
+<<<<<<< HEAD
             res.status(201).json({
                 status: 'success',
                 message: 'User created successfully',
@@ -185,6 +186,17 @@ export default class AuthController {
                 }
             })
         } catch (err) {
+=======
+        res.status(201).json({
+            status: 'success',
+            message: 'User created successfully',
+            data: {
+                entity: entity.dataValues,
+                accessToken,
+            }
+        })
+        }catch(err){
+>>>>>>> 5eb1e54875ee0b8d950bbf71d6dd75cea86d2fcd
             await transaction.rollback()
             res.status(500).json({
                 status: 'failed',
