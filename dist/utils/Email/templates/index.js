@@ -25,6 +25,9 @@ class EmailTemplate {
         this.receipt = ({ transaction, meterNumber, token }) => __awaiter(this, void 0, void 0, function* () {
             return container(yield ejs_1.default.renderFile(__dirname + '/receipt.ejs', { transaction, meterNumber, token }));
         });
+        this.airTimeReceipt = ({ transaction, phoneNumber }) => __awaiter(this, void 0, void 0, function* () {
+            return container(yield ejs_1.default.renderFile(__dirname + '/airtime-receipt.ejs', { transaction, phoneNumber }));
+        });
         this.emailVerification = ({ partnerEmail, otpCode }) => __awaiter(this, void 0, void 0, function* () {
             return container(yield ejs_1.default.renderFile(__dirname + '/emailverification.ejs', { partnerEmail, otpCode }));
         });

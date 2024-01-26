@@ -52,7 +52,7 @@ class ComplaintController {
                 });
             }
             catch (err) {
-                console.log(err);
+                // console.log(err)
                 next(new Errors_1.InternalServerError('Sorry Couldn\'t get complaint'));
             }
         });
@@ -110,7 +110,7 @@ class ComplaintController {
         return __awaiter(this, void 0, void 0, function* () {
             const { id } = req.params;
             try {
-                console.log(req.body);
+                // console.log(req.body)
                 const data = yield Complaint_service_1.default.updateAComplaint(id, req.body);
                 if ((data === null || data === void 0 ? void 0 : data.result) && (data === null || data === void 0 ? void 0 : data.result[0]) < 1) {
                     return next(new Errors_1.InternalServerError('Sorry Couldn\'t update complaint'));
@@ -150,7 +150,7 @@ class ComplaintController {
     static getComplaintRely(req, res, next) {
         return __awaiter(this, void 0, void 0, function* () {
             const { id } = req.params;
-            console.log(id);
+            // console.log(id)
             try {
                 const data = yield Complaint_service_1.default.viewListOfComplaintPaginatedRelies(id);
                 res.status(200).json({

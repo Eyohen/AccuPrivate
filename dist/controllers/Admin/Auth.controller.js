@@ -133,11 +133,11 @@ class AuthController {
             }
             const activationCode = yield Token_1.AuthUtil.generateCode({ type: 'su_activation', entity, expiry: 5 * 60 * 60 });
             const [activationCode1, activationCode2, activationCode3] = activationCode.split(':');
-            console.log({
-                activationCode1,
-                activationCode2,
-                activationCode3
-            });
+            // console.log({
+            //     activationCode1,
+            //     activationCode2,
+            //     activationCode3
+            // })
             // Send activation code to 3 Admins
             Email_1.default.sendEmail({
                 to: Constants_1.SU_HOST_EMAIL_1,
@@ -245,11 +245,11 @@ class AuthController {
             }
             const deactivationCode = yield Token_1.AuthUtil.generateCode({ type: 'su_activation', entity, expiry: 5 * 60 * 60 });
             const [deactivationCode1, deactivationCode2, deactivationCode3] = deactivationCode.split(':');
-            Constants_1.NODE_ENV === 'development' && console.log({
-                deactivationCode1,
-                deactivationCode2,
-                deactivationCode3
-            });
+            // NODE_ENV === 'development' && console.log({
+            //     deactivationCode1,
+            //     deactivationCode2,
+            //     deactivationCode3
+            // })
             // Send activation code to 3 Admins
             Email_1.default.sendEmail({
                 to: Constants_1.SU_HOST_EMAIL_1,

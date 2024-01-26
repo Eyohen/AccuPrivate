@@ -12,6 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const Airtime_1 = __importDefault(require("./Airtime"));
 const Crm_1 = __importDefault(require("./Crm"));
 const Inventory_1 = __importDefault(require("./Inventory"));
 const Notification_1 = __importDefault(require("./Notification"));
@@ -33,6 +34,7 @@ class ConsumerRouter {
             new User_1.default().startBatchConsumer();
             new Vendor_1.default().startBatchConsumer();
             new Webhook_1.default().startBatchConsumer();
+            new Airtime_1.default().startBatchConsumer();
         });
     }
 }
