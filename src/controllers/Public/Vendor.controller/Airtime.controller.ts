@@ -19,7 +19,6 @@ import {
 import { VendorPublisher } from "../../../kafka/modules/publishers/Vendor";
 import { CRMPublisher } from "../../../kafka/modules/publishers/Crm";
 import { AirtimeTransactionEventService } from "../../../services/TransactionEvent.service";
-import { Sequelize } from "sequelize";
 import { Database } from "../../../models";
 
 

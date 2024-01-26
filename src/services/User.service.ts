@@ -11,15 +11,15 @@ import { Transaction as SequelizeTransaction, UUIDV4 } from "sequelize";
 export default class UserService {
 
     static async addUserIfNotExists(user: IUser, _transaction: SequelizeTransaction | null = null): Promise<User> {
-        const transactionWasIncludedInQuery = !!_transaction
-        const transaction = _transaction ?? await Database.transaction()
+        // const transactionWasIncludedInQuery = !!_transaction
+        // const transaction = _transaction ?? await Database.transaction()
         const existingUser: User | null = await User.findOne({ where: { phoneNumber: user.phoneNumber } })
         if (existingUser) {
             return existingUser
         }
         const newUser: User = User.build(user)
         try {
-            await newUser.save({ transaction })
+            await newUser.save()
             const entity = await EntityService.addEntity({
                 email: user.email,
                 userId: newUser.id,
@@ -31,19 +31,19 @@ export default class UserService {
                 },
                 requireOTPOnLogin: true,
                 phoneNumber: user.phoneNumber,
-            }, transaction)
+            })
 
             const password = await PasswordService.addPassword({
                 id: randomUUID(),
                 entityId: entity.id,
                 password: randomUUID()
-            }, transaction)
+            })
 
-            await transaction.commit()
+            // !transactionWasIncludedInQuery && await transaction.commit()
             return newUser
         } catch (er) {
-            if (!transactionWasIncludedInQuery) await transaction.rollback()
-            console.log(er)
+            // if (!transactionWasIncludedInQuery) await transaction.rollback()
+            // console.log(er)
             throw er
         }
 

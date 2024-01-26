@@ -71,9 +71,14 @@ class VendorTokenHandler implements Registry {
     private tokenSent = false
     private transaction: Transaction
     private response: () => Response
+    private consumerInstance: ConsumerFactory
 
     private async handleTokenReceived(data: PublisherEventAndParameters[TOPICS.TOKEN_RECIEVED_FROM_VENDOR]) {
         try {
+            if (this.consumerInstance) {
+                this.consumerInstance.shutdown()
+            }
+
             this.response().status(200).send({
                 status: 'success',
                 message: 'Token purchase initiated successfully',
@@ -100,6 +105,10 @@ class VendorTokenHandler implements Registry {
         return this.tokenSent
     }
 
+    public setConsumerInstance(consumerInstance: ConsumerFactory) {
+        this.consumerInstance = consumerInstance
+    }
+
     public registry = {
         [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: this.handleTokenReceived.bind(this)
     }
@@ -118,6 +127,10 @@ class VendorTokenReceivedSubscriber extends ConsumerFactory {
 
     public getTokenSentState() {
         return this.tokenHandler.getTokenState()
+    }
+
+    public setConsumerInstance(consumerInstance: ConsumerFactory) {
+        this.tokenHandler.setConsumerInstance(consumerInstance)
     }
 }
 
@@ -392,7 +405,7 @@ export default class VendorController {
         );
 
         await transactionEventService.addMeterValidationRequestedEvent();
-        VendorPublisher.publishEventForMeterValidationRequested({
+        await VendorPublisher.publishEventForMeterValidationRequested({
             meter: { meterNumber, disco, vendType },
             transactionId: transaction.id,
             superAgent: superagent
@@ -409,19 +422,19 @@ export default class VendorController {
         };
 
         await transactionEventService.addMeterValidationReceivedEvent({ user: userInfo });
-        VendorPublisher.publishEventForMeterValidationReceived({
+        await VendorPublisher.publishEventForMeterValidationReceived({
             meter: { meterNumber, disco, vendType },
             transactionId: transaction.id,
             user: userInfo,
         });
 
         await transactionEventService.addCRMUserInitiatedEvent({ user: userInfo });
-        CRMPublisher.publishEventForInitiatedUser({
+        await CRMPublisher.publishEventForInitiatedUser({
             user: userInfo,
             transactionId: transaction.id,
         })
 
-        // Add User if no record of user in db
+        // // Add User if no record of user in db
         const user = await UserService.addUserIfNotExists({
             id: userInfo.id,
             address: response.address,
@@ -437,7 +450,7 @@ export default class VendorController {
 
         await transaction.update({ userId: user?.id, irecharge_token: (response as any).access_token });
         await transactionEventService.addCRMUserConfirmedEvent({ user: userInfo });
-        CRMPublisher.publishEventForConfirmedUser({
+        await CRMPublisher.publishEventForConfirmedUser({
             user: userInfo,
             transactionId: transaction.id,
         })
@@ -449,12 +462,12 @@ export default class VendorController {
                 : await VendorService.baxiCheckDiscoUp(disco).catch((e) => e);
 
         const discoUpEvent = discoUp instanceof Boolean ? await transactionEventService.addDiscoUpEvent() : false
-        discoUpEvent && VendorPublisher.publishEventForDiscoUpCheckConfirmedFromVendor({
+        discoUpEvent && await VendorPublisher.publishEventForDiscoUpCheckConfirmedFromVendor({
             transactionId: transaction.id,
             meter: { meterNumber, disco, vendType },
         })
 
-        // TODO: Publish event for disco up to kafka
+        // // TODO: Publish event for disco up to kafka
 
         const meter: Meter = await MeterService.addMeter({
             id: uuidv4(),
@@ -493,17 +506,17 @@ export default class VendorController {
         });
 
         await transactionEventService.addMeterValidationSentEvent(meter.id);
-        VendorPublisher.publishEventForMeterValidationSentToPartner({
+        await VendorPublisher.publishEventForMeterValidationSentToPartner({
             transactionId: transaction.id,
             meter: { meterNumber, disco, vendType, id: meter.id },
         })
     }
 
     static async requestToken(req: Request, res: Response, next: NextFunction) {
-        const { transactionId, bankRefId, bankComment, amount, vendType } =
+        const { transactionId, bankComment, amount, vendType } =
             req.query as Record<string, any>;
-
-        if (amount < 500) {
+        const bankRefId = process.env.LOAD_TEST_MODE ? uuidv4() : req.body.bankRefId;
+        if (parseInt(amount) < 500) {
             throw new BadRequestError("Amount must be greater than 500");
         }
 
@@ -512,6 +525,7 @@ export default class VendorController {
         if (!transaction) {
             throw new NotFoundError("Transaction not found");
         }
+
 
         const meter = await transaction.$get("meter");
         if (!meter) {
@@ -528,17 +542,16 @@ export default class VendorController {
         await transactionEventService.addPowerPurchaseInitiatedEvent(bankRefId, amount);
 
         const { user, partnerEntity } = await VendorControllerValdator.requestToken({ bankRefId, transactionId });
-        await TransactionService.updateSingleTransaction(
-            transactionId,
-            {
-                bankRefId,
-                bankComment,
-                amount,
-                status: Status.PENDING,
-            });
+        await transaction.update({
+            bankRefId,
+            bankComment,
+            amount,
+            status: Status.PENDING,
+        });
 
         const vendorTokenConsumer = new VendorTokenReceivedSubscriber(transaction, res)
         await vendorTokenConsumer.start()
+        vendorTokenConsumer.setConsumerInstance(vendorTokenConsumer)
         try {
             const response = await VendorPublisher.publishEventForInitiatedPowerPurchase({
                 transactionId: transaction.id,

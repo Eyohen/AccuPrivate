@@ -38,75 +38,75 @@ export default class PartnerProfileController {
         const transaction = await Database.transaction()
 
 
-        try{
+        try {
 
-        const newPartner = await PartnerService.addPartner({
-            id: uuidv4(),
-            email,
-            companyName,
-            address
-        }, transaction)
+            const newPartner = await PartnerService.addPartner({
+                id: uuidv4(),
+                email,
+                companyName,
+                address
+            }, transaction)
 
-        const entity = await EntityService.addEntity({
-            id: uuidv4(),
-            email,
-            status: {
-                activated: false,
-                emailVerified: false
-            },
-            partnerProfileId: newPartner.id,
-            role: RoleEnum.Partner,
-            notificationSettings: {
-                login: true,
-                failedTransactions: true,
-                logout: true
-            },
-            requireOTPOnLogin: false
-        }, transaction)
+            const entity = await EntityService.addEntity({
+                id: uuidv4(),
+                email,
+                status: {
+                    activated: false,
+                    emailVerified: false
+                },
+                partnerProfileId: newPartner.id,
+                role: RoleEnum.Partner,
+                notificationSettings: {
+                    login: true,
+                    failedTransactions: true,
+                    logout: true
+                },
+                requireOTPOnLogin: false
+            }, transaction)
 
-        const apiKey = await ApiKeyService.addApiKey({
-            partnerId: newPartner.id,
-            key: newPartner.key,
-            active: true,
-            id: uuidv4()
-        }, transaction)
+            const apiKey = await ApiKeyService.addApiKey({
+                partnerId: newPartner.id,
+                key: newPartner.key,
+                active: true,
+                id: uuidv4()
+            }, transaction)
 
-        const secKeyInCache = Cypher.encryptString(newPartner.sec)
-        await TokenUtil.saveTokenToCache({ key: secKeyInCache, token: Cypher.encryptString(newPartner.key) })
-        await ApiKeyService.setCurrentActiveApiKeyInCache(newPartner, apiKey.key.toString())
+            const secKeyInCache = Cypher.encryptString(newPartner.sec)
+            await TokenUtil.saveTokenToCache({ key: secKeyInCache, token: Cypher.encryptString(newPartner.key) })
+            await ApiKeyService.setCurrentActiveApiKeyInCache(newPartner, apiKey.key.toString())
 
-        const password = uuidv4()
-        const partnerPassword = await PasswordService.addPassword({
-            id: uuidv4(),
-            entityId: entity.id,
-            password,
-        }, transaction)
+            const password = uuidv4()
+            const partnerPassword = await PasswordService.addPassword({
+                id: uuidv4(),
+                entityId: entity.id,
+                password,
+            }, transaction)
 
-        await WebhookService.addWebhook({
-            id: uuidv4(),
-            partnerId: newPartner.id,
-        }, transaction)
+            await WebhookService.addWebhook({
+                id: uuidv4(),
+                partnerId: newPartner.id,
+            }, transaction)
 
-        await transaction.commit()
+            await transaction.commit()
 
-        await entity.update({ status: { ...entity.status, emailVerified: true } })
+            await entity.update({ status: { ...entity.status, emailVerified: true } })
 
-        await EmailService.sendEmail({
-            to: newPartner.email,
-            subject: 'Partner invitation',
-            html: await new EmailTemplate().invitePartner({ email: newPartner.email, password })
-        })
+            await EmailService.sendEmail({
+                to: newPartner.email,
+                subject: 'Partner invitation',
+                html: await new EmailTemplate().invitePartner({ email: newPartner.email, password })
+            })
 
-        res.status(200).json({
-            status: 'success',
-            message: 'Partner invited successfully',
-            data: {
-                partner: ResponseTrimmer.trimPartner({ ...newPartner.dataValues, entity }),
-            }
-        })
-
-        }catch(err){
-            transaction.rollback()
+            res.status(200).json({
+                status: 'success',
+                message: 'Partner invited successfully',
+                data: {
+                    partner: ResponseTrimmer.trimPartner({ ...newPartner.dataValues, entity }),
+                }
+            })
+            
+        } catch (err) {
+            await transaction.rollback()
             res.status(500).json({
                 status: 'failed',
                 message: 'Partner invited not successfully',
@@ -160,33 +160,39 @@ export default class PartnerProfileController {
             (item.sec as any) = undefined;
             return item
         })
-        
-        
+
+
         const _stats: any = []
         //adding partner Statics here        
         for (let index = 0; index < partners.length; index++) {
-            let failed_Transactions: number =  0 
-            let pending_Transactions: number = 0 
+            let failed_Transactions: number = 0
+            let pending_Transactions: number = 0
             let success_Transactions: number = 0
             const element = partners[index];
-            
+
             const _failed_Transaction = await TransactionService.viewTransactionsWithCustomQuery({
-                where:{partnerId: element.id,
-                status: "FAILED"}
+                where: {
+                    partnerId: element.id,
+                    status: "FAILED"
+                }
             })
             failed_Transactions = _failed_Transaction.length
 
-           
+
             const _pending_Transaction = await TransactionService.viewTransactionsWithCustomQuery({
-                where:{partnerId: element.id,
-                status: "PENDING"}
+                where: {
+                    partnerId: element.id,
+                    status: "PENDING"
+                }
             })
             pending_Transactions = _pending_Transaction.length
 
-           
+
             const _complete_Transaction = await TransactionService.viewTransactionsWithCustomQuery({
-                where:{partnerId: element.id,
-                status: "COMPLETE"}
+                where: {
+                    partnerId: element.id,
+                    status: "COMPLETE"
+                }
             })
             success_Transactions = _complete_Transaction.length
 
@@ -194,7 +200,7 @@ export default class PartnerProfileController {
             //     success_Transactions,
             //     failed_Transactions,
             //     pending_Transactions
-                
+
             // }
             _stats.push({
                 id: element.id,
@@ -202,14 +208,14 @@ export default class PartnerProfileController {
                 failed_Transactions,
                 pending_Transactions
             })
-            
+
         }
 
         res.status(200).json({
             status: 'success',
             message: 'Partners data retrieved successfully',
             data: {
-                partners , 
+                partners,
                 stats: _stats
             }
         })

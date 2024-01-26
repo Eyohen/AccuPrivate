@@ -186,7 +186,6 @@ export class IRechargeVendorService {
 
     static async getDiscos() {
         const response = await this.client.get<IRechargeVendorService.GetDiscosResponse>('/get_electric_disco.php?response_format=json')
-
         return response.data
     }
 
@@ -225,7 +224,11 @@ export class IRechargeVendorService {
             }
         })
 
-        return { ...response.data, source: 'IRECHARGE' }
+        const responseData = { ...response.data, source: 'IRECHARGE' }
+        if (NODE_ENV === 'development') {
+            responseData.meter_token = generateRandomToken() // IRecharge uses the same token for all transactions on dev mode this swill cause a validateon error for postgresql
+        }
+        return responseData
     };
 
     static async requery({ accessToken, serviceType }: { accessToken: string, serviceType: string }) {
@@ -242,7 +245,6 @@ export class IRechargeVendorService {
             }
         })
 
-        console.log({ data: response.data })
         return { ...response.data, source: 'IRECHARGE' }
 
     };
@@ -414,7 +416,6 @@ export default class VendorService {
             const response = await this.baxiAxios().get<IBaxiGetProviderResponse>('/electricity/billers')
             const responseData = response.data
 
-            console.log(responseData)
             const providers = [] as { name: string, serviceType: 'PREPAID' | 'POSTPAID' }[]
 
             for (const provider of responseData.data.providers) {
@@ -492,7 +493,6 @@ export default class VendorService {
             phone: body.phone
         }
 
-        console.log({ postData })
         if (NODE_ENV === 'development') {
             postData.phone = '08034210294'
             postData.meter = '12345678910'
@@ -615,7 +615,6 @@ export default class VendorService {
             const response = await this.buyPowerAxios().get<IBuyPowerGetProvidersResponse>('/discos/status')
             const responseData = response.data
 
-            console.log({ responseData })
             for (const key of Object.keys(responseData)) {
                 if (responseData[key as keyof IBuyPowerGetProvidersResponse] === true) {
                     providers.push({
@@ -653,8 +652,6 @@ export default class VendorService {
                 })
 
             }
-
-            console.log({ providers })
 
             return providers
         } catch (error) {
