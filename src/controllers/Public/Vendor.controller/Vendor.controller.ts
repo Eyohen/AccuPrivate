@@ -515,6 +515,7 @@ export default class VendorController {
     static async requestToken(req: Request, res: Response, next: NextFunction) {
         const { transactionId, bankComment, amount, vendType } =
             req.query as Record<string, any>;
+        console.log({ transactionId, bankComment, amount, vendType })
         const bankRefId = process.env.LOAD_TEST_MODE ? uuidv4() : req.body.bankRefId;
         if (parseInt(amount) < 500) {
             throw new BadRequestError("Amount must be greater than 500");
