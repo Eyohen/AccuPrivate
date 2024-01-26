@@ -415,7 +415,6 @@ export default class VendorService {
         try {
             const response = await this.baxiAxios().get<IBaxiGetProviderResponse>('/electricity/billers')
             const responseData = response.data
-
             const providers = [] as { name: string, serviceType: 'PREPAID' | 'POSTPAID' }[]
 
             for (const provider of responseData.data.providers) {
@@ -683,10 +682,8 @@ export default class VendorService {
     }
 
     static async irechargeRequeryTransaction({ serviceType, accessToken }: { accessToken: string, serviceType: 'power' | 'airtime' | 'data' | 'tv' }) {
-        console.log({ serviceType, accessToken })
         const response = await IRechargeVendorService.requery({ serviceType, accessToken })
 
-        console.log({ response })
         return response
     }
 
