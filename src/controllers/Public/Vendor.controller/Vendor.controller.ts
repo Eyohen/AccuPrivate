@@ -544,7 +544,7 @@ export default class VendorController {
 
         const { user, partnerEntity } = await VendorControllerValdator.requestToken({ bankRefId, transactionId });
         await transaction.update({
-            bankRefId,
+            bankRefId: transaction.id,
             bankComment,
             amount,
             status: Status.PENDING,
