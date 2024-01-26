@@ -8,11 +8,11 @@ import { DB_CONFIG, REDIS_HOST, REDIS_PASSWORD, REDIS_PORT, REDIS_URL } from '..
 console.log(DB_CONFIG.URL)
 // Create a new Sequelize instance for database connection and add Models
 const Database = new Sequelize(DB_CONFIG.URL, {
-    logging: false,
+    logging: true,
     pool:{
         max: 20,
         min: 1,
-        idle: 10000,
+        idle: 5000,
     }
 });
 

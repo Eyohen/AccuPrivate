@@ -152,3 +152,7 @@ user-access-key.key
 user-access-certificate.crt
 jmeter.dockerfile
 jmeterold.dockerfile
+
+newrelic_agent.log
+terraform/*
+terraform/

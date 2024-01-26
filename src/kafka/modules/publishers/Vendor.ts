@@ -3,9 +3,11 @@ import logger from "../../../utils/Logger";
 import { TOPICS } from "../../Constants";
 import { PublisherEventAndParameters } from "../util/Interface";
 import ProducerFactory from "../util/Producer";
+const newrelic = require('newrelic')
 
 export class VendorPublisher extends ProducerFactory {
-    static async publishEventForMeterValidationRequested(
+
+    static async  publishEventForMeterValidationRequested(
         data: PublisherEventAndParameters[TOPICS.METER_VALIDATION_REQUEST_SENT_TO_VENDOR],
     ) {
         return ProducerFactory.sendMessage({
@@ -101,7 +103,7 @@ export class VendorPublisher extends ProducerFactory {
         });
     }
 
-    static async publishEventForInitiatedPowerPurchase(
+    static async  publishEventForInitiatedPowerPurchase(
         data: PublisherEventAndParameters[TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER],
     ) {
         return ProducerFactory.sendMessage({
@@ -134,7 +136,7 @@ export class VendorPublisher extends ProducerFactory {
         });
     }
    
-    static async publishEventForRetryPowerPurchaseWithNewVendor(
+    static async  publishEventForRetryPowerPurchaseWithNewVendor(
         data: PublisherEventAndParameters[TOPICS.RETRY_PURCHASE_FROM_NEW_VENDOR],
     ) {
         return ProducerFactory.sendMessage({

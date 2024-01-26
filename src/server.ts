@@ -2,6 +2,7 @@ import app from "./app";
 import KafkaService from "./kafka";
 import { initiateDB, Database } from "./models";
 import logger from "./utils/Logger";
+require('newrelic');
 
 // Asynchronous function to start the server
 async function startServer(): Promise<void> {
@@ -28,6 +29,11 @@ async function startServer(): Promise<void> {
         // Exit the process with a non-zero status code to indicate an error
         process.exit(1);
     }
+
+
+    var logStream = require('fs').createWriteStream('./logFile.log', {flags: 'a'});
+
+    
 }
 
 // Call the function to start the server

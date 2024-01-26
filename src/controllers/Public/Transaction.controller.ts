@@ -16,6 +16,7 @@ import TransactionEventService from "../../services/TransactionEvent.service";
 import { VendorPublisher } from "../../kafka/modules/publishers/Vendor";
 import { Op } from "sequelize";
 import { TeamMemberProfileService } from "../../services/Entity/Profiles";
+require('newrelic');
 
 interface getTransactionsRequestBody extends ITransaction {
     page: `${number}`;

@@ -30,6 +30,8 @@ export default class TeamMemberProfileController {
 
         const transaction = await Database.transaction()
 
+
+
         try{
             const teamMemberProfile = await TeamMemberProfileService.addTeamMemberProfile({
                 id: uuidv4(),
@@ -161,6 +163,8 @@ export default class TeamMemberProfileController {
         }
 
         const transaction = await Database.transaction()
+
+
         try{
             await EntityService.deleteEntity(entity, transaction)
             await TeamMemberProfileService.deleteTeamMember(teamMemberProfile, transaction)

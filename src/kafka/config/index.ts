@@ -10,6 +10,7 @@ import {
     KAFKA_CA_CERT,
     KAFA_LOGS
 } from "../../utils/Constants";
+require('newrelic');
 
 const kafkaConfig: kafka.KafkaConfig =
     NODE_ENV === "development"

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { NotFoundError } from "../../utils/Errors";
 import User from "../../models/User.model";
 import UserService from "../../services/User.service";
+require('newrelic');
 
 export default class TransactionController {
     static async getUserInfo(req: Request, res: Response) {

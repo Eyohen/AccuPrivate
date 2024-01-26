@@ -12,6 +12,7 @@ export default class UserService {
 
     static async addUserIfNotExists(user: IUser): Promise<User| void> {
         const transaction = await Database.transaction()
+            
         const existingUser: User | null = await User.findOne({ where: { phoneNumber: user.phoneNumber } })
         if (existingUser) {
             return existingUser
@@ -37,6 +38,8 @@ export default class UserService {
                 entityId: entity.id,
                 password: randomUUID()
             }, transaction)
+
+            
     
             await transaction.commit()
             return newUser

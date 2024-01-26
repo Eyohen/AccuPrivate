@@ -34,6 +34,7 @@ import logger from "../../utils/Logger";
 import { error } from "console";
 import TransactionEventService from "../../services/TransactionEvent.service";
 import WebhookService from "../../services/Webhook.service";
+const newrelic = require('newrelic');
 
 interface valideMeterRequestBody {
     meterNumber: string;
@@ -410,13 +411,15 @@ export default class VendorController {
         })
 
         // Add User if no record of user in db
-        const user = await UserService.addUserIfNotExists({
-            id: userInfo.id,
-            address: response.address,
-            email: email,
-            name: response.name,
-            phoneNumber: phoneNumber,
-        });
+        // const user = await UserService.addUserIfNotExists({
+        //     id: userInfo.id,
+        //     address: response.address,
+        //     email: email,
+        //     name: response.name,
+        //     phoneNumber: phoneNumber,
+        // });
+
+        const user = await UserService.viewSingleUser("fdaba38b-5308-41ab-a773-ae1f38b609bf")
 
 
         if (!user)
