@@ -516,7 +516,7 @@ export default class VendorController {
         const { transactionId, bankComment, amount, vendType } =
             req.query as Record<string, any>;
         console.log({ transactionId, bankComment, amount, vendType })
-        const bankRefId = process.env.LOAD_TEST_MODE ? uuidv4() : req.body.bankRefId;
+        const bankRefId = randomUUID()
         if (parseInt(amount) < 500) {
             throw new BadRequestError("Amount must be greater than 500");
         }
@@ -544,7 +544,7 @@ export default class VendorController {
 
         const { user, partnerEntity } = await VendorControllerValdator.requestToken({ bankRefId, transactionId });
         await transaction.update({
-            bankRefId: transaction.id,
+            bankRefId: bankRefId,
             bankComment,
             amount,
             status: Status.PENDING,
