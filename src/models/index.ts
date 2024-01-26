@@ -9,10 +9,12 @@ console.log(DB_CONFIG.URL)
 // Create a new Sequelize instance for database connection and add Models
 const Database = new Sequelize(DB_CONFIG.URL, {
     logging: false,
-    pool:{
-        max: 200,
-        min: 1,
-        idle: 10000,
+    pool: {
+        max: 20,
+        min: 0,
+        idle: 1000,
+        acquire: 30000,
+        evict: 10000,
     }
 });
 

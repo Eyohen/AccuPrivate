@@ -1,4 +1,3 @@
-import { REAL } from "sequelize";
 import logger from "../../../utils/Logger";
 import { TOPICS } from "../../Constants";
 import { PublisherEventAndParameters } from "../util/Interface";

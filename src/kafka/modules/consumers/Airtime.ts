@@ -275,7 +275,7 @@ class TokenHandler extends Registry {
 
         const { user, partner } = transaction;
 
-        if (transaction.superagent === 'IRECHARGE' || transaction.superagent === 'BAXI') {
+        if ( transaction.superagent === 'BAXI') {
             throw 'Unsupported superagent'
         }
 

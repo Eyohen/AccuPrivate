@@ -46,7 +46,7 @@ class EventPublisher {
         await this.publisher(...this.args)
     }
 
-    public getEvent() {
+    public async getEvent() {
         return this.event;
     }
 }
@@ -125,7 +125,7 @@ export class AirtimeTransactionEventService {
             id: uuidv4(),
             status: Status.COMPLETE,
         }
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
     public async addCRMUserConfirmedEvent(info: ICRMUserInitiatedEventParams): Promise<Event> {
@@ -149,7 +149,7 @@ export class AirtimeTransactionEventService {
             id: uuidv4(),
             status: Status.COMPLETE,
         }
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
     public async addAirtimePurchaseInitiatedEvent({ amount }: { amount: string }): Promise<Event> {
@@ -169,10 +169,10 @@ export class AirtimeTransactionEventService {
             id: uuidv4(),
             status: Status.PENDING,
         }
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
-    public addAirtimePurchaseConfirmedEvent(): Promise<Event> {
+    public async addAirtimePurchaseConfirmedEvent(): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
             eventType: TOPICS.AIRTIME_RECEIVED_FROM_VENDOR,
@@ -188,10 +188,10 @@ export class AirtimeTransactionEventService {
             id: uuidv4(),
             status: Status.PENDING,
         }
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
-    public addVendAirtimeRequestedFromVendorEvent(): Promise<Event> {
+    public async addVendAirtimeRequestedFromVendorEvent(): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
             eventType: TOPICS.VEND_AIRTIME_REQUESTED_FROM_VENDOR,
@@ -207,10 +207,10 @@ export class AirtimeTransactionEventService {
             id: uuidv4(),
             status: Status.PENDING,
         }
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
-    public addRequestTimedOutEvent(): Promise<Event> {
+    public async addRequestTimedOutEvent(): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
             eventType: TOPICS.REQUEST_TIMEDOUT,
@@ -226,10 +226,10 @@ export class AirtimeTransactionEventService {
             id: uuidv4(),
             status: Status.PENDING,
         }
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
-    public addGetAirtimeFromVendorRetryEvent(error: { cause: TransactionErrorCause, code: number, }, retryCount: number): Promise<Event> {
+    public async addGetAirtimeFromVendorRetryEvent(error: { cause: TransactionErrorCause, code: number, }, retryCount: number): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
             eventType: TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY,
@@ -249,7 +249,7 @@ export class AirtimeTransactionEventService {
             status: Status.COMPLETE,
         }
 
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
     public async addAirtimePurchaseWithNewVendorEvent({ currentVendor, newVendor }: {
@@ -274,7 +274,7 @@ export class AirtimeTransactionEventService {
             status: Status.PENDING,
         }
 
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
     public async addAirtimeReceivedFromVendorEvent(): Promise<Event> {
@@ -295,7 +295,7 @@ export class AirtimeTransactionEventService {
             status: Status.PENDING,
         }
 
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
     public async addAirtimeTransactionRequery(): Promise<Event> {
@@ -316,7 +316,7 @@ export class AirtimeTransactionEventService {
             status: Status.PENDING,
         }
 
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
     public async addAirtimeTranasctionRequeryInitiated(): Promise<Event> {
@@ -340,7 +340,7 @@ export class AirtimeTransactionEventService {
             status: Status.PENDING,
         }
 
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
     public async addAirtimeWebhookNotificationSent(): Promise<Event> {
@@ -364,7 +364,7 @@ export class AirtimeTransactionEventService {
             status: Status.PENDING,
         }
 
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
     public async addAirtimeWebhookNotificationConfirmed(): Promise<Event> {
@@ -388,7 +388,7 @@ export class AirtimeTransactionEventService {
             status: Status.COMPLETE,
         }
 
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
     public async addAirtimeSentToPartner(): Promise<Event> {
@@ -411,7 +411,7 @@ export class AirtimeTransactionEventService {
             id: uuidv4(),
             status: Status.COMPLETE,
         }
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
     public async addAirtimeSentToUserEmail(): Promise<Event> {
@@ -434,7 +434,7 @@ export class AirtimeTransactionEventService {
             id: uuidv4(),
             status: Status.COMPLETE,
         }
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
 }
@@ -505,7 +505,7 @@ export default class TransactionEventService {
             status: Status.COMPLETE,
         }
 
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
     public async addMeterValidationSentEvent(meterId: string): Promise<Event> {
@@ -526,7 +526,7 @@ export default class TransactionEventService {
             id: uuidv4(),
             status: Status.COMPLETE,
         }
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
     public async addCRMUserInitiatedEvent(info: ICRMUserInitiatedEventParams): Promise<Event> {
@@ -551,7 +551,7 @@ export default class TransactionEventService {
             id: uuidv4(),
             status: Status.COMPLETE,
         }
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
     public async addCRMUserConfirmedEvent(info: ICRMUserInitiatedEventParams): Promise<Event> {
@@ -576,7 +576,7 @@ export default class TransactionEventService {
             id: uuidv4(),
             status: Status.COMPLETE,
         }
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
     public async addDiscoUpEvent(): Promise<Event> {
@@ -594,7 +594,7 @@ export default class TransactionEventService {
             id: uuidv4(),
             status: Status.COMPLETE,
         }
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
     public async addPowerPurchaseInitiatedEvent(bankRefId: string, amount: string): Promise<Event> {
@@ -894,7 +894,7 @@ export default class TransactionEventService {
             status: Status.COMPLETE,
         }
 
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
     public async addTokenSentToPartnerRetryEvent(): Promise<Event> {
@@ -922,7 +922,7 @@ export default class TransactionEventService {
             status: Status.COMPLETE,
         }
 
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
     public async addTokenRequestFailedNotificationToPartnerEvent(): Promise<Event> {
@@ -950,7 +950,7 @@ export default class TransactionEventService {
             status: Status.COMPLETE,
         }
 
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
     public async addWebHookNotificationSentEvent(): Promise<Event> {
@@ -978,7 +978,7 @@ export default class TransactionEventService {
             status: Status.COMPLETE,
         }
 
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
     public async addWebHookNotificationConfirmedEvent(): Promise<Event> {
@@ -1006,7 +1006,7 @@ export default class TransactionEventService {
             status: Status.COMPLETE,
         }
 
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
     public async addWebHookNotificationRetryEvent({ url, retryCount, timeStamp }: { url: string, retryCount: number, timeStamp: Date }): Promise<Event> {
@@ -1037,7 +1037,7 @@ export default class TransactionEventService {
             status: Status.COMPLETE,
         }
 
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
     public async addPartnerTransactionCompleteEvent(): Promise<Event> {
         const partner = await this.transaction.$get('partner');
@@ -1064,7 +1064,7 @@ export default class TransactionEventService {
             status: Status.COMPLETE,
         }
 
-        return EventService.addEvent(event);
+        return await EventService.addEvent(event);
     }
 
 
