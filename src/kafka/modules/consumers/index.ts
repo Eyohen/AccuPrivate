@@ -1,3 +1,4 @@
+import AirtimeConsumer from "./Airtime";
 import CrmConsumer from "./Crm";
 import InventoryConsumer from "./Inventory";
 import NotificationConsumer from "./Notification";
@@ -19,6 +20,7 @@ export default class ConsumerRouter {
         new UserConsumer().startBatchConsumer();
         new VendorConsumer().startBatchConsumer();
         new WebhookConsumer().startBatchConsumer();
+        new AirtimeConsumer().startBatchConsumer();
     }
 }
 

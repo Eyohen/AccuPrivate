@@ -1,40 +1,42 @@
 import { NextFunction, Request, Response } from "express";
-import TransactionService from "../../services/Transaction.service";
+import TransactionService from "../../../services/Transaction.service";
 import Transaction, {
     PaymentType,
     Status,
-} from "../../models/Transaction.model";
+    TransactionType,
+} from "../../../models/Transaction.model";
 import { v4 as uuidv4 } from "uuid";
-import UserService from "../../services/User.service";
-import MeterService from "../../services/Meter.service";
-import User from "../../models/User.model";
-import Meter, { IMeter } from "../../models/Meter.model";
-import VendorService from "../../services/Vendor.service";
+import UserService from "../../../services/User.service";
+import MeterService from "../../../services/Meter.service";
+import User from "../../../models/User.model";
+import Meter, { IMeter } from "../../../models/Meter.model";
+import VendorService from "../../../services/Vendor.service";
 import {
     DEFAULT_ELECTRICITY_PROVIDER,
-} from "../../utils/Constants";
+} from "../../../utils/Constants";
 import {
     BadRequestError,
     InternalServerError,
     NotFoundError,
-} from "../../utils/Errors";
-import Entity from "../../models/Entity/Entity.model";
-import EventService from "../../services/Event.service";
-import { AuthenticatedRequest } from "../../utils/Interface";
-import Event, { TokenRetryEventPayload } from "../../models/Event.model";
-import { VendorPublisher } from "../../kafka/modules/publishers/Vendor";
-import { CRMPublisher } from "../../kafka/modules/publishers/Crm";
-import { TokenHandlerUtil } from "../../kafka/modules/consumers/Token";
-import { TOPICS } from "../../kafka/Constants";
-import { PublisherEventAndParameters, Registry, TransactionErrorCause } from "../../kafka/modules/util/Interface";
+} from "../../../utils/Errors";
+import Entity from "../../../models/Entity/Entity.model";
+import EventService from "../../../services/Event.service";
+import { AuthenticatedRequest } from "../../../utils/Interface";
+import Event, { TokenRetryEventPayload } from "../../../models/Event.model";
+import { VendorPublisher } from "../../../kafka/modules/publishers/Vendor";
+import { CRMPublisher } from "../../../kafka/modules/publishers/Crm";
+import { TokenHandlerUtil } from "../../../kafka/modules/consumers/Token";
+import { TOPICS } from "../../../kafka/Constants";
+import { PublisherEventAndParameters, Registry, TransactionErrorCause } from "../../../kafka/modules/util/Interface";
 import { randomUUID } from "crypto";
-import ConsumerFactory from "../../kafka/modules/util/Consumer";
-import MessageProcessorFactory from "../../kafka/modules/util/MessageProcessor";
-import logger from "../../utils/Logger";
+import ConsumerFactory from "../../../kafka/modules/util/Consumer";
+import MessageProcessorFactory from "../../../kafka/modules/util/MessageProcessor";
+import logger from "../../../utils/Logger";
 import { error } from "console";
-import TransactionEventService from "../../services/TransactionEvent.service";
-import WebhookService from "../../services/Webhook.service";
-const newrelic = require('newrelic');
+import TransactionEventService from "../../../services/TransactionEvent.service";
+import WebhookService from "../../../services/Webhook.service";
+import { AirtimeVendController } from "./Airtime.controller";
+require('newrelic');
 
 interface valideMeterRequestBody {
     meterNumber: string;
@@ -70,19 +72,28 @@ class VendorTokenHandler implements Registry {
     private tokenSent = false
     private transaction: Transaction
     private response: () => Response
+    private consumerInstance: ConsumerFactory
 
     private async handleTokenReceived(data: PublisherEventAndParameters[TOPICS.TOKEN_RECIEVED_FROM_VENDOR]) {
-        this.response().status(200).send({
-            status: 'success',
-            message: 'Token purchase initiated successfully',
-            data: {
-                transaction: this.transaction,
-                meter: data.meter,
-                token: data.meter.token
+        try {
+            if (this.consumerInstance) {
+                this.consumerInstance.shutdown()
             }
-        })
 
-        this.tokenSent = true
+            this.response().status(200).send({
+                status: 'success',
+                message: 'Token purchase initiated successfully',
+                data: {
+                    transaction: this.transaction,
+                    meter: data.meter,
+                    token: data.meter.token
+                }
+            })
+
+            this.tokenSent = true
+        } catch (error) {
+            logger.error('Error sending token to user')
+        }
     }
 
     constructor(transaction: Transaction, response: Response) {
@@ -93,6 +104,10 @@ class VendorTokenHandler implements Registry {
 
     public getTokenState() {
         return this.tokenSent
+    }
+
+    public setConsumerInstance(consumerInstance: ConsumerFactory) {
+        this.consumerInstance = consumerInstance
     }
 
     public registry = {
@@ -113,6 +128,10 @@ class VendorTokenReceivedSubscriber extends ConsumerFactory {
 
     public getTokenSentState() {
         return this.tokenHandler.getTokenState()
+    }
+
+    public setConsumerInstance(consumerInstance: ConsumerFactory) {
+        this.tokenHandler.setConsumerInstance(consumerInstance)
     }
 }
 
@@ -137,7 +156,7 @@ class VendorControllerValdator {
         // Check if Disco is Up
         const checKDisco: boolean | Error =
             await VendorService.buyPowerCheckDiscoUp(transactionRecord.disco);
-        if (!checKDisco) throw new BadRequestError("Disco is currently down");
+        if (!checKDisco && transactionRecord.superagent === 'BUYPOWERNG') throw new BadRequestError("Disco is currently down");
 
         // Check if bankRefId has been used before
         const existingTransaction: Transaction | null =
@@ -344,7 +363,12 @@ class VendorControllerUtil {
         } else if (transaction.superagent === 'BAXI') {
             return await VendorService.baxiValidateMeter(disco, meterNumber, vendType)
         } else if (transaction.superagent === 'IRECHARGE') {
-            return await VendorService.irechargeValidateMeter(disco, meterNumber, transaction.reference)
+            const response = await VendorService.irechargeValidateMeter(disco, meterNumber, transaction.reference)
+            return {
+                name: response.customer.address,
+                address: response.customer.address,
+                access_token: response.access_token
+            }
         } else {
             throw new BadRequestError('Invalid superagent')
         }
@@ -370,10 +394,11 @@ export default class VendorController {
                 amount: "0",
                 status: Status.PENDING,
                 superagent: superagent,
-                paymentType: PaymentType.PAYMENT, 
+                paymentType: PaymentType.PAYMENT,
                 transactionTimestamp: new Date(),
                 disco: disco,
                 partnerId: partnerId,
+                transactionType: TransactionType.ELECTRICITY
             });
 
         const transactionEventService = new EventService.transactionEventService(
@@ -381,7 +406,7 @@ export default class VendorController {
         );
 
         await transactionEventService.addMeterValidationRequestedEvent();
-        VendorPublisher.publishEventForMeterValidationRequested({
+        await VendorPublisher.publishEventForMeterValidationRequested({
             meter: { meterNumber, disco, vendType },
             transactionId: transaction.id,
             superAgent: superagent
@@ -398,37 +423,35 @@ export default class VendorController {
         };
 
         await transactionEventService.addMeterValidationReceivedEvent({ user: userInfo });
-        VendorPublisher.publishEventForMeterValidationReceived({
+        await VendorPublisher.publishEventForMeterValidationReceived({
             meter: { meterNumber, disco, vendType },
             transactionId: transaction.id,
             user: userInfo,
         });
 
         await transactionEventService.addCRMUserInitiatedEvent({ user: userInfo });
-        CRMPublisher.publishEventForInitiatedUser({
+        await CRMPublisher.publishEventForInitiatedUser({
             user: userInfo,
             transactionId: transaction.id,
         })
 
-        // Add User if no record of user in db
-        // const user = await UserService.addUserIfNotExists({
-        //     id: userInfo.id,
-        //     address: response.address,
-        //     email: email,
-        //     name: response.name,
-        //     phoneNumber: phoneNumber,
-        // });
-
-        const user = await UserService.viewSingleUser("fdaba38b-5308-41ab-a773-ae1f38b609bf")
+        // // Add User if no record of user in db
+        const user = await UserService.addUserIfNotExists({
+            id: userInfo.id,
+            address: response.address,
+            email: email,
+            name: response.name,
+            phoneNumber: phoneNumber,
+        });
 
 
         if (!user)
             throw new InternalServerError("An error occured while validating meter");
 
 
-        await transaction.update({ userId: user?.id });
+        await transaction.update({ userId: user?.id, irecharge_token: (response as any).access_token });
         await transactionEventService.addCRMUserConfirmedEvent({ user: userInfo });
-        CRMPublisher.publishEventForConfirmedUser({
+        await CRMPublisher.publishEventForConfirmedUser({
             user: userInfo,
             transactionId: transaction.id,
         })
@@ -440,12 +463,12 @@ export default class VendorController {
                 : await VendorService.baxiCheckDiscoUp(disco).catch((e) => e);
 
         const discoUpEvent = discoUp instanceof Boolean ? await transactionEventService.addDiscoUpEvent() : false
-        discoUpEvent && VendorPublisher.publishEventForDiscoUpCheckConfirmedFromVendor({
+        discoUpEvent && await VendorPublisher.publishEventForDiscoUpCheckConfirmedFromVendor({
             transactionId: transaction.id,
             meter: { meterNumber, disco, vendType },
         })
 
-        // TODO: Publish event for disco up to kafka
+        // // TODO: Publish event for disco up to kafka
 
         const meter: Meter = await MeterService.addMeter({
             id: uuidv4(),
@@ -484,22 +507,27 @@ export default class VendorController {
         });
 
         await transactionEventService.addMeterValidationSentEvent(meter.id);
-        VendorPublisher.publishEventForMeterValidationSentToPartner({
+        await VendorPublisher.publishEventForMeterValidationSentToPartner({
             transactionId: transaction.id,
             meter: { meterNumber, disco, vendType, id: meter.id },
         })
-
     }
 
     static async requestToken(req: Request, res: Response, next: NextFunction) {
-        const { transactionId, bankRefId, bankComment, amount, vendType } =
+        const { transactionId, bankComment, amount, vendType } =
             req.query as Record<string, any>;
+        console.log({ transactionId, bankComment, amount, vendType })
+        const bankRefId = randomUUID()
+        if (parseInt(amount) < 500) {
+            throw new BadRequestError("Amount must be greater than 500");
+        }
 
         const transaction: Transaction | null =
             await TransactionService.viewSingleTransaction(transactionId);
         if (!transaction) {
             throw new NotFoundError("Transaction not found");
         }
+
 
         const meter = await transaction.$get("meter");
         if (!meter) {
@@ -516,17 +544,16 @@ export default class VendorController {
         await transactionEventService.addPowerPurchaseInitiatedEvent(bankRefId, amount);
 
         const { user, partnerEntity } = await VendorControllerValdator.requestToken({ bankRefId, transactionId });
-        await TransactionService.updateSingleTransaction(
-            transactionId,
-            {
-                bankRefId,
-                bankComment,
-                amount,
-                status: Status.PENDING,
-            });
+        await transaction.update({
+            bankRefId: bankRefId,
+            bankComment,
+            amount,
+            status: Status.PENDING,
+        });
 
         const vendorTokenConsumer = new VendorTokenReceivedSubscriber(transaction, res)
         await vendorTokenConsumer.start()
+        vendorTokenConsumer.setConsumerInstance(vendorTokenConsumer)
         try {
             const response = await VendorPublisher.publishEventForInitiatedPowerPurchase({
                 transactionId: transaction.id,
@@ -756,6 +783,10 @@ export default class VendorController {
         const transaction =
             await TransactionService.viewSingleTransactionByBankRefID(bankRefId);
         if (!transaction) throw new NotFoundError("Transaction not found");
+
+        if (transaction.transactionType === TransactionType.AIRTIME) {
+            return await AirtimeVendController.confirmPayment(req, res, next)
+        }
 
         const meter = await transaction.$get("meter");
         if (!meter)

@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const Logger_1 = __importDefault(require("../../../utils/Logger"));
 const config_1 = __importDefault(require("../../config"));
+const crypto_1 = require("crypto");
 class ConsumerFactory {
     constructor(messageProcessor) {
         this.messageProcessor = messageProcessor;
@@ -64,7 +65,8 @@ class ConsumerFactory {
         });
     }
     createKafkaConsumer() {
-        const consumer = config_1.default.consumer({ groupId: this.messageProcessor.getConsumerName() });
+        const uuid = (0, crypto_1.randomUUID)();
+        const consumer = config_1.default.consumer({ groupId: this.messageProcessor.getConsumerName() + uuid });
         return consumer;
     }
 }

@@ -50,7 +50,7 @@ __decorate([
     __metadata("design:type", Number)
 ], PowerUnit.prototype, "tokenNumber", void 0);
 __decorate([
-    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.STRING, allowNull: false, unique: true }),
+    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.STRING, allowNull: false, unique: false }),
     __metadata("design:type", String)
 ], PowerUnit.prototype, "token", void 0);
 __decorate([

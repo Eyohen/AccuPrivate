@@ -15,9 +15,9 @@ require('newrelic');
 const kafkaConfig: kafka.KafkaConfig =
     NODE_ENV === "development"
         ? {
-            //   clientId: KAFKA_CLIENT_ID,
-            //   brokers: [KAFKA_BROKER],
-            //   logLevel: isNaN(parseInt(KAFA_LOGS))? 0 : parseInt(KAFA_LOGS),
+            // clientId: KAFKA_CLIENT_ID,
+            // brokers: [KAFKA_BROKER],
+            // logLevel: isNaN(parseInt(KAFA_LOGS)) ? 0 : parseInt(KAFA_LOGS),
             clientId: KAFKA_CLIENT_ID,
             brokers: [KAFKA_BROKER],
             connectionTimeout: 450000,

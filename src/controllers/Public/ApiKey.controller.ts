@@ -22,7 +22,7 @@ export default class ApiController {
             partner_ = await PartnerService.viewSinglePartnerByEmail(entity.email)
             
         }else{
-            console.log(entity.email)
+            // console.log(entity.email)
             const teammember_ = await TeamMemberProfileService.viewSingleTeamMemberByEmail(entity.email);
             if(!teammember_) throw new InternalServerError('Authenticated teammember not found')
             partner_ = await PartnerService.viewSinglePartner(teammember_.partnerId) 

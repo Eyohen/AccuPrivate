@@ -72,7 +72,7 @@ export const validateApiKey = async (req: Request, res: Response, next: NextFunc
         return next(new UnauthenticatedError('Invalid API key'))
     }
 
-    ApiKeyService.updateLastUsedTime(validApiKey).catch((e) => {
+    await ApiKeyService.updateLastUsedTime(validApiKey).catch((e) => {
         logger.info('Error updating last used time for api key')
     })
 

@@ -121,11 +121,11 @@ export default class AuthController {
         const activationCode = await AuthUtil.generateCode({ type: 'su_activation', entity, expiry: 5 * 60 * 60 })
         const [activationCode1, activationCode2, activationCode3] = activationCode.split(':') as ReturnType<typeof randomUUID>[]
 
-        console.log({
-            activationCode1,
-            activationCode2,
-            activationCode3
-        })
+        // console.log({
+        //     activationCode1,
+        //     activationCode2,
+        //     activationCode3
+        // })
         // Send activation code to 3 Admins
         EmailService.sendEmail({
             to: SU_HOST_EMAIL_1,
@@ -255,11 +255,11 @@ export default class AuthController {
         const [deactivationCode1, deactivationCode2, deactivationCode3] = deactivationCode.split(':') as ReturnType<typeof randomUUID>[]
 
 
-        NODE_ENV === 'development' && console.log({
-            deactivationCode1,
-            deactivationCode2,
-            deactivationCode3
-        })
+        // NODE_ENV === 'development' && console.log({
+        //     deactivationCode1,
+        //     deactivationCode2,
+        //     deactivationCode3
+        // })
         // Send activation code to 3 Admins
         EmailService.sendEmail({
             to: SU_HOST_EMAIL_1,

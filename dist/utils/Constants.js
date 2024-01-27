@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SU_HOST_EMAIL_3 = exports.SU_HOST_EMAIL_2 = exports.SU_HOST_EMAIL_1 = exports.PRIMARY_ROLES = exports.DB_CONFIG = exports.IRECHARGE_VENDOR_CODE = exports.IRECHARGE_PUBLIC_KEY = exports.IRECHARGE_PRIVATE_KEY = exports.DISCO_LOGO = exports.MAX_REQUERY_PER_VENDOR = exports.SENDGRID_API_KEY = exports.KAFKA_BROKER = exports.KAFKA_PASSWORD = exports.KAFKA_USERNAME = exports.KAFKA_CLIENT_ID = exports.ONESIGNAL_APP_ID = exports.ONESIGNAL_API_KEY = exports.CLOUDINARY_API_SECRET = exports.CLOUDINARY_API_KEY = exports.CLOUDINARY_CLOUD_NAME = exports.CRYPTO_PASSWORD = exports.CRYPTO_IV = exports.API_KEY_SECRET = exports.REDIS_URL = exports.REDIS_PORT = exports.REDIS_PASSWORD = exports.REDIS_HOST = exports.ENCRYPTION_KEY = exports.JWT_SECRET = exports.LOGO_URL = exports.OAUTH_ACCESS_TOKEN = exports.OAUTH_REFRESH_TOKEN = exports.OAUTH_CLIENT_SECRET = exports.OAUTH_CLIENT_ID = exports.EMAIL_HOST_ADDRESS = exports.EMAIL_PORT = exports.EMAIL_HOST = exports.KAFA_LOGS = exports.KAFKA_CA_CERT = exports.KAFKA_ENV = exports.NODE_ENV = exports.DEFAULT_ELECTRICITY_PROVIDER = exports.BUYPOWER_TOKEN = exports.BUYPOWER_URL = exports.BAXI_TOKEN = exports.BAXI_URL = void 0;
+exports.SU_HOST_EMAIL_3 = exports.SU_HOST_EMAIL_2 = exports.SU_HOST_EMAIL_1 = exports.PRIMARY_ROLES = exports.DB_CONFIG = exports.IRECHARGE_VENDOR_CODE = exports.IRECHARGE_PUBLIC_KEY = exports.IRECHARGE_PRIVATE_KEY = exports.DISCO_LOGO = exports.MAX_REQUERY_PER_VENDOR = exports.SENDGRID_API_KEY = exports.KAFKA_BROKER = exports.KAFKA_PASSWORD = exports.KAFKA_USERNAME = exports.KAFKA_CLIENT_ID = exports.ONESIGNAL_APP_ID = exports.ONESIGNAL_API_KEY = exports.CLOUDINARY_API_SECRET = exports.CLOUDINARY_API_KEY = exports.CLOUDINARY_CLOUD_NAME = exports.CRYPTO_PASSWORD = exports.CRYPTO_IV = exports.API_KEY_SECRET = exports.REDIS_URL = exports.REDIS_PORT = exports.REDIS_PASSWORD = exports.REDIS_HOST = exports.ENCRYPTION_KEY = exports.JWT_SECRET = exports.LOGO_URL = exports.OAUTH_ACCESS_TOKEN = exports.OAUTH_REFRESH_TOKEN = exports.OAUTH_CLIENT_SECRET = exports.OAUTH_CLIENT_ID = exports.EMAIL_HOST_ADDRESS = exports.EMAIL_PORT = exports.EMAIL_HOST = exports.KAFA_LOGS = exports.KAFKA_CA_CERT = exports.KAFKA_ENV = exports.NODE_ENV = exports.DEFAULT_AIRTIME_PROVIDER = exports.DEFAULT_ELECTRICITY_PROVIDER = exports.BUYPOWER_TOKEN = exports.BUYPOWER_URL = exports.BAXI_TOKEN = exports.BAXI_URL = void 0;
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config(); // Load environment variables from .env file
 const deployed = process.env.DEPLOYED;
@@ -14,6 +14,7 @@ exports.BAXI_TOKEN = process.env.BAXI_TOKEN;
 exports.BUYPOWER_URL = process.env.BUYPOWER_URL;
 exports.BUYPOWER_TOKEN = process.env.BUYPOWER_TOKEN;
 exports.DEFAULT_ELECTRICITY_PROVIDER = process.env.DEFAULT_ELECTRICITY_PROVIDER;
+exports.DEFAULT_AIRTIME_PROVIDER = process.env.DEFAULT_AIRTIME_PROVIDER;
 exports.NODE_ENV = process.env.NODE_ENV;
 exports.KAFKA_ENV = process.env.KAFKA_ENV;
 exports.KAFKA_CA_CERT = process.env.KAFKA_CA_CERT;
@@ -84,3 +85,131 @@ exports.DB_CONFIG = {
 };
 exports.PRIMARY_ROLES = ["Admin", "Partner", "TeamMember", "SuperAdmin"];
 exports.SU_HOST_EMAIL_1 = process.env.SU_HOST_EMAIL_1, exports.SU_HOST_EMAIL_2 = process.env.SU_HOST_EMAIL_2, exports.SU_HOST_EMAIL_3 = process.env.SU_HOST_EMAIL_3;
+const discoProductMapping = {
+    'ECABEPS': {
+        place: 'ABUJA',
+        type: 'POSTPAID',
+        vendors: {
+            Baxi: { discoCode: 'abuja_electric_postpaid', commission: 1.80 },
+            BuyPower: { discoCode: 'ABUJA', commission: 1.80 },
+            iRecharge: { discoCode: 'AEDC', commission: 1.80 }
+        }
+    },
+    'ECEKEPS': {
+        place: 'EKO',
+        type: 'POSTPAID',
+        vendors: {
+            Baxi: { discoCode: 'eko_electric_postpaid', commission: 1.35 },
+            BuyPower: { discoCode: 'EKO', commission: 1.50 },
+            iRecharge: { discoCode: 'Eko_Postpaid', commission: 1.50 }
+        }
+    },
+    'ECIKEPS': {
+        place: 'IKEJA',
+        type: 'POSTPAID',
+        vendors: {
+            Baxi: { discoCode: 'ikeja_electric_postpaid', commission: 1.30 },
+            BuyPower: { discoCode: 'IKEJA', commission: 1.40 },
+            iRecharge: { discoCode: 'Ikeja_Electric_Bill_Payment', commission: 1.20 }
+        }
+    },
+    'ECJOPPS': {
+        place: 'JOS',
+        type: 'POSTPAID',
+        vendors: {
+            Baxi: { discoCode: 'jos_electric_postpaid', commission: 1.80 },
+            BuyPower: { discoCode: 'JOS', commission: 1.50 },
+            iRecharge: { discoCode: 'Jos_Disco_Postpaid', commission: 1.50 }
+        }
+    },
+    'ECKAEPS': {
+        place: 'KADUNA',
+        type: 'POSTPAID',
+        vendors: {
+            Baxi: { discoCode: 'kaduna_electric_postpaid', commission: 2.30 },
+            BuyPower: { discoCode: 'KADUNA', commission: 2.00 },
+            iRecharge: { discoCode: 'Kaduna_Electricity_Disco_Postpaid', commission: 2.00 }
+        }
+    },
+    'ECEKEPE': {
+        place: 'EKO',
+        type: 'PREPAID',
+        vendors: {
+            Baxi: { discoCode: 'eko_electric_prepaid', commission: 1.50 },
+            BuyPower: { discoCode: 'EKO', commission: 1.50 },
+            iRecharge: { discoCode: 'Eko_Prepaid', commission: 1.35 }
+        }
+    },
+    'ECKDEPS': {
+        place: 'KADUNA',
+        type: 'POSTPAID',
+        vendors: {
+            Baxi: { discoCode: 'kaduna_electric_postpaid', commission: 2.30 },
+            BuyPower: { discoCode: 'KADUNA', commission: 2.00 },
+            iRecharge: { discoCode: 'Kaduna_Electricity_Disco_Postpaid', commission: 2.00 }
+        }
+    },
+    'ECJSEPE': {
+        place: 'JOS',
+        type: 'PREPAID',
+        vendors: {
+            Baxi: { discoCode: 'jos_electric_prepaid', commission: 1.80 },
+            BuyPower: { discoCode: 'JOS', commission: 1.50 },
+            iRecharge: { discoCode: 'Jos_Disco', commission: 1.50 }
+        }
+    },
+    'ECJSEPS': {
+        place: 'JOS',
+        type: 'POSTPAID',
+        vendors: {
+            Baxi: { discoCode: 'jos_electric_postpaid', commission: 1.80 },
+            BuyPower: { discoCode: 'JOS', commission: 1.50 },
+            iRecharge: { discoCode: 'Jos_Disco_Postpaid', commission: 1.50 }
+        }
+    },
+    'ECPHEPE': {
+        place: 'PORT-HARCOURT',
+        type: 'PREPAID',
+        vendors: {
+            Baxi: { discoCode: 'portharcourt_electric_prepaid', commission: 1.80 },
+            BuyPower: { discoCode: 'PH', commission: 1.50 },
+            iRecharge: { discoCode: 'PH_Disco', commission: 1.50 }
+        }
+    },
+    'ECPHEPS': {
+        place: 'PORT-HARCOURT',
+        type: 'POSTPAID',
+        vendors: {
+            Baxi: { discoCode: 'portharcourt_electric_postpaid', commission: 1.80 },
+            BuyPower: { discoCode: 'PH', commission: 1.50 },
+            iRecharge: { discoCode: 'PH_Disco', commission: 1.50 }
+        }
+    },
+    'ECBNEPS': {
+        place: 'BENIN',
+        type: 'POSTPAID',
+        vendors: {
+            Baxi: { discoCode: 'ECBNEPS', commission: 2.20 },
+            BuyPower: { discoCode: 'BENIN', commission: 2.20 },
+            iRecharge: { discoCode: 'Benin', commission: 2.20 }
+        }
+    },
+    'ECBNEPE': {
+        place: 'BENIN',
+        type: 'PREPAID',
+        vendors: {
+            Baxi: { discoCode: 'ECBNEPE', commission: 2.20 },
+            BuyPower: { discoCode: 'BENIN', commission: 2.20 },
+            iRecharge: { discoCode: 'Benin', commission: 2.20 }
+        }
+    },
+    'ECAHBEPS': {
+        place: 'YOLA',
+        type: 'POSTPAID',
+        vendors: {
+            Baxi: { discoCode: 'YOLA', commission: 1.80 },
+            BuyPower: { discoCode: 'YOLA', commission: 1.80 },
+            iRecharge: { discoCode: 'YOLA', commission: 1.20 }
+        }
+    },
+};

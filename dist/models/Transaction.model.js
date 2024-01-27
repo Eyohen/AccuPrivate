@@ -8,11 +8,20 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PaymentType = exports.Status = void 0;
+exports.TransactionType = exports.PaymentType = exports.Status = void 0;
 // Import necessary modules and dependencies
 const sequelize_typescript_1 = require("sequelize-typescript");
 const User_model_1 = __importDefault(require("./User.model"));
@@ -35,8 +44,42 @@ var PaymentType;
     PaymentType["REVERSAL"] = "REVERSAL";
     PaymentType["PAYMENT"] = "PAYMENT";
 })(PaymentType || (exports.PaymentType = PaymentType = {}));
+var TransactionType;
+(function (TransactionType) {
+    TransactionType["AIRTIME"] = "AIRTIME";
+    TransactionType["ELECTRICITY"] = "ELECTRICITY";
+    TransactionType["DATA"] = "DATA";
+    TransactionType["CABLE"] = "CABLE";
+})(TransactionType || (exports.TransactionType = TransactionType = {}));
 // Define the Sequelize model for the "Transaction" table
 let Transaction = class Transaction extends sequelize_typescript_1.Model {
+    static checkIfAccesstokenExistForIRecharge(transaction) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (transaction.superagent === 'IRECHARGE') {
+                if (!transaction.irecharge_token) {
+                    // throw new Error('irecharge_token is required')
+                }
+            }
+        });
+    }
+    static checkIfDiscoExistForElectricity(transaction) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (transaction.transactionType === TransactionType.ELECTRICITY) {
+                if (!transaction.disco) {
+                    throw new Error('disco is required');
+                }
+            }
+        });
+    }
+    static checkDiscoForAirtime(transaction) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (transaction.transactionType === TransactionType.AIRTIME) {
+                if (['MTN', 'GLO', 'AIRTEL', '9MOBILE', 'ETISALAT'].indexOf(transaction.disco.toUpperCase()) === -1) {
+                    throw new Error('disco is required');
+                }
+            }
+        });
+    }
 };
 __decorate([
     (0, sequelize_typescript_1.IsUUID)(4),
@@ -81,11 +124,19 @@ __decorate([
     __metadata("design:type", String)
 ], Transaction.prototype, "reference", void 0);
 __decorate([
+    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.STRING, allowNull: true }),
+    __metadata("design:type", String)
+], Transaction.prototype, "irecharge_token", void 0);
+__decorate([
     (0, sequelize_typescript_1.ForeignKey)(() => User_model_1.default),
     (0, sequelize_typescript_1.IsUUID)(4),
     sequelize_typescript_1.Column,
     __metadata("design:type", String)
 ], Transaction.prototype, "userId", void 0);
+__decorate([
+    (0, sequelize_typescript_1.Column)({ type: sequelize_typescript_1.DataType.ENUM, values: Object.values(TransactionType), allowNull: true }),
+    __metadata("design:type", String)
+], Transaction.prototype, "transactionType", void 0);
 __decorate([
     (0, sequelize_typescript_1.BelongsTo)(() => User_model_1.default),
     __metadata("design:type", User_model_1.default)
@@ -140,6 +191,24 @@ __decorate([
     }),
     __metadata("design:type", Date)
 ], Transaction.prototype, "updatedAt", void 0);
+__decorate([
+    sequelize_typescript_1.BeforeCreate,
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Transaction]),
+    __metadata("design:returntype", Promise)
+], Transaction, "checkIfAccesstokenExistForIRecharge", null);
+__decorate([
+    sequelize_typescript_1.BeforeCreate,
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Transaction]),
+    __metadata("design:returntype", Promise)
+], Transaction, "checkIfDiscoExistForElectricity", null);
+__decorate([
+    sequelize_typescript_1.BeforeCreate,
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Transaction]),
+    __metadata("design:returntype", Promise)
+], Transaction, "checkDiscoForAirtime", null);
 Transaction = __decorate([
     sequelize_typescript_1.Table
 ], Transaction);

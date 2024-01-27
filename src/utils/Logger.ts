@@ -31,8 +31,11 @@ const logger = winston.createLogger({
                 }),
                 logFormat,
             ),
+            silent: true
         }),
     ]
 });
+
+
 
 export default logger;

@@ -40,7 +40,7 @@ const Entity_service_1 = __importDefault(require("../../../services/Entity/Entit
 const Event_service_1 = __importDefault(require("../../../services/Event.service"));
 const Notification_service_1 = __importDefault(require("../../../services/Notification.service"));
 const Transaction_service_1 = __importDefault(require("../../../services/Transaction.service"));
-const TransactionEvent_service_1 = __importDefault(require("../../../services/TransactionEvent.service"));
+const TransactionEvent_service_1 = __importStar(require("../../../services/TransactionEvent.service"));
 const Email_1 = __importStar(require("../../../utils/Email"));
 const Logger_1 = __importDefault(require("../../../utils/Logger"));
 const Notification_1 = __importDefault(require("../../../utils/Notification"));
@@ -106,6 +106,57 @@ class NotificationHandler extends Interface_1.Registry {
             return;
         });
     }
+    static handleReceivedAirtime(data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            Logger_1.default.info('Inside notification handler');
+            const transaction = yield Transaction_service_1.default.viewSingleTransaction(data.transactionId);
+            if (!transaction) {
+                throw new Error(`Error fetching transaction with id ${data.transactionId}`);
+            }
+            const partnerEntity = yield Entity_service_1.default.viewSingleEntityByEmail(transaction.partner.email);
+            if (!partnerEntity) {
+                throw new Error(`Error fetching partner with email ${transaction.partner.email}`);
+            }
+            // Add notification successfull transaction
+            const notification = yield Notification_service_1.default.addNotification({
+                id: (0, uuid_1.v4)(),
+                title: "Successful transaction",
+                heading: "Successful ransaction",
+                message: `
+                Successtul transaction for ${data.phone.phoneNumber} with amount ${transaction.amount}
+
+                Bank Ref: ${transaction.bankRefId}
+                Bank Comment: ${transaction.bankComment}
+                Transaction Id: ${transaction.id},
+                Phone number: ${data.phone.phoneNumber}                    
+                `,
+                entityId: partnerEntity.id,
+                read: false,
+            });
+            // Check if notifiecations have been sent to partner and user
+            const notifyPartnerEvent = yield Event_service_1.default.viewSingleEventByTransactionIdAndType(transaction.id, Constants_1.TOPICS.TOKEN_SENT_TO_PARTNER);
+            const notifyUserEvent = yield Event_service_1.default.viewSingleEventByTransactionIdAndType(transaction.id, Constants_1.TOPICS.TOKEN_SENT_TO_EMAIL);
+            const transactionEventService = new TransactionEvent_service_1.AirtimeTransactionEventService(transaction, transaction.superagent, transaction.partner.email, data.phone.phoneNumber);
+            // If you've not notified the partner before, notify them
+            if (!notifyPartnerEvent) {
+                yield Notification_1.default.sendNotificationToUser(partnerEntity.id, notification);
+                yield transactionEventService.addAirtimeSentToPartner();
+            }
+            // If you've not notified the user before, notify them
+            if (!notifyUserEvent) {
+                yield Email_1.default.sendEmail({
+                    to: transaction.user.email,
+                    subject: "Token Purchase",
+                    html: yield new Email_1.EmailTemplate().airTimeReceipt({
+                        transaction: transaction,
+                        phoneNumber: data.phone.phoneNumber,
+                    }),
+                });
+                yield transactionEventService.addAirtimeSentToUserEmail();
+            }
+            return;
+        });
+    }
     static failedTokenRequest(data) {
         return __awaiter(this, void 0, void 0, function* () {
             Logger_1.default.info('Inside notification handler');
@@ -164,7 +215,8 @@ _a = NotificationHandler;
 NotificationHandler.registry = {
     [Constants_1.TOPICS.TOKEN_SENT_TO_PARTNER_RETRY]: _a.handleReceivedToken,
     [Constants_1.TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: _a.handleReceivedToken,
-    [Constants_1.TOPICS.TOKEN_REQUEST_FAILED]: _a.failedTokenRequest
+    [Constants_1.TOPICS.TOKEN_REQUEST_FAILED]: _a.failedTokenRequest,
+    [Constants_1.TOPICS.AIRTIME_RECEIVED_FROM_VENDOR]: _a.handleReceivedAirtime,
 };
 class NotificationConsumer extends Consumer_1.default {
     constructor() {

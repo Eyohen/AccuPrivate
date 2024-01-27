@@ -76,6 +76,7 @@ class MessageProcessorFactory {
                 Logger_1.default.info('Committing offsets...');
             }
             catch (error) {
+                console.error(error);
                 Logger_1.default.warn(error.message);
             }
         });
