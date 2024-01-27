@@ -19,8 +19,10 @@ import {
 import MessageProcessor from "../util/MessageProcessor";
 import { v4 as uuidv4 } from "uuid";
 import EventService from "../../../services/Event.service";
-import VendorService, { SuccessResponseForBuyPowerRequery, VendorAirtimeService } from "../../../services/Vendor.service";
+import VendorService, { Prettify, SuccessResponseForBuyPowerRequery, VendorAirtimeService } from "../../../services/Vendor.service";
 import { generateRandomToken } from "../../../utils/Helper";
+import BuypowerApi from "../../../services/Vendor.service/Buypower";
+import { IRechargeApi } from "../../../services/Vendor.service/Irecharge";
 
 interface EventMessage {
     phone: {
@@ -43,8 +45,8 @@ interface TriggerRequeryTransactionTokenProps {
     retryCount: number;
 }
 
-interface TokenPurchaseData {
-    transaction: Transaction,
+interface TokenPurchaseData<T = 'IRECHARGE'> {
+    transaction: Omit<Transaction, 'superagent'> & { superagent: T },
     phoneNumber: string,
     email: string,
     amount: number,
@@ -52,10 +54,9 @@ interface TokenPurchaseData {
     serviceProvider: 'MTN' | 'GLO' | 'AIRTEL' | '9MOBILE',
 }
 
-interface ProcessVendRequestReturnData extends Record<Transaction['superagent'], Record<string, any>> {
-    'BAXI': Awaited<ReturnType<typeof VendorService.baxiVendToken>>
-    'BUYPOWERNG': Awaited<ReturnType<typeof VendorService.buyPowerVendToken>>,
-    'IRECHARGE': Awaited<ReturnType<typeof VendorService.irechargeVendToken>>
+interface ProcessVendRequestReturnData {
+    'BUYPOWERNG': Awaited<ReturnType<typeof BuypowerApi.Airtime.purchase>>,
+    'IRECHARGE': Awaited<ReturnType<typeof IRechargeApi.Airtime.purchase>>,
 }
 
 const retry = {
@@ -188,21 +189,33 @@ export class TokenHandlerUtil {
         })
     }
 
-    static async processVendRequest(data: TokenPurchaseData) {
-        switch (data.transaction.superagent) {
+    static async processVendRequest<T extends 'IRECHARGE'>({ transaction, ...data }: TokenPurchaseData<T>): Promise<ProcessVendRequestReturnData[T]> {
+        const _data = {
+            accountNumber: data.accountNumber,
+            phoneNumber: data.phoneNumber,
+            serviceType: data.serviceProvider,
+            amount: data.amount,
+            email: data.email,
+            reference: transaction.reference,
+        }
+
+        switch (transaction.superagent) {
             // case "BAXI":
             //     return await VendorService.baxiVendToken(_data)
-            case "BUYPOWERNG":
-                return await VendorService.purchaseAirtime({ data: {
-                    accountNumber: data.accountNumber,
-                    phoneNumber: data.phoneNumber,
-                    serviceType: data.serviceProvider,
-                    amount: data.amount,
-                    email: data.email,
-                    reference: data.transaction.reference,
-                }, vendor: 'BUYPOWERNG' }).then(response => ({ ...response, source: 'BUYPOWERNG' }))
-            // case "IRECHARGE":
-            //     return await VendorService.irechargeVendToken(_data)
+            // case "BUYPOWERNG":
+            //     return await VendorService.purchaseAirtime({
+            //         data: {
+            //             accountNumber: data.accountNumber,
+            //             phoneNumber: data.phoneNumber,
+            //             serviceType: data.serviceProvider,
+            //             amount: data.amount,
+            //             email: data.email,
+            //             reference: transaction.reference,
+            //         }, vendor: 'BUYPOWERNG'
+            //     }).then(response => ({ ...response, source: 'BUYPOWERNG' }))
+            case "IRECHARGE":
+                return await VendorService.purchaseAirtime({ data: _data, vendor: 'IRECHARGE' })
+                    .then(response => ({ ...response, source: 'IRECHARGE' }))
             default:
                 throw new Error("Invalid superagent");
         }
@@ -275,7 +288,7 @@ class TokenHandler extends Registry {
 
         const { user, partner } = transaction;
 
-        if ( transaction.superagent === 'BAXI') {
+        if (transaction.superagent === 'BAXI') {
             throw 'Unsupported superagent'
         }
 
@@ -289,16 +302,7 @@ class TokenHandler extends Registry {
             serviceProvider: transaction.disco as TokenPurchaseData['serviceProvider'],
         });
 
-        const eventMessage = {
-            phone: data.phone,
-            transactionId: transaction.id,
-            error: {
-                code: (tokenInfo instanceof AxiosError
-                    ? tokenInfo.response?.data?.responseCode
-                    : undefined) as number | 0,
-                cause: TransactionErrorCause.UNKNOWN,
-            },
-        };
+        const error = { code: 202, cause: TransactionErrorCause.UNKNOWN }
         const transactionEventService = new AirtimeTransactionEventService(
             transaction,
             data.superAgent,
@@ -307,72 +311,52 @@ class TokenHandler extends Registry {
         );
         await transactionEventService.addVendAirtimeRequestedFromVendorEvent();
 
-        // Check if error occured while purchasing token
-        // Note that Irecharge api always returns 200, even when an error occurs
-        if (tokenInfo instanceof Error) {
-            if (tokenInfo instanceof AxiosError) {
-                /**
-                 * Note that these error codes are only valid for Buypower
-                 * 202 - Timeout / Transaction is processing
-                 * 501 - Maintenance error
-                 * 500 - Unexpected error - Please requery
-                 */
-                // If error is due to timeout, trigger event to requery transactioPn later
-                let responseCode = tokenInfo.response?.data.responseCode as keyof typeof TransactionErrorCodeAndCause;
-                responseCode = tokenInfo.message === 'Transaction timeout' ? 202 : responseCode
-
-                if (tokenInfo.source === 'BUYPOWERNG' && [202, 500, 501].includes(responseCode)) {
-                    return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
-                        {
-                            eventService: transactionEventService,
-                            retryCount: 1,
-                            superAgent: data.superAgent,
-                            transactionTimedOutFromBuypower: false,
-                            eventData: { ...eventMessage, error: { code: responseCode, cause: TransactionErrorCodeAndCause[responseCode] } },
-                        },
-                    );
-                }
-
-                // This doesn't account for other errors that may arise from other Providers
-                // Other errors (4xx ...) occured while purchasing token 
-            }
-
-            // Transaction failed, trigger event to retry transaction from scratch
-            /* Commmented out because no transaction should be allowed to fail, any failed transaction should be retried with a different vendor
-            await transactionEventService.addTokenRequestFailedNotificationToPartnerEvent();
-            return await VendorPublisher.publishEventForFailedTokenRequest(eventMessage); */
-            return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ transaction, transactionEventService, phone: data.phone })
+        let requeryFromNewVendor = false
+        let requeryFromSameVendor = false
+        let transactionFailed = !['00', '15', '43'].includes(tokenInfo.status)
+        const transactionSuccessFul = tokenInfo.status === '00'
+        transactionFailed = TEST_FAILED ? retry.count > retry.retryCountBeforeSwitchingVendor : transactionFailed // TOGGLE - Will simulate failed irecharge transaction
+        if (transactionFailed) requeryFromNewVendor = true
+        else {
+            requeryFromSameVendor = true
+            error.code = tokenInfo.status === '00' ? 200 : 202
+            error.cause = tokenInfo.status === '00' ? TransactionErrorCause.TRANSACTION_TIMEDOUT : TransactionErrorCause.TRANSACTION_FAILED
         }
 
-        /**
-         * Vend token request didn't return an error, but there are two possible outcomes in this case
-         *
-         * 1. Transaction timedout
-         * 2. No token was found in the response
-         * 3. Transaction was successful and a token was found in the response
-         *
-         * In the case of 1 and 2, we need to requery the transaction at intervals
-         */
-        let transactionTimedOutFromBuypower = tokenInfo.source === 'BUYPOWERNG' ? tokenInfo.data.responseCode == 202 : false // TODO: Add check for when transaction timeout from baxi
+        console.log({
+            status: tokenInfo.status,
+            transactionFailed,
+            requeryFromNewVendor,
+            requeryFromSameVendor,
+        })
 
+        const eventMessage = {
+            phone: data.phone,
+            transactionId: transaction.id,
+            error: error,
+        };
 
-        // If Transaction timedout - Requery the transaction at intervals
-        transactionTimedOutFromBuypower = TEST_FAILED ?? transactionTimedOutFromBuypower
-        if (transactionTimedOutFromBuypower) {
+        if (!transactionSuccessFul) {
+            if (requeryFromNewVendor) {
+                return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ phone: data.phone, transaction, transactionEventService })
+            }
+
             return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
                 {
                     eventService: transactionEventService,
                     eventData: eventMessage,
-                    transactionTimedOutFromBuypower,
-                    superAgent: transaction.superagent,
                     retryCount: 1,
+                    superAgent: data.superAgent,
+                    transactionTimedOutFromBuypower: true,
                 },
             );
         }
+        // If Transaction timedout - Requery the transaction at intervals
 
         // Token purchase was successful
         // And token was found in request
         // Add and publish token received event
+        await transaction.update({ irecharge_token: tokenInfo.ref })
         await transactionEventService.addAirtimeReceivedFromVendorEvent();
         return await VendorPublisher.publishEventForAirtimeReceivedFromVendor({
             transactionId: transaction!.id,
@@ -412,11 +396,11 @@ class TokenHandler extends Registry {
         const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction);
         const requeryResultFromBuypower = requeryResult as Awaited<ReturnType<typeof VendorService.buyPowerRequeryTransaction>>
         // const requeryResultFromBaxi = requeryResult as Awaited<ReturnType<typeof VendorService.baxiRequeryTransaction>>
-        // const requeryResultFromIrecharge = requeryResult as Awaited<ReturnType<typeof VendorService.irechargeRequeryTransaction>>
+        const requeryResultFromIrecharge = requeryResult as Awaited<ReturnType<typeof VendorService.irechargeRequeryTransaction>>
 
         const transactionSuccessFromBuypower = requeryResultFromBuypower.source === 'BUYPOWERNG' ? requeryResultFromBuypower.responseCode === 200 : false
         // const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false
-        // const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' : false
+        const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' : false
 
         const transactionEventService = new AirtimeTransactionEventService(
             transaction,
@@ -424,7 +408,15 @@ class TokenHandler extends Registry {
             transaction.partner.email,
             data.phone.phoneNumber,
         );
-        const transactionSuccess = transactionSuccessFromBuypower
+        const transactionSuccess = transactionSuccessFromBuypower || transactionSuccessFromIrecharge
+
+        console.log({
+            stage: 'Token received',
+            transactionSuccess,
+            transactionSuccessFromBuypower,
+            transactionSuccessFromIrecharge,
+            requeryResult
+        })
         if (!transactionSuccess) {
             await transactionEventService.addAirtimeTransactionRequery()
             await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor({
@@ -491,11 +483,11 @@ class TokenHandler extends Registry {
         const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction)
         const requeryResultFromBuypower = requeryResult as Awaited<ReturnType<typeof VendorService.buyPowerRequeryTransaction>>
         // const requeryResultFromBaxi = requeryResult as Awaited<ReturnType<typeof VendorService.baxiRequeryTransaction>>
-        // const requeryResultFromIrecharge = requeryResult as Awaited<ReturnType<typeof VendorService.irechargeRequeryTransaction>>
+        const requeryResultFromIrecharge = requeryResult as Awaited<ReturnType<typeof VendorService.irechargeRequeryTransaction>>
 
         const transactionSuccessFromBuypower = requeryResultFromBuypower.source === 'BUYPOWERNG' ? requeryResultFromBuypower.responseCode === 200 : false
         // const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false
-        // const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' : false
+        const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' : false
 
         const transactionSuccess = TEST_FAILED ? false : transactionSuccessFromBuypower
         // console.log({ transactionSuccess, transactionSuccessFromBuypower, transactionSuccessFromBaxi, transactionSuccessFromIrecharge })
@@ -527,19 +519,26 @@ class TokenHandler extends Registry {
                 // TODO: Add logic to handle baxi requery
             } else if (requeryResult.source === 'IRECHARGE') {
                 // console.log(`
-                
+
                 //     SHIFTING
-                
+
                 // `)
-                // let transactionFailed = !['00', '15', '43'].includes(requeryResultFromIrecharge.status)
-                // transactionFailed = TEST_FAILED ? retry.count > retry.retryCountBeforeSwitchingVendor : transactionFailed // TOGGLE - Will simulate failed irecharge transaction
-                // if (transactionFailed) requeryFromNewVendor = true
-                // else {
-                //     requeryFromSameVendor = true
-                //     error.code = requeryResultFromIrecharge.status === '00' ? 200 : 202
-                //     error.cause = requeryResultFromIrecharge.status === '00' ? TransactionErrorCause.TRANSACTION_TIMEDOUT : TransactionErrorCause.TRANSACTION_FAILED
-                // }
+                let transactionFailed = !['00', '15', '43'].includes(requeryResultFromIrecharge.status)
+                transactionFailed = TEST_FAILED ? retry.count > retry.retryCountBeforeSwitchingVendor : transactionFailed // TOGGLE - Will simulate failed irecharge transaction
+                if (transactionFailed) requeryFromNewVendor = true
+                else {
+                    requeryFromSameVendor = true
+                    error.code = requeryResultFromIrecharge.status === '00' ? 200 : 202
+                    error.cause = requeryResultFromIrecharge.status === '00' ? TransactionErrorCause.TRANSACTION_TIMEDOUT : TransactionErrorCause.TRANSACTION_FAILED
+                }
             }
+
+            console.log({
+                requeryFromNewVendor,
+                requeryFromSameVendor,
+                error,
+                requeryResult
+            })
 
             logger.error(
                 `Error requerying transaction with id ${data.transactionId} 1213 `,
@@ -586,7 +585,6 @@ class TokenHandler extends Registry {
         [TOPICS.AIRTIME_PURCHASE_INITIATED_BY_CUSTOMER]: this.handleAirtimeRequest,
         [TOPICS.AIRTIME_RECEIVED_FROM_VENDOR]: this.handleAirtimeRecievd,
         [TOPICS.GET_AIRTIME_FROM_VENDOR_RETRY]: this.requeryTransaction,
-        [TOPICS.AIRTIME_TRANSACTION_REQUERY]: this.retryPowerPurchaseWithNewVendor,
         [TOPICS.AIRTIME_PURCHASE_RETRY_FROM_NEW_VENDOR]: this.retryPowerPurchaseWithNewVendor,
     };
 }
