@@ -63,10 +63,7 @@ export default class ProductController {
         const productCode = await ProductService.viewSingleProductCode(productCodeId);
 
         if (!productCode) {
-            return res.status(404).json({
-                status: 'error',
-                message: 'Product code not found',
-            });
+            throw new NotFoundError('Product code not found');
         }
 
         res.status(200).json({

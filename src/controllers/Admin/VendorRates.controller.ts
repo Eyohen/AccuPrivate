@@ -64,10 +64,7 @@ export default class VendorRatesController {
         const vendorRate = await ProductService.viewSingleVendorRate(vendorRateId);
 
         if (!vendorRate) {
-            return res.status(404).json({
-                status: 'error',
-                message: 'Vendor rate not found',
-            });
+            throw new NotFoundError('Vendor rate not found');
         }
 
         res.status(200).json({
