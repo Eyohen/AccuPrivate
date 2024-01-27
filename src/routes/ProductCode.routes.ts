@@ -10,17 +10,17 @@ const router: Router = express.Router();
 
 // ProductCode-related routes
 router
-    .post('/', basicAuth('access'), RBACMiddleware.validateRole([RoleEnum.Admin]), AuthenticatedController(ProductController.createProductCode))
-    .patch('/', basicAuth('access'), RBACMiddleware.validateRole([RoleEnum.Admin]), AuthenticatedController(ProductController.updateProductCode))
+    .post('/new', basicAuth('access'), RBACMiddleware.validateRole([RoleEnum.SuperAdmin]), AuthenticatedController(ProductController.createProductCode))
+    .patch('/', basicAuth('access'), RBACMiddleware.validateRole([RoleEnum.SuperAdmin]), AuthenticatedController(ProductController.updateProductCode))
     .get('/', AuthenticatedController(ProductController.getAllProductCodes))
     .get('/info', AuthenticatedController(ProductController.getInfoForProductCode));
 
 
 // VendorRates-related routes
 router
-    .post('/vendorrate', basicAuth('access'), RBACMiddleware.validateRole([RoleEnum.Admin]), AuthenticatedController(VendorRatesController.createVendorRate))
-    .patch('/vendorrate', basicAuth('access'), RBACMiddleware.validateRole([RoleEnum.Admin]), AuthenticatedController(VendorRatesController.updateVendorRate))
-    .get('/vendorrates', AuthenticatedController(VendorRatesController.getAllVendorRates))
-    .get('/vendorrates/info', AuthenticatedController(VendorRatesController.getInfoForVendorRate));
+    .post('/vendorrate/new', basicAuth('access'), RBACMiddleware.validateRole([RoleEnum.SuperAdmin]), AuthenticatedController(VendorRatesController.createVendorRate))
+    .patch('/vendorrate', basicAuth('access'), RBACMiddleware.validateRole([RoleEnum.SuperAdmin]), AuthenticatedController(VendorRatesController.updateVendorRate))
+    .get('/vendorrate', AuthenticatedController(VendorRatesController.getAllVendorRates))
+    .get('/vendorrate/info', AuthenticatedController(VendorRatesController.getInfoForVendorRate));
 
 export default router;

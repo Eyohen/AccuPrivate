@@ -9,6 +9,9 @@ export default class ProductCode extends Model<IProductCode | ProductCode> {
     @IsUUID(4)
     @PrimaryKey
     @Column
+    id: string;
+
+    @Column({ type: DataType.STRING, allowNull: false, unique: true })
     productCode: string;
 
     // Location associated with the product code

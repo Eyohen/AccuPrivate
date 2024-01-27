@@ -2,6 +2,7 @@
 import { Transaction } from "sequelize";
 import ProductCode, { IProductCode } from "../models/ProductCode.model";
 import VendorRates, { IVendorRates } from "../models/VendorRates.model";
+import { NotFoundError } from "../utils/Errors";
 
 // ProductService class for handling product-related operations
 export default class ProductService {
@@ -16,7 +17,7 @@ export default class ProductService {
     static async updateProductCode(productCodeId: string, data: Partial<IProductCode>, transaction?: Transaction): Promise<ProductCode> {
         const productCode = await ProductCode.findByPk(productCodeId);
         if (!productCode) {
-            throw new Error('Product code not found');
+            throw new NotFoundError('Product code not found');
         }
 
         transaction ? await productCode.update(data, { transaction }) : await productCode.update(data);

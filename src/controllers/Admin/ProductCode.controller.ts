@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import ProductService from "../../services/ProductCode.service";
 import { AuthenticatedRequest } from "../../utils/Interface";
 import { BadRequestError, NotFoundError } from "../../utils/Errors";
+import { randomUUID } from "crypto";
 
 export default class ProductController {
 
@@ -12,7 +13,7 @@ export default class ProductController {
             throw new BadRequestError('Location and type are required');
         }
 
-        const data = { location, type, productCode: code };
+        const data = { location, type, productCode: code, id: randomUUID() };
         const productCode = await ProductService.addProductCode(data);
 
         res.status(201).json({
@@ -24,8 +25,7 @@ export default class ProductController {
     }
 
     static async updateProductCode(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { productCodeId } = req.query as { productCodeId: string };
-        const { location, type } = req.body as { location?: string, type?: 'POSTPAID' | 'PREPAID' };
+        const { location, type, productCodeId } = req.body as {productCodeId: string, location?: string, type?: 'POSTPAID' | 'PREPAID' };
 
         if (!location && !type) {
             throw new BadRequestError('Location or type is required');
@@ -60,7 +60,7 @@ export default class ProductController {
     static async getInfoForProductCode(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         const { productCodeId } = req.query as { productCodeId: string };
 
-        const productCode = await ProductService.viewSingleProductCode(productCodeId);
+        const productCode = await ProductService.viewSingleProductCode(productCodeId, true);
 
         if (!productCode) {
             throw new NotFoundError('Product code not found');

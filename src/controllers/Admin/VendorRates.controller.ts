@@ -25,8 +25,7 @@ export default class VendorRatesController {
     }
 
     static async updateVendorRate(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { vendorRateId } = req.query as { vendorRateId: string };
-        const { discoCode, commission } = req.body as { discoCode?: string, commission?: number };
+        const { discoCode, commission, vendorRateId } = req.body as { vendorRateId: string, discoCode?: string, commission?: number };
 
         if (!discoCode && !commission) {
             throw new BadRequestError('At least one of disco code or commission is required for update');
