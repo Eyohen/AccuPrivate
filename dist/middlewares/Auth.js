@@ -72,7 +72,7 @@ const validateApiKey = (req, res, next) => __awaiter(void 0, void 0, void 0, fun
     if (Cypher_1.default.decryptString(currentActiveApiKey) !== apiKey) {
         return next(new Errors_1.UnauthenticatedError('Invalid API key'));
     }
-    ApiKey_service_1.default.updateLastUsedTime(validApiKey).catch((e) => {
+    yield ApiKey_service_1.default.updateLastUsedTime(validApiKey).catch((e) => {
         Logger_1.default.info('Error updating last used time for api key');
     });
     next();

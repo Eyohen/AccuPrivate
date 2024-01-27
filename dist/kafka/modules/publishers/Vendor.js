@@ -371,5 +371,113 @@ class VendorPublisher extends Producer_1.default {
             });
         });
     }
+    // AIRTIME SPECIFIC PUBLISHERS
+    static publshEventForAirtimePurchaseInitiate(data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return Producer_1.default.sendMessage({
+                topic: Constants_1.TOPICS.AIRTIME_PURCHASE_INITIATED_BY_CUSTOMER,
+                message: {
+                    phone: data.phone,
+                    partner: data.partner,
+                    user: data.user,
+                    transactionId: data.transactionId,
+                    superAgent: data.superAgent
+                },
+            }).catch((e) => {
+                Logger_1.default.error(`An error occured while publishing  ${Constants_1.TOPICS.AIRTIME_PURCHASE_INITIATED_BY_CUSTOMER} event for transaction` +
+                    data.transactionId);
+                return e;
+            });
+        });
+    }
+    static publishEventForAirtimeReceivedFromVendor(data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return Producer_1.default.sendMessage({
+                topic: Constants_1.TOPICS.AIRTIME_RECEIVED_FROM_VENDOR,
+                message: {
+                    phone: data.phone,
+                    transactionId: data.transactionId,
+                    partner: data.partner,
+                    user: data.user,
+                },
+            }).catch((e) => {
+                Logger_1.default.error(`An error occured while publishing  ${Constants_1.TOPICS.AIRTIME_RECEIVED_FROM_VENDOR} event for transaction` +
+                    data.transactionId);
+                return e;
+            });
+        });
+    }
+    static publishEventForAirtimeWebhookNotificationSentToPartner(data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return Producer_1.default.sendMessage({
+                topic: Constants_1.TOPICS.AIRTIME_WEBHOOK_NOTIFICATION_SENT_TO_PARTNER,
+                message: {
+                    phone: data.phone,
+                    transactionId: data.transactionId,
+                },
+            }).catch((e) => {
+                Logger_1.default.error(`An error occured while publishing  ${Constants_1.TOPICS.AIRTIME_WEBHOOK_NOTIFICATION_SENT_TO_PARTNER} event for transaction` +
+                    data.transactionId);
+                return e;
+            });
+        });
+    }
+    static publishEventForAirtimePurchaseComplete(data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return Producer_1.default.sendMessage({
+                topic: Constants_1.TOPICS.AIRTIME_TRANSACTION_COMPLETE,
+                message: {
+                    phone: data.phone,
+                    transactionId: data.transactionId,
+                    partner: data.partner,
+                    user: data.user,
+                    superAgent: data.superAgent
+                },
+            }).catch((e) => {
+                Logger_1.default.error(`An error occured while publishing  ${Constants_1.TOPICS.AIRTIME_TRANSACTION_COMPLETE} event for transaction` +
+                    data.transactionId);
+                return e;
+            });
+        });
+    }
+    static publishEventForGetAirtimeFromVendorRetry(data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return Producer_1.default.sendMessage({
+                topic: Constants_1.TOPICS.GET_AIRTIME_FROM_VENDOR_RETRY,
+                message: {
+                    phone: data.phone,
+                    error: data.error,
+                    transactionId: data.transactionId,
+                    timeStamp: data.timeStamp,
+                    retryCount: data.retryCount,
+                    superAgent: data.superAgent,
+                    waitTime: data.waitTime
+                },
+            }).catch((e) => {
+                Logger_1.default.error(`An error occured while publishing ${Constants_1.TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR} event for transaction` +
+                    data.transactionId);
+                return e;
+            });
+        });
+    }
+    static publishEventForAirtimePurchaseRetryFromVendorWithNewVendor(data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return Producer_1.default.sendMessage({
+                topic: Constants_1.TOPICS.AIRTIME_PURCHASE_RETRY_FROM_NEW_VENDOR,
+                message: {
+                    phone: data.phone,
+                    transactionId: data.transactionId,
+                    superAgent: data.superAgent,
+                    newVendor: data.newVendor,
+                    partner: data.partner,
+                    user: data.user
+                }
+            }).catch((e) => {
+                Logger_1.default.error(`An error occured while publishing ${Constants_1.TOPICS.AIRTIME_PURCHASE_RETRY_FROM_NEW_VENDOR} event for transaction` +
+                    data.transactionId);
+                return e;
+            });
+        });
+    }
 }
 exports.VendorPublisher = VendorPublisher;

@@ -122,7 +122,7 @@ class PartnerProfileController {
                 });
             }
             catch (err) {
-                transaction.rollback();
+                yield transaction.rollback();
                 res.status(500).json({
                     status: 'failed',
                     message: 'Partner invited not successfully',
@@ -181,18 +181,24 @@ class PartnerProfileController {
                 let success_Transactions = 0;
                 const element = partners[index];
                 const _failed_Transaction = yield Transaction_service_1.default.viewTransactionsWithCustomQuery({
-                    where: { partnerId: element.id,
-                        status: "FAILED" }
+                    where: {
+                        partnerId: element.id,
+                        status: "FAILED"
+                    }
                 });
                 failed_Transactions = _failed_Transaction.length;
                 const _pending_Transaction = yield Transaction_service_1.default.viewTransactionsWithCustomQuery({
-                    where: { partnerId: element.id,
-                        status: "PENDING" }
+                    where: {
+                        partnerId: element.id,
+                        status: "PENDING"
+                    }
                 });
                 pending_Transactions = _pending_Transaction.length;
                 const _complete_Transaction = yield Transaction_service_1.default.viewTransactionsWithCustomQuery({
-                    where: { partnerId: element.id,
-                        status: "COMPLETE" }
+                    where: {
+                        partnerId: element.id,
+                        status: "COMPLETE"
+                    }
                 });
                 success_Transactions = _complete_Transaction.length;
                 // element.stats = {

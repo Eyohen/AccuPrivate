@@ -30,7 +30,7 @@ class ApiController {
                 partner_ = yield PartnerProfile_service_1.default.viewSinglePartnerByEmail(entity.email);
             }
             else {
-                console.log(entity.email);
+                // console.log(entity.email)
                 const teammember_ = yield Profiles_1.TeamMemberProfileService.viewSingleTeamMemberByEmail(entity.email);
                 if (!teammember_)
                     throw new Errors_1.InternalServerError('Authenticated teammember not found');

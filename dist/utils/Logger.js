@@ -44,6 +44,7 @@ const logger = winston_1.default.createLogger({
             format: winston_1.default.format.combine(winston_1.default.format.timestamp(), winston_1.default.format.colorize({
                 colors: { info: 'cyan', error: 'red' }
             }), logFormat),
+            silent: true
         }),
     ]
 });

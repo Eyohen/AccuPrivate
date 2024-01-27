@@ -131,7 +131,7 @@ class AuthController {
                 });
             }
             catch (err) {
-                transaction.rollback();
+                yield transaction.rollback();
                 res.status(500).json({
                     status: 'failed',
                     message: 'Partner created unsuccessfully',
@@ -196,7 +196,7 @@ class AuthController {
                 });
             }
             catch (err) {
-                transaction.rollback();
+                yield transaction.rollback();
                 res.status(500).json({
                     status: 'failed',
                     message: 'User creation unsuccessfully',

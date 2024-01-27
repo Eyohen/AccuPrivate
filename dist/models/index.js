@@ -27,8 +27,10 @@ const Database = new sequelize_typescript_1.Sequelize(Constants_1.DB_CONFIG.URL,
     logging: false,
     pool: {
         max: 20,
-        min: 1,
-        idle: 10000,
+        min: 0,
+        idle: 1000,
+        acquire: 30000,
+        evict: 10000,
     }
 });
 exports.Database = Database;

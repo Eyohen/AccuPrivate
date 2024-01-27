@@ -150,3 +150,5 @@ conducktor-docker-compose.yml
 ca-certificate.crt
 user-access-key.key
 user-access-certificate.crt
+jmeter.dockerfile
+jmeterold.dockerfile

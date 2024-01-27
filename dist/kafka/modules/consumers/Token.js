@@ -33,9 +33,9 @@ const Helper_1 = require("../../../utils/Helper");
 const retry = {
     count: 0,
     // limit: 5,
-    retryCountBeforeSwitchingVendor: 3,
+    retryCountBeforeSwitchingVendor: 2,
 };
-const TEST_FAILED = false;
+const TEST_FAILED = Constants_1.NODE_ENV === 'production' ? false : false; // TOGGLE - Will simulate failed transaction
 const TransactionErrorCodeAndCause = {
     501: Interface_1.TransactionErrorCause.MAINTENANCE_ACCOUNT_ACTIVATION_REQUIRED,
     500: Interface_1.TransactionErrorCause.UNEXPECTED_ERROR,
@@ -95,7 +95,6 @@ class TokenHandlerUtil {
                     }
                 });
             }
-            console.log({ waitTime: eventMetaData.waitTime });
             countDownTimer(eventMetaData.waitTime);
             // Publish event in increasing intervals of seconds i.e 1, 2, 4, 8, 16, 32, 64, 128, 256, 512
             // TODO: Use an external service to schedule this task
@@ -136,6 +135,9 @@ class TokenHandlerUtil {
     }
     static processVendRequest(data) {
         return __awaiter(this, void 0, void 0, function* () {
+            const user = yield data.transaction.$get('user');
+            if (!user)
+                throw new Error('User not found for transaction');
             const _data = {
                 reference: data.transaction.reference,
                 meterNumber: data.meterNumber,
@@ -143,12 +145,16 @@ class TokenHandlerUtil {
                 vendType: data.vendType,
                 amount: data.transaction.amount,
                 phone: data.phone,
+                email: user.email,
+                accessToken: data.accessToken
             };
             switch (data.transaction.superagent) {
                 case "BAXI":
                     return yield Vendor_service_1.default.baxiVendToken(_data);
                 case "BUYPOWERNG":
                     return yield Vendor_service_1.default.buyPowerVendToken(_data).catch((e) => e);
+                case "IRECHARGE":
+                    return yield Vendor_service_1.default.irechargeVendToken(_data);
                 default:
                     throw new Error("Invalid superagent");
             }
@@ -161,6 +167,8 @@ class TokenHandlerUtil {
                     return yield Vendor_service_1.default.baxiRequeryTransaction({ reference: transaction.reference });
                 case 'BUYPOWERNG':
                     return yield Vendor_service_1.default.buyPowerRequeryTransaction({ reference: transaction.reference });
+                case 'IRECHARGE':
+                    return yield Vendor_service_1.default.irechargeRequeryTransaction({ accessToken: transaction.irecharge_token, serviceType: 'power' });
                 default:
                     throw new Error('Unsupported superagent');
             }
@@ -169,12 +177,12 @@ class TokenHandlerUtil {
     static getNextBestVendorForVendRePurchase(currentVendor) {
         return __awaiter(this, void 0, void 0, function* () {
             // TODO: Implement logic to calculate best rates from different vendors
-            if (currentVendor === 'BUYPOWERNG')
-                return 'BAXI';
-            else if (currentVendor === 'BAXI')
-                return 'BUYPOWERNG';
-            else
-                throw new Error('Invalid superagent');
+            const nextVendor = {
+                BUYPOWERNG: 'BAXI',
+                BAXI: 'IRECHARGE',
+                IRECHARGE: 'BUYPOWERNG'
+            };
+            return nextVendor[currentVendor];
         });
     }
 }
@@ -214,9 +222,9 @@ class TokenHandler extends Interface_1.Registry {
                 return;
             }
             const { user, meter, partner } = transaction;
-            if (transaction.superagent === 'IRECHARGE') {
-                throw 'Unsupported superagent';
-            }
+            // if (transaction.superagent === 'IRECHARGE') {
+            //     throw 'Unsupported superagent'
+            // }
             // Purchase token from vendor
             const tokenInfo = yield TokenHandlerUtil.processVendRequest({
                 transaction: transaction,
@@ -224,6 +232,7 @@ class TokenHandler extends Interface_1.Registry {
                 disco: transaction.disco,
                 vendType: meter.vendType,
                 phone: user.phoneNumber,
+                accessToken: transaction.irecharge_token
             });
             const eventMessage = {
                 meter: {
@@ -243,7 +252,10 @@ class TokenHandler extends Interface_1.Registry {
             const transactionEventService = new TransactionEvent_service_1.default(transaction, eventMessage.meter, data.superAgent, partner.email);
             yield transactionEventService.addGetTransactionTokenFromVendorInitiatedEvent();
             yield transactionEventService.addVendElectricityRequestedFromVendorEvent();
+            const responseFromIrecharge = tokenInfo;
+            const transactionTimedOutFromIrecharge = responseFromIrecharge.source === 'IRECHARGE' ? ['15', '43'].includes(responseFromIrecharge.status) : false;
             // Check if error occured while purchasing token
+            // Note that Irecharge api always returns 200, even when an error occurs
             if (tokenInfo instanceof Error) {
                 if (tokenInfo instanceof axios_1.AxiosError) {
                     /**
@@ -252,7 +264,7 @@ class TokenHandler extends Interface_1.Registry {
                      * 501 - Maintenance error
                      * 500 - Unexpected error - Please requery
                      */
-                    // If error is due to timeout, trigger event to requery transaction later
+                    // If error is due to timeout, trigger event to requery transactioPn later
                     let responseCode = (_d = tokenInfo.response) === null || _d === void 0 ? void 0 : _d.data.responseCode;
                     responseCode = tokenInfo.message === 'Transaction timeout' ? 202 : responseCode;
                     if (tokenInfo.source === 'BUYPOWERNG' && [202, 500, 501].includes(responseCode)) {
@@ -291,9 +303,12 @@ class TokenHandler extends Interface_1.Registry {
             else if (tokenInfo.source === 'BAXI') {
                 tokenInResponse = tokenInfo.data.rawOutput.token;
             }
-            // Transaction timedout from buypower - Requery the transactio at intervals
-            transactionTimedOutFromBuypower = TEST_FAILED !== null && TEST_FAILED !== void 0 ? TEST_FAILED : transactionTimedOutFromBuypower; // TOGGLE  Use this To test for failed token request - Proceeds to requery transaction
-            if (transactionTimedOutFromBuypower || !tokenInResponse) {
+            else if (tokenInfo.source === 'IRECHARGE') {
+                tokenInResponse = tokenInfo.meter_token;
+            }
+            // If Transaction timedout - Requery the transaction at intervals
+            transactionTimedOutFromBuypower = TEST_FAILED !== null && TEST_FAILED !== void 0 ? TEST_FAILED : transactionTimedOutFromBuypower;
+            if (transactionTimedOutFromBuypower || !tokenInResponse || transactionTimedOutFromIrecharge) {
                 return yield TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor({
                     eventService: transactionEventService,
                     eventData: eventMessage,
@@ -329,6 +344,7 @@ class TokenHandler extends Interface_1.Registry {
         });
     }
     static handleTokenReceived(data) {
+        var _b;
         return __awaiter(this, void 0, void 0, function* () {
             const transaction = yield Transaction_service_1.default.viewSingleTransaction(data.transactionId);
             if (!transaction) {
@@ -340,7 +356,13 @@ class TokenHandler extends Interface_1.Registry {
             }
             // Requery transaction from provider and update transaction status
             const requeryResult = yield TokenHandlerUtil.requeryTransactionFromVendor(transaction);
-            const transactionSuccess = requeryResult.responseCode === 200;
+            const requeryResultFromBuypower = requeryResult;
+            const requeryResultFromBaxi = requeryResult;
+            const requeryResultFromIrecharge = requeryResult;
+            const transactionSuccessFromBuypower = requeryResultFromBuypower.source === 'BUYPOWERNG' ? requeryResultFromBuypower.responseCode === 200 : false;
+            const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false;
+            const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' : false;
+            const transactionSuccess = transactionSuccessFromBuypower || transactionSuccessFromBaxi || transactionSuccessFromIrecharge;
             if (!transactionSuccess) {
                 throw new Error(`Error requerying transaction with id ${data.transactionId}`);
             }
@@ -348,7 +370,7 @@ class TokenHandler extends Interface_1.Registry {
             let powerUnit = yield PowerUnit_service_1.default.viewSinglePowerUnitByTransactionId(data.transactionId);
             // BuyPower returnes the same token on test mode, this causes a conflict when trying to update the power unit
             data.meter.token = Constants_1.NODE_ENV === 'development' ? data.meter.token === '0000-0000-0000-0000-0000' ? (0, Helper_1.generateRandomToken)() : data.meter.token : data.meter.token;
-            const discoLogo = Constants_1.DISCO_LOGO[data.meter.disco];
+            const discoLogo = (_b = Constants_1.DISCO_LOGO[data.meter.disco]) !== null && _b !== void 0 ? _b : Constants_1.LOGO_URL;
             powerUnit = powerUnit
                 ? yield PowerUnit_service_1.default.updateSinglePowerUnit(powerUnit.id, {
                     token: data.meter.token,
@@ -374,9 +396,12 @@ class TokenHandler extends Interface_1.Registry {
         });
     }
     static requeryTransactionForToken(data) {
-        var _b;
+        var _b, _c;
         return __awaiter(this, void 0, void 0, function* () {
             retry.count = data.retryCount;
+            console.log({
+                retryCount: data.retryCount
+            });
             // Check if token has been found
             const transaction = yield Transaction_service_1.default.viewSingleTransaction(data.transactionId);
             if (!transaction) {
@@ -409,41 +434,78 @@ class TokenHandler extends Interface_1.Registry {
              * When requerying a transaction, the response code is 201.
              */
             const requeryResult = yield TokenHandlerUtil.requeryTransactionFromVendor(transaction);
-            requeryResult.responseCode = TEST_FAILED ? 400 : requeryResult.responseCode; //  TOGGLE - Will simulate Unsuccessful Buypower transaction (NOTE Unsuccessful != Failed)
-            const transactionSuccess = requeryResult.responseCode === 200;
+            const requeryResultFromBuypower = requeryResult;
+            const requeryResultFromBaxi = requeryResult;
+            const requeryResultFromIrecharge = requeryResult;
+            const transactionSuccessFromBuypower = requeryResultFromBuypower.source === 'BUYPOWERNG' ? requeryResultFromBuypower.responseCode === 200 : false;
+            const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false;
+            const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' : false;
+            const transactionSuccess = TEST_FAILED ? false : (transactionSuccessFromBuypower || transactionSuccessFromBaxi || transactionSuccessFromIrecharge);
             if (!transactionSuccess) {
                 /**
                  * Transaction may be unsuccessful but it doesn't mean it has failed
                  * The transaction can still be pending
                  * If transaction failed, switch to a new vendor
                  */
-                let transactionFailed = requeryResult.responseCode === 202;
-                transactionFailed = TEST_FAILED ? retry.count > retry.retryCountBeforeSwitchingVendor : transactionFailed; // TOGGLE - Will simulate failed buypower transaction
-                if (transactionFailed) {
-                    return yield TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({
-                        meter: data.meter, transaction, transactionEventService
-                    });
+                let requeryFromNewVendor = false;
+                let requeryFromSameVendor = false;
+                let error = { code: 202, cause: Interface_1.TransactionErrorCause.UNKNOWN };
+                if (requeryResult.source === 'BUYPOWERNG') {
+                    let transactionFailed = requeryResultFromBuypower.responseCode === 202;
+                    transactionFailed = TEST_FAILED ? retry.count > retry.retryCountBeforeSwitchingVendor : transactionFailed; // TOGGLE - Will simulate failed buypower transaction
+                    if (transactionFailed)
+                        requeryFromNewVendor = true;
+                    else {
+                        requeryFromSameVendor = true;
+                        error.code = requeryResultFromBuypower.responseCode;
+                        error.cause = requeryResultFromBuypower.responseCode === 201 ? Interface_1.TransactionErrorCause.TRANSACTION_TIMEDOUT : Interface_1.TransactionErrorCause.TRANSACTION_FAILED;
+                    }
+                }
+                else if (requeryResult.source === 'BAXI') {
+                    // TODO: Add logic to handle baxi requery
+                }
+                else if (requeryResult.source === 'IRECHARGE') {
+                    console.log(`
+                
+                    SHIFTING
+                
+                `);
+                    let transactionFailed = !['00', '15', '43'].includes(requeryResultFromIrecharge.status);
+                    transactionFailed = TEST_FAILED ? retry.count > retry.retryCountBeforeSwitchingVendor : transactionFailed; // TOGGLE - Will simulate failed irecharge transaction
+                    if (transactionFailed)
+                        requeryFromNewVendor = true;
+                    else {
+                        requeryFromSameVendor = true;
+                        error.code = requeryResultFromIrecharge.status === '00' ? 200 : 202;
+                        error.cause = requeryResultFromIrecharge.status === '00' ? Interface_1.TransactionErrorCause.TRANSACTION_TIMEDOUT : Interface_1.TransactionErrorCause.TRANSACTION_FAILED;
+                    }
                 }
                 Logger_1.default.error(`Error requerying transaction with id ${data.transactionId} `);
-                // TODO: Trigger requery transaction at interval
-                return yield TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor({
-                    eventService: transactionEventService,
-                    eventData: {
-                        meter: data.meter,
-                        transactionId: data.transactionId,
-                        error: {
-                            code: requeryResult.responseCode, cause: requeryResult.responseCode === 201
-                                ? Interface_1.TransactionErrorCause.TRANSACTION_TIMEDOUT
-                                : Interface_1.TransactionErrorCause.TRANSACTION_FAILED
+                if (requeryFromNewVendor) {
+                    return yield TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter, transaction, transactionEventService });
+                }
+                if (requeryFromSameVendor) {
+                    return yield TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor({
+                        eventService: transactionEventService,
+                        eventData: {
+                            meter: data.meter,
+                            transactionId: data.transactionId,
+                            error: error
                         },
-                    },
-                    retryCount: data.retryCount + 1,
-                    superAgent: data.superAgent,
-                    tokenInResponse: null,
-                    transactionTimedOutFromBuypower: false,
-                });
+                        retryCount: data.retryCount + 1,
+                        superAgent: data.superAgent,
+                        tokenInResponse: null,
+                        transactionTimedOutFromBuypower: false,
+                    });
+                }
             }
-            const token = requeryResult.source === 'BAXI' ? (_b = requeryResult.data) === null || _b === void 0 ? void 0 : _b.rawOutput.token : requeryResult.data.token;
+            let token = undefined;
+            if (requeryResult.source === 'BUYPOWERNG')
+                token = (_b = requeryResultFromBuypower.data) === null || _b === void 0 ? void 0 : _b.token;
+            else if (requeryResult.source === 'BAXI')
+                token = (_c = requeryResultFromBaxi.data) === null || _c === void 0 ? void 0 : _c.rawOutput.token;
+            else if (requeryResult.source === 'IRECHARGE')
+                token = requeryResultFromIrecharge.token;
             if (!token) {
                 return yield TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor({
                     eventService: transactionEventService,
