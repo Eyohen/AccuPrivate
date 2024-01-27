@@ -516,7 +516,7 @@ export default class VendorController {
         const { transactionId, bankComment, amount, vendType } =
             req.query as Record<string, any>;
         console.log({ transactionId, bankComment, amount, vendType })
-        const bankRefId = randomUUID()
+        const bankRefId = process.env.LOAD_TEST_MODE ? randomUUID() : req.body.bankRefId;
         if (parseInt(amount) < 500) {
             throw new BadRequestError("Amount must be greater than 500");
         }

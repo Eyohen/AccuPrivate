@@ -31,7 +31,7 @@ const logger = winston.createLogger({
                 }),
                 logFormat,
             ),
-            silent: false
+            silent: true
         }),
     ]
 });

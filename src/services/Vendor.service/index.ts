@@ -233,7 +233,7 @@ export class IRechargeVendorService {
     };
 
     static async requery({ accessToken, serviceType }: { accessToken: string, serviceType: string }) {
-        const combinedString = this.VENDOR_CODE + "|" + (accessToken ? accessToken + "|" : '') + this.PUBLIC_KEY
+        const combinedString = this.VENDOR_CODE + "|" + accessToken + "|" + this.PUBLIC_KEY
         const hash = this.generateHash(combinedString)
 
         const params = {
@@ -244,7 +244,6 @@ export class IRechargeVendorService {
             hash
         }
 
-        console.log({ params })
         const response = await this.client.get<IRechargeRequeryResponse>('/vend_status.php', { params })
 
         return { ...response.data, source: 'IRECHARGE' }
