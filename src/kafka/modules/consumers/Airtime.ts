@@ -323,13 +323,6 @@ class TokenHandler extends Registry {
             error.cause = tokenInfo.status === '00' ? TransactionErrorCause.TRANSACTION_TIMEDOUT : TransactionErrorCause.TRANSACTION_FAILED
         }
 
-        console.log({
-            status: tokenInfo.status,
-            transactionFailed,
-            requeryFromNewVendor,
-            requeryFromSameVendor,
-        })
-
         const eventMessage = {
             phone: data.phone,
             transactionId: transaction.id,
@@ -351,11 +344,7 @@ class TokenHandler extends Registry {
                 },
             );
         }
-        // If Transaction timedout - Requery the transaction at intervals
 
-        // Token purchase was successful
-        // And token was found in request
-        // Add and publish token received event
         await transaction.update({ irecharge_token: tokenInfo.ref })
         await transactionEventService.addAirtimeReceivedFromVendorEvent();
         return await VendorPublisher.publishEventForAirtimeReceivedFromVendor({
@@ -395,12 +384,12 @@ class TokenHandler extends Registry {
         // Requery transaction from provider and update transaction status
         const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction);
         const requeryResultFromBuypower = requeryResult as Awaited<ReturnType<typeof VendorService.buyPowerRequeryTransaction>>
-        // const requeryResultFromBaxi = requeryResult as Awaited<ReturnType<typeof VendorService.baxiRequeryTransaction>>
         const requeryResultFromIrecharge = requeryResult as Awaited<ReturnType<typeof VendorService.irechargeRequeryTransaction>>
+        // const requeryResultFromBaxi = requeryResult as Awaited<ReturnType<typeof VendorService.baxiRequeryTransaction>>
 
         const transactionSuccessFromBuypower = requeryResultFromBuypower.source === 'BUYPOWERNG' ? requeryResultFromBuypower.responseCode === 200 : false
-        // const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false
         const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' : false
+        // const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false
 
         const transactionEventService = new AirtimeTransactionEventService(
             transaction,
@@ -410,13 +399,6 @@ class TokenHandler extends Registry {
         );
         const transactionSuccess = transactionSuccessFromBuypower || transactionSuccessFromIrecharge
 
-        console.log({
-            stage: 'Token received',
-            transactionSuccess,
-            transactionSuccessFromBuypower,
-            transactionSuccessFromIrecharge,
-            requeryResult
-        })
         if (!transactionSuccess) {
             await transactionEventService.addAirtimeTransactionRequery()
             await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor({
@@ -518,27 +500,17 @@ class TokenHandler extends Registry {
             } else if (requeryResult.source === 'BAXI') {
                 // TODO: Add logic to handle baxi requery
             } else if (requeryResult.source === 'IRECHARGE') {
-                // console.log(`
-
-                //     SHIFTING
-
-                // `)
                 let transactionFailed = !['00', '15', '43'].includes(requeryResultFromIrecharge.status)
                 transactionFailed = TEST_FAILED ? retry.count > retry.retryCountBeforeSwitchingVendor : transactionFailed // TOGGLE - Will simulate failed irecharge transaction
                 if (transactionFailed) requeryFromNewVendor = true
                 else {
-                    requeryFromSameVendor = true
-                    error.code = requeryResultFromIrecharge.status === '00' ? 200 : 202
-                    error.cause = requeryResultFromIrecharge.status === '00' ? TransactionErrorCause.TRANSACTION_TIMEDOUT : TransactionErrorCause.TRANSACTION_FAILED
+                    if (requeryResultFromIrecharge.status !== '00') {
+                        requeryFromSameVendor = true
+                        error.code = 202
+                        error.cause = TransactionErrorCause.TRANSACTION_FAILED
+                    }
                 }
             }
-
-            console.log({
-                requeryFromNewVendor,
-                requeryFromSameVendor,
-                error,
-                requeryResult
-            })
 
             logger.error(
                 `Error requerying transaction with id ${data.transactionId} 1213 `,
