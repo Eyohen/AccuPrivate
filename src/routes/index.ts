@@ -14,6 +14,8 @@ import eventRoute from './Event.routes'
 import webhookRoute from './Webhook.routes'
 import partnerRoute from './Partner.routes'
 import complainRoute from './complaint.routes'
+import productCodeRoute from './ProductCode.routes'
+
 const router = Router()
 
 router
@@ -32,6 +34,7 @@ router
     .use('/webhook', webhookRoute)
     .use('/partner', partnerRoute)
     .use('/complaints', complainRoute)
+    .use('/productcode', productCodeRoute)
 
 export default router
 
