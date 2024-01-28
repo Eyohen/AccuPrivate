@@ -7,13 +7,18 @@ import router from "./routes";
 import morgan from 'morgan'
 import helmet from 'helmet';
 require('newrelic');
-
+import { createWriteStream } from 'fs';
+import { join } from 'path';
 const app = express();
 
 app.use(helmet())
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(cors())
+// create a write stream (in append mode)
+var accessLogStream = createWriteStream(join(__dirname, 'access.log'), { flags: 'a' })
+
+// app.use(morgan('combined', { stream: accessLogStream }))
 app.use(morgan('dev'))
 
 app.get('/healthcheck', async (req: Request, res: Response) => {
@@ -22,6 +27,8 @@ app.get('/healthcheck', async (req: Request, res: Response) => {
         message: "Server is working",
     });
 });
+
+
 
 app.use('/api/v0', router)
 
