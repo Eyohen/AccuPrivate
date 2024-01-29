@@ -11,6 +11,7 @@ import { generateRandomString, generateRandomToken, generateRandonNumbers } from
 import { response } from "express";
 import BuypowerApi from "./Buypower";
 import { BuypowerAirtimePurchaseData } from "./Buypower/Airtime.";
+import { IRechargeApi } from "./Irecharge";
 
 export interface PurchaseResponse extends BaseResponse {
     source: 'BUYPOWERNG';
@@ -235,15 +236,15 @@ export class IRechargeVendorService {
         const combinedString = this.VENDOR_CODE + "|" + accessToken + "|" + this.PUBLIC_KEY
         const hash = this.generateHash(combinedString)
 
-        const response = await this.client.get<IRechargeRequeryResponse>('/vend_status.php', {
-            params: {
-                vendor_code: this.VENDOR_CODE,
-                access_token: accessToken,
-                type: serviceType,
-                response_format: 'json',
-                hash
-            }
-        })
+        const params = {
+            vendor_code: this.VENDOR_CODE,
+            access_token: accessToken,
+            type: serviceType,
+            response_format: 'json',
+            hash
+        }
+
+        const response = await this.client.get<IRechargeRequeryResponse>('/vend_status.php', { params })
 
         return { ...response.data, source: 'IRECHARGE' }
 
@@ -687,12 +688,21 @@ export default class VendorService {
         return response
     }
 
-    static async purchaseAirtime({ data, vendor }: { data: BuypowerAirtimePurchaseData, vendor: Transaction['superagent'] }) {
+    static async purchaseAirtime<T extends 'BUYPOWERNG' | 'IRECHARGE'>({ data, vendor }: { data: BuypowerAirtimePurchaseData, vendor: T }): Promise<Prettify<ProcessVendRequestReturnData[typeof vendor]>> {
         switch (vendor) {
             case 'BUYPOWERNG':
                 return await BuypowerApi.Airtime.purchase(data);
+            case 'IRECHARGE':
+                return await IRechargeApi.Airtime.purchase(data)
             default:
                 throw new Error('UNAVAILABLE_VENDOR')
         }
     }
+}
+
+export type Prettify<T extends {}> = { [K in keyof T]: T[K] } & {}
+
+interface ProcessVendRequestReturnData {
+    'BUYPOWERNG': ReturnType<typeof BuypowerApi.Airtime.purchase>,
+    'IRECHARGE': ReturnType<typeof IRechargeApi.Airtime.purchase>,
 }
