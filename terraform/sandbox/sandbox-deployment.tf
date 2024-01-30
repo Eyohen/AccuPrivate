@@ -1,6 +1,3 @@
-
-
-
 #Variables 
 variable "region" {
   description = "The AWS region"
@@ -18,8 +15,8 @@ variable "secret_key" {
 }
 
 variable "subnet_1" {
-  description = "The first subnet CIDR block"
-  default     = "10.0.0.0/24"
+  description = "The second subnet CIDR block"
+  default     = "10.0.1.0/24"
 }
 
 variable "subnet_2" {
@@ -34,11 +31,16 @@ variable "subnet_3" {
 
 variable "accountId" {
   description = "The AWS account ID"
-  default     = "984109170193"
+  default     = "*******"
 }
 
 variable "image_id" {
   description = "The ID of the AMI to use for the instance"
+  default     = ""
+}
+
+variable "instance_keypair" {
+  description = "The name of the key pair for the EC2 instance"
   default     = ""
 }
 
@@ -52,26 +54,6 @@ variable "kafka_instance_type" {
   default     = ""
 }
 
-variable "autoscaling_max_size" {
-  description = "The maximum size of the auto-scaling group"
-  default     = 1
-}
-
-variable "autoscaling_min_size" {
-  description = "The minimum size of the auto-scaling group"
-  default     = 1
-}
-
-variable "deployment_prefix" {
-  description = "Prefix for resources deployed (e.g., sandbox)"
-  default     = "sandbox"
-}
-
-
-variable "instance_keypair" {
-  description = "The name of the key pair for the EC2 instance"
-  default     = ""
-}
 
 variable "db_password" {
   description = "The password for the database"
@@ -92,8 +74,6 @@ variable "db_db_name" {
   description = "The name of the database"
   default     = ""
 }
-
-
 
 
 terraform {
@@ -128,6 +108,8 @@ resource "aws_vpc" "sandbox_vpc" {
   }
 }
 
+
+
 # creating one subnets in one az 
 resource "aws_subnet" "sandbox_public_subnet_1" {
   vpc_id     = aws_vpc.sandbox_vpc.id
@@ -139,6 +121,7 @@ resource "aws_subnet" "sandbox_public_subnet_1" {
     Name = "sandbox_public_subnet_1"
   }
 }
+
 # creating one subnets in one az 
 resource "aws_subnet" "sandbox_public_subnet_2" {
   vpc_id     = aws_vpc.sandbox_vpc.id
@@ -147,7 +130,7 @@ resource "aws_subnet" "sandbox_public_subnet_2" {
   map_public_ip_on_launch = true
   tags = {
     Environment = "sandbox"
-    Name = "sandbox_public_subnet_1"
+    Name = "sandbox_public_subnet_2"
   }
 }
 
@@ -159,7 +142,7 @@ resource "aws_subnet" "sandbox_public_subnet_3" {
   map_public_ip_on_launch = true
   tags = {
     Environment = "sandbox"
-    Name = "sandbox_public_subnet_1"
+    Name = "sandbox_public_subnet_3"
   }
 }
 
@@ -173,7 +156,6 @@ resource "aws_internet_gateway" "sandbox_internet_gateway" {
     Name = "sandbox_internetgateway"
   }
 }
-
 
 
 #Create Route Table 
@@ -214,8 +196,6 @@ resource "aws_route_table_association" "sandbox_public_subnet_2_routetable_assc"
 }
 
 
-
-
 # Assocate route table with subnet 3
 
 resource "aws_route_table_association" "sandbox_public_subnet_3_routetable_assc" {
@@ -224,48 +204,38 @@ resource "aws_route_table_association" "sandbox_public_subnet_3_routetable_assc"
 }
 
 
+# database security group
 
-#create a security group for loadbalancer 
-
-resource "aws_security_group" "sandbox_loadbalancer_security_group" {
+resource "aws_security_group" "sandbox_db_security_group" {
   vpc_id = aws_vpc.sandbox_vpc.id
   
   ingress {
-    from_port         = 443
-    description = "HTTPS"
+    from_port         =  5432
+    description = "Allow postgres access"
     protocol       = "tcp"
-    to_port           = 443
+    to_port           =  5432
     cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
   }
 
   ingress {
-    from_port         = 80
-    description = "HTTP"
+    from_port         =  22
+    description = "Allow SSH access"
     protocol       = "tcp"
-    to_port           = 80
+    to_port           = 22
     cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
   }
 
-  egress {
-    from_port         = 443
-    description = "HTTPS"
-    protocol       = "tcp"
-    to_port           = 443
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
-  }
 
   egress {
-    from_port         = 80
-    description = "HTTP"
-    protocol       = "tcp"
-    to_port           = 80
-    cidr_blocks      = ["0.0.0.0/0"]
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     ipv6_cidr_blocks = ["::/0"]
   }
 }
+
 
 #create a security group for web server
 
@@ -317,7 +287,105 @@ resource "aws_security_group" "sandbox_webserver_security_group" {
 }
 
 
+#create a security group for loadbalancer 
 
+resource "aws_security_group" "sandbox_loadbalancer_security_group" {
+  vpc_id = aws_vpc.sandbox_vpc.id
+  
+  ingress {
+    from_port         = 443
+    description = "HTTPS"
+    protocol       = "tcp"
+    to_port           = 443
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  ingress {
+    from_port         = 80
+    description = "HTTP"
+    protocol       = "tcp"
+    to_port           = 80
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  egress {
+    from_port         = 443
+    description = "HTTPS"
+    protocol       = "tcp"
+    to_port           = 443
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  egress {
+    from_port         = 80
+    description = "HTTP"
+    protocol       = "tcp"
+    to_port           = 80
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+}
+
+
+
+# Load Balancer target group
+
+resource "aws_lb_target_group" "sandbox_target_group_http" {
+    name     = "sandbox-target-group-http"
+    port     = 80
+    protocol = "HTTP"
+    vpc_id   = aws_vpc.sandbox_vpc.id
+    health_check {
+      interval = 30
+      healthy_threshold = 2
+      unhealthy_threshold = 5
+      path = "/"
+      timeout = 8
+    }
+}
+
+# Core Engine Insatnce
+
+resource "aws_instance" "sandbox-core-engine" {
+  instance_type = var.instance_type
+  depends_on = [ aws_msk_cluster.sandbox_aws_managed_kafka , aws_instance.sandbox-db ]
+  subnet_id = aws_subnet.sandbox_public_subnet_1
+  ami = var.image_id
+  iam_instance_profile = aws_iam_instance_profile.sandbox_ec2_profile.arn
+  user_data = filebase64("${path.module}/app-install.sh")
+  tags ={
+    Name : "Sandbox-core-engine"
+  }
+  ebs_block_device {
+    device_name = "/dev/sda1"
+    volume_size = 10 
+    delete_on_termination = true
+    volume_type = "gp2" # default is gp2
+  }
+}
+
+
+# Database Instance 
+
+resource "aws_instance" "sandbox-db" {
+  instance_type = var.instance_type
+  subnet_id = aws_subnet.sandbox_public_subnet_1
+  ami = var.image_id
+  iam_instance_profile = aws_iam_instance_profile.sandbox_ec2_profile.arn
+  user_data = filebase64("${path.module}/db-install.sh")
+  tags ={
+    Name : "Sandbox-db"
+  }
+  ebs_block_device {
+    device_name = "/dev/sda1"
+    volume_size = 10 
+    delete_on_termination = true
+    volume_type = "gp2" # default is gp2
+  }
+}
 
 #Creating a loadbalancer
 
@@ -342,79 +410,17 @@ resource "aws_lb" "sandbox_load_balancer" {
   }
 }
 
-# loadnbalancer listeners
-
-resource "aws_acm_certificate" "cert" {
-  domain_name       = "*.accuvend.ng"
-  validation_method = "DNS"
-
-  tags = {
-    Environment = "sandbox"
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
+resource "aws_lb_target_group_attachment" "name" {
+  target_group_arn = aws_lb_target_group.sandbox_target_group_http.arn
+  target_id = aws_instance.sandbox-core-engine.id
+  port = 80
 }
-
-
-
-
-
-resource "aws_lb_listener" "sandbox_application_load_balancer_listner_http" {
-  load_balancer_arn = aws_lb.sandbox_load_balancer.arn
-  port              = "80"
-  protocol          = "HTTP"  
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.sandbox_target_group_http.arn
-  }
-}
-
-# loadbalancer listener rule
-
-
-resource "aws_lb_listener_rule" "host_based_weighted_routing-http" {
-  listener_arn = aws_lb_listener.sandbox_application_load_balancer_listner_http.arn
-  priority     = 1
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.sandbox_target_group_http.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/"]
-    }
-  }
-}
-
-
-
-# Load Balancer target group
-
-resource "aws_lb_target_group" "sandbox_target_group_http" {
-    name     = "sandbox-target-group-http"
-    port     = 80
-    protocol = "HTTP"
-    vpc_id   = aws_vpc.sandbox_vpc.id
-    health_check {
-      interval = 30
-      healthy_threshold = 2
-      unhealthy_threshold = 5
-      path = "/"
-      timeout = 8
-    }
-}
-
 
 
 
 #IAM Policy for Kafka 
 resource "aws_iam_policy" "sandbox_iam_kafka_policy" {
-  depends_on = [ aws_msk_cluster.staging_aws_managed_kafka ]
+  depends_on = [ aws_msk_cluster.sandbox_aws_managed_kafka ]
   name = "sandbox-iam-kafka-policy"
   policy = jsonencode(
   {
@@ -428,7 +434,7 @@ resource "aws_iam_policy" "sandbox_iam_kafka_policy" {
                 "kafka-cluster:DescribeCluster"
             ],
             Resource: [
-                "arn:aws:kafka:${var.region}:${var.accountId}:cluster/${aws_msk_cluster.staging_aws_managed_kafka.cluster_name}/*"
+                "arn:aws:kafka:${var.region}:${var.accountId}:cluster/${aws_msk_cluster.sandbox_aws_managed_kafka.cluster_name}/*"
             ]
         },
         {
@@ -439,7 +445,7 @@ resource "aws_iam_policy" "sandbox_iam_kafka_policy" {
                 "kafka-cluster:ReadData"
             ],
             Resource: [
-                "arn:aws:kafka:${var.region}:${var.accountId}:topic/${aws_msk_cluster.staging_aws_managed_kafka.cluster_name}/*"
+                "arn:aws:kafka:${var.region}:${var.accountId}:topic/${aws_msk_cluster.sandbox_aws_managed_kafka.cluster_name}/*"
             ]
         },
         {
@@ -449,7 +455,7 @@ resource "aws_iam_policy" "sandbox_iam_kafka_policy" {
                 "kafka-cluster:DescribeGroup"
             ],
             Resource: [
-                "arn:aws:kafka::${var.region}:${var.accountId}:group/${aws_msk_cluster.staging_aws_managed_kafka.cluster_name}/*"
+                "arn:aws:kafka::${var.region}:${var.accountId}:group/${aws_msk_cluster.sandbox_aws_managed_kafka.cluster_name}/*"
             ]
         }
     ]
@@ -508,9 +514,6 @@ resource "aws_iam_role_policy_attachment" "sandbox_role_kafka_policy_attachment"
   policy_arn = aws_iam_policy.sandbox_iam_kafka_policy.arn
 }
 
-
-
-
 #IAM S3 Role Policy attachment
 resource "aws_iam_role_policy_attachment" "sandbox_role_S3_policy_attachment" {
   role       = aws_iam_role.sandbox_iam_kafka_s3_role.name
@@ -526,71 +529,9 @@ resource "aws_iam_instance_profile" "sandbox_ec2_profile" {
 
 
 
-#Aws launch template
-
-resource "aws_launch_template" "sandbox_launch_aws_launch_template" {
-  
-  name = "Sandbox-launch-template"
-  description = "Sanbox-launch-template"
-  image_id = var.image_id
-  instance_type = var.instance_type
-  iam_instance_profile {
-    arn = aws_iam_instance_profile.sandbox_ec2_profile.arn
-  }
-
-  vpc_security_group_ids = [aws_security_group.sandbox_webserver_security_group.id]
-  key_name = var.instance_keypair
-  # user_data = filebase64("${path.module}/app1-install.sh")
-  # ebs_optimized = true
-  #default_version = 1
-  update_default_version = true
-  block_device_mappings {
-    device_name = "/dev/sda1"
-    ebs {
-      volume_size = 10 
-      #volume_size = 20 # LT Update Testing - Version 2 of LT      
-      delete_on_termination = true
-      volume_type = "gp2" # default is gp2
-     }
-  }
-  monitoring {
-    enabled = true
-  }
-
-  tag_specifications {
-    resource_type = "instance"
-    tags = {
-      Name = "sandbox-launch-group"
-    }
-  }
-}
 
 
-#Creating an autoscaling group
-
-resource "aws_autoscaling_group" "sandbox_auto_scaling_group" {
-  depends_on = [ aws_launch_template.sandbox_launch_aws_launch_template ]
-  max_size = 1
-  min_size = 1
-  desired_capacity = 1
-  target_group_arns = [aws_lb_target_group.sandbox_target_group_http.arn]
-  health_check_type = "ELB"
-  vpc_zone_identifier = [
-    aws_subnet.sandbox_public_subnet_1.id,
-  ]
-  name = "sandbox_autoscaling_group"
-  launch_template {
-    id = aws_launch_template.sandbox_launch_aws_launch_template.id
-  }
-  tag {
-    key = "Name"
-    value = "sandbox_autoscaling_group"
-    propagate_at_launch = true
-  }
-}
-
-
-#create a security group for loadbalancer 
+#create a security kafka for loadbalancer 
 
 resource "aws_security_group" "sandbox_kafka_security_group" {
   vpc_id = aws_vpc.sandbox_vpc.id
@@ -630,11 +571,10 @@ resource "aws_security_group" "sandbox_kafka_security_group" {
 }
 
 
-
 #creating Managed kafka 
 
-resource "aws_msk_cluster" "staging_aws_managed_kafka" {
-  cluster_name = "staging-aws-managed-kafka-2"
+resource "aws_msk_cluster" "sandbox_aws_managed_kafka" {
+  cluster_name = "sandbox-aws-managed-kafka-2"
   kafka_version = "3.5.1"
   number_of_broker_nodes = 3
   
@@ -670,9 +610,10 @@ resource "aws_msk_cluster" "staging_aws_managed_kafka" {
 
 }
 
+
 # outputs 
 output "broker_endpoints" {
-  value       = staging_aws_managed_kafka.broker_endpoints
+  value       = sandbox_aws_managed_kafka.broker_endpoints
   description = "List of broker endpoints"
 }
 
@@ -682,61 +623,4 @@ output "dns_name" {
   value       = try(sandbox_load_balancer.this[0].dns_name, null)
 }
 
-
-
-
-
-# #  RDS For Testing Staging using free-tier 
-
-# resource "aws_security_group" "sandbox_rds_security_group" {
-#   vpc_id = aws_vpc.sandbox_vpc.id
-  
-#   ingress {
-#     from_port         =  5432
-#     description = "Allo postgres access"
-#     protocol       = "tcp"
-#     to_port           =  5432
-#     cidr_blocks      = ["0.0.0.0/0"]
-#     ipv6_cidr_blocks = ["::/0"]
-#   }
-
-
-#   egress {
-#     from_port   = 0
-#     to_port     = 0
-#     protocol    = "-1"
-#     ipv6_cidr_blocks = ["::/0"]
-#   }
-# }
-
-# #RDS subnet groups 
-
-# resource "aws_db_subnet_group" "staging_db_subnet_group" {
-#   name = "staging-db-subnet-group"
-#   subnet_ids = [aws_subnet.sandbox_public_subnet_1.id, aws_subnet.sandbox_public_subnet_2.id]
-
-#   tags = {
-#     Name = "My DB Subnet Group"
-#   }
-# }
-
-# # RDS
-# resource "aws_db_instance" "staging_rds_service" {
-#   allocated_storage    = 10
-#   db_name              = var.db_db_name
-#   engine               = "postgres"
-#   engine_version       = "15.4"
-#   instance_class       = var.db_instance_type
-#   username             = var.db_user_name
-#   password             = var.db_user_name
-#   skip_final_snapshot  = true
-#   publicly_accessible = true
-#   db_subnet_group_name = aws_db_subnet_group.staging_db_subnet_group.name
-#   vpc_security_group_ids = [aws_security_group.sandbox_rds_security_group.id]
-
-# }
-
-
-
-
-
+# output "server"
