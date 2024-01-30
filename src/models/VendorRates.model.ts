@@ -1,5 +1,5 @@
 // Import necessary modules and dependencies
-import { Table, Column, Model, DataType, BelongsTo, ForeignKey, IsUUID, PrimaryKey } from "sequelize-typescript";
+import { Table, Column, Model, DataType, BelongsTo, ForeignKey, IsUUID, PrimaryKey, Unique } from "sequelize-typescript";
 import ProductCode from "./ProductCode.model";
 
 // Define the Sequelize model for the "VendorRates" table
@@ -8,6 +8,7 @@ export default class VendorRates extends Model<IVendorRates | VendorRates> {
     // Unique identifier for the vendor rates
     @IsUUID(4)
     @PrimaryKey
+    @Unique
     @Column
     id: string;
 

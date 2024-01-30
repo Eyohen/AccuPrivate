@@ -7,13 +7,17 @@ import { randomUUID } from "crypto";
 export default class ProductController {
 
     static async createProductCode(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { location, type, code } = req.body as {code: string, location: string, type: 'POSTPAID' | 'PREPAID' };
+        const { location, type, code, vendType } = req.body as {
+            code: string, location: string,
+            type: 'AIRTIME' | 'ELECTRICITY' | 'DATA' | 'CABLE',
+            vendType: 'POSTPAID' | 'PREPAID'
+        };
 
         if (!location || !type) {
             throw new BadRequestError('Location and type are required');
         }
 
-        const data = { location, type, productCode: code, id: randomUUID() };
+        const data = { location, type, productCode: code, id: randomUUID(), vendType };
         const productCode = await ProductService.addProductCode(data);
 
         res.status(201).json({
@@ -25,13 +29,13 @@ export default class ProductController {
     }
 
     static async updateProductCode(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { location, type, productCodeId } = req.body as {productCodeId: string, location?: string, type?: 'POSTPAID' | 'PREPAID' };
+        const { location, productCodeId } = req.body as { productCodeId: string, location?: string };
 
-        if (!location && !type) {
+        if (!location) {
             throw new BadRequestError('Location or type is required');
         }
 
-        const data = { location, type };
+        const data = { location };
         const updatedProductCode = await ProductService.updateProductCode(productCodeId, data);
 
         if (!updatedProductCode) {

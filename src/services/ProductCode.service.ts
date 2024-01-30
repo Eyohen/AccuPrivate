@@ -29,6 +29,11 @@ export default class ProductService {
         return productCode;
     }
 
+    static async viewSingleProductCodeByCode(productCode: string, include = false): Promise<ProductCode | null> {
+        const _productCode  = await ProductCode.findOne({ where: { productCode }, include: include ? [VendorRates] : undefined });
+        return _productCode;
+    }
+
     // Method for adding a new vendor rate to the database
     static async addVendorRate(data: IVendorRates, transaction?: Transaction): Promise<VendorRates> {
         const vendorRate = VendorRates.build(data);
@@ -41,6 +46,10 @@ export default class ProductService {
         return vendorRate;
     }
 
+    static async viewSingleVendorRateByNames(vendorName: string, discoCode: string): Promise<VendorRates | null> {
+        const vendorRate = await VendorRates.findOne({ where: { vendorName, discoCode } });
+        return vendorRate;
+    }
     // Method for updating an existing vendor rate
     static async updateVendorRate(vendorRateId: string, data: Partial<IVendorRates>, transaction?: Transaction): Promise<VendorRates> {
         const vendorRate = await VendorRates.findByPk(vendorRateId);

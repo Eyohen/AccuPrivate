@@ -1,5 +1,5 @@
 // Import necessary modules and dependencies
-import { Table, Column, Model, DataType, HasOne, HasMany, IsUUID, PrimaryKey } from "sequelize-typescript";
+import { Table, Column, Model, DataType, HasOne, HasMany, IsUUID, PrimaryKey, Unique } from "sequelize-typescript";
 import VendorRates from './VendorRates.model';
 
 // Define the Sequelize model for the "ProductCode" table
@@ -8,6 +8,7 @@ export default class ProductCode extends Model<IProductCode | ProductCode> {
     // Unique identifier for the product code
     @IsUUID(4)
     @PrimaryKey
+    @Unique
     @Column
     id: string;
 
@@ -18,9 +19,12 @@ export default class ProductCode extends Model<IProductCode | ProductCode> {
     @Column({ type: DataType.STRING, allowNull: false })
     location: string;
 
+    @Column({ type: DataType.ENUM('AIRTIME', 'ELECTRICITY', 'DATA', 'CABLE'), allowNull: false })
+    type: 'AIRTIME' | 'ELECTRICITY' | 'DATA' | 'CABLE';
+
     // Type of the product code (POSTPAID or PREPAID)
     @Column({ type: DataType.ENUM('POSTPAID', 'PREPAID'), allowNull: false })
-    type: 'POSTPAID' | 'PREPAID';
+    vendType: 'POSTPAID' | 'PREPAID';
 
     // Has many associated VendorRates
     @HasMany(() => VendorRates)
@@ -29,7 +33,9 @@ export default class ProductCode extends Model<IProductCode | ProductCode> {
 
 // Define an interface representing a product code (IProductCode) with various properties.
 export interface IProductCode {
+    id: string;
     productCode: string; // Unique identifier for the product code
     location: string; // Location associated with the product code
-    type: 'POSTPAID' | 'PREPAID'; // Type of the product code (POSTPAID or PREPAID)
+    vendType: 'POSTPAID' | 'PREPAID'; // Type of the product code (POSTPAID or PREPAID)
+    type: 'AIRTIME' | 'ELECTRICITY' | 'DATA' | 'CABLE';
 }

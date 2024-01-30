@@ -92,131 +92,131 @@ export const SU_HOST_EMAIL_1 = process.env.SU_HOST_EMAIL_1 as string,
     SU_HOST_EMAIL_2 = process.env.SU_HOST_EMAIL_2 as string,
     SU_HOST_EMAIL_3 = process.env.SU_HOST_EMAIL_3 as string;
 
-const discoProductMapping = {
+export const discoProductMapping = {
     'ECABEPS': {
         place: 'ABUJA',
         type: 'POSTPAID',
         vendors: {
-            Baxi: { discoCode: 'abuja_electric_postpaid', commission: 1.80 },
-            BuyPower: { discoCode: 'ABUJA', commission: 1.80 },
-            iRecharge: { discoCode: 'AEDC', commission: 1.80 }
+            BAXI: { discoCode: 'abuja_electric_postpaid', commission: 1.80 },
+            BUYPOWERNG: { discoCode: 'ABUJA', commission: 1.80 },
+            IRECHARGE: { discoCode: 'AEDC', commission: 1.80 }
         }
     },
     'ECEKEPS': {
         place: 'EKO',
         type: 'POSTPAID',
         vendors: {
-            Baxi: { discoCode: 'eko_electric_postpaid', commission: 1.35 },
-            BuyPower: { discoCode: 'EKO', commission: 1.50 },
-            iRecharge: { discoCode: 'Eko_Postpaid', commission: 1.50 }
+            BAXI: { discoCode: 'eko_electric_postpaid', commission: 1.35 },
+            BUYPOWERNG: { discoCode: 'EKO', commission: 1.50 },
+            IRECHARGE: { discoCode: 'Eko_Postpaid', commission: 1.50 }
         }
     },
     'ECIKEPS': {
         place: 'IKEJA',
         type: 'POSTPAID',
         vendors: {
-            Baxi: { discoCode: 'ikeja_electric_postpaid', commission: 1.30 },
-            BuyPower: { discoCode: 'IKEJA', commission: 1.40 },
-            iRecharge: { discoCode: 'Ikeja_Electric_Bill_Payment', commission: 1.20 }
+            BAXI: { discoCode: 'ikeja_electric_postpaid', commission: 1.30 },
+            BUYPOWERNG: { discoCode: 'IKEJA', commission: 1.40 },
+            IRECHARGE: { discoCode: 'Ikeja_Electric_Bill_Payment', commission: 1.20 }
         }
     },
     'ECJOPPS': {
         place: 'JOS',
         type: 'POSTPAID',
         vendors: {
-            Baxi: { discoCode: 'jos_electric_postpaid', commission: 1.80 },
-            BuyPower: { discoCode: 'JOS', commission: 1.50 },
-            iRecharge: { discoCode: 'Jos_Disco_Postpaid', commission: 1.50 }
+            BAXI: { discoCode: 'jos_electric_postpaid', commission: 1.80 },
+            BUYPOWERNG: { discoCode: 'JOS', commission: 1.50 },
+            IRECHARGE: { discoCode: 'Jos_Disco_Postpaid', commission: 1.50 }
         }
     },
     'ECKAEPS': {
         place: 'KADUNA',
         type: 'POSTPAID',
         vendors: {
-            Baxi: { discoCode: 'kaduna_electric_postpaid', commission: 2.30 },
-            BuyPower: { discoCode: 'KADUNA', commission: 2.00 },
-            iRecharge: { discoCode: 'Kaduna_Electricity_Disco_Postpaid', commission: 2.00 }
+            BAXI: { discoCode: 'kaduna_electric_postpaid', commission: 2.30 },
+            BUYPOWERNG: { discoCode: 'KADUNA', commission: 2.00 },
+            IRECHARGE: { discoCode: 'Kaduna_Electricity_Disco_Postpaid', commission: 2.00 }
         }
     },
     'ECEKEPE': {
         place: 'EKO',
         type: 'PREPAID',
         vendors: {
-            Baxi: { discoCode: 'eko_electric_prepaid', commission: 1.50 },
-            BuyPower: { discoCode: 'EKO', commission: 1.50 },
-            iRecharge: { discoCode: 'Eko_Prepaid', commission: 1.35 }
+            BAXI: { discoCode: 'eko_electric_prepaid', commission: 1.50 },
+            BUYPOWERNG: { discoCode: 'EKO', commission: 1.50 },
+            IRECHARGE: { discoCode: 'Eko_Prepaid', commission: 1.35 }
         }
     },
     'ECKDEPS': {
         place: 'KADUNA',
         type: 'POSTPAID',
         vendors: {
-            Baxi: { discoCode: 'kaduna_electric_postpaid', commission: 2.30 },
-            BuyPower: { discoCode: 'KADUNA', commission: 2.00 },
-            iRecharge: { discoCode: 'Kaduna_Electricity_Disco_Postpaid', commission: 2.00 }
+            BAXI: { discoCode: 'kaduna_electric_postpaid', commission: 2.30 },
+            BUYPOWERNG: { discoCode: 'KADUNA', commission: 2.00 },
+            IRECHARGE: { discoCode: 'Kaduna_Electricity_Disco_Postpaid', commission: 2.00 }
         }
     },
     'ECJSEPE': {
         place: 'JOS',
         type: 'PREPAID',
         vendors: {
-            Baxi: { discoCode: 'jos_electric_prepaid', commission: 1.80 },
-            BuyPower: { discoCode: 'JOS', commission: 1.50 },
-            iRecharge: { discoCode: 'Jos_Disco', commission: 1.50 }
+            BAXI: { discoCode: 'jos_electric_prepaid', commission: 1.80 },
+            BUYPOWERNG: { discoCode: 'JOS', commission: 1.50 },
+            IRECHARGE: { discoCode: 'Jos_Disco', commission: 1.50 }
         }
     },
     'ECJSEPS': {
         place: 'JOS',
         type: 'POSTPAID',
         vendors: {
-            Baxi: { discoCode: 'jos_electric_postpaid', commission: 1.80 },
-            BuyPower: { discoCode: 'JOS', commission: 1.50 },
-            iRecharge: { discoCode: 'Jos_Disco_Postpaid', commission: 1.50 }
+            BAXI: { discoCode: 'jos_electric_postpaid', commission: 1.80 },
+            BUYPOWERNG: { discoCode: 'JOS', commission: 1.50 },
+            IRECHARGE: { discoCode: 'Jos_Disco_Postpaid', commission: 1.50 }
         }
     },
     'ECPHEPE': {
         place: 'PORT-HARCOURT',
         type: 'PREPAID',
         vendors: {
-            Baxi: { discoCode: 'portharcourt_electric_prepaid', commission: 1.80 },
-            BuyPower: { discoCode: 'PH', commission: 1.50 },
-            iRecharge: { discoCode: 'PH_Disco', commission: 1.50 }
+            BAXI: { discoCode: 'portharcourt_electric_prepaid', commission: 1.80 },
+            BUYPOWERNG: { discoCode: 'PH', commission: 1.50 },
+            IRECHARGE: { discoCode: 'PH_Disco', commission: 1.50 }
         }
     },
     'ECPHEPS': {
         place: 'PORT-HARCOURT',
         type: 'POSTPAID',
         vendors: {
-            Baxi: { discoCode: 'portharcourt_electric_postpaid', commission: 1.80 },
-            BuyPower: { discoCode: 'PH', commission: 1.50 },
-            iRecharge: { discoCode: 'PH_Disco', commission: 1.50 }
+            BAXI: { discoCode: 'portharcourt_electric_postpaid', commission: 1.80 },
+            BUYPOWERNG: { discoCode: 'PH', commission: 1.50 },
+            IRECHARGE: { discoCode: 'PH_Disco', commission: 1.50 }
         }
     },
     'ECBNEPS': {
         place: 'BENIN',
         type: 'POSTPAID',
         vendors: {
-            Baxi: { discoCode: 'ECBNEPS', commission: 2.20 },
-            BuyPower: { discoCode: 'BENIN', commission: 2.20 },
-            iRecharge: { discoCode: 'Benin', commission: 2.20 }
+            BAXI: { discoCode: 'ECBNEPS', commission: 2.20 },
+            BUYPOWERNG: { discoCode: 'BENIN', commission: 2.20 },
+            IRECHARGE: { discoCode: 'Benin', commission: 2.20 }
         }
     },
     'ECBNEPE': {
         place: 'BENIN',
         type: 'PREPAID',
         vendors: {
-            Baxi: { discoCode: 'ECBNEPE', commission: 2.20 },
-            BuyPower: { discoCode: 'BENIN', commission: 2.20 },
-            iRecharge: { discoCode: 'Benin', commission: 2.20 }
+            BAXI: { discoCode: 'ECBNEPE', commission: 2.20 },
+            BUYPOWERNG: { discoCode: 'BENIN', commission: 2.20 },
+            IRECHARGE: { discoCode: 'Benin', commission: 2.20 }
         }
     },
     'ECAHBEPS': {
         place: 'YOLA',
         type: 'POSTPAID',
         vendors: {
-            Baxi: { discoCode: 'YOLA', commission: 1.80 },
-            BuyPower: { discoCode: 'YOLA', commission: 1.80 },
-            iRecharge: { discoCode: 'YOLA', commission: 1.20 }
+            BAXI: { discoCode: 'YOLA', commission: 1.80 },
+            BUYPOWERNG: { discoCode: 'YOLA', commission: 1.80 },
+            IRECHARGE: { discoCode: 'YOLA', commission: 1.20 }
         }
     },
-};
+} as const

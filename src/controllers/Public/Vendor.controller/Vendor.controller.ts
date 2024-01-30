@@ -36,6 +36,9 @@ import { error } from "console";
 import TransactionEventService from "../../../services/TransactionEvent.service";
 import WebhookService from "../../../services/Webhook.service";
 import { AirtimeVendController } from "./Airtime.controller";
+import ProductCode from "../../../models/ProductCode.model";
+import ProductService from "../../../services/ProductCode.service";
+import VendorRates from "../../../models/VendorRates.model";
 
 interface valideMeterRequestBody {
     meterNumber: string;
@@ -411,8 +414,26 @@ export default class VendorController {
             superAgent: superagent
         });
 
+        const existingProductCodeForDisco = await ProductService.viewSingleProductCodeByCode(disco, true)
+        if (!existingProductCodeForDisco) {
+            throw new NotFoundError('Product code not found for disco')
+        }
+
+        if (existingProductCodeForDisco.type !== 'ELECTRICITY') {
+            throw new BadRequestError('Invalid product code for electricity')
+        }
+
+        const vendorDiscoCode = existingProductCodeForDisco.vendorRates.find((vendorRate) => {
+            console.log({ vendorRate: vendorRate.dataValues })
+            return vendorRate.vendorName === DEFAULT_ELECTRICITY_PROVIDER
+        })?.discoCode
+
+        if (!vendorDiscoCode) {
+            throw new InternalServerError('Vendor disco code not found')
+        }
+
         // We Check for Meter User *
-        const response = await VendorControllerUtil.validateMeter({ meterNumber, disco, vendType, transaction })
+        const response = await VendorControllerUtil.validateMeter({ meterNumber, disco: vendorDiscoCode, vendType, transaction })
         const userInfo = {
             name: response.name,
             email: email,
@@ -458,8 +479,8 @@ export default class VendorController {
         // Check if disco is up
         const discoUp =
             superagent === "BUYPOWERNG"
-                ? await VendorService.buyPowerCheckDiscoUp(disco).catch((e) => e)
-                : await VendorService.baxiCheckDiscoUp(disco).catch((e) => e);
+                ? await VendorService.buyPowerCheckDiscoUp(vendorDiscoCode).catch((e) => e)
+                : await VendorService.baxiCheckDiscoUp(vendorDiscoCode).catch((e) => e);
 
         const discoUpEvent = discoUp instanceof Boolean ? await transactionEventService.addDiscoUpEvent() : false
         discoUpEvent && await VendorPublisher.publishEventForDiscoUpCheckConfirmedFromVendor({
@@ -724,26 +745,13 @@ export default class VendorController {
     static async getDiscos(req: Request, res: Response) {
         let discos: { name: string; serviceType: "PREPAID" | "POSTPAID" }[] = [];
 
-        switch (DEFAULT_ELECTRICITY_PROVIDER) {
-            case "BAXI":
-                discos = await VendorService.baxiFetchAvailableDiscos();
-                break;
-            case "BUYPOWERNG":
-                discos = await VendorService.buyPowerFetchAvailableDiscos();
-                break;
-            case 'IRECHARGE':
-                discos = await VendorService.irechargeFetchAvailableDiscos();
-                break;
-            default:
-                discos = [];
-                break;
-        }
+        const productCodes = await ProductService.getAllProductCodes();
 
         res.status(200).json({
             status: "success",
             message: "Discos retrieved successfully",
             data: {
-                discos: discos,
+                productCodes,
             },
         });
     }
