@@ -65,6 +65,8 @@ jobs:
         with:
           path: dist
           key: dist-folder
+      - run: |
+          ls dist
         
   push-build:
     name: push-build
@@ -86,7 +88,8 @@ jobs:
           aws-region: eu-west-2
       - name: push to state to s3
         run: |
-          aws s3 cp dist s3://staging-bucket-deployment/ --recursive
+          ls dist 
+          aws s3 cp ./dist s3://staging-bucket-deployment/ --recursive
       
   create-update-environment:
     name: create-environment
@@ -103,7 +106,7 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_ACCESS_SECRET_KEY }}
     - name: pull terraform state from s3
       run: |
-        aws s3 cp s3://sandbox-terraform-item/terraform.tfstate ./terraform/sandbox
+        aws s3 cp s3://sandbox-terraform-item/terraform.tfstate ./terraform/sandbox && echo "Success: The AWS CLI command completed successfully." || echo "Error: The AWS CLI command failed."
     
     # - name: Terraform Init
     #   uses: hashicorp/terraform-github-actions/init@v0.4.0
