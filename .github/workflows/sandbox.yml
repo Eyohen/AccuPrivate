@@ -66,47 +66,50 @@ jobs:
           path: dist
           key: dist-folder
       - run: |
-          ls dist
+          ls 
+          cd dist 
+          echo "******"
+          ls 
         
-  push-build:
-    name: push-build
-    needs: [build-backend]
-    runs-on: ubuntu-latest
-    steps:
-      - name: chechkout
-        uses: actions/checkout@v2
-      - name: restore dist 
-        uses: actions/checkout@v2
-        with:
-          path: dist
-          key: dist-folder
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_ACCESS_SECRET_KEY }}
-          aws-region: eu-west-2
-      - name: push to state to s3
-        run: |
-          ls dist 
-          aws s3 cp ./dist s3://staging-bucket-deployment/ --recursive
+  # push-build:
+  #   name: push-build
+  #   needs: [build-backend]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: chechkout
+  #       uses: actions/checkout@v2
+  #     - name: restore dist 
+  #       uses: actions/checkout@v2
+  #       with:
+  #         path: dist
+  #         key: dist-folder
+  #     - name: Configure AWS Credentials
+  #       uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_ACCESS_SECRET_KEY }}
+  #         aws-region: eu-west-2
+  #     - name: push to state to s3
+  #       run: |
+  #         ls dist 
+  #         aws s3 cp ./dist s3://staging-bucket-deployment/ --recursive
       
-  create-update-environment:
-    name: create-environment
-    needs: [push-build]
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Configure AWS Credentials 2
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-region: eu-west-2
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_ACCESS_SECRET_KEY }}
-    - name: pull terraform state from s3
-      run: |
-        aws s3 cp s3://sandbox-terraform-item/terraform.tfstate ./terraform/sandbox && echo "Success: The AWS CLI command completed successfully." || echo "Error: The AWS CLI command failed."
+  # create-update-environment:
+  #   name: create-environment
+  #   needs: [push-build]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - name: Checkout
+  #     uses: actions/checkout@v2
+  #   - name: Configure AWS Credentials 2
+  #     uses: aws-actions/configure-aws-credentials@v4
+  #     with:
+  #       aws-region: eu-west-2
+  #       aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #       aws-secret-access-key: ${{ secrets.AWS_ACCESS_SECRET_KEY }}
+  #   - name: pull terraform state from s3
+  #     run: |
+  #       aws s3 cp s3://sandbox-terraform-item/terraform.tfstate ./terraform/sandbox && echo "Success: The AWS CLI command completed successfully." || echo "Error: The AWS CLI command failed."
     
     # - name: Terraform Init
     #   uses: hashicorp/terraform-github-actions/init@v0.4.0
