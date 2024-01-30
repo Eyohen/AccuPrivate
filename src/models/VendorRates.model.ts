@@ -13,8 +13,8 @@ export default class VendorRates extends Model<IVendorRates | VendorRates> {
     id: string;
 
     // Vendor name (e.g., Baxi, BuyPower, iRecharge)
-    @Column({ type: DataType.STRING, allowNull: false })
-    vendorName: string;
+    @Column({ type: DataType.ENUM('IRECHARGE', 'BUYPOWERNG', 'BAXI'), allowNull: false })
+    vendorName: 'IRECHARGE' | 'BUYPOWERNG' | 'BAXI';
 
     // Disco code associated with the vendor
     @Column({ type: DataType.STRING, allowNull: false })
@@ -38,7 +38,7 @@ export default class VendorRates extends Model<IVendorRates | VendorRates> {
 // Define an interface representing vendor rates (IVendorRates) with various properties.
 export interface IVendorRates {
     id: string; // Unique identifier for the vendor rates
-    vendorName: string; // Vendor name (e.g., Baxi, BuyPower, iRecharge)
+    vendorName: 'IRECHARGE' | 'BUYPOWERNG' | 'BAXI'; // Vendor name (e.g., Baxi, BuyPower, iRecharge)
     discoCode: string; // Disco code associated with the vendor
     commission: number; // Commission rate for the vendor
     productCodeId: string; // Unique identifier of the associated ProductCode

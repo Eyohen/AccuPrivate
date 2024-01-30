@@ -21,6 +21,7 @@ import { v4 as uuidv4 } from "uuid";
 import EventService from "../../../services/Event.service";
 import VendorService, { SuccessResponseForBuyPowerRequery } from "../../../services/Vendor.service";
 import { generateRandomToken } from "../../../utils/Helper";
+import ProductService from "../../../services/ProductCode.service";
 
 interface EventMessage {
     meter: {
@@ -67,7 +68,7 @@ const retry = {
     retryCountBeforeSwitchingVendor: 2,
 }
 
-const TEST_FAILED = NODE_ENV === 'production' ? false : false // TOGGLE - Will simulate failed transaction
+const TEST_FAILED = NODE_ENV === 'production' ? false : true // TOGGLE - Will simulate failed transaction
 
 const TransactionErrorCodeAndCause = {
     501: TransactionErrorCause.MAINTENANCE_ACCOUNT_ACTIVATION_REQUIRED,
@@ -82,6 +83,7 @@ export function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
     return waitTime
 }
 
+type TransactionWithProductId = Exclude<Transaction, 'productCodeId'> & { productCodeId: NonNullable<Transaction['productCodeId']> }
 export class TokenHandlerUtil {
     static async triggerEventToRequeryTransactionTokenFromVendor({
         eventService,
@@ -160,7 +162,7 @@ export class TokenHandlerUtil {
         {
             transaction, transactionEventService, meter,
         }: {
-            transaction: Transaction,
+            transaction: TransactionWithProductId,
             transactionEventService: TransactionEventService,
             meter: MeterInfo & { id: string },
         }
@@ -168,7 +170,7 @@ export class TokenHandlerUtil {
         // Attempt purchase from new vendor
         if (!transaction.bankRefId) throw new Error('BankRefId not found')
 
-        const newVendor = await TokenHandlerUtil.getNextBestVendorForVendRePurchase(transaction.superagent)
+        const newVendor = await TokenHandlerUtil.getNextBestVendorForVendRePurchase(transaction.productCodeId, transaction.superagent, transaction.previousVendors)
         await transactionEventService.addPowerPurchaseRetryWithNewVendor({ bankRefId: transaction.bankRefId, currentVendor: transaction.superagent, newVendor })
 
         const user = await transaction.$get('user')
@@ -178,6 +180,7 @@ export class TokenHandlerUtil {
         if (!partner) throw new Error('Partner not found for transaction')
 
         retry.count = 0
+        await transaction.update({ previousVendors: [...transaction.previousVendors, newVendor] })
         return await VendorPublisher.publishEventForRetryPowerPurchaseWithNewVendor({
             meter: meter,
             partner: partner,
@@ -233,15 +236,34 @@ export class TokenHandlerUtil {
         }
     }
 
-    static async getNextBestVendorForVendRePurchase(currentVendor: Transaction['superagent']) {
-        // TODO: Implement logic to calculate best rates from different vendors
-        const nextVendor = {
-            BUYPOWERNG: 'BAXI',
-            BAXI: 'IRECHARGE',
-            IRECHARGE: 'BUYPOWERNG'
-        } as const
+    static async getNextBestVendorForVendRePurchase(productCodeId: NonNullable<Transaction['productCodeId']>, currentVendor: Transaction['superagent'], previousVendors: Transaction['previousVendors'] = []): Promise<Transaction['superagent']> {
+        const productCode = await ProductService.viewSingleProductCode(productCodeId, true)
+        if (!productCode) throw new Error('Product code not found')
 
-        return nextVendor[currentVendor]
+        const vendorRates = productCode.vendorRates
+        if (!vendorRates) throw new Error('Vendor rates not found')
+
+        const currentVendorRate = vendorRates.find(vendorRate => vendorRate.vendorName === currentVendor)
+        if (!currentVendorRate) throw new Error('Current vendor rate not found')
+
+        // Check other vendors, sort them according to their commission rates
+        // If the current vendor is the vendor with the highest commission rate, then switch to the vendor with the next highest commission rate
+        // If the next vendor has been used before, switch to the next vendor with the next highest commission rate
+        // If all the vendors have been used before, switch to the vendor with the highest commission rate
+
+        const otherVendors = vendorRates.filter(vendorRate => vendorRate.vendorName !== currentVendor)
+        const sortedOtherVendors = otherVendors.sort((a, b) => b.commission - a.commission)
+
+        const nextBestVendor = sortedOtherVendors[0]
+        if (!nextBestVendor) throw new Error('Next best vendor not found')
+
+        const nextBestVendorHasBeenUsedBefore = previousVendors.includes(nextBestVendor.vendorName)
+        if (!nextBestVendorHasBeenUsedBefore) return nextBestVendor.vendorName
+
+        const nextBestVendorWithHighestCommissionRate = sortedOtherVendors.find(vendorRate => !previousVendors.includes(vendorRate.vendorName))
+        if (!nextBestVendorWithHighestCommissionRate) throw new Error('Next best vendor with highest commission rate not found')
+
+        return nextBestVendorWithHighestCommissionRate.vendorName
     }
 }
 
@@ -326,6 +348,10 @@ class TokenHandler extends Registry {
         await transactionEventService.addGetTransactionTokenFromVendorInitiatedEvent();
         await transactionEventService.addVendElectricityRequestedFromVendorEvent();
 
+        if (!transaction.productCodeId) {
+            throw new Error('Product code not found')
+        }
+
         const responseFromIrecharge = tokenInfo as Awaited<ReturnType<typeof VendorService.irechargeVendToken>>
         const transactionTimedOutFromIrecharge = responseFromIrecharge.source === 'IRECHARGE' ? ['15', '43'].includes(responseFromIrecharge.status) : false
 
@@ -364,7 +390,7 @@ class TokenHandler extends Registry {
             /* Commmented out because no transaction should be allowed to fail, any failed transaction should be retried with a different vendor
             await transactionEventService.addTokenRequestFailedNotificationToPartnerEvent();
             return await VendorPublisher.publishEventForFailedTokenRequest(eventMessage); */
-            return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter: data.meter, transaction, transactionEventService })
+            return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter: data.meter, transaction: transaction as TransactionWithProductId, transactionEventService })
         }
 
         /**

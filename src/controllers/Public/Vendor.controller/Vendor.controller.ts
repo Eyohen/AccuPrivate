@@ -155,9 +155,23 @@ class VendorControllerValdator {
             throw new BadRequestError("Transaction does not exist");
         }
 
+        const productCode = await ProductService.viewSingleProductCodeByCode(transactionRecord.disco, true)
+        if (!productCode) {
+            throw new NotFoundError('Product code not found')
+        }
+
+
+        const vendorDiscoCode = productCode.vendorRates.find((vendorRate) => {
+            return vendorRate.vendorName === transactionRecord.superagent
+        })?.discoCode
+
+        if (!vendorDiscoCode) {
+            throw new InternalServerError('Vendor disco code not found')
+        }
+
         // Check if Disco is Up
         const checKDisco: boolean | Error =
-            await VendorService.buyPowerCheckDiscoUp(transactionRecord.disco);
+            await VendorService.buyPowerCheckDiscoUp(vendorDiscoCode);
         if (!checKDisco && transactionRecord.superagent === 'BUYPOWERNG') throw new BadRequestError("Disco is currently down");
 
         // Check if bankRefId has been used before
@@ -390,6 +404,15 @@ export default class VendorController {
         const superagent = DEFAULT_ELECTRICITY_PROVIDER; // BUYPOWERNG or BAXI
         const partnerId = (req as any).key;
 
+        const existingProductCodeForDisco = await ProductService.viewSingleProductCodeByCode(disco, true)
+        if (!existingProductCodeForDisco) {
+            throw new NotFoundError('Product code not found for disco')
+        }
+
+        if (existingProductCodeForDisco.type !== 'ELECTRICITY') {
+            throw new BadRequestError('Invalid product code for electricity')
+        }
+
         const transaction: Transaction =
             await TransactionService.addTransactionWithoutValidatingUserRelationship({
                 id: uuidv4(),
@@ -400,7 +423,9 @@ export default class VendorController {
                 transactionTimestamp: new Date(),
                 disco: disco,
                 partnerId: partnerId,
-                transactionType: TransactionType.ELECTRICITY
+                transactionType: TransactionType.ELECTRICITY,
+                productCodeId: existingProductCodeForDisco.id,
+                previousVendors: [DEFAULT_ELECTRICITY_PROVIDER]
             });
 
         const transactionEventService = new EventService.transactionEventService(
@@ -413,15 +438,6 @@ export default class VendorController {
             transactionId: transaction.id,
             superAgent: superagent
         });
-
-        const existingProductCodeForDisco = await ProductService.viewSingleProductCodeByCode(disco, true)
-        if (!existingProductCodeForDisco) {
-            throw new NotFoundError('Product code not found for disco')
-        }
-
-        if (existingProductCodeForDisco.type !== 'ELECTRICITY') {
-            throw new BadRequestError('Invalid product code for electricity')
-        }
 
         const vendorDiscoCode = existingProductCodeForDisco.vendorRates.find((vendorRate) => {
             console.log({ vendorRate: vendorRate.dataValues })
@@ -548,15 +564,28 @@ export default class VendorController {
             throw new NotFoundError("Transaction not found");
         }
 
-
         const meter = await transaction.$get("meter");
         if (!meter) {
             throw new InternalServerError("Transaction does not have a meter");
         }
 
+
+        const productCode = await ProductService.viewSingleProductCodeByCode(transaction.disco, true)
+        if (!productCode) {
+            throw new NotFoundError('Product code not found')
+        }
+
+        const vendorDiscoCode = productCode.vendorRates.find((vendorRate) => {
+            return vendorRate.vendorName === transaction.superagent
+        })?.discoCode
+
+        if (!vendorDiscoCode) {
+            throw new InternalServerError('Vendor disco code not found')
+        }
+
         const meterInfo = {
             meterNumber: meter.meterNumber,
-            disco: transaction.disco,
+            disco: vendorDiscoCode,
             vendType: meter.vendType,
             id: meter.id,
         }
@@ -743,8 +772,6 @@ export default class VendorController {
     }
 
     static async getDiscos(req: Request, res: Response) {
-        let discos: { name: string; serviceType: "PREPAID" | "POSTPAID" }[] = [];
-
         const productCodes = await ProductService.getAllProductCodes();
 
         res.status(200).json({

@@ -20,6 +20,8 @@ import { VendorPublisher } from "../../../kafka/modules/publishers/Vendor";
 import { CRMPublisher } from "../../../kafka/modules/publishers/Crm";
 import { AirtimeTransactionEventService } from "../../../services/TransactionEvent.service";
 import { Database } from "../../../models";
+import ProductService from "../../../services/ProductCode.service";
+import ProductCode from "../../../models/ProductCode.model";
 
 
 class AirtimeValidator {
@@ -66,6 +68,12 @@ export class AirtimeVendController {
         // TODO: Add request type for request authenticated by API keys
         const partnerId = (req as any).key
 
+        // TODO: I'm using this for now to allow the schema validation since product code hasn't been created for airtime
+        const productCode = await ProductCode.findOne({ where: { type: 'ELECTRICITY' } })
+        if (!productCode) {
+            throw new InternalServerError('Product code not found')
+        }
+
         const transaction: Transaction =
             await TransactionService.addTransactionWithoutValidatingUserRelationship({
                 id: uuidv4(),
@@ -76,7 +84,9 @@ export class AirtimeVendController {
                 paymentType: PaymentType.PAYMENT,
                 transactionTimestamp: new Date(),
                 partnerId: partnerId,
-                transactionType: TransactionType.ELECTRICITY
+                transactionType: TransactionType.ELECTRICITY,
+                productCodeId: productCode.id,
+                previousVendors: [DEFAULT_AIRTIME_PROVIDER],
             });
 
         const transactionEventService = new AirtimeTransactionEventService(transaction, superAgent, partnerId, phoneNumber);
