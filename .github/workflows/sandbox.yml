@@ -1,0 +1,119 @@
+name: ci-cd
+
+on:
+  push:
+    branches: 
+      - sandbox
+  pull_request: 
+    branches: 
+      - sandbox
+
+jobs:
+  test-backend: 
+    name: test-backend
+    runs-on: ubuntu-latest
+    steps: 
+      - name: Checkout
+        uses: actions/checkout@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm ci
+      - run: npm test
+      
+  scan-backend: 
+    name: scan-backend
+    runs-on: ubuntu-latest
+    steps: 
+      - name: Checkout
+        uses: actions/checkout@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm ci
+      - run: npm audit fix --force
+      - run: npm audit fix --audit-level=critical --force
+      - run: npm audit --audit-level=critical
+      - name: Save nodemodules cache
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: backend-build
+
+        
+  build-backend:
+    name: build-backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Restore frontend cache
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: backend-build
+      - name: Back-end build
+        run: |
+          rm -rf dist
+          npm ci
+          npm run build
+          ls ./src/utils/Email/templates && cp -r src/utils/Email/templates/ dist/utils/Email/  && rm -f ./dist/utils/Email/templates/index.ts  && ls ./dist/utils/Email/templates
+      - name: cache dist 
+        uses: actions/checkout@v2
+        with:
+          path: dist
+          key: dist-folder
+        
+  push-build:
+    name: push-build
+    runs-on: ubuntu-latest
+    steps:
+      - name: chechkout
+        uses: actions/checkout@v2
+      - name: restore dist 
+        uses: actions/checkout@v2
+        with:
+          path: dist
+          key: dist-folder
+      - name: push to state to s3
+        run: |
+          aws s3 cp -R dist/  s3://staging-bucket-deployment/dist
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            TF_ACTION_WORKING_DIR: 'terraform/sandbox'
+            AWS_ACCESS_KEY_ID:  ${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            TF_db_password: ${{secrets.DB_PASSWORD}}
+      
+  create-update-environment:
+    name: create-environment
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: pull terraform state from s3
+      run: |
+        aws s3 cp s3://sandbox-terraform-item/terraform.tfstate ./terraform/sandbox
+    
+    # - name: Terraform Init
+    #   uses: hashicorp/terraform-github-actions/init@v0.4.0
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #     TF_ACTION_WORKING_DIR: 'terraform/sandbox'
+    #     AWS_ACCESS_KEY_ID:  ${{ secrets.AWS_ACCESS_KEY_ID }}
+    #     AWS_SECRET_ACCESS_KEY:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    #     TF_db_password: ${{secrets.DB_PASSWORD}}
+
+    # - name: Terraform Validate
+    #   uses: hashicorp/terraform-github-actions/validate@v0.3.7
+
+    # - name: Terraform Apply
+    #   uses: hashicorp/terraform-github-actions/apply@v0.4.0
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #     TF_ACTION_WORKING_DIR: 'terraform/sandbox'
+    #     AWS_ACCESS_KEY_ID:  ${{ secrets.AWS_ACCESS_KEY_ID }}
+    #     AWS_SECRET_ACCESS_KEY:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    #     TF_db_password: ${{secrets.DB_PASSWORD}}
+      
