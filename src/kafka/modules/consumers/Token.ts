@@ -260,8 +260,11 @@ export class TokenHandlerUtil {
         const nextBestVendorHasBeenUsedBefore = previousVendors.includes(nextBestVendor.vendorName)
         if (!nextBestVendorHasBeenUsedBefore) return nextBestVendor.vendorName
 
-        const nextBestVendorWithHighestCommissionRate = sortedOtherVendors.find(vendorRate => !previousVendors.includes(vendorRate.vendorName))
-        if (!nextBestVendorWithHighestCommissionRate) throw new Error('Next best vendor with highest commission rate not found')
+        let nextBestVendorWithHighestCommissionRate = sortedOtherVendors.find(vendorRate => !previousVendors.includes(vendorRate.vendorName))
+        if (!nextBestVendorWithHighestCommissionRate) {
+            // If all vendors have been used before, switch to the vendor with the highest commission rate
+            nextBestVendorWithHighestCommissionRate = vendorRates.sort((a, b) => b.commission - a.commission)[0]
+        }
 
         return nextBestVendorWithHighestCommissionRate.vendorName
     }
