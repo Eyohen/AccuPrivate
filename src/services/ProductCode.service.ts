@@ -30,7 +30,7 @@ export default class ProductService {
     }
 
     static async viewSingleProductCodeByCode(productCode: string, include = false): Promise<ProductCode | null> {
-        const _productCode  = await ProductCode.findOne({ where: { productCode }, include: include ? [VendorRates] : undefined });
+        const _productCode = await ProductCode.findOne({ where: { productCode }, include: include ? [VendorRates] : undefined });
         return _productCode;
     }
 
@@ -62,8 +62,8 @@ export default class ProductService {
     }
 
     // Method for retrieving all product codes
-    static async getAllProductCodes(): Promise<ProductCode[]> {
-        const productCodes = await ProductCode.findAll();
+    static async getAllProductCodes(include?: boolean): Promise<ProductCode[]> {
+        const productCodes = await ProductCode.findAll({ where: {}, include: include ? [VendorRates] : undefined });
         return productCodes;
     }
 

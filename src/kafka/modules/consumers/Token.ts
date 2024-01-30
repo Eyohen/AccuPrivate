@@ -170,7 +170,7 @@ export class TokenHandlerUtil {
         // Attempt purchase from new vendor
         if (!transaction.bankRefId) throw new Error('BankRefId not found')
 
-        const newVendor = await TokenHandlerUtil.getNextBestVendorForVendRePurchase(transaction.productCodeId, transaction.superagent, transaction.previousVendors)
+        const newVendor = await TokenHandlerUtil.getNextBestVendorForVendRePurchase(transaction.productCodeId, transaction.superagent, transaction.previousVendors, parseFloat(transaction.amount))
         await transactionEventService.addPowerPurchaseRetryWithNewVendor({ bankRefId: transaction.bankRefId, currentVendor: transaction.superagent, newVendor })
 
         const user = await transaction.$get('user')
@@ -236,7 +236,7 @@ export class TokenHandlerUtil {
         }
     }
 
-    static async getNextBestVendorForVendRePurchase(productCodeId: NonNullable<Transaction['productCodeId']>, currentVendor: Transaction['superagent'], previousVendors: Transaction['previousVendors'] = []): Promise<Transaction['superagent']> {
+    static async getNextBestVendorForVendRePurchase(productCodeId: NonNullable<Transaction['productCodeId']>, currentVendor: Transaction['superagent'], previousVendors: Transaction['previousVendors'] = [], amount: number): Promise<Transaction['superagent']> {
         const productCode = await ProductService.viewSingleProductCode(productCodeId, true)
         if (!productCode) throw new Error('Product code not found')
 
@@ -252,7 +252,7 @@ export class TokenHandlerUtil {
         // If all the vendors have been used before, switch to the vendor with the highest commission rate
 
         const otherVendors = vendorRates.filter(vendorRate => vendorRate.vendorName !== currentVendor)
-        const sortedOtherVendors = otherVendors.sort((a, b) => b.commission - a.commission)
+        const sortedOtherVendors = otherVendors.sort((a, b) => (b.commission + b.bonus) - (a.commission + a.bonus))
 
         const nextBestVendor = sortedOtherVendors[0]
         if (!nextBestVendor) throw new Error('Next best vendor not found')
@@ -263,7 +263,7 @@ export class TokenHandlerUtil {
         let nextBestVendorWithHighestCommissionRate = sortedOtherVendors.find(vendorRate => !previousVendors.includes(vendorRate.vendorName))
         if (!nextBestVendorWithHighestCommissionRate) {
             // If all vendors have been used before, switch to the vendor with the highest commission rate
-            nextBestVendorWithHighestCommissionRate = vendorRates.sort((a, b) => b.commission - a.commission)[0]
+            nextBestVendorWithHighestCommissionRate = vendorRates.sort((a, b) => (b.commission + b.bonus) - (a.commission + a.bonus))[0]
         }
 
         return nextBestVendorWithHighestCommissionRate.vendorName

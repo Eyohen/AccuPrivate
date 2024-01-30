@@ -7,13 +7,13 @@ import { randomUUID } from "crypto";
 export default class VendorRatesController {
 
     static async createVendorRate(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { productCodeId, vendorName, discoCode, commission } = req.body as { productCodeId: string, vendorName: 'BUYPOWERNG' | 'BAXI' | 'IRECHARGE', discoCode: string, commission: number };
+        const { productCodeId, vendorName, discoCode, commission, bonus } = req.body as { bonus: number, productCodeId: string, vendorName: 'BUYPOWERNG' | 'BAXI' | 'IRECHARGE', discoCode: string, commission: number };
 
         if (!productCodeId || !vendorName || !discoCode || !commission) {
             throw new BadRequestError('Product code ID, vendor name, disco code, and commission are required');
         }
 
-        const data = { productCodeId, vendorName, discoCode, commission, id: randomUUID() };
+        const data = { productCodeId, vendorName, discoCode, commission, id: randomUUID(), bonus };
         const vendorRate = await ProductService.addVendorRate(data);
 
         res.status(201).json({

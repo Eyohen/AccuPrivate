@@ -772,7 +772,7 @@ export default class VendorController {
     }
 
     static async getDiscos(req: Request, res: Response) {
-        const productCodes = await ProductService.getAllProductCodes();
+        const productCodes = await ProductService.getAllProductCodes(true);
 
         res.status(200).json({
             status: "success",
