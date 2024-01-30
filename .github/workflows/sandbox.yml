@@ -90,7 +90,7 @@ jobs:
       
   create-update-environment:
     name: create-environment
-    needs: [test-backend]
+    needs: [push-build]
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
