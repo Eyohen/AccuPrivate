@@ -95,12 +95,12 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-    - name: Configure AWS Credentials
+    - name: Configure AWS Credentials 2
       uses: aws-actions/configure-aws-credentials@v4
       with:
+        aws-region: eu-west-2
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: eu-west-2
     - name: pull terraform state from s3
       run: |
         aws s3 cp s3://sandbox-terraform-item/terraform.tfstate ./terraform/sandbox
