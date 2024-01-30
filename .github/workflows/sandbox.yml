@@ -80,7 +80,7 @@ jobs:
           key: dist-folder
       - name: push to state to s3
         run: |
-          aws s3 cp -R dist/  s3://staging-bucket-deployment/dist
+          aws s3 cp dist s3://staging-bucket-deployment/ --recursive
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             TF_ACTION_WORKING_DIR: 'terraform/sandbox'
