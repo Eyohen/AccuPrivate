@@ -8,10 +8,6 @@ export class IRechargeAirtimeApi extends IRechargeBaseConfig {
 
         const reference = NODE_ENV === 'development' ? generateRandonNumbers(12) : data.reference
 
-        const combinedString = this.VENDOR_CODE + "|" + reference + "|" + phoneNumber + "|" + serviceType + "|" + amount + "|" + this.PUBLIC_KEY
-        const hash = this.generateHash(combinedString)
-        console.log({ data })
-
         const network = {
             'mtn': 'MTN',
             'glo': 'Glo',
@@ -19,6 +15,10 @@ export class IRechargeAirtimeApi extends IRechargeBaseConfig {
             '9mobile': 'Etisalat',
             'etisalat': 'Etisalat'
         }
+
+        const combinedString = this.VENDOR_CODE + "|" + reference + "|" + phoneNumber + "|" + network[serviceType.toLowerCase() as keyof typeof network] + "|" + amount + "|" + this.PUBLIC_KEY
+        const hash = this.generateHash(combinedString)
+
         const params = {
             vendor_code: this.VENDOR_CODE,
             vtu_network: network[serviceType.toLowerCase() as keyof typeof network],
