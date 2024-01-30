@@ -54,6 +54,9 @@ jobs:
         with:
           path: node_modules
           key: backend-build
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
       - name: Back-end build
         run: |
           ls
@@ -65,6 +68,7 @@ jobs:
           pwd
           cd dist 
           pwd
+          ls
       - name: cache dist 
         uses: actions/checkout@v2
         with:
