@@ -66,11 +66,7 @@ jobs:
           path: dist
           key: dist-folder
       - run: |
-          ls 
-          find server.js
-          cd dist 
-          echo "******"
-          ls 
+          tsc --version
          
         
   # push-build:
