@@ -63,12 +63,7 @@ jobs:
           rm -rf dist
           npm install
           npm run build
-          ls
           ls ./src/utils/Email/templates && cp -r src/utils/Email/templates/ dist/utils/Email/  && rm -f ./dist/utils/Email/templates/index.ts  && ls ./dist/utils/Email/templates
-          pwd
-          cd dist 
-          pwd
-          ls
       - name: cache dist 
         uses: actions/checkout@v2
         with:
@@ -78,28 +73,30 @@ jobs:
           tsc --version
          
         
-  # push-build:
-  #   name: push-build
-  #   needs: [build-backend]
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: chechkout
-  #       uses: actions/checkout@v2
-  #     - name: restore dist 
-  #       uses: actions/checkout@v2
-  #       with:
-  #         path: dist
-  #         key: dist-folder
-  #     - name: Configure AWS Credentials
-  #       uses: aws-actions/configure-aws-credentials@v4
-  #       with:
-  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  #         aws-secret-access-key: ${{ secrets.AWS_ACCESS_SECRET_KEY }}
-  #         aws-region: eu-west-2
-  #     - name: push to state to s3
-  #       run: |
-  #         ls dist 
-  #         aws s3 cp ./dist s3://staging-bucket-deployment/ --recursive
+  push-build:
+    name: push-build
+    needs: [build-backend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: chechkout
+        uses: actions/checkout@v2
+      - name: restore dist 
+        uses: actions/checkout@v2
+        with:
+          path: dist
+          key: dist-folder
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_ACCESS_SECRET_KEY }}
+          aws-region: eu-west-2
+      - name: push to state to s3
+        env:
+          github_run_id : ${{GITHUB_RUN_NUMBER}}
+        run: |
+          zip -r dist-${{env.github_run_id}}.zip dist
+          aws s3 cp ./dist-${{env.github_run_id}}.zip s3://staging-bucket-deployment/ 
       
   # create-update-environment:
   #   name: create-environment
