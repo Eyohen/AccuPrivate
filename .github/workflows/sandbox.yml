@@ -307,18 +307,20 @@ jobs:
           terraform apply -auto-approve -no-color
       continue-on-error: true
 
-    - name: Save tft.state file 
-      run: |
-          cd terraform/sandbox
-          pwd
-          aws s3 cp terraform.tfstate s3://sandbox-terraform-item/
-      
     - run: echo ${{ steps.plan.outputs.stdout }}
     - run: echo ${{ steps.plan.outputs.stderr }}
     - run: echo ${{ steps.plan.outputs.exitcode }}
     - run: echo ${{ steps.apply.outputs.stdout }}
     - run: echo ${{ steps.apply.outputs.stderr }}
     - run: echo ${{ steps.apply.outputs.exitcode }}
+
+    - name: Save tft.state file 
+      run: |
+          cd terraform/sandbox
+          pwd
+          aws s3 cp terraform.tfstate s3://sandbox-terraform-item/
+      
+   
       
 
     
