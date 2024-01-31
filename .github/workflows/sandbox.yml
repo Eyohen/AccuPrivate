@@ -138,6 +138,9 @@ jobs:
         echo "SU_HOST_EMAIL_2=$SU_HOST_EMAIL_2" >> .env
         echo "SU_HOST_EMAIL_3=$SU_HOST_EMAIL_3" >> .env
         cat .env
+    - name: push to state to s3
+      run: |
+        aws s3 cp ./.env s3://accuvend-bucket-configuration/ 
       
   # scan-backend: 
   #   name: scan-backend
