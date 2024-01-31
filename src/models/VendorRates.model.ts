@@ -27,6 +27,12 @@ export default class VendorRates extends Model<IVendorRates | VendorRates> {
     @Column({ type: DataType.FLOAT, allowNull: false, defaultValue: 0 })
     bonus: number;
 
+    @Column({ type: DataType.STRING, allowNull: true })
+    title: string;
+
+    @Column({ type: DataType.STRING, allowNull: true })
+    validity: string;
+
     // Foreign key for the associated ProductCode
     @ForeignKey(() => ProductCode)
     @IsUUID(4)
@@ -46,4 +52,6 @@ export interface IVendorRates {
     commission: number; // Commission rate for the vendor
     productCodeId: string; // Unique identifier of the associated ProductCode
     bonus: number;
+    title: string | undefined;
+    validity: string | undefined;
 }

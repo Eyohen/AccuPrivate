@@ -4,7 +4,7 @@ import Meter from "../../../models/Meter.model";
 import Transaction from "../../../models/Transaction.model";
 import PowerUnitService from "../../../services/PowerUnit.service";
 import TransactionService from "../../../services/Transaction.service";
-import TransactionEventService, { AirtimeTransactionEventService } from "../../../services/TransactionEvent.service";
+import TransactionEventService, { DataTransactionEventService } from "../../../services/TransactionEvent.service";
 import { DISCO_LOGO, LOGO_URL, MAX_REQUERY_PER_VENDOR, NODE_ENV } from "../../../utils/Constants";
 import logger from "../../../utils/Logger";
 import { TOPICS } from "../../Constants";
@@ -19,7 +19,7 @@ import {
 import MessageProcessor from "../util/MessageProcessor";
 import { v4 as uuidv4 } from "uuid";
 import EventService from "../../../services/Event.service";
-import VendorService, { Prettify, SuccessResponseForBuyPowerRequery, VendorAirtimeService } from "../../../services/Vendor.service";
+import VendorService, { Prettify, SuccessResponseForBuyPowerRequery } from "../../../services/Vendor.service";
 import { generateRandomToken } from "../../../utils/Helper";
 import BuypowerApi from "../../../services/Vendor.service/Buypower";
 import { IRechargeApi } from "../../../services/Vendor.service/Irecharge";
@@ -34,7 +34,7 @@ interface EventMessage {
 }
 
 interface TriggerRequeryTransactionTokenProps {
-    eventService: AirtimeTransactionEventService;
+    eventService: DataTransactionEventService;
     eventData: EventMessage & {
         error: {
             cause: TransactionErrorCause;
@@ -51,13 +51,13 @@ interface TokenPurchaseData<T = 'IRECHARGE'> {
     phoneNumber: string,
     email: string,
     amount: number,
-    accountNumber: string,
     serviceProvider: 'MTN' | 'GLO' | 'AIRTEL' | '9MOBILE',
+    dataCode: string
 }
 
 interface ProcessVendRequestReturnData {
-    'BUYPOWERNG': Awaited<ReturnType<typeof BuypowerApi.Airtime.purchase>>,
-    'IRECHARGE': Awaited<ReturnType<typeof IRechargeApi.Airtime.purchase>>,
+    // 'BUYPOWERNG': Awaited<ReturnType<typeof BuypowerApi.Data.purchase>>,
+    'IRECHARGE': Awaited<ReturnType<typeof IRechargeApi.Data.purchase>>,
 }
 
 const retry = {
@@ -121,7 +121,7 @@ export class TokenHandlerUtil {
             `Retrying transaction with id ${eventData.transactionId} from vendor`,
         );
 
-        await eventService.addGetAirtimeFromVendorRetryEvent(_eventMessage.error, retryCount);
+        await eventService.addGetDataFromVendorRetryEvent(_eventMessage.error, retryCount);
         const eventMetaData = {
             transactionId: eventData.transactionId,
             phone: eventData.phone,
@@ -146,7 +146,7 @@ export class TokenHandlerUtil {
         // TODO: Use an external service to schedule this task
         setTimeout(async () => {
             logger.info('Retrying transaction from vendor')
-            await VendorPublisher.publishEventForGetAirtimeFromVendorRetry(
+            await VendorPublisher.publishEventForGetDataFromVendorRetry(
                 eventMetaData,
             );
         }, eventMetaData.waitTime * 1000);
@@ -157,7 +157,7 @@ export class TokenHandlerUtil {
             transaction, transactionEventService, phone,
         }: {
             transaction: Transaction,
-            transactionEventService: AirtimeTransactionEventService,
+            transactionEventService: DataTransactionEventService,
             phone: { phoneNumber: string, amount: number },
         }
     ) {
@@ -170,7 +170,7 @@ export class TokenHandlerUtil {
             previousVendors: transaction.previousVendors,
             amount: parseFloat(transaction.amount),
         })
-        await transactionEventService.addAirtimePurchaseWithNewVendorEvent({ currentVendor: transaction.superagent, newVendor })
+        await transactionEventService.addDataPurchaseWithNewVendorEvent({ currentVendor: transaction.superagent, newVendor })
 
         const user = await transaction.$get('user')
         if (!user) throw new Error('User not found for transaction')
@@ -181,7 +181,7 @@ export class TokenHandlerUtil {
         retry.count = 0
         await transaction.update({ previousVendors: [...transaction.previousVendors, newVendor] })
 
-        return await VendorPublisher.publishEventForAirtimePurchaseRetryFromVendorWithNewVendor({
+        return await VendorPublisher.publishEventForDataPurchaseRetryFromVendorWithNewVendor({
             partner: partner,
             transactionId: transaction.id,
             superAgent: newVendor,
@@ -198,7 +198,7 @@ export class TokenHandlerUtil {
 
     static async processVendRequest<T extends 'IRECHARGE'>({ transaction, ...data }: TokenPurchaseData<T>): Promise<ProcessVendRequestReturnData[T]> {
         const _data = {
-            accountNumber: data.accountNumber,
+            dataCode: data.dataCode,
             phoneNumber: data.phoneNumber,
             serviceType: data.serviceProvider,
             amount: data.amount,
@@ -210,7 +210,7 @@ export class TokenHandlerUtil {
             // case "BAXI":
             //     return await VendorService.baxiVendToken(_data)
             // case "BUYPOWERNG":
-            //     return await VendorService.purchaseAirtime({
+            //     return await VendorService.purchaseData({
             //         data: {
             //             accountNumber: data.accountNumber,
             //             phoneNumber: data.phoneNumber,
@@ -221,7 +221,7 @@ export class TokenHandlerUtil {
             //         }, vendor: 'BUYPOWERNG'
             //     }).then(response => ({ ...response, source: 'BUYPOWERNG' }))
             case "IRECHARGE":
-                return await VendorService.purchaseAirtime({ data: _data, vendor: 'IRECHARGE' })
+                return await VendorService.purchaseData({ data: _data, vendor: 'IRECHARGE' })
                     .then(response => ({ ...response, source: 'IRECHARGE' }))
             default:
                 throw new Error("Invalid superagent");
@@ -281,7 +281,7 @@ export class TokenHandlerUtil {
 }
 
 class TokenHandler extends Registry {
-    private static async retryPowerPurchaseWithNewVendor(data: PublisherEventAndParameters[TOPICS.RETRY_AIRTIME_PURCHASE_FROM_NEW_VENDOR]) {
+    private static async retryPowerPurchaseWithNewVendor(data: PublisherEventAndParameters[TOPICS.RETRY_DATA_PURCHASE_FROM_NEW_VENDOR]) {
         const transaction = await TransactionService.viewSingleTransaction(data.transactionId);
         if (!transaction) {
             throw new Error(`Error fetching transaction with id ${data.transactionId}`);
@@ -291,9 +291,9 @@ class TokenHandler extends Registry {
         }
 
         await TransactionService.updateSingleTransaction(transaction.id, { superagent: data.newVendor })
-        const transactionEventService = new AirtimeTransactionEventService(transaction, data.newVendor, data.partner.email, data.phone.phoneNumber);
-        await transactionEventService.addAirtimePurchaseInitiatedEvent({ amount: transaction.amount });
-        await VendorPublisher.publshEventForAirtimePurchaseInitiate({
+        const transactionEventService = new DataTransactionEventService(transaction, data.newVendor, data.partner.email, data.phone.phoneNumber);
+        await transactionEventService.addDataPurchaseInitiatedEvent({ amount: transaction.amount });
+        await VendorPublisher.publshEventForDataPurchaseInitiate({
             phone: data.phone,
             user: data.user,
             partner: data.partner,
@@ -302,8 +302,8 @@ class TokenHandler extends Registry {
         })
     }
 
-    private static async handleAirtimeRequest(
-        data: PublisherEventAndParameters[TOPICS.AIRTIME_PURCHASE_INITIATED_BY_CUSTOMER],
+    private static async handleDataRequest(
+        data: PublisherEventAndParameters[TOPICS.DATA_PURCHASE_INITIATED_BY_CUSTOMER],
     ) {
         console.log({
             log: 'New token request',
@@ -333,25 +333,25 @@ class TokenHandler extends Registry {
         if (!vendorRates) throw new Error('Vendor rates not found')
 
         const vendorProductCode = vendorRates.find(vendorRate => vendorRate.vendorName === transaction.superagent)?.discoCode
-        
+
         // Purchase token from vendor
         const tokenInfo = await TokenHandlerUtil.processVendRequest({
             transaction: transaction as TokenPurchaseData['transaction'],
             phoneNumber: data.phone.phoneNumber,
             email: user.email,
             amount: parseFloat(transaction.amount),
-            accountNumber: data.phone.phoneNumber,
-            serviceProvider: vendorProductCode as TokenPurchaseData['serviceProvider'],
+            dataCode: vendorProductCode as TokenPurchaseData['dataCode'],
+            serviceProvider: productCode.network as TokenPurchaseData['serviceProvider'],
         });
 
         const error = { code: 202, cause: TransactionErrorCause.UNKNOWN }
-        const transactionEventService = new AirtimeTransactionEventService(
+        const transactionEventService = new DataTransactionEventService(
             transaction,
             data.superAgent,
             partner.email,
             data.phone.phoneNumber,
         );
-        await transactionEventService.addVendAirtimeRequestedFromVendorEvent();
+        await transactionEventService.addVendDataRequestedFromVendorEvent();
 
         let requeryFromNewVendor = false
         let requeryFromSameVendor = false
@@ -384,8 +384,8 @@ class TokenHandler extends Registry {
         }
 
         await transaction.update({ irecharge_token: tokenInfo.ref })
-        await transactionEventService.addAirtimeReceivedFromVendorEvent();
-        return await VendorPublisher.publishEventForAirtimeReceivedFromVendor({
+        await transactionEventService.addDataReceivedFromVendorEvent();
+        return await VendorPublisher.publishEventForDataReceivedFromVendor({
             transactionId: transaction!.id,
             user: {
                 name: user.name as string,
@@ -400,8 +400,8 @@ class TokenHandler extends Registry {
         });
     }
 
-    private static async handleAirtimeRecievd(
-        data: PublisherEventAndParameters[TOPICS.AIRTIME_RECEIVED_FROM_VENDOR],
+    private static async handleDataRecievd(
+        data: PublisherEventAndParameters[TOPICS.DATA_RECEIVED_FROM_VENDOR],
     ) {
         const transaction = await TransactionService.viewSingleTransaction(
             data.transactionId,
@@ -429,7 +429,7 @@ class TokenHandler extends Registry {
         const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' : false
         // const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false
 
-        const transactionEventService = new AirtimeTransactionEventService(
+        const transactionEventService = new DataTransactionEventService(
             transaction,
             transaction.superagent,
             transaction.partner.email,
@@ -438,7 +438,7 @@ class TokenHandler extends Registry {
         const transactionSuccess = transactionSuccessFromBuypower || transactionSuccessFromIrecharge
 
         if (!transactionSuccess) {
-            await transactionEventService.addAirtimeTransactionRequery()
+            await transactionEventService.addDataTransactionRequery()
             await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor({
                 eventService: transactionEventService,
                 eventData: {
@@ -461,7 +461,7 @@ class TokenHandler extends Registry {
     }
 
     private static async requeryTransaction(
-        data: PublisherEventAndParameters[TOPICS.GET_AIRTIME_FROM_VENDOR_RETRY],
+        data: PublisherEventAndParameters[TOPICS.GET_DATA_FROM_VENDOR_RETRY],
     ) {
         retry.count = data.retryCount;
         console.log({
@@ -481,13 +481,13 @@ class TokenHandler extends Registry {
             throw new Error("Transaction  required relations not found");
         }
 
-        const transactionEventService = new AirtimeTransactionEventService(
+        const transactionEventService = new DataTransactionEventService(
             transaction,
             data.superAgent,
             partner.email,
             data.phone.phoneNumber
         );
-        await transactionEventService.addAirtimeTranasctionRequeryInitiated();
+        await transactionEventService.addDataTranasctionRequeryInitiated();
 
         // Requery transaction from provider and update transaction status
         /**
@@ -575,8 +575,8 @@ class TokenHandler extends Registry {
             }
         }
 
-        await transactionEventService.addAirtimeTransactionRequery()
-        await VendorPublisher.publishEventForAirtimeReceivedFromVendor({
+        await transactionEventService.addDataTransactionRequery()
+        await VendorPublisher.publishEventForDataReceivedFromVendor({
             phone: data.phone,
             transactionId: transaction.id,
             user: {
@@ -592,14 +592,14 @@ class TokenHandler extends Registry {
     }
 
     static registry = {
-        [TOPICS.AIRTIME_PURCHASE_INITIATED_BY_CUSTOMER]: this.handleAirtimeRequest,
-        [TOPICS.AIRTIME_RECEIVED_FROM_VENDOR]: this.handleAirtimeRecievd,
-        [TOPICS.GET_AIRTIME_FROM_VENDOR_RETRY]: this.requeryTransaction,
-        [TOPICS.AIRTIME_PURCHASE_RETRY_FROM_NEW_VENDOR]: this.retryPowerPurchaseWithNewVendor,
+        [TOPICS.DATA_PURCHASE_INITIATED_BY_CUSTOMER]: this.handleDataRequest,
+        [TOPICS.DATA_RECEIVED_FROM_VENDOR]: this.handleDataRecievd,
+        [TOPICS.GET_DATA_FROM_VENDOR_RETRY]: this.requeryTransaction,
+        [TOPICS.DATA_PURCHASE_RETRY_FROM_NEW_VENDOR]: this.retryPowerPurchaseWithNewVendor,
     };
 }
 
-export default class AirtimeConsumer extends ConsumerFactory {
+export default class DataConsumer extends ConsumerFactory {
     constructor() {
         const messageProcessor = new MessageProcessor(
             TokenHandler.registry,

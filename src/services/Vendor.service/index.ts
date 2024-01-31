@@ -698,6 +698,27 @@ export default class VendorService {
                 throw new Error('UNAVAILABLE_VENDOR')
         }
     }
+
+    static async purchaseData<T extends 'BUYPOWERNG' | 'IRECHARGE'>({ data, vendor }: {
+        data: {
+            amount: number,
+            dataCode: string,
+            serviceType: 'MTN' | 'GLO' | 'AIRTEL' | '9MOBILE',
+            phoneNumber: string,
+            reference: string,
+            email: string,
+        },
+        vendor: T
+    }): Promise<Prettify<ProcessVendRequestReturnData[typeof vendor]>> {
+        switch (vendor) {
+            // case 'BUYPOWERNG':
+            //     return await BuypowerApi.Data.purchase(data);
+            case 'IRECHARGE':
+                return await IRechargeApi.Data.purchase(data)
+            default:
+                throw new Error('UNAVAILABLE_VENDOR')
+        }
+    }
 }
 
 export type Prettify<T extends {}> = { [K in keyof T]: T[K] } & {}

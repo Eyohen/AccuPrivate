@@ -50,6 +50,7 @@ export default class ProductService {
         const vendorRate = await VendorRates.findOne({ where: { vendorName, discoCode } });
         return vendorRate;
     }
+
     // Method for updating an existing vendor rate
     static async updateVendorRate(vendorRateId: string, data: Partial<IVendorRates>, transaction?: Transaction): Promise<VendorRates> {
         const vendorRate = await VendorRates.findByPk(vendorRateId);
