@@ -40,7 +40,7 @@ class AirtimeValidator {
         }
     }
 
-    static validateAirtimeRequest({ phoneNumber, amount, disco }: { phoneNumber: string, amount: string, disco: string }) {
+    static async validateAirtimeRequest({ phoneNumber, amount, disco }: { phoneNumber: string, amount: string, disco: string }) {
         AirtimeValidator.validatePhoneNumber(phoneNumber);
         // Check if amount is a number
         if (isNaN(Number(amount))) {
@@ -51,10 +51,24 @@ class AirtimeValidator {
             throw new BadRequestError("Amount must be greater than 50");
         }
 
-        if (['9MOBILE', 'AIRTEL', 'GLO', 'MTN', 'ETISALAT'].indexOf(disco.toUpperCase()) === -1) {
-            throw new BadRequestError("Invalid disco");
+        const productCode = await ProductService.viewSingleProductCodeByCode(disco, true)
+        if (!productCode) {
+            throw new InternalServerError('Product code not found')
         }
     }
+
+    static async requestAirtime({ transactionId, bankRefId, bankComment }: { transactionId: string, bankRefId: string, bankComment: string }) {
+        if (!transactionId || !bankRefId || !bankComment) {
+            throw new BadRequestError("Transaction ID, bank reference ID, and bank comment are required");
+        }
+
+        const transactionRecord = await TransactionService.viewSingleTransaction(transactionId);
+        if (!transactionRecord) {
+            throw new NotFoundError("Transaction not found");
+        }
+    }
+
+
 }
 
 export class AirtimeVendController {
@@ -69,9 +83,9 @@ export class AirtimeVendController {
         const partnerId = (req as any).key
 
         // TODO: I'm using this for now to allow the schema validation since product code hasn't been created for airtime
-        const productCode = await ProductCode.findOne({ where: { type: 'ELECTRICITY' } })
+        const productCode = await ProductService.viewSingleProductCodeByCode(disco, true)
         if (!productCode) {
-            throw new InternalServerError('Product code not found')
+            throw new BadRequestError('Invalid Product code')
         }
 
         const transaction: Transaction =

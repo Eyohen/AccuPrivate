@@ -351,10 +351,6 @@ class TokenHandler extends Registry {
         await transactionEventService.addGetTransactionTokenFromVendorInitiatedEvent();
         await transactionEventService.addVendElectricityRequestedFromVendorEvent();
 
-        if (!transaction.productCodeId) {
-            throw new Error('Product code not found')
-        }
-
         const responseFromIrecharge = tokenInfo as Awaited<ReturnType<typeof VendorService.irechargeVendToken>>
         const transactionTimedOutFromIrecharge = responseFromIrecharge.source === 'IRECHARGE' ? ['15', '43'].includes(responseFromIrecharge.status) : false
 

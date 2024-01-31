@@ -13,6 +13,7 @@ import Meter, { IMeter } from "../../../models/Meter.model";
 import VendorService from "../../../services/Vendor.service";
 import {
     DEFAULT_ELECTRICITY_PROVIDER,
+    discoProductMapping,
 } from "../../../utils/Constants";
 import {
     BadRequestError,

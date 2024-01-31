@@ -23,6 +23,7 @@ import VendorService, { Prettify, SuccessResponseForBuyPowerRequery, VendorAirti
 import { generateRandomToken } from "../../../utils/Helper";
 import BuypowerApi from "../../../services/Vendor.service/Buypower";
 import { IRechargeApi } from "../../../services/Vendor.service/Irecharge";
+import ProductService from "../../../services/ProductCode.service";
 
 interface EventMessage {
     phone: {
@@ -163,7 +164,12 @@ export class TokenHandlerUtil {
         // Attempt purchase from new vendor
         if (!transaction.bankRefId) throw new Error('BankRefId not found')
 
-        const newVendor = await TokenHandlerUtil.getNextBestVendorForVendRePurchase(transaction.superagent)
+        const newVendor = await TokenHandlerUtil.getNextBestVendorForVendRePurchase({
+            productCodeId: transaction.productCodeId,
+            currentVendor: transaction.superagent,
+            previousVendors: transaction.previousVendors,
+            amount: parseFloat(transaction.amount),
+        })
         await transactionEventService.addAirtimePurchaseWithNewVendorEvent({ currentVendor: transaction.superagent, newVendor })
 
         const user = await transaction.$get('user')
@@ -173,11 +179,12 @@ export class TokenHandlerUtil {
         if (!partner) throw new Error('Partner not found for transaction')
 
         retry.count = 0
+        await transaction.update({ previousVendors: [...transaction.previousVendors, newVendor] })
+
         return await VendorPublisher.publishEventForAirtimePurchaseRetryFromVendorWithNewVendor({
             partner: partner,
             transactionId: transaction.id,
             superAgent: newVendor,
-
             user: {
                 name: user.name as string,
                 email: user.email,
@@ -234,15 +241,42 @@ export class TokenHandlerUtil {
         }
     }
 
-    static async getNextBestVendorForVendRePurchase(currentVendor: Transaction['superagent']) {
-        // TODO: Implement logic to calculate best rates from different vendors
-        const nextVendor = {
-            BUYPOWERNG: 'BAXI',
-            BAXI: 'IRECHARGE',
-            IRECHARGE: 'BUYPOWERNG'
-        } as const
+    static async getNextBestVendorForVendRePurchase({
+        productCodeId,
+        currentVendor,
+        previousVendors = [],
+        amount,
+    }: { productCodeId: NonNullable<Transaction['productCodeId']>, currentVendor: Transaction['superagent'], previousVendors: Transaction['previousVendors'], amount: number }): Promise<Transaction['superagent']> {
+        const productCode = await ProductService.viewSingleProductCode(productCodeId, true)
+        if (!productCode) throw new Error('Product code not found')
 
-        return nextVendor.IRECHARGE
+        const vendorRates = productCode.vendorRates
+        if (!vendorRates) throw new Error('Vendor rates not found')
+
+        const currentVendorRate = vendorRates.find(vendorRate => vendorRate.vendorName === currentVendor)
+        if (!currentVendorRate) throw new Error('Current vendor rate not found')
+
+        // Check other vendors, sort them according to their commission rates
+        // If the current vendor is the vendor with the highest commission rate, then switch to the vendor with the next highest commission rate
+        // If the next vendor has been used before, switch to the next vendor with the next highest commission rate
+        // If all the vendors have been used before, switch to the vendor with the highest commission rate
+
+        const otherVendors = vendorRates.filter(vendorRate => vendorRate.vendorName !== currentVendor)
+        const sortedOtherVendors = otherVendors.sort((a, b) => (b.commission + b.bonus) - (a.commission + a.bonus))
+
+        const nextBestVendor = sortedOtherVendors[0]
+        if (!nextBestVendor) throw new Error('Next best vendor not found')
+
+        const nextBestVendorHasBeenUsedBefore = previousVendors.includes(nextBestVendor.vendorName)
+        if (!nextBestVendorHasBeenUsedBefore) return nextBestVendor.vendorName
+
+        let nextBestVendorWithHighestCommissionRate = sortedOtherVendors.find(vendorRate => !previousVendors.includes(vendorRate.vendorName))
+        if (!nextBestVendorWithHighestCommissionRate) {
+            // If all vendors have been used before, switch to the vendor with the highest commission rate
+            nextBestVendorWithHighestCommissionRate = vendorRates.sort((a, b) => (b.commission + b.bonus) - (a.commission + a.bonus))[0]
+        }
+
+        return nextBestVendorWithHighestCommissionRate.vendorName
     }
 }
 
@@ -292,6 +326,14 @@ class TokenHandler extends Registry {
             throw 'Unsupported superagent'
         }
 
+        const productCode = await ProductService.viewSingleProductCode(transaction.productCodeId, true)
+        if (!productCode) throw new Error('Product code not found')
+
+        const vendorRates = productCode.vendorRates
+        if (!vendorRates) throw new Error('Vendor rates not found')
+
+        const vendorProductCode = vendorRates.find(vendorRate => vendorRate.vendorName === transaction.superagent)?.discoCode
+        
         // Purchase token from vendor
         const tokenInfo = await TokenHandlerUtil.processVendRequest({
             transaction: transaction as TokenPurchaseData['transaction'],
@@ -299,7 +341,7 @@ class TokenHandler extends Registry {
             email: user.email,
             amount: parseFloat(transaction.amount),
             accountNumber: data.phone.phoneNumber,
-            serviceProvider: transaction.disco as TokenPurchaseData['serviceProvider'],
+            serviceProvider: vendorProductCode as TokenPurchaseData['serviceProvider'],
         });
 
         const error = { code: 202, cause: TransactionErrorCause.UNKNOWN }
@@ -323,11 +365,7 @@ class TokenHandler extends Registry {
             error.cause = tokenInfo.status === '00' ? TransactionErrorCause.TRANSACTION_TIMEDOUT : TransactionErrorCause.TRANSACTION_FAILED
         }
 
-        const eventMessage = {
-            phone: data.phone,
-            transactionId: transaction.id,
-            error: error,
-        };
+        const eventMessage = { phone: data.phone, transactionId: transaction.id, error: error, };
 
         if (!transactionSuccessFul) {
             if (requeryFromNewVendor) {

@@ -9,7 +9,7 @@ export default class VendorRatesController {
     static async createVendorRate(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         const { productCodeId, vendorName, discoCode, commission, bonus } = req.body as { bonus: number, productCodeId: string, vendorName: 'BUYPOWERNG' | 'BAXI' | 'IRECHARGE', discoCode: string, commission: number };
 
-        if (!productCodeId || !vendorName || !discoCode || !commission) {
+        if (!productCodeId || !vendorName || !discoCode || commission === undefined ) {
             throw new BadRequestError('Product code ID, vendor name, disco code, and commission are required');
         }
 
@@ -25,13 +25,13 @@ export default class VendorRatesController {
     }
 
     static async updateVendorRate(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { discoCode, commission, vendorRateId } = req.body as { vendorRateId: string, discoCode?: string, commission?: number };
+        const { discoCode, commission, vendorRateId, bonus } = req.body as { vendorRateId: string, discoCode?: string, commission?: number, bonus: number };
 
         if (!discoCode && !commission) {
             throw new BadRequestError('At least one of disco code or commission is required for update');
         }
 
-        const data = { discoCode, commission };
+        const data = { discoCode, commission, bonus };
         const updatedVendorRate = await ProductService.updateVendorRate(vendorRateId, data);
 
         if (!updatedVendorRate) {

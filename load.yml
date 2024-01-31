@@ -2,8 +2,8 @@ config:
   target: "http://localhost:3000/api/v0/vendor"
 
   phases:
-    - duration: 20
-      arrivalCount: 1000
+    - duration: 1
+      arrivalCount: 1
       name: "Warm up"
   
 scenarios:
@@ -13,7 +13,7 @@ scenarios:
           json:
             meterNumber: "12345678910"
             venderType: "ELECTRICITY"
-            disco: "AEDC"
+            disco: "ECABEPS"
             partnerName: "ZENITH BANK"
             phoneNumber: "084567834568"
             email: "neilkwdfghj4@test.com"

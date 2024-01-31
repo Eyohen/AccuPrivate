@@ -51,7 +51,8 @@ export default class ProductController {
     }
 
     static async getAllProductCodes(req: Request, res: Response, next: NextFunction) {
-        const productCodes = await ProductService.getAllProductCodes();
+        const { type } = req.query as { type: 'AIRTIME' | 'ELECTRICITY' | 'DATA' | 'CABLE' };
+        const productCodes = type ? await ProductService.getProductCodesByType(type) : await ProductService.getAllProductCodes();
 
         res.status(200).json({
             status: 'success',

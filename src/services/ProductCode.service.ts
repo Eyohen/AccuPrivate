@@ -67,6 +67,11 @@ export default class ProductService {
         return productCodes;
     }
 
+    static async getProductCodesByType(type: 'AIRTIME' | 'ELECTRICITY' | 'DATA' | 'CABLE', include?: boolean): Promise<ProductCode[]> {
+        const productCodes = await ProductCode.findAll({ where: { type }, include: include ? [VendorRates] : undefined });
+        return productCodes;
+    }
+    
     // Method for retrieving all vendor rates
     static async getAllVendorRates(): Promise<VendorRates[]> {
         const vendorRates = await VendorRates.findAll();
