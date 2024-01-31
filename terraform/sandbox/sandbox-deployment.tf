@@ -354,6 +354,7 @@ resource "aws_instance" "sandbox-core-engine" {
   depends_on = [ aws_msk_cluster.sandbox_aws_managed_kafka , aws_instance.sandbox-db ]
   subnet_id = aws_subnet.sandbox_public_subnet_1
   ami = var.image_id
+  key_name = var.instance_keypair
   iam_instance_profile = aws_iam_instance_profile.sandbox_ec2_profile.arn
   user_data = filebase64("${path.module}/app-install.sh")
   tags ={
@@ -376,6 +377,7 @@ resource "aws_instance" "sandbox-db" {
   ami = var.image_id
   iam_instance_profile = aws_iam_instance_profile.sandbox_ec2_profile.arn
   user_data = filebase64("${path.module}/db-install.sh")
+  key_name = var.instance_keypair
   tags ={
     Name : "Sandbox-db"
   }
