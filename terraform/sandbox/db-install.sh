@@ -5,7 +5,7 @@ sudo apt-get update
 sudo apt-get install -y awscli
 
 # Step 2: Pull .env file from S3 bucket to the home directory
-aws s3 cp s3://your-bucket-name/.env ~/.env
+aws s3 cp s3://db-bucket-configuration/.env ~/.env
 
 # Step 3: Install PostgreSQL and configure using .env
 sudo apt-get install -y postgresql
