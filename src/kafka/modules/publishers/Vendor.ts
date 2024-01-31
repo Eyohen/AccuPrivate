@@ -403,10 +403,10 @@ export class VendorPublisher extends ProducerFactory {
 
     // AIRTIME SPECIFIC PUBLISHERS
     static async publshEventForAirtimePurchaseInitiate(
-        data: PublisherEventAndParameters[TOPICS.DATA_PURCHASE_INITIATED_BY_CUSTOMER],
+        data: PublisherEventAndParameters[TOPICS.AIRTIME_PURCHASE_INITIATED_BY_CUSTOMER],
     ) {
         return ProducerFactory.sendMessage({
-            topic: TOPICS.DATA_PURCHASE_INITIATED_BY_CUSTOMER,
+            topic: TOPICS.AIRTIME_PURCHASE_INITIATED_BY_CUSTOMER,
             message: {
                 phone: data.phone,
                 partner: data.partner,

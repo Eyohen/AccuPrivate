@@ -66,7 +66,7 @@ const retry = {
     retryCountBeforeSwitchingVendor: 2,
 }
 
-const TEST_FAILED = NODE_ENV === 'production' ? false : false // TOGGLE - Will simulate failed transaction
+const TEST_FAILED = NODE_ENV === 'production' ? false : true // TOGGLE - Will simulate failed transaction
 
 const TransactionErrorCodeAndCause = {
     501: TransactionErrorCause.MAINTENANCE_ACCOUNT_ACTIVATION_REQUIRED,
@@ -265,7 +265,7 @@ export class TokenHandlerUtil {
         const sortedOtherVendors = otherVendors.sort((a, b) => (b.commission + b.bonus) - (a.commission + a.bonus))
 
         const nextBestVendor = sortedOtherVendors[0]
-        if (!nextBestVendor) throw new Error('Next best vendor not found')
+        if (!nextBestVendor) return currentVendor
 
         const nextBestVendorHasBeenUsedBefore = previousVendors.includes(nextBestVendor.vendorName)
         if (!nextBestVendorHasBeenUsedBefore) return nextBestVendor.vendorName
@@ -367,6 +367,7 @@ class TokenHandler extends Registry {
 
         const eventMessage = { phone: data.phone, transactionId: transaction.id, error: error, };
 
+        console.log({ tokenInfo, transactionSuccessFul, transactionFailed: retry.count > retry.retryCountBeforeSwitchingVendor, requeryFromNewVendor, requeryFromSameVendor })
         if (!transactionSuccessFul) {
             if (requeryFromNewVendor) {
                 return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ phone: data.phone, transaction, transactionEventService })
