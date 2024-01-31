@@ -55,25 +55,25 @@ variable "kafka_instance_type" {
 }
 
 
-variable "db_password" {
-  description = "The password for the database"
-  default     = ""
-}
+# variable "db_password" {
+#   description = "The password for the database"
+#   default     = ""
+# }
 
-variable "db_user_name" {
-  description = "The username for the database"
-  default     = ""
-}
+# variable "db_user_name" {
+#   description = "The username for the database"
+#   default     = ""
+# }
 
-variable "db_instance_type" {
-  description = "The instance type for the database"
-  default     = ""
-}
+# variable "db_instance_type" {
+#   description = "The instance type for the database"
+#   default     = ""
+# }
 
-variable "db_db_name" {
-  description = "The name of the database"
-  default     = ""
-}
+# variable "db_db_name" {
+#   description = "The name of the database"
+#   default     = ""
+# }
 
 
 terraform {
@@ -88,9 +88,9 @@ terraform {
 
 # Configure the AWS Provider
 provider "aws" { 
-   region = var.region
-   access_key = var.access_key
-   secret_key = "f3uFmzhHN1pM8tjz33DmBVXFhsODmf+kqo2bVCEJ"
+  region = var.region
+  access_key = var.access_key
+  secret_key = var.secret_key
 }
 
 
