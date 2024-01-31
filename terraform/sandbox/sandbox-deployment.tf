@@ -613,16 +613,16 @@ resource "aws_msk_cluster" "sandbox_aws_managed_kafka" {
 }
 
 
-# outputs 
-output "broker_endpoints" {
-  value       = aws_msk_cluster.sandbox_aws_managed_kafka.broker_endpoints
-  description = "List of broker endpoints"
-}
+# # outputs 
+# output "broker_endpoints" {
+#   value       = aws_msk_cluster.sandbox_aws_managed_kafka.broker_endpoints
+#   description = "List of broker endpoints"
+# }
 
-#
-output "dns_name" {
-  description = "The DNS name of the load balancer"
-  value       = try(aws_lb.sandbox_load_balancer.dns_name, null)
-}
+# #
+# output "dns_name" {
+#   description = "The DNS name of the load balancer"
+#   value       = try(aws_lb.sandbox_load_balancer.dns_name, null)
+# }
 
 # output "server"
