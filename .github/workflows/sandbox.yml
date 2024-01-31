@@ -268,29 +268,40 @@ jobs:
         TF_VAR_instance_type: ${{secrets.INSTANCE_TYPE}}
         TF_VAR_kafka_instance_type: "kafka.t3.small"
         TF_VAR_instance_keypair: "sandbox-key-pair"
-    - name: change directory to sanbox
-      run: cd terraform/sandbox
       
     - name: Terraform fmt
       id: fmt
-      run: terraform fmt -check
+      run: | 
+         cd terraform/sandbox
+         pwd
+         terraform fmt -check
       continue-on-error: true
 
     - name: Terraform Init
       id: init
-      run: terraform init
+      run:  | 
+         cd terraform/sandbox
+         pwd
+         terraform init
     
     - name: Terraform Validate
       id: validate
-      run: terraform validate -no-color
+      run:  | 
+         cd terraform/sandbox
+         pwd
+         terraform validate -no-color
     
     - name: Terraform Plan
       id: plan
-      run: terraform plan -no-color
+      run:  | 
+         cd terraform/sandbox
+         pwd
+         terraform plan -no-color
       continue-on-error: true
 
     - name: Save tft.state file 
       run: |
+          cd terraform/sandbox
           pwd
           aws s3 cp terraform.tfstate s3://sandbox-terraform-item/
       
