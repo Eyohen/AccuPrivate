@@ -46,7 +46,27 @@ export declare namespace IRechargeApi {
         address: string,
         response_hash: string
     }
+
     interface AirtimeSuccessfulVendResponse {
+        source: 'IRECHARGE'
+        status: '00' | '15' | '43', // there are other response codes, but these are the only necessary ones. only '00' will have the response data shown below
+        message: 'Successful',
+        wallet_balance: string,
+        ref: string,
+        amount: number,
+        response_hash: string
+    }
+
+    interface DataPurchaseParams {
+        phoneNumber: string;
+        email: string;
+        amount: number;
+        serviceType: 'MTN' | 'GLO' | 'AIRTEL' | '9MOBILE'
+        reference: string;
+        dataCode: string;
+    }
+
+    interface DataSuccessfulVendResponse {
         source: 'IRECHARGE'
         status: '00' | '15' | '43', // there are other response codes, but these are the only necessary ones. only '00' will have the response data shown below
         message: 'Successful',
