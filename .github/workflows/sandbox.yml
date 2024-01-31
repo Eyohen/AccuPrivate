@@ -25,7 +25,7 @@ jobs:
     name: generate-env-file
     # needs: [push-build]
     runs-on: ubuntu-latest
-    if : github.ref == "refs/heads/staging"
+    if : github.ref == 'refs/heads/staging'
     steps:
     - name: chechkout
       uses: actions/checkout@v2
@@ -149,7 +149,7 @@ jobs:
   scan-backend: 
     name: scan-backend
     runs-on: ubuntu-latest
-    if : github.ref == "refs/heads/staging"
+    if : github.ref == 'refs/heads/staging'
     # needs: [test-backend]
     needs: [generate-env-file]
     steps: 
@@ -172,7 +172,7 @@ jobs:
   build-backend:
     name: build-backend
     needs: [scan-backend]
-    if : github.ref == "refs/heads/staging"
+    if : github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -210,7 +210,7 @@ jobs:
   push-build:
     name: push-build
     needs: [build-backend]
-    if : github.ref == "refs/heads/staging"
+    if : github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
     steps:
       - name: chechkout
@@ -234,8 +234,8 @@ jobs:
       
   create-update-environment:
     name: create-environment
-    needs: [build-backend]
-    if : github.ref == "refs/heads/staging"
+    needs: [push-build]
+    if : github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
