@@ -17,11 +17,19 @@ export default class VendorProductService {
     // Method for updating an existing vendor product
     static async updateVendorProduct(vendorProductId: string, data: Partial<IVendorProduct>, transaction?: Transaction): Promise<VendorProduct> {
         const vendorProduct = await VendorProduct.findByPk(vendorProductId);
+
         if (!vendorProduct) {
             throw new NotFoundError('Vendor Product not found');
         }
 
-        transaction ? await vendorProduct.update(data, { transaction }) : await vendorProduct.update(data);
+        const dataToUpdate = { ...data };
+        if (dataToUpdate.schemaData) {
+            dataToUpdate.schemaData = {
+                ...vendorProduct.schemaData,
+                ...dataToUpdate.schemaData,
+            }
+        }
+        transaction ? await vendorProduct.update(dataToUpdate, { transaction }) : await vendorProduct.update(dataToUpdate);
         return vendorProduct;
     }
 
@@ -35,5 +43,10 @@ export default class VendorProductService {
     static async getAllVendorProducts(): Promise<VendorProduct[]> {
         const vendorProducts = await VendorProduct.findAll({ include: [Product, Vendor] });
         return vendorProducts;
+    }
+
+    static async viewSingleVendorProductByVendorIdAndProductId(vendorId: string, productId: string): Promise<VendorProduct | null> {
+        const vendorProduct = await VendorProduct.findOne({ where: { vendorId, productId }, include: [Product, Vendor] });
+        return vendorProduct;
     }
 }

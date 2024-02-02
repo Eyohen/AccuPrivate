@@ -30,6 +30,11 @@ export default class ProductService {
         return product;
     }
 
+    static async viewSingleProductByMasterProductCode(masterProductCode: string): Promise<Product | null> {
+        const product = await Product.findOne({ where: { masterProductCode }, include: VendorProduct });
+        return product;
+    }
+
     // Method for retrieving all products
     static async getAllProducts(): Promise<Product[]> {
         const products = await Product.findAll({ include: VendorProduct });

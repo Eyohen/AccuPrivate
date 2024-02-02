@@ -5,20 +5,23 @@ import { BadRequestError, NotFoundError } from "../../utils/Errors";
 import { randomUUID } from "crypto";
 
 export default class ProductController {
-
     static async createProduct(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { masterProductCode, category, type, amount } = req.body as {
+        const { masterProductCode, category, type } = req.body as {
             masterProductCode: string,
             category: 'AIRTIME' | 'ELECTRICITY' | 'DATA' | 'CABLE',
             type: 'POSTPAID' | 'PREPAID',
-            amount?: number,
         };
 
         if (!masterProductCode || !category || !type) {
             throw new BadRequestError('Master Product Code, Category, and Type are required');
         }
 
-        const data = { masterProductCode, category, type, amount, id: randomUUID() };
+        const existingProductWithSameMasterProductCode = await ProductService.viewSingleProductByMasterProductCode(masterProductCode);
+        if (existingProductWithSameMasterProductCode) {
+            throw new BadRequestError('Product with same master product code already exists');
+        }
+
+        const data = { masterProductCode, category, type, id: randomUUID() };
         const product = await ProductService.addProduct(data);
 
         res.status(201).json({
@@ -30,19 +33,25 @@ export default class ProductController {
     }
 
     static async updateProduct(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { productId, masterProductCode, category, type, amount } = req.body as {
+        const { productId, masterProductCode, category, type } = req.body as {
             productId: string,
             masterProductCode?: string,
             category?: 'AIRTIME' | 'ELECTRICITY' | 'DATA' | 'CABLE',
             type?: 'POSTPAID' | 'PREPAID',
-            amount?: number,
         };
 
         if (!productId) {
             throw new BadRequestError('Product ID is required');
         }
 
-        const data = { masterProductCode, category, type, amount };
+        if (masterProductCode) {
+            const existingProductWithSameMasterProductCode = await ProductService.viewSingleProductByMasterProductCode(masterProductCode);
+            if (existingProductWithSameMasterProductCode) {
+                throw new BadRequestError('Product with same master product code already exists');
+            }
+        }
+
+        const data = { masterProductCode, category, type };
         const updatedProduct = await ProductService.updateProduct(productId, data);
 
         if (!updatedProduct) {

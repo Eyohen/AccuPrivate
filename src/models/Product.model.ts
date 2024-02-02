@@ -19,9 +19,6 @@ export default class Product extends Model<IProduct | Product> {
     @Column({ type: DataType.ENUM('AIRTIME', 'ELECTRICITY', 'DATA', 'CABLE'), allowNull: false })
     category: 'AIRTIME' | 'ELECTRICITY' | 'DATA' | 'CABLE';
 
-    @Column({ type: DataType.FLOAT, allowNull: true })
-    amount: number;
-
     // Type of the product code (POSTPAID or PREPAID)
     @Column({ type: DataType.ENUM('POSTPAID', 'PREPAID'), allowNull: false })
     type: 'POSTPAID' | 'PREPAID';
@@ -36,5 +33,4 @@ export interface IProduct {
     masterProductCode: string; // Unique identifier for the product code
     type: 'POSTPAID' | 'PREPAID'; // Type of the product code (POSTPAID or PREPAID)
     category: 'AIRTIME' | 'ELECTRICITY' | 'DATA' | 'CABLE';
-    amount: number | undefined;
 }

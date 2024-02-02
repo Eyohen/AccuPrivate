@@ -1,5 +1,5 @@
 // Import necessary modules and dependencies
-import { Table, Column, Model, DataType, HasOne, HasMany, IsUUID, PrimaryKey, Unique, BeforeCreate, ForeignKey, BelongsToMany, BelongsTo } from "sequelize-typescript";
+import { Table, Column, Model, DataType, HasOne, HasMany, IsUUID, PrimaryKey, Unique, BeforeCreate, ForeignKey, BelongsToMany, BelongsTo, Index } from "sequelize-typescript";
 import VendorRates from './VendorRates.model';
 import Product from "./Product.model";
 import Vendor from "./Vendor.model";
@@ -47,7 +47,6 @@ export default class VendorProduct extends Model<IVendorProduct | VendorProduct>
 
     @BelongsTo(() => Product)
     product: Product;
-
 }
 
 // Define an interface representing a product code (IVendorProduct) with various properties.

@@ -5,22 +5,27 @@ import { BadRequestError, NotFoundError } from "../../utils/Errors";
 import { randomUUID } from "crypto";
 
 export default class VendorProductController {
-
     static async createVendorProduct(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { vendorId, productId, commission, bonus, schemaData, vendorHttpUrl } = req.body as {
+        const { vendorId, productId, commission, bonus, schemaData, vendorHttpUrl, amount } = req.body as {
             vendorId: string,
             productId: string,
             commission: number,
             bonus: number,
             schemaData: Record<string, any>,
             vendorHttpUrl: string,
+            amount: number,
         };
 
         if (!vendorId || !productId || !commission || !bonus || !schemaData || !vendorHttpUrl) {
             throw new BadRequestError('Vendor ID, Product ID, Commission, Bonus, Schema Data, and Vendor HTTP URL are required');
         }
 
-        const data = { vendorId, productId, commission, bonus, schemaData, vendorHttpUrl, id: randomUUID() };
+        const docWithSameVendorIdAndProductId = await VendorProductService.viewSingleVendorProductByVendorIdAndProductId(vendorId, productId);
+        if (docWithSameVendorIdAndProductId) {
+            throw new BadRequestError('Vendor Product with same Vendor ID and Product ID already exists');
+        }
+        
+        const data = { vendorId, productId, commission, bonus, amount, schemaData, vendorHttpUrl, id: randomUUID() };
         const vendorProduct = await VendorProductService.addVendorProduct(data);
 
         res.status(201).json({
