@@ -87,8 +87,8 @@ jobs:
         SU_HOST_EMAIL_1=${{ secrets.SU_HOST_EMAIL_1}}
         SU_HOST_EMAIL_2=${{ secrets.SU_HOST_EMAIL_2}}
         SU_HOST_EMAIL_3=${{ secrets.SU_HOST_EMAIL_3}}
-        KAFA_LOGS=${{ secrets.KAFA_LOGS}}
-        KAFA_REGION=${{ secrets.KAFA_REGION}}
+        KAFKA_LOGS=${{ secrets.KAFKA_LOGS}}
+        KAFKA_REGION=${{ secrets.KAFKA_REGION}}
         KAFKA_BROKER=${{ secrets.KAFKA_BROKER}}
         KAFKA_CLIENT_ID=${{ secrets.KAFKA_CLIENT_ID}}
         KAFKA_PASSWORD=${{ secrets.KAFKA_PASSWORD}}
@@ -97,8 +97,8 @@ jobs:
         KAFKA_ENV=${{ secrets.KAFKA_ENV}}
 
         echo "KAFKA_ENV=$KAFKA_ENV" >> .env
-        echo "KAFA_LOGS=$KAFA_LOGS" >> .env
-        echo "KAFA_REGION=$KAFA_REGION" >> .env
+        echo "KAFKA_LOGS=$KAFKA_LOGS" >> .env
+        echo "KAFKA_REGION=$KAFKA_REGION" >> .env
         echo "KAFKA_BROKER=$KAFKA_BROKER" >> .env
         echo "KAFKA_CA_CERT=$KAFKA_CA_CERT" >> .env
         echo "KAFKA_CLIENT_ID=$KAFKA_CLIENT_ID" >> .env
@@ -106,7 +106,7 @@ jobs:
         echo "KAFKA_USERNAME=$KAFKA_USERNAME" >> .env
         echo "KAFKA_INSTANCE_TYPE=$KAFKA_INSTANCE_TYPE" >> .env
         
-        echo "KAFA_LOGS=$KAFA_LOGS" >> .env
+        
         echo "BAXI_TOKEN=$BAXI_TOKEN" >> .env
         echo "BAXI_URL=$BAXI_URL" >> .env
         echo "BUYPOWER_TOKEN=$BUYPOWER_TOKEN" >> .env
