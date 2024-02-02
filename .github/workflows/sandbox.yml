@@ -216,7 +216,7 @@ jobs:
           npm install
           npm run build
           cp .env dist/.env
-          ls ./src/utils/Email/templates && cp -r src/utils/Email/templates/ dist/utils/Email/  && rm -f ./dist/utils/Email/templates/index.ts  && ls ./dist/utils/Email/templates
+          ls ./src/utils/Email/templates && cp -r src/utils/Email/templates/ dist/utils/Email/templates  && rm -f ./dist/utils/Email/templates/index.ts  && ls ./dist/utils/Email/templates
       - name: cache dist 
         uses: actions/checkout@v2
         with:
