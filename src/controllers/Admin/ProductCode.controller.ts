@@ -31,13 +31,13 @@ export default class ProductController {
     }
 
     static async updateProductCode(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { location, productCodeId, amount, network } = req.body as { productCodeId: string, location?: string, amount?: number, network?: 'MTN' | 'GLO' | 'AIRTEL' | '9MOBILE' };
+        const { location, productCodeId, amount, network, code } = req.body as { productCodeId: string, code: string, location?: string, amount?: number, network?: 'MTN' | 'GLO' | 'AIRTEL' | '9MOBILE' };
 
         if (!location) {
-            throw new BadRequestError('Location or type is required');
+            // throw new BadRequestError('Location or type is required');
         }
 
-        const data = { location, amount, network };
+        const data = { location, amount, network, productCode: code };
         const updatedProductCode = await ProductService.updateProductCode(productCodeId, data);
 
         if (!updatedProductCode) {
@@ -54,7 +54,7 @@ export default class ProductController {
 
     static async getAllProductCodes(req: Request, res: Response, next: NextFunction) {
         const { type } = req.query as { type: 'AIRTIME' | 'ELECTRICITY' | 'DATA' | 'CABLE' };
-        const productCodes = type ? await ProductService.getProductCodesByType(type) : await ProductService.getAllProductCodes();
+        const productCodes = type ? await ProductService.getProductCodesByType(type, true) : await ProductService.getAllProductCodes();
 
         res.status(200).json({
             status: 'success',

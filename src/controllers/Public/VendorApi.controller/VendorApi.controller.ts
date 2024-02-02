@@ -10,7 +10,7 @@ import UserService from "../../../services/User.service";
 import MeterService from "../../../services/Meter.service";
 import User from "../../../models/User.model";
 import Meter, { IMeter } from "../../../models/Meter.model";
-import VendorService from "../../../services/Vendor.service";
+import VendorService from "../../../services/VendorApi.service";
 import {
     DEFAULT_ELECTRICITY_PROVIDER,
     discoProductMapping,

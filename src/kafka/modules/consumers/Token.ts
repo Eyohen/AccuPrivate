@@ -19,7 +19,7 @@ import {
 import MessageProcessor from "../util/MessageProcessor";
 import { v4 as uuidv4 } from "uuid";
 import EventService from "../../../services/Event.service";
-import VendorService, { SuccessResponseForBuyPowerRequery } from "../../../services/Vendor.service";
+import VendorService, { SuccessResponseForBuyPowerRequery } from "../../../services/VendorApi.service";
 import { generateRandomToken } from "../../../utils/Helper";
 import ProductService from "../../../services/ProductCode.service";
 

@@ -19,10 +19,10 @@ import {
 import MessageProcessor from "../util/MessageProcessor";
 import { v4 as uuidv4 } from "uuid";
 import EventService from "../../../services/Event.service";
-import VendorService, { Prettify, SuccessResponseForBuyPowerRequery, VendorAirtimeService } from "../../../services/Vendor.service";
+import VendorService, { Prettify, SuccessResponseForBuyPowerRequery, VendorAirtimeService } from "../../../services/VendorApi.service";
 import { generateRandomToken } from "../../../utils/Helper";
-import BuypowerApi from "../../../services/Vendor.service/Buypower";
-import { IRechargeApi } from "../../../services/Vendor.service/Irecharge";
+import BuypowerApi from "../../../services/VendorApi.service/Buypower";
+import { IRechargeApi } from "../../../services/VendorApi.service/Irecharge";
 import ProductService from "../../../services/ProductCode.service";
 
 interface EventMessage {
@@ -333,7 +333,7 @@ class TokenHandler extends Registry {
         if (!vendorRates) throw new Error('Vendor rates not found')
 
         const vendorProductCode = vendorRates.find(vendorRate => vendorRate.vendorName === transaction.superagent)?.discoCode
-        
+
         // Purchase token from vendor
         const tokenInfo = await TokenHandlerUtil.processVendRequest({
             transaction: transaction as TokenPurchaseData['transaction'],

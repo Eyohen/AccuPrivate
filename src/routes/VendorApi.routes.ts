@@ -1,9 +1,9 @@
 import express, { Router } from "express";
-import VendorController from "../controllers/Public/Vendor.controller/Vendor.controller";
+import VendorController from "../controllers/Public/VendorApi.controller/VendorApi.controller";
 import { validateApiKey } from "../middlewares/Auth";
 import { AuthenticatedController } from "../utils/Interface";
-import { AirtimeVendController } from "../controllers/Public/Vendor.controller/Airtime.controller";
-import { DataVendController } from "../controllers/Public/Vendor.controller/Data.controller";
+import { AirtimeVendController } from "../controllers/Public/VendorApi.controller/Airtime.controller";
+import { DataVendController } from "../controllers/Public/VendorApi.controller/Data.controller";
 
 const router: Router = express.Router()
 
