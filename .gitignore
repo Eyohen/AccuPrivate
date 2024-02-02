@@ -195,3 +195,7 @@ override.tf.json
 .terraformrc
 terraform.rc
 sandbox-deployment-old.txt
+terraform.tfstate-old.txt
+terraform.tfstate-old2.txt
+old1.txt
+old.txt
