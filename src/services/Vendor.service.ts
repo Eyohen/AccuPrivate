@@ -38,7 +38,7 @@ export default class VendorService {
 
     // Method for retrieving all vendors
     static async getAllVendors(): Promise<Vendor[]> {
-        const vendors = await Vendor.findAll({ include: VendorProduct });
+        const vendors = await Vendor.findAll();
         return vendors;
     }
 }

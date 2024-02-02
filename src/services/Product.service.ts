@@ -37,7 +37,7 @@ export default class ProductService {
 
     // Method for retrieving all products
     static async getAllProducts(): Promise<Product[]> {
-        const products = await Product.findAll({ include: VendorProduct });
+        const products = await Product.findAll();
         return products;
     }
 }

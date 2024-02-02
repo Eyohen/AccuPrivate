@@ -19,7 +19,6 @@ export default class Vendor extends Model<IVendor | Vendor> {
     @HasMany(() => VendorProduct)
     vendorProducts: VendorProduct[];
 
-
     @BeforeCreate
     static async capitalizeVendorName(instance: Vendor) {
         instance.name = instance.name.toUpperCase();
