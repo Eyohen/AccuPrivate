@@ -94,7 +94,9 @@ jobs:
         KAFKA_PASSWORD=${{ secrets.KAFKA_PASSWORD}}
         KAFKA_INSTANCE_TYPE=${{ secrets.KAFKA_INSTANCE_TYPE}}
         KAFKA_USERNAME=${{ secrets.KAFKA_USERNAME}}
+        KAFKA_ENV=${{ secrets.KAFKA_ENV}}
 
+        echo "KAFA_ENV=$KAFA_ENV" >> .env
         echo "KAFA_LOGS=$KAFA_LOGS" >> .env
         echo "KAFA_REGION=$KAFA_REGION" >> .env
         echo "KAFKA_BROKER=$KAFKA_BROKER" >> .env
