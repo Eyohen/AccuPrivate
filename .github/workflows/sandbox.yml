@@ -87,7 +87,24 @@ jobs:
         SU_HOST_EMAIL_1=${{ secrets.SU_HOST_EMAIL_1}}
         SU_HOST_EMAIL_2=${{ secrets.SU_HOST_EMAIL_2}}
         SU_HOST_EMAIL_3=${{ secrets.SU_HOST_EMAIL_3}}
+        KAFA_LOGS=${{ secrets.KAFA_LOGS}}
+        KAFA_REGION=${{ secrets.KAFA_REGION}}
+        KAFKA_BROKER=${{ secrets.KAFKA_BROKER}}
+        KAFKA_CLIENT_ID=${{ secrets.KAFKA_CLIENT_ID}}
+        KAFKA_PASSWORD=${{ secrets.KAFKA_PASSWORD}}
+        KAFKA_INSTANCE_TYPE=${{ secrets.KAFKA_INSTANCE_TYPE}}
+        KAFKA_USERNAME=${{ secrets.KAFKA_USERNAME}}
+
+        echo "KAFA_LOGS=$KAFA_LOGS" >> .env
+        echo "KAFA_REGION=$KAFA_REGION" >> .env
+        echo "KAFKA_BROKER=$KAFKA_BROKER" >> .env
+        echo "KAFKA_CA_CERT=$KAFKA_CA_CERT" >> .env
+        echo "KAFKA_CLIENT_ID=$KAFKA_CLIENT_ID" >> .env
+        echo "KAFKA_PASSWORD=$KAFKA_PASSWORD" >> .env
+        echo "KAFKA_USERNAME=$KAFKA_USERNAME" >> .env
+        echo "KAFKA_INSTANCE_TYPE=$KAFKA_INSTANCE_TYPE" >> .env
         
+        echo "KAFA_LOGS=$KAFA_LOGS" >> .env
         echo "BAXI_TOKEN=$BAXI_TOKEN" >> .env
         echo "BAXI_URL=$BAXI_URL" >> .env
         echo "BUYPOWER_TOKEN=$BUYPOWER_TOKEN" >> .env
@@ -207,29 +224,29 @@ jobs:
           tsc --version
          
         
-  push-build:
-    name: push-build
-    needs: [build-backend]
-    if : github.ref == 'refs/heads/sandbox'
-    runs-on: ubuntu-latest
-    steps:
-      - name: chechkout
-        uses: actions/checkout@v2
-      - name: restore dist 
-        uses: actions/checkout@v2
-        with:
-          path: dist
-          key: dist-folder
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_ACCESS_SECRET_KEY }}
-          aws-region: eu-west-2
-      - name: push to state to s3
-        run: |
-          zip -r dist.zip dist
-          aws s3 cp ./dist.zip s3://staging-bucket-deployment/ 
+  # push-build:
+  #   name: push-build
+  #   needs: [build-backend]
+  #   if : github.ref == 'refs/heads/sandbox'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: chechkout
+  #       uses: actions/checkout@v2
+  #     - name: restore dist 
+  #       uses: actions/checkout@v2
+  #       with:
+  #         path: dist
+  #         key: dist-folder
+  #     - name: Configure AWS Credentials
+  #       uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_ACCESS_SECRET_KEY }}
+  #         aws-region: eu-west-2
+  #     - name: push to state to s3
+  #       run: |
+  #         zip -r dist.zip dist
+  #         aws s3 cp ./dist.zip s3://staging-bucket-deployment/ 
         
       
   # create-update-environment:
