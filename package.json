@@ -18,6 +18,7 @@
     "license": "ISC",
     "dependencies": {
         "@sendgrid/mail": "^8.1.0",
+        "aws-msk-iam-sasl-signer-js": "github:aws/aws-msk-iam-sasl-signer-js",
         "axios": "^1.6.0",
         "bcrypt": "^5.1.1",
         "body-parser": "^1.20.2",

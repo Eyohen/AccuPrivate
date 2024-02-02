@@ -15,6 +15,7 @@ export const NODE_ENV = process.env.NODE_ENV as 'development' | 'production' | '
 export const KAFKA_ENV = process.env.KAFKA_ENV as string
 export const KAFKA_CA_CERT = process.env.KAFKA_CA_CERT as string
 export const KAFA_LOGS = process.env.KAFA_LOGS as string
+export const KAFA_REGION = process.env.KAFA_LOGS as string
 export const EMAIL_HOST = process.env.EMAIL_HOST as string
 export const EMAIL_PORT = process.env.EMAIL_PORT as string
 export const EMAIL_HOST_ADDRESS = process.env.EMAIL_HOST_ADDRESS as string
