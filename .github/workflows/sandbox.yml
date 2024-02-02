@@ -232,93 +232,93 @@ jobs:
           aws s3 cp ./dist.zip s3://staging-bucket-deployment/ 
         
       
-  create-update-environment:
-    name: create-environment
-    needs: [push-build]
-    if : github.ref == 'refs/heads/sandbox'
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Configure AWS Credentials 2
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-region: eu-west-2
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_ACCESS_SECRET_KEY }}
-    - name: pull terraform state from s3
-      run: |
-        aws s3 cp s3://sandbox-terraform-item/terraform.tfstate ./terraform/sandbox && echo "Success: The AWS CLI command completed successfully." || echo "Error: The AWS CLI command failed."
+  # create-update-environment:
+  #   name: create-environment
+  #   needs: [push-build]
+  #   if : github.ref == 'refs/heads/sandbox'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - name: Checkout
+  #     uses: actions/checkout@v2
+  #   - name: Configure AWS Credentials 2
+  #     uses: aws-actions/configure-aws-credentials@v4
+  #     with:
+  #       aws-region: eu-west-2
+  #       aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #       aws-secret-access-key: ${{ secrets.AWS_ACCESS_SECRET_KEY }}
+  #   - name: pull terraform state from s3
+  #     run: |
+  #       aws s3 cp s3://sandbox-terraform-item/terraform.tfstate ./terraform/sandbox && echo "Success: The AWS CLI command completed successfully." || echo "Error: The AWS CLI command failed."
     
-    - name: Terraform Setup
-      uses: hashicorp/setup-terraform@v3
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        TF_ACTION_WORKING_DIR: 'terraform/sandbox'
-        TF_AWS_ACCESS_KEY_ID:  ${{ secrets.AWS_ACCESS_KEY_ID }}
-        TF_AWS_SECRET_ACCESS_KEY:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        TF_VAR_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        TF_VAR_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        TF_VAR_region: "eu-west-2"
-        TF_VAR_subnet_1: ${{secrets.SUBNET_1}}
-        TF_VAR_subnet_2: ${{secrets.SUBNET_2}}
-        TF_VAR_subnet_3: ${{secrets.SUBNET_3}}
-        TF_VAR_accountId: ${{secrets.ACCOUNTID}}
-        TF_VAR_image_id: ${{secrets.IMAGE_ID}}
-        TF_VAR_instance_type: ${{secrets.INSTANCE_TYPE}}
-        TF_VAR_kafka_instance_type: "kafka.t3.small"
-        TF_VAR_instance_keypair: "sandbox-key-pair"
+  #   - name: Terraform Setup
+  #     uses: hashicorp/setup-terraform@v3
+  #     env:
+  #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       TF_ACTION_WORKING_DIR: 'terraform/sandbox'
+  #       TF_AWS_ACCESS_KEY_ID:  ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #       TF_AWS_SECRET_ACCESS_KEY:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #       TF_VAR_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #       TF_VAR_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #       TF_VAR_region: "eu-west-2"
+  #       TF_VAR_subnet_1: ${{secrets.SUBNET_1}}
+  #       TF_VAR_subnet_2: ${{secrets.SUBNET_2}}
+  #       TF_VAR_subnet_3: ${{secrets.SUBNET_3}}
+  #       TF_VAR_accountId: ${{secrets.ACCOUNTID}}
+  #       TF_VAR_image_id: ${{secrets.IMAGE_ID}}
+  #       TF_VAR_instance_type: ${{secrets.INSTANCE_TYPE}}
+  #       TF_VAR_kafka_instance_type: "kafka.t3.small"
+  #       TF_VAR_instance_keypair: "sandbox-key-pair"
       
-    - name: Terraform fmt
-      id: fmt
-      run: | 
-         cd terraform/sandbox
-         pwd
-         terraform fmt -check
-      continue-on-error: true
+  #   - name: Terraform fmt
+  #     id: fmt
+  #     run: | 
+  #        cd terraform/sandbox
+  #        pwd
+  #        terraform fmt -check
+  #     continue-on-error: true
 
-    - name: Terraform Init
-      id: init
-      run:  | 
-         cd terraform/sandbox
-         pwd
-         terraform init
+  #   - name: Terraform Init
+  #     id: init
+  #     run:  | 
+  #        cd terraform/sandbox
+  #        pwd
+  #        terraform init
     
-    - name: Terraform Validate
-      id: validate
-      run:  | 
-         cd terraform/sandbox
-         pwd
-         terraform validate -no-color
+  #   - name: Terraform Validate
+  #     id: validate
+  #     run:  | 
+  #        cd terraform/sandbox
+  #        pwd
+  #        terraform validate -no-color
     
-    - name: Terraform Plan
-      id: plan
-      run:  | 
-         cd terraform/sandbox
-         pwd
-         terraform plan -no-color
-      continue-on-error: true
+  #   - name: Terraform Plan
+  #     id: plan
+  #     run:  | 
+  #        cd terraform/sandbox
+  #        pwd
+  #        terraform plan -no-color
+  #     continue-on-error: true
       
-    - name: Terraform apply
-      id: apply
-      run: |
-          cd terraform/sandbox
-          pwd
-          terraform apply -auto-approve -no-color
-      continue-on-error: true
+  #   - name: Terraform apply
+  #     id: apply
+  #     run: |
+  #         cd terraform/sandbox
+  #         pwd
+  #         terraform apply -auto-approve -no-color
+  #     continue-on-error: true
 
-    - run: echo ${{ steps.plan.outputs.stdout }}
-    - run: echo ${{ steps.plan.outputs.stderr }}
-    - run: echo ${{ steps.plan.outputs.exitcode }}
-    - run: echo ${{ steps.apply.outputs.stdout }}
-    - run: echo ${{ steps.apply.outputs.stderr }}
-    - run: echo ${{ steps.apply.outputs.exitcode }}
+  #   - run: echo ${{ steps.plan.outputs.stdout }}
+  #   - run: echo ${{ steps.plan.outputs.stderr }}
+  #   - run: echo ${{ steps.plan.outputs.exitcode }}
+  #   - run: echo ${{ steps.apply.outputs.stdout }}
+  #   - run: echo ${{ steps.apply.outputs.stderr }}
+  #   - run: echo ${{ steps.apply.outputs.exitcode }}
 
-    - name: Save tft.state file 
-      run: |
-          cd terraform/sandbox
-          pwd
-          aws s3 cp terraform.tfstate s3://sandbox-terraform-item/
+  #   - name: Save tft.state file 
+  #     run: |
+  #         cd terraform/sandbox
+  #         pwd
+  #         aws s3 cp terraform.tfstate s3://sandbox-terraform-item/
       
    
       
