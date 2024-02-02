@@ -36,8 +36,9 @@ export default class ProductService {
     }
 
     // Method for retrieving all products
-    static async getAllProducts(): Promise<Product[]> {
-        const products = await Product.findAll();
+    static async getAllProducts(query?: { category?: IProduct['category'], type?: IProduct['type'] }): Promise<Product[]> {
+        console.log({ query })
+        const products = await Product.findAll({ where: query ?? {} });
         return products;
     }
 }

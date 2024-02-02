@@ -67,7 +67,12 @@ export default class ProductController {
     }
 
     static async getAllProducts(req: Request, res: Response, next: NextFunction) {
-        const products = await ProductService.getAllProducts();
+        const { category, type } = req.query as { category?: 'AIRTIME' | 'ELECTRICITY' | 'DATA' | 'CABLE', type?: 'POSTPAID' | 'PREPAID' };
+        const query = { category, type };
+        if (!category) delete query.category;
+        if (!type) delete query.type;
+
+        const products = await ProductService.getAllProducts(query);
 
         res.status(200).json({
             status: 'success',
