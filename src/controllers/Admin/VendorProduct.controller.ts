@@ -3,6 +3,7 @@ import VendorProductService from "../../services/VendorProduct.service";
 import { AuthenticatedRequest } from "../../utils/Interface";
 import { BadRequestError, NotFoundError } from "../../utils/Errors";
 import { randomUUID } from "crypto";
+import ProductService from "../../services/Product.service";
 
 export default class VendorProductController {
     static async createVendorProduct(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -23,6 +24,15 @@ export default class VendorProductController {
         const docWithSameVendorIdAndProductId = await VendorProductService.viewSingleVendorProductByVendorIdAndProductId(vendorId, productId);
         if (docWithSameVendorIdAndProductId) {
             throw new BadRequestError('Vendor Product with same Vendor ID and Product ID already exists');
+        }
+        
+        const product = await ProductService.viewSingleProduct(productId);
+        if (!product) {
+            throw new NotFoundError('Product not found');
+        }
+
+        if (product.category === 'DATA' && !amount) {
+            throw new BadRequestError('Amount is required for Data product');
         }
         
         const data = { vendorId, productId, commission, bonus, amount, schemaData, vendorHttpUrl, id: randomUUID() };

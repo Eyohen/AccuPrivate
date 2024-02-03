@@ -26,6 +26,9 @@ export default class VendorProduct extends Model<IVendorProduct | VendorProduct>
     @Column({ type: DataType.STRING, allowNull: false })
     productId: string;
 
+    @Column({ type: DataType.FLOAT, allowNull: true })
+    amount: number;
+
     // Commission for the product
     @Column({ type: DataType.FLOAT, allowNull: false })
     commission: number;
@@ -72,4 +75,5 @@ export interface IVendorProduct {
     bonus: number;
     schemaData: Record<string, any>;
     vendorHttpUrl: string;
+    amount?: number;
 }

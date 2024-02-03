@@ -21,6 +21,17 @@ export default class ProductController {
             throw new BadRequestError('Product with same master product code already exists');
         }
 
+        if (category === 'DATA') {
+            const mtn = masterProductCode.includes('MTN')
+            const glo = masterProductCode.includes('GLO')
+            const airtel = masterProductCode.includes('AIRTEL')
+            const nineMobile = masterProductCode.includes('9MOBILE')
+
+            if (!mtn && !glo && !airtel && !nineMobile) {
+                throw new BadRequestError(`Master code for data must contain either MTN, GLO, AIRTEL, or 9MOBILE`);
+            }
+        }
+
         const data = { masterProductCode, category, type, id: randomUUID() };
         const product = await ProductService.addProduct(data);
 

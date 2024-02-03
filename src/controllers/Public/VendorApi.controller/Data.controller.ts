@@ -20,8 +20,9 @@ import { VendorPublisher } from "../../../kafka/modules/publishers/Vendor";
 import { CRMPublisher } from "../../../kafka/modules/publishers/Crm";
 import { DataTransactionEventService } from "../../../services/TransactionEvent.service";
 import { Database } from "../../../models";
-import ProductService from "../../../services/ProductCode.service";
-import ProductCode from "../../../models/ProductCode.model";
+import ProductService from "../../../services/Product.service";
+import VendorProduct from "../../../models/VendorProduct.model";
+import VendorProductService from "../../../services/VendorProduct.service";
 
 
 class DataValidator {
@@ -51,7 +52,7 @@ class DataValidator {
             throw new BadRequestError("Amount must be greater than 50");
         }
 
-        const productCode = await ProductService.viewSingleProductCodeByCode(disco, true)
+        const productCode = await ProductService.viewSingleProductByMasterProductCode(disco)
         if (!productCode) {
             throw new InternalServerError('Product code not found')
         }
@@ -77,29 +78,32 @@ export class DataVendController {
         res: Response,
         next: NextFunction
     ) {
-        const { phoneNumber, email, disco } = req.body;
+        const { phoneNumber, email, disco, vendorProductId } = req.body;
         const superAgent = DEFAULT_DATA_PROVIDER;
         // TODO: Add request type for request authenticated by API keys
         const partnerId = (req as any).key
 
         // TODO: I'm using this for now to allow the schema validation since product code hasn't been created for airtime
-        const productCode = await ProductService.viewSingleProductCodeByCode(disco, true)
-        if (!productCode) {
-            throw new BadRequestError('Invalid Product code')
+        const existingProductCodeForDisco = await ProductService.viewSingleProductByMasterProductCode(disco)
+        if (!existingProductCodeForDisco) {
+            throw new NotFoundError('Product code not found for disco')
         }
 
-        const [, , vendorApiCode] = productCode.productCode.split('-')
-
-        const vendorRate = await productCode.vendorRates?.find(vendorRate => vendorRate.vendorName === superAgent && vendorRate.discoCode === vendorApiCode)
-        if (!vendorRate) {
-            throw new BadRequestError('Invalid Product code')
+        if (existingProductCodeForDisco.category !== 'DATA') {
+            throw new BadRequestError('Invalid product code for data')
         }
 
-        if (!productCode.amount) {
-            throw new InternalServerError('Data product code amount not found')
+        const vendorProduct = await VendorProductService.viewSingleVendorProduct(vendorProductId)
+        if (!vendorProduct) {
+            throw new NotFoundError('Vendor product not found')
         }
 
-        const amount = productCode.amount.toString()
+        const vendor = await vendorProduct.$get('vendor')
+        if (!vendor) {
+            throw new InternalServerError('Vendor not found for vendor product')
+        }
+
+        const amount = vendorProduct.amount.toString()
         const transaction: Transaction =
             await TransactionService.addTransactionWithoutValidatingUserRelationship({
                 id: uuidv4(),
@@ -110,15 +114,15 @@ export class DataVendController {
                 paymentType: PaymentType.PAYMENT,
                 transactionTimestamp: new Date(),
                 partnerId: partnerId,
-                transactionType: TransactionType.ELECTRICITY,
-                productCodeId: productCode.id,
-                previousVendors: [DEFAULT_DATA_PROVIDER],
+                transactionType: TransactionType.DATA,
+                productCodeId: existingProductCodeForDisco.id,
+                previousVendors: [vendor.name],
             });
 
         const transactionEventService = new DataTransactionEventService(transaction, superAgent, partnerId, phoneNumber);
         await transactionEventService.addPhoneNumberValidationRequestedEvent()
 
-        DataValidator.validateDataRequest({ phoneNumber, amount, disco });
+        await DataValidator.validateDataRequest({ phoneNumber, amount, disco });
         await transactionEventService.addPhoneNumberValidationRequestedEvent()
 
         const userInfo = {

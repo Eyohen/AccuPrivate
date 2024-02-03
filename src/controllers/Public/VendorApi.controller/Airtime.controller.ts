@@ -103,7 +103,7 @@ export class AirtimeVendController {
                 paymentType: PaymentType.PAYMENT,
                 transactionTimestamp: new Date(),
                 partnerId: partnerId,
-                transactionType: TransactionType.ELECTRICITY,
+                transactionType: TransactionType.AIRTIME,
                 productCodeId: existingProductCodeForDisco.id,
                 previousVendors: [DEFAULT_AIRTIME_PROVIDER],
             });
