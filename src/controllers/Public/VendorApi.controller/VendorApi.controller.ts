@@ -394,7 +394,7 @@ export default class VendorController {
         const superagent = DEFAULT_ELECTRICITY_PROVIDER; // BUYPOWERNG or BAXI
         const partnerId = (req as any).key;
 
-        const existingProductCodeForDisco = await ProductService.viewSingleProductByMasterProductCode(disco, true)
+        const existingProductCodeForDisco = await ProductService.viewSingleProductByMasterProductCode(disco)
         if (!existingProductCodeForDisco) {
             throw new NotFoundError('Product code not found for disco')
         }
@@ -579,7 +579,7 @@ export default class VendorController {
         const vendorProduct = await VendorProduct.findOne({
             where: {
                 productId: existingProductCodeForDisco.id,
-                vendorId: vendor?.id
+                vendorId: vendor.id
             }
         })
         if (!vendorProduct) {

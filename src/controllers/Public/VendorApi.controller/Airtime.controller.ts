@@ -20,8 +20,9 @@ import { VendorPublisher } from "../../../kafka/modules/publishers/Vendor";
 import { CRMPublisher } from "../../../kafka/modules/publishers/Crm";
 import { AirtimeTransactionEventService } from "../../../services/TransactionEvent.service";
 import { Database } from "../../../models";
-import ProductService from "../../../services/ProductCode.service";
-import ProductCode from "../../../models/ProductCode.model";
+import ProductService from "../../../services/Product.service";
+import Vendor from "../../../models/Vendor.model";
+import VendorProduct, { VendorProductSchemaData } from "../../../models/VendorProduct.model";
 
 
 class AirtimeValidator {
@@ -51,7 +52,7 @@ class AirtimeValidator {
             throw new BadRequestError("Amount must be greater than 50");
         }
 
-        const productCode = await ProductService.viewSingleProductCodeByCode(disco, true)
+        const productCode = await ProductService.viewSingleProductByMasterProductCode(disco)
         if (!productCode) {
             throw new InternalServerError('Product code not found')
         }
@@ -83,9 +84,13 @@ export class AirtimeVendController {
         const partnerId = (req as any).key
 
         // TODO: I'm using this for now to allow the schema validation since product code hasn't been created for airtime
-        const productCode = await ProductService.viewSingleProductCodeByCode(disco, true)
-        if (!productCode) {
-            throw new BadRequestError('Invalid Product code')
+        const existingProductCodeForDisco = await ProductService.viewSingleProductByMasterProductCode(disco)
+        if (!existingProductCodeForDisco) {
+            throw new NotFoundError('Product code not found for disco')
+        }
+
+        if (existingProductCodeForDisco.category !== 'AIRTIME') {
+            throw new BadRequestError('Invalid product code for airtime')
         }
 
         const transaction: Transaction =
@@ -99,7 +104,7 @@ export class AirtimeVendController {
                 transactionTimestamp: new Date(),
                 partnerId: partnerId,
                 transactionType: TransactionType.ELECTRICITY,
-                productCodeId: productCode.id,
+                productCodeId: existingProductCodeForDisco.id,
                 previousVendors: [DEFAULT_AIRTIME_PROVIDER],
             });
 
