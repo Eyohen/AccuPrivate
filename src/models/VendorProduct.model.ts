@@ -49,6 +49,20 @@ export default class VendorProduct extends Model<IVendorProduct | VendorProduct>
     product: Product;
 }
 
+export declare namespace VendorProductSchemaData {
+    interface IRECHARGE {
+        code: string
+    }
+
+    interface BUYPOWERNG {
+        code: string
+    }
+
+    interface BAXI {
+        code: string
+    }
+}
+
 // Define an interface representing a product code (IVendorProduct) with various properties.
 export interface IVendorProduct {
     id: string;

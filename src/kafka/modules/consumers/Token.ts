@@ -21,7 +21,7 @@ import { v4 as uuidv4 } from "uuid";
 import EventService from "../../../services/Event.service";
 import VendorService, { SuccessResponseForBuyPowerRequery } from "../../../services/VendorApi.service";
 import { generateRandomToken } from "../../../utils/Helper";
-import ProductService from "../../../services/ProductCode.service";
+import ProductService from "../../../services/Product.service";
 
 interface EventMessage {
     meter: {
@@ -68,7 +68,7 @@ const retry = {
     retryCountBeforeSwitchingVendor: 2,
 }
 
-const TEST_FAILED = NODE_ENV === 'production' ? false : true // TOGGLE - Will simulate failed transaction
+const TEST_FAILED = NODE_ENV === 'production' ? false : false // TOGGLE - Will simulate failed transaction
 
 const TransactionErrorCodeAndCause = {
     501: TransactionErrorCause.MAINTENANCE_ACCOUNT_ACTIVATION_REQUIRED,
@@ -237,36 +237,47 @@ export class TokenHandlerUtil {
     }
 
     static async getNextBestVendorForVendRePurchase(productCodeId: NonNullable<Transaction['productCodeId']>, currentVendor: Transaction['superagent'], previousVendors: Transaction['previousVendors'] = [], amount: number): Promise<Transaction['superagent']> {
-        const productCode = await ProductService.viewSingleProductCode(productCodeId, true)
-        if (!productCode) throw new Error('Product code not found')
+        const product = await ProductService.viewSingleProduct(productCodeId)
+        if (!product) throw new Error('Product code not found')
 
-        const vendorRates = productCode.vendorRates
-        if (!vendorRates) throw new Error('Vendor rates not found')
-
-        const currentVendorRate = vendorRates.find(vendorRate => vendorRate.vendorName === currentVendor)
-        if (!currentVendorRate) throw new Error('Current vendor rate not found')
+        const vendorProducts = await product.$get('vendorProducts')
+        // Populate all te vendors
+        const vendors = await Promise.all(vendorProducts.map(async vendorProduct => {
+            const vendor = await vendorProduct.$get('vendor')
+            if (!vendor) throw new Error('Vendor not found')
+            vendorProduct.vendor = vendor
+            return vendor
+        }))
 
         // Check other vendors, sort them according to their commission rates
         // If the current vendor is the vendor with the highest commission rate, then switch to the vendor with the next highest commission rate
         // If the next vendor has been used before, switch to the next vendor with the next highest commission rate
         // If all the vendors have been used before, switch to the vendor with the highest commission rate
 
-        const otherVendors = vendorRates.filter(vendorRate => vendorRate.vendorName !== currentVendor)
-        const sortedOtherVendors = otherVendors.sort((a, b) => (b.commission + b.bonus) - (a.commission + a.bonus))
+        const sortedVendorProductsAccordingToCommissionRate = vendorProducts.sort((a, b) => (b.commission + b.bonus) - (a.commission + a.bonus))
+        const vendorRates = sortedVendorProductsAccordingToCommissionRate.map(vendorProduct => {
+            const vendor = vendorProduct.vendor
+            if (!vendor) throw new Error('Vendor not found')
+            return {
+                vendorName: vendor.name,
+                commission: vendorProduct.commission,
+                bonus: vendorProduct.bonus
+            }
+        })
 
-        const nextBestVendor = sortedOtherVendors[0]
-        if (!nextBestVendor) throw new Error('Next best vendor not found')
+        const sortedOtherVendors = vendorRates.filter(vendorRate => vendorRate.vendorName !== currentVendor)
 
-        const nextBestVendorHasBeenUsedBefore = previousVendors.includes(nextBestVendor.vendorName)
-        if (!nextBestVendorHasBeenUsedBefore) return nextBestVendor.vendorName
-
-        let nextBestVendorWithHighestCommissionRate = sortedOtherVendors.find(vendorRate => !previousVendors.includes(vendorRate.vendorName))
-        if (!nextBestVendorWithHighestCommissionRate) {
-            // If all vendors have been used before, switch to the vendor with the highest commission rate
-            nextBestVendorWithHighestCommissionRate = vendorRates.sort((a, b) => (b.commission + b.bonus) - (a.commission + a.bonus))[0]
+        nextBestVendor: for (const vendorRate of sortedOtherVendors) { 
+            if (!previousVendors.includes(vendorRate.vendorName)) return vendorRate.vendorName as Transaction['superagent']
         }
 
-        return nextBestVendorWithHighestCommissionRate.vendorName
+        if (previousVendors.length === vendors.length) {
+            // If all vendors have been used before, switch to the vendor with the highest commission rate
+            return vendorRates.sort((a, b) => (b.commission + b.bonus) - (a.commission + a.bonus))[0].vendorName as Transaction['superagent']
+        } 
+
+        // If the current vendor is the vendor with the highest commission rate, then switch to the vendor with the next highest commission rate
+        return sortedOtherVendors[0].vendorName as Transaction['superagent']
     }
 }
 

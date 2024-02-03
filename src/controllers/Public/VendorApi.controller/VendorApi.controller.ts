@@ -37,9 +37,10 @@ import { error } from "console";
 import TransactionEventService from "../../../services/TransactionEvent.service";
 import WebhookService from "../../../services/Webhook.service";
 import { AirtimeVendController } from "./Airtime.controller";
-import ProductCode from "../../../models/ProductCode.model";
-import ProductService from "../../../services/ProductCode.service";
 import VendorRates from "../../../models/VendorRates.model";
+import ProductService from "../../../services/Product.service";
+import VendorProduct, { VendorProductSchemaData } from "../../../models/VendorProduct.model";
+import Vendor from "../../../models/Vendor.model";
 
 interface valideMeterRequestBody {
     meterNumber: string;
@@ -63,6 +64,7 @@ interface vendTokenRequestBody {
 interface RequestTokenValidatorParams {
     bankRefId: string;
     transactionId: string;
+    vendorDiscoCode: string
 }
 
 interface RequestTokenValidatorResponse {
@@ -146,6 +148,7 @@ class VendorControllerValdator {
     static async requestToken({
         bankRefId,
         transactionId,
+        vendorDiscoCode
     }: RequestTokenValidatorParams): Promise<RequestTokenValidatorResponse> {
         if (!bankRefId)
             throw new BadRequestError("Transaction reference is required");
@@ -154,20 +157,6 @@ class VendorControllerValdator {
             await TransactionService.viewSingleTransaction(transactionId);
         if (!transactionRecord) {
             throw new BadRequestError("Transaction does not exist");
-        }
-
-        const productCode = await ProductService.viewSingleProductCodeByCode(transactionRecord.disco, true)
-        if (!productCode) {
-            throw new NotFoundError('Product code not found')
-        }
-
-
-        const vendorDiscoCode = productCode.vendorRates.find((vendorRate) => {
-            return vendorRate.vendorName === transactionRecord.superagent
-        })?.discoCode
-
-        if (!vendorDiscoCode) {
-            throw new InternalServerError('Vendor disco code not found')
         }
 
         // Check if Disco is Up
@@ -405,12 +394,12 @@ export default class VendorController {
         const superagent = DEFAULT_ELECTRICITY_PROVIDER; // BUYPOWERNG or BAXI
         const partnerId = (req as any).key;
 
-        const existingProductCodeForDisco = await ProductService.viewSingleProductCodeByCode(disco, true)
+        const existingProductCodeForDisco = await ProductService.viewSingleProductByMasterProductCode(disco, true)
         if (!existingProductCodeForDisco) {
             throw new NotFoundError('Product code not found for disco')
         }
 
-        if (existingProductCodeForDisco.type !== 'ELECTRICITY') {
+        if (existingProductCodeForDisco.category !== 'ELECTRICITY') {
             throw new BadRequestError('Invalid product code for electricity')
         }
 
@@ -440,15 +429,20 @@ export default class VendorController {
             superAgent: superagent
         });
 
-        const vendorDiscoCode = existingProductCodeForDisco.vendorRates.find((vendorRate) => {
-            console.log({ vendorRate: vendorRate.dataValues })
-            return vendorRate.vendorName === DEFAULT_ELECTRICITY_PROVIDER
-        })?.discoCode
+        const vendor = await Vendor.findOne({ where: { name: superagent } })
+        if (!vendor) throw new InternalServerError('Vendor not found')
 
-        if (!vendorDiscoCode) {
-            throw new InternalServerError('Vendor disco code not found')
+        const vendorProduct = await VendorProduct.findOne({
+            where: {
+                productId: existingProductCodeForDisco.id,
+                vendorId: vendor?.id
+            }
+        })
+        if (!vendorProduct) {
+            throw new NotFoundError('Vendor product not found')
         }
 
+        const vendorDiscoCode = (vendorProduct.schemaData as VendorProductSchemaData.BUYPOWERNG).code
         // We Check for Meter User *
         const response = await VendorControllerUtil.validateMeter({ meterNumber, disco: vendorDiscoCode, vendType, transaction })
         const userInfo = {
@@ -570,19 +564,29 @@ export default class VendorController {
             throw new InternalServerError("Transaction does not have a meter");
         }
 
-
-        const productCode = await ProductService.viewSingleProductCodeByCode(transaction.disco, true)
-        if (!productCode) {
-            throw new NotFoundError('Product code not found')
+        const existingProductCodeForDisco = await ProductService.viewSingleProduct(transaction.productCodeId)
+        if (!existingProductCodeForDisco) {
+            throw new NotFoundError('Product code not found for disco')
         }
 
-        const vendorDiscoCode = productCode.vendorRates.find((vendorRate) => {
-            return vendorRate.vendorName === transaction.superagent
-        })?.discoCode
-
-        if (!vendorDiscoCode) {
-            throw new InternalServerError('Vendor disco code not found')
+        if (existingProductCodeForDisco.category !== 'ELECTRICITY') {
+            throw new BadRequestError('Invalid product code for electricity')
         }
+
+        const vendor = await Vendor.findOne({ where: { name: transaction.superagent } })
+        if (!vendor) throw new InternalServerError('Vendor not found')
+
+        const vendorProduct = await VendorProduct.findOne({
+            where: {
+                productId: existingProductCodeForDisco.id,
+                vendorId: vendor?.id
+            }
+        })
+        if (!vendorProduct) {
+            throw new NotFoundError('Vendor product not found')
+        }
+
+        const vendorDiscoCode = (vendorProduct.schemaData as VendorProductSchemaData.BUYPOWERNG).code
 
         const meterInfo = {
             meterNumber: meter.meterNumber,
@@ -593,7 +597,7 @@ export default class VendorController {
         const transactionEventService = new EventService.transactionEventService(transaction, meterInfo, transaction.superagent, transaction.partner.email);
         await transactionEventService.addPowerPurchaseInitiatedEvent(bankRefId, amount);
 
-        const { user, partnerEntity } = await VendorControllerValdator.requestToken({ bankRefId, transactionId });
+        const { user, partnerEntity } = await VendorControllerValdator.requestToken({ bankRefId, transactionId, vendorDiscoCode });
         await transaction.update({
             bankRefId: bankRefId,
             bankComment,
