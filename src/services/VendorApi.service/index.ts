@@ -244,6 +244,8 @@ export class IRechargeVendorService {
             hash
         }
 
+        console.log({ params })
+
         const response = await this.client.get<IRechargeRequeryResponse>('/vend_status.php', { params })
 
         return { ...response.data, source: 'IRECHARGE' }
@@ -524,7 +526,7 @@ export default class VendorService {
                 return {
                     'source': 'BUYPOWERNG',
                     "status": true,
-                    "message": "Transaction succesful",
+                    "message": "Transaction successful",
                     'responseCode': 200,
                     "data": {
                         "id": 80142232,

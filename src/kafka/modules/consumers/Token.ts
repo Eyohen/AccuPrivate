@@ -64,11 +64,12 @@ interface ProcessVendRequestReturnData extends Record<Transaction['superagent'],
 
 const retry = {
     count: 0,
-    // limit: 5,
+    limit: 2,
+    limitToStopRetryingWhenTransactionIsSuccessful: 5,
     retryCountBeforeSwitchingVendor: 2,
 }
 
-const TEST_FAILED = NODE_ENV === 'production' ? false : false // TOGGLE - Will simulate failed transaction
+const TEST_FAILED = NODE_ENV === 'production' ? false : true // TOGGLE - Will simulate failed transaction
 
 const TransactionErrorCodeAndCause = {
     501: TransactionErrorCause.MAINTENANCE_ACCOUNT_ACTIVATION_REQUIRED,
@@ -267,14 +268,14 @@ export class TokenHandlerUtil {
 
         const sortedOtherVendors = vendorRates.filter(vendorRate => vendorRate.vendorName !== currentVendor)
 
-        nextBestVendor: for (const vendorRate of sortedOtherVendors) { 
+        nextBestVendor: for (const vendorRate of sortedOtherVendors) {
             if (!previousVendors.includes(vendorRate.vendorName)) return vendorRate.vendorName as Transaction['superagent']
         }
 
         if (previousVendors.length === vendors.length) {
             // If all vendors have been used before, switch to the vendor with the highest commission rate
             return vendorRates.sort((a, b) => (b.commission + b.bonus) - (a.commission + a.bonus))[0].vendorName as Transaction['superagent']
-        } 
+        }
 
         // If the current vendor is the vendor with the highest commission rate, then switch to the vendor with the next highest commission rate
         return sortedOtherVendors[0].vendorName as Transaction['superagent']
@@ -422,9 +423,17 @@ class TokenHandler extends Registry {
             tokenInResponse = tokenInfo.meter_token
         }
 
+        let requeryTransactionFromVendor = transactionTimedOutFromBuypower || !tokenInResponse || transactionTimedOutFromIrecharge
+        if (tokenInResponse && TEST_FAILED) {
+            const totalRetries = (retry.retryCountBeforeSwitchingVendor * transaction.previousVendors.length - 1) + retry.count + 1
+
+            // If we are in test mode, and the transaction is successful, after a number of retries, we should assume the transaction is successful
+            const shouldAssumeToBeSuccessful = (totalRetries > retry.limitToStopRetryingWhenTransactionIsSuccessful) && TEST_FAILED
+            requeryTransactionFromVendor = !shouldAssumeToBeSuccessful
+        }
+
         // If Transaction timedout - Requery the transaction at intervals
-        transactionTimedOutFromBuypower = TEST_FAILED ?? transactionTimedOutFromBuypower
-        if (transactionTimedOutFromBuypower || !tokenInResponse || transactionTimedOutFromIrecharge) {
+        if (requeryTransactionFromVendor || !tokenInResponse) {
             return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
                 {
                     eventService: transactionEventService,
@@ -592,7 +601,14 @@ class TokenHandler extends Registry {
         const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false
         const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' : false
 
-        const transactionSuccess = TEST_FAILED ? false : (transactionSuccessFromBuypower || transactionSuccessFromBaxi || transactionSuccessFromIrecharge)
+        let transactionSuccess = (transactionSuccessFromBuypower || transactionSuccessFromBaxi || transactionSuccessFromIrecharge)
+        if (transactionSuccess && TEST_FAILED) {
+            const totalRetries = (retry.retryCountBeforeSwitchingVendor * transaction.previousVendors.length - 1) + retry.count + 1
+
+            // If we are in test mode, and the transaction is successful, after a number of retries, we should assume the transaction is successful
+            transactionSuccess = (totalRetries > retry.limitToStopRetryingWhenTransactionIsSuccessful) && TEST_FAILED
+        }
+
         if (!transactionSuccess) {
             /**
              * Transaction may be unsuccessful but it doesn't mean it has failed
@@ -662,6 +678,7 @@ class TokenHandler extends Registry {
         if (requeryResult.source === 'BUYPOWERNG') token = (requeryResultFromBuypower as SuccessResponseForBuyPowerRequery).data?.token
         else if (requeryResult.source === 'BAXI') token = requeryResultFromBaxi.data?.rawOutput.token
         else if (requeryResult.source === 'IRECHARGE') token = requeryResultFromIrecharge.token
+
 
         if (!token) {
             return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
