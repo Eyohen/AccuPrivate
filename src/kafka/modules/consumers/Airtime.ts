@@ -165,12 +165,16 @@ export class TokenHandlerUtil {
         // Attempt purchase from new vendor
         if (!transaction.bankRefId) throw new Error('BankRefId not found')
 
-        const newVendor = await TokenHandlerUtil.getNextBestVendorForVendRePurchase({
-            productCodeId: transaction.productCodeId,
-            currentVendor: transaction.superagent,
-            previousVendors: transaction.previousVendors,
-            amount: parseFloat(transaction.amount),
-        })
+
+        const product = await ProductService.viewSingleProduct(transaction.productCodeId)
+        if (!product) throw new Error('Product code not found')
+
+        const newVendor = await TokenHandlerUtil.getNextBestVendorForVendRePurchase(
+            product.id,
+            transaction.superagent,
+            transaction.previousVendors,
+            parseFloat(transaction.amount)
+        )
         await transactionEventService.addAirtimePurchaseWithNewVendorEvent({ currentVendor: transaction.superagent, newVendor })
 
         const user = await transaction.$get('user')

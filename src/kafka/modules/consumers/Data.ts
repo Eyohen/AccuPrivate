@@ -243,8 +243,8 @@ export class TokenHandlerUtil {
     }
 
     static async getNextBestVendorForVendRePurchase({
-        productCodeId, currentVendor, previousVendors, amount
-    }: { productCodeId: NonNullable<Transaction['productCodeId']>, currentVendor: Transaction['superagent'], previousVendors: Transaction['previousVendors'] = [], amount: number }): Promise<Transaction['superagent']> {
+        productCodeId, currentVendor, previousVendors = [], amount
+    }: { productCodeId: NonNullable<Transaction['productCodeId']>, currentVendor: Transaction['superagent'], previousVendors: Transaction['previousVendors'], amount: number }): Promise<Transaction['superagent']> {
         const product = await ProductService.viewSingleProduct(productCodeId)
         if (!product) throw new Error('Product code not found')
 

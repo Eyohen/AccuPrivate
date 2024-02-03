@@ -10,7 +10,6 @@ const router: Router = express.Router()
 router
     .post('/validate/meter', validateApiKey, VendorController.validateMeter)
     .get('/token', validateApiKey, VendorController.requestToken)
-    .get('/discos', VendorController.getDiscos)
     .get('/discos/check', VendorController.checkDisco)
     .post('/confirm-payment', validateApiKey, AuthenticatedController(VendorController.confirmPayment))
 
