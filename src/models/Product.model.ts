@@ -23,8 +23,8 @@ export default class Product extends Model<IProduct | Product> {
     @Column({ type: DataType.ENUM('POSTPAID', 'PREPAID'), allowNull: false })
     type: 'POSTPAID' | 'PREPAID';
 
-    @Column({ type: DataType.STRING, allowNull: true })
-    productName?: string;
+    @Column({ type: DataType.STRING, allowNull: false })
+    productName: string;
 
     @HasMany(() => VendorProduct)
     vendorProducts: VendorProduct[];
@@ -43,5 +43,5 @@ export interface IProduct {
 export interface IUpdateProduct {
     masterProductCode?: string;
     type?: 'POSTPAID' | 'PREPAID';
-    productName?: string;
+    productName: string;
 }

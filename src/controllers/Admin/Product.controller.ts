@@ -13,8 +13,8 @@ export default class ProductController {
             productName: string
         };
 
-        if (!masterProductCode || !category || !type) {
-            throw new BadRequestError('Master Product Code, Category, and Type are required');
+        if (!masterProductCode || !category || !type || !productName) {
+            throw new BadRequestError('Master Product Code, Category, ProductName and Type are required');
         }
 
         const existingProductWithSameMasterProductCode = await ProductService.viewSingleProductByMasterProductCode(masterProductCode);

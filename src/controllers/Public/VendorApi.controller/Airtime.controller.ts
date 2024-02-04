@@ -8,10 +8,6 @@ import Transaction, {
 import { v4 as uuidv4 } from "uuid";
 import UserService from "../../../services/User.service";
 import {
-    DEFAULT_AIRTIME_PROVIDER,
-    DEFAULT_ELECTRICITY_PROVIDER,
-} from "../../../utils/Constants";
-import {
     BadRequestError,
     InternalServerError,
     NotFoundError,
@@ -24,6 +20,13 @@ import ProductService from "../../../services/Product.service";
 import Vendor from "../../../models/Vendor.model";
 import VendorProduct, { VendorProductSchemaData } from "../../../models/VendorProduct.model";
 import { TokenHandlerUtil } from "../../../kafka/modules/consumers/Token";
+import { BAXI_AGENT_ID, HTTP_URL, SCHEMADATA, SEED } from "../../../utils/Constants";
+import Product from "../../../models/Product.model";
+import { randomUUID } from "crypto";
+import VendorService from "../../../services/Vendor.service";
+import VendorProductService from "../../../services/VendorProduct.service";
+import { generateRandonNumbers } from "../../../utils/Helper";
+import logger from "../../../utils/Logger";
 
 
 class AirtimeValidator {
@@ -94,7 +97,6 @@ export class AirtimeVendController {
         }
 
         const superAgent = await TokenHandlerUtil.getBestVendorForPurchase(existingProductCodeForDisco.id, 1000);
-        console.log({ superAgent})
         const transaction: Transaction =
             await TransactionService.addTransactionWithoutValidatingUserRelationship({
                 id: uuidv4(),
@@ -151,6 +153,88 @@ export class AirtimeVendController {
             },
         })
     }
+    
+    static async seedDataToDb(
+        req: Request,
+        res: Response,
+        next: NextFunction
+    ) {
+        console.log('Start seeding data to the database...');
+
+        const productCategories = ['POSTPAID', 'PREPAID'] as const;
+        const vendors = ['IRECHARGE', 'BUYPOWERNG', 'BAXI'] as const;
+        const productTypes = Object.keys(SEED);
+
+        const vendorDoc = {} as {
+            BUYPOWERNG: Vendor,
+            IRECHARGE: Vendor,
+            BAXI: Vendor,
+        };
+
+        // Create vendors
+        for (let i = 0; i < vendors.length; i++) {
+            const vendorName = vendors[i] as typeof vendors[number];
+            console.log(`Creating vendor: ${vendorName}`);
+            const vendor = await VendorService.addVendor({
+                name: vendorName,
+                id: randomUUID(),
+                schemaData: SCHEMADATA[vendorName],
+            });
+
+            vendorDoc[vendorName] = vendor;
+            console.log(`Vendor ${vendorName} created with ID ${vendor.id}`);
+        }
+
+        // Create vendor products
+        for (let j = 0; j < productTypes.length; j++) {
+            const productType = productTypes[j] as keyof typeof SEED;
+            console.log(`Creating products for type: ${productType}`);
+            const productCodeData = SEED[productType];
+            const productNames = Object.keys(productCodeData);
+
+            for (let k = 0; k < productNames.length; k++) {
+                const productCode = productNames[k];
+                console.log(`Creating product: ${productCode}`);
+                const productInfo = productCodeData[productCode as keyof typeof productCodeData] as unknown as typeof SEED.ELECTRICITY.ECABEPS;
+
+                // Create product
+                const product = await ProductService.addProduct({
+                    masterProductCode: productCode,
+                    category: 'AIRTIME',
+                    type: productInfo.type as 'PREPAID' | 'POSTPAID',
+                    productName: productInfo.productName,
+                    id: randomUUID(),
+                });
+
+                console.log(`Product ${productCode} created with ID ${product.id}`);
+
+                // Get the vendors in productInfo and create a vendorProduct using the vendor and product
+                const vendors = Object.keys(productInfo.vendors);
+                for (let l = 0; l < vendors.length; l++) {
+                    const vendorName = vendors[l] as keyof typeof productInfo.vendors;
+                    const vendor = vendorDoc[vendorName];
+
+                    console.log(`Adding VendorProduct for vendor ${vendorName} and product ${productCode}`);
+                    await VendorProductService.addVendorProduct({
+                        id: randomUUID(),
+                        vendorId: vendor.id,
+                        productId: product.id,
+                        commission: productInfo.vendors[vendorName].commission,
+                        bonus: parseFloat(generateRandonNumbers(1)),
+                        schemaData: {
+                            code: productInfo.vendors[vendorName].discoCode,
+                        },
+                        vendorHttpUrl: HTTP_URL[vendorName][productType],
+                    });
+
+                    console.log(`VendorProduct added for vendor ${vendorName} and product ${productCode}`);
+                }
+            }
+        }
+
+        console.log('Data seeding completed.');
+    }
+
 
     static async requestAirtime(
         req: Request,

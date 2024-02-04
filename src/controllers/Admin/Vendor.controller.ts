@@ -7,7 +7,12 @@ import { randomUUID } from "crypto";
 export default class VendorController {
 
     static async createVendor(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { name } = req.body as { name: string };
+        const { name, schemaData } = req.body as { name: string, schemaData: {
+            ELECTRICITY: Record<string, any>,
+            AIRTIME: Record<string, any>,
+            DATA: Record<string, any>,
+            CABLE: Record<string, any>,
+        } };
 
         if (!name) {
             throw new BadRequestError('Name is required');
@@ -18,7 +23,7 @@ export default class VendorController {
             throw new BadRequestError('Vendor with same name already exists');
         }
 
-        const data = { name, id: randomUUID() };
+        const data = { name, id: randomUUID(), schemaData };
         const vendor = await VendorService.addVendor(data);
 
         res.status(201).json({

@@ -18,10 +18,10 @@ export default class Vendor extends Model<IVendor | Vendor> {
 
     @Column({ type: DataType.JSONB, allowNull: true })
     schemaData: {
-        airtime: Record<string, any>,
-        data: Record<string, any>,
-        electricity: Record<string, any>,
-        cable: Record<string, any>,
+        ELECTRICITY: Record<string, any>,
+        AIRTIME: Record<string, any>,
+        DATA: Record<string, any>,
+        CABLE: Record<string, any>,
     };
 
     @HasMany(() => VendorProduct)
@@ -42,10 +42,10 @@ export default class Vendor extends Model<IVendor | Vendor> {
 export interface IVendor {
     id: string;
     name: string;
-    schemaData?: {
-        airtime: Record<string, any>,
-        data: Record<string, any>,
-        electricity: Record<string, any>,
-        cable: Record<string, any>
+    schemaData: {
+        ELECTRICITY: Record<string, any>,
+        AIRTIME: Record<string, any>,
+        DATA: Record<string, any>,
+        CABLE: Record<string, any>,
     }
 }
