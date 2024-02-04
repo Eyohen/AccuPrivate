@@ -22,7 +22,7 @@ export class IRechargeDataApi extends IRechargeBaseConfig {
         const params = {
             vendor_code: this.VENDOR_CODE,
             vtu_network: network[serviceType.toLowerCase() as keyof typeof network],
-            vtu_amount: 20000,
+            vtu_amount: parseFloat(amount.toString()),
             vtu_data: parseInt(data.dataCode),
             vtu_number: phoneNumber,
             email: email,
@@ -30,9 +30,7 @@ export class IRechargeDataApi extends IRechargeBaseConfig {
             response_format: 'json',
             hash
         }
-        const response = await this.API.get<IRechargeApi.DataSuccessfulVendResponse | IRechargeApi.RequeryResponse>('/vend_airtime.php', {
-            params
-        })
+        const response = await this.API.get<IRechargeApi.DataSuccessfulVendResponse | IRechargeApi.RequeryResponse>('/vend_airtime.php', { params })
 
 
         return (NODE_ENV === 'development'
@@ -47,6 +45,6 @@ export class IRechargeDataApi extends IRechargeBaseConfig {
                 response_hash: 'e6ece15bcb33d379933252aab4528ce102198de3',
                 source: 'IRECHARGE'
             }
-            : response.data) as any
+            : response.data) as IRechargeApi.DataSuccessfulVendResponse | IRechargeApi.RequeryResponse
     }
 }

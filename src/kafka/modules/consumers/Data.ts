@@ -19,7 +19,7 @@ import {
 import MessageProcessor from "../util/MessageProcessor";
 import { v4 as uuidv4 } from "uuid";
 import EventService from "../../../services/Event.service";
-import VendorService, { Prettify, SuccessResponseForBuyPowerRequery } from "../../../services/VendorApi.service";
+import VendorService, { DataPurchaseResponse, Prettify, SuccessResponseForBuyPowerRequery, Vendor } from "../../../services/VendorApi.service";
 import { generateRandomToken } from "../../../utils/Helper";
 import BuypowerApi from "../../../services/VendorApi.service/Buypower";
 import { IRechargeApi } from "../../../services/VendorApi.service/Irecharge";
@@ -47,7 +47,7 @@ interface TriggerRequeryTransactionTokenProps {
     retryCount: number;
 }
 
-interface TokenPurchaseData<T = 'IRECHARGE'> {
+interface TokenPurchaseData<T = Vendor> {
     transaction: Omit<Transaction, 'superagent'> & { superagent: T },
     phoneNumber: string,
     email: string,
@@ -197,7 +197,7 @@ export class TokenHandlerUtil {
         })
     }
 
-    static async processVendRequest<T extends 'IRECHARGE'>({ transaction, ...data }: TokenPurchaseData<T>): Promise<ProcessVendRequestReturnData[T]> {
+    static async processVendRequest<T extends Vendor>({ transaction, ...data }: TokenPurchaseData<T>) {
         const _data = {
             dataCode: data.dataCode,
             phoneNumber: data.phoneNumber,
@@ -207,25 +207,14 @@ export class TokenHandlerUtil {
             reference: transaction.reference,
         }
 
-        switch (transaction.superagent) {
-            // case "BAXI":
-            //     return await VendorService.baxiVendToken(_data)
-            // case "BUYPOWERNG":
-            //     return await VendorService.purchaseData({
-            //         data: {
-            //             accountNumber: data.accountNumber,
-            //             phoneNumber: data.phoneNumber,
-            //             serviceType: data.serviceProvider,
-            //             amount: data.amount,
-            //             email: data.email,
-            //             reference: transaction.reference,
-            //         }, vendor: 'BUYPOWERNG'
-            //     }).then(response => ({ ...response, source: 'BUYPOWERNG' }))
-            case "IRECHARGE":
-                return await VendorService.purchaseData({ data: _data, vendor: 'IRECHARGE' })
-                    .then(response => ({ ...response, source: 'IRECHARGE' }))
-            default:
-                throw new Error("Invalid superagent");
+        if (transaction.superagent === "BAXI") {
+            return await VendorService.purchaseData({ data: _data, vendor: 'BAXI' }).then(response => ({ ...response, source: 'BAXI' as const }))
+        } else if (transaction.superagent === "IRECHARGE") {
+            return await VendorService.purchaseData({ data: _data, vendor: 'IRECHARGE' }).then(response => ({ ...response, source: 'IRECHARGE' as const }))
+        } else if (transaction.superagent === "BUYPOWERNG") {
+            return await VendorService.purchaseData({ data: _data, vendor: 'BUYPOWERNG' }).then(response => ({ ...response, source: 'BUYPOWERNG' as const }))
+        } else {
+            throw new Error('Unsupported superagent')
         }
     }
 
@@ -286,6 +275,38 @@ export class TokenHandlerUtil {
 
         // If the current vendor is the vendor with the highest commission rate, then switch to the vendor with the next highest commission rate
         return sortedOtherVendors[0].vendorName as Transaction['superagent']
+    }
+
+    static async getBestVendorForPurchase(productCodeId: NonNullable<Transaction['productCodeId']>, amount: number): Promise<Transaction['superagent']> {
+        const product = await ProductService.viewSingleProduct(productCodeId)
+        if (!product) throw new Error('Product code not found')
+
+        const vendorProducts = await product.$get('vendorProducts')
+        // Populate all te vendors
+        const vendors = await Promise.all(vendorProducts.map(async vendorProduct => {
+            const vendor = await vendorProduct.$get('vendor')
+            if (!vendor) throw new Error('Vendor not found')
+            vendorProduct.vendor = vendor
+            return vendor
+        }))
+
+        // Check other vendors, sort them according to their commission rates
+        // If the current vendor is the vendor with the highest commission rate, then switch to the vendor with the next highest commission rate
+        // If the next vendor has been used before, switch to the next vendor with the next highest commission rate
+        // If all the vendors have been used before, switch to the vendor with the highest commission rate
+
+        const sortedVendorProductsAccordingToCommissionRate = vendorProducts.sort((a, b) => (b.commission + b.bonus) - (a.commission + a.bonus))
+        const vendorRates = sortedVendorProductsAccordingToCommissionRate.map(vendorProduct => {
+            const vendor = vendorProduct.vendor
+            if (!vendor) throw new Error('Vendor not found')
+            return {
+                vendorName: vendor.name,
+                commission: vendorProduct.commission,
+                bonus: vendorProduct.bonus
+            }
+        })
+
+        return vendorRates[0].vendorName as Transaction['superagent']
     }
 }
 
@@ -373,7 +394,7 @@ class TokenHandler extends Registry {
             amount: parseFloat(transaction.amount),
             dataCode: vendorProductCode as TokenPurchaseData['dataCode'],
             serviceProvider: network as TokenPurchaseData['serviceProvider'],
-        });
+        })
 
         const error = { code: 202, cause: TransactionErrorCause.UNKNOWN }
         const transactionEventService = new DataTransactionEventService(

@@ -10,8 +10,9 @@ import Transaction from "../../models/Transaction.model";
 import { generateRandomString, generateRandomToken, generateRandonNumbers } from "../../utils/Helper";
 import { response } from "express";
 import BuypowerApi from "./Buypower";
-import { BuypowerAirtimePurchaseData } from "./Buypower/Airtime.";
+import { BuypowerAirtimePurchaseData } from "./Buypower/Airtime";
 import { IRechargeApi } from "./Irecharge";
+import BaxiApi from "./Baxi";
 
 export interface PurchaseResponse extends BaseResponse {
     source: 'BUYPOWERNG';
@@ -146,7 +147,7 @@ interface IRechargeMeterValidationResponse {
 
 type BuypowerRequeryResponse = _RequeryBuypowerSuccessResponse | InprogressResponseForBuyPowerRequery | FailedResponseForBuyPowerRequery
 
-abstract class Vendor {
+abstract class VendorApi {
     protected static client: AxiosInstance
 
     static getDiscos: () => Promise<any>
@@ -691,18 +692,19 @@ export default class VendorService {
         return response
     }
 
-    static async purchaseAirtime<T extends 'BUYPOWERNG' | 'IRECHARGE'>({ data, vendor }: { data: BuypowerAirtimePurchaseData, vendor: T }): Promise<Prettify<ProcessVendRequestReturnData[typeof vendor]>> {
-        switch (vendor) {
-            case 'BUYPOWERNG':
-                return await BuypowerApi.Airtime.purchase(data);
-            case 'IRECHARGE':
-                return await IRechargeApi.Airtime.purchase(data)
-            default:
-                throw new Error('UNAVAILABLE_VENDOR')
+    static async purchaseAirtime<T extends Vendor>({ data, vendor }: { data: BuypowerAirtimePurchaseData, vendor: T }): Promise<AirtimePurchaseResponse[T]> {
+        if (vendor === 'BUYPOWERNG') {
+            return await BuypowerApi.Airtime.purchase(data) as AirtimePurchaseResponse[T]
+        } else if (vendor === 'IRECHARGE') {
+            return await IRechargeApi.Airtime.purchase(data) as AirtimePurchaseResponse[T]
+        } else if (vendor === 'BAXI') {
+            return await BaxiApi.Airtime.purchase(data) as AirtimePurchaseResponse[T]
+        } else {
+            throw new Error('UNAVAILABLE_VENDOR')
         }
     }
 
-    static async purchaseData<T extends 'BUYPOWERNG' | 'IRECHARGE'>({ data, vendor }: {
+    static async purchaseData<T extends Vendor>({ data, vendor }: {
         data: {
             amount: number,
             dataCode: string,
@@ -712,21 +714,30 @@ export default class VendorService {
             email: string,
         },
         vendor: T
-    }): Promise<Prettify<ProcessVendRequestReturnData[typeof vendor]>> {
-        switch (vendor) {
-            // case 'BUYPOWERNG':
-            //     return await BuypowerApi.Data.purchase(data);
-            case 'IRECHARGE':
-                return await IRechargeApi.Data.purchase(data)
-            default:
-                throw new Error('UNAVAILABLE_VENDOR')
+    }): Promise<DataPurchaseResponse[T]> {
+        if (vendor === 'BUYPOWERNG') {
+            return await BuypowerApi.Data.purchase(data) as DataPurchaseResponse[T]
+        } else if (vendor === 'IRECHARGE') {
+            return await IRechargeApi.Data.purchase(data) as DataPurchaseResponse[T]
+        } else if (vendor === 'BAXI') {
+            return await BaxiApi.Data.purchase(data) as DataPurchaseResponse[T]
+        } else {
+            throw new Error('UNAVAILABLE_VENDOR')
         }
     }
 }
 
-export type Prettify<T extends {}> = { [K in keyof T]: T[K] } & {}
-
-interface ProcessVendRequestReturnData {
-    'BUYPOWERNG': ReturnType<typeof BuypowerApi.Airtime.purchase>,
-    'IRECHARGE': ReturnType<typeof IRechargeApi.Airtime.purchase>,
+interface AirtimePurchaseResponse {
+    BUYPOWERNG: Awaited<ReturnType<typeof BuypowerApi.Airtime.purchase>>,
+    IRECHARGE: Awaited<ReturnType<typeof IRechargeApi.Airtime.purchase>>,
+    BAXI: Awaited<ReturnType<typeof BaxiApi.Airtime.purchase>>,
 }
+
+export interface DataPurchaseResponse {
+    BUYPOWERNG: Awaited<ReturnType<typeof BuypowerApi.Data.purchase>>,
+    IRECHARGE: Awaited<ReturnType<typeof IRechargeApi.Data.purchase>>,
+    BAXI: Awaited<ReturnType<typeof BaxiApi.Data.purchase>>,
+}
+export type Prettify<T extends {}> = { [K in keyof T]: T[K] }
+
+export type Vendor = 'BUYPOWERNG' | 'IRECHARGE' | 'BAXI'

@@ -7,6 +7,7 @@ dotenv.config({ path });
 
 export const BAXI_URL: string | undefined = process.env.BAXI_URL
 export const BAXI_TOKEN: string | undefined = process.env.BAXI_TOKEN
+export const BAXI_AGENT_ID: string | undefined = process.env.BAXI_AGENT_ID
 export const BUYPOWER_URL: string | undefined = process.env.BUYPOWER_URL
 export const BUYPOWER_TOKEN: string | undefined = process.env.BUYPOWER_TOKEN
 export const DEFAULT_ELECTRICITY_PROVIDER = process.env.DEFAULT_ELECTRICITY_PROVIDER as 'BAXI' | 'BUYPOWERNG' | 'IRECHARGE'

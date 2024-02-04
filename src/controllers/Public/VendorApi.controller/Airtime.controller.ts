@@ -93,6 +93,7 @@ export class AirtimeVendController {
             throw new BadRequestError('Invalid product code for airtime')
         }
 
+        console.log({ disco})
         const transaction: Transaction =
             await TransactionService.addTransactionWithoutValidatingUserRelationship({
                 id: uuidv4(),
@@ -108,6 +109,7 @@ export class AirtimeVendController {
                 previousVendors: [DEFAULT_AIRTIME_PROVIDER],
             });
 
+        console.log("pre save")
         const transactionEventService = new AirtimeTransactionEventService(transaction, superAgent, partnerId, phoneNumber);
         await transactionEventService.addPhoneNumberValidationRequestedEvent()
 
@@ -130,8 +132,9 @@ export class AirtimeVendController {
                 email: email,
                 phoneNumber: phoneNumber,
             }, sequelizeTransaction);
-
+            console.log('pre update')
             await transaction.update({ userId: user.id }, { transaction: sequelizeTransaction })
+            console.log('post update')
             await sequelizeTransaction.commit()
         } catch (error) {
             await sequelizeTransaction.rollback()
