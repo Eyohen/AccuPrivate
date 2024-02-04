@@ -725,6 +725,29 @@ export default class VendorService {
             throw new Error('UNAVAILABLE_VENDOR')
         }
     }
+
+    static async purchaseElectricity<T extends Vendor>({ data, vendor }: {
+        data: {
+            reference: string,
+            meterNumber: string,
+            disco: string,
+            amount: string,
+            vendType: 'PREPAID' | 'POSTPAID',
+            phone: string,
+            email: string,
+            accessToken: string
+        }, vendor: T
+    }): Promise<ElectricityPurchaseResponse[T]> {
+        if (vendor === 'BUYPOWERNG') {
+            return await this.buyPowerVendToken(data) as ElectricityPurchaseResponse[T]
+        } else if (vendor === 'IRECHARGE') {
+            return await this.irechargeVendToken(data) as ElectricityPurchaseResponse[T]
+        } else if (vendor === 'BAXI') {
+            return await this.baxiVendToken(data) as ElectricityPurchaseResponse[T]
+        } else {
+            throw new Error('UNAVAILABLE_VENDOR')
+        }
+    }
 }
 
 interface AirtimePurchaseResponse {
@@ -738,6 +761,13 @@ export interface DataPurchaseResponse {
     IRECHARGE: Awaited<ReturnType<typeof IRechargeApi.Data.purchase>>,
     BAXI: Awaited<ReturnType<typeof BaxiApi.Data.purchase>>,
 }
+
+export interface ElectricityPurchaseResponse {
+    BUYPOWERNG: PurchaseResponse | TimedOutResponse,
+    IRECHARGE: IRechargeSuccessfulVendResponse,
+    BAXI: IBaxiPurchaseResponse
+}
+
 export type Prettify<T extends {}> = { [K in keyof T]: T[K] }
 
 export type Vendor = 'BUYPOWERNG' | 'IRECHARGE' | 'BAXI'

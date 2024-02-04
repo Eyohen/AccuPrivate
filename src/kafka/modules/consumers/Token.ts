@@ -19,7 +19,7 @@ import {
 import MessageProcessor from "../util/MessageProcessor";
 import { v4 as uuidv4 } from "uuid";
 import EventService from "../../../services/Event.service";
-import VendorService, { SuccessResponseForBuyPowerRequery } from "../../../services/VendorApi.service";
+import VendorService, { SuccessResponseForBuyPowerRequery, Vendor } from "../../../services/VendorApi.service";
 import { generateRandomToken } from "../../../utils/Helper";
 import ProductService from "../../../services/Product.service";
 
@@ -197,7 +197,7 @@ export class TokenHandlerUtil {
         })
     }
 
-    static async processVendRequest(data: TokenPurchaseData): Promise<ProcessVendRequestReturnData[typeof data.transaction.superagent]> {
+    static async processVendRequest<T extends Vendor>(data: TokenPurchaseData) {
         const user = await data.transaction.$get('user')
         if (!user) throw new Error('User not found for transaction')
 
@@ -214,11 +214,11 @@ export class TokenHandlerUtil {
 
         switch (data.transaction.superagent) {
             case "BAXI":
-                return await VendorService.baxiVendToken(_data)
+                return await VendorService.purchaseElectricity({ data: _data, vendor: 'BAXI' })
             case "BUYPOWERNG":
-                return await VendorService.buyPowerVendToken(_data).catch((e) => e)
+                return await VendorService.purchaseElectricity({ data: _data, vendor: 'BUYPOWERNG' }).catch((e) => e)
             case "IRECHARGE":
-                return await VendorService.irechargeVendToken(_data)
+                return await VendorService.purchaseElectricity({ data: _data, vendor: 'IRECHARGE' })
             default:
                 throw new Error("Invalid superagent");
         }
@@ -280,6 +280,38 @@ export class TokenHandlerUtil {
         // If the current vendor is the vendor with the highest commission rate, then switch to the vendor with the next highest commission rate
         return sortedOtherVendors[0].vendorName as Transaction['superagent']
     }
+
+    static async getBestVendorForPurchase(productCodeId: NonNullable<Transaction['productCodeId']>, amount: number): Promise<Transaction['superagent']> {
+        const product = await ProductService.viewSingleProduct(productCodeId)
+        if (!product) throw new Error('Product code not found')
+
+        const vendorProducts = await product.$get('vendorProducts')
+        // Populate all te vendors
+        const vendors = await Promise.all(vendorProducts.map(async vendorProduct => {
+            const vendor = await vendorProduct.$get('vendor')
+            if (!vendor) throw new Error('Vendor not found')
+            vendorProduct.vendor = vendor
+            return vendor
+        }))
+
+        // Check other vendors, sort them according to their commission rates
+        // If the current vendor is the vendor with the highest commission rate, then switch to the vendor with the next highest commission rate
+        // If the next vendor has been used before, switch to the next vendor with the next highest commission rate
+        // If all the vendors have been used before, switch to the vendor with the highest commission rate
+
+        const sortedVendorProductsAccordingToCommissionRate = vendorProducts.sort((a, b) => (b.commission + b.bonus) - (a.commission + a.bonus))
+        const vendorRates = sortedVendorProductsAccordingToCommissionRate.map(vendorProduct => {
+            const vendor = vendorProduct.vendor
+            if (!vendor) throw new Error('Vendor not found')
+            return {
+                vendorName: vendor.name,
+                commission: vendorProduct.commission,
+                bonus: vendorProduct.bonus
+            }
+        })
+
+        return vendorRates[0].vendorName as Transaction['superagent']
+    }
 }
 
 
@@ -339,6 +371,16 @@ class TokenHandler extends Registry {
             accessToken: transaction.irecharge_token
         });
 
+        // Requery transaction from provider and update transaction status
+        const vendResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction);
+        const vendResultFromBuypower = vendResult as Awaited<ReturnType<typeof TokenHandlerUtil.processVendRequest<'BU'>>
+        const vendResultFromBaxi = vendResult as Awaited<ReturnType<typeof VendorService.baxiRequeryTransaction>>
+        const vendResultFromIrecharge = vendResult as Awaited<ReturnType<typeof VendorService.irechargeRequeryTransaction>>
+
+        const transactionSuccessFromBuypower = requeryResultFromBuypower.source === 'BUYPOWERNG' ? requeryResultFromBuypower.responseCode === 200 : false
+        const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false
+        const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' : false
+
         const eventMessage = {
             meter: {
                 meterNumber: meter.meterNumber,
@@ -362,9 +404,6 @@ class TokenHandler extends Registry {
         );
         await transactionEventService.addGetTransactionTokenFromVendorInitiatedEvent();
         await transactionEventService.addVendElectricityRequestedFromVendorEvent();
-
-        const responseFromIrecharge = tokenInfo as Awaited<ReturnType<typeof VendorService.irechargeVendToken>>
-        const transactionTimedOutFromIrecharge = responseFromIrecharge.source === 'IRECHARGE' ? ['15', '43'].includes(responseFromIrecharge.status) : false
 
         // Check if error occured while purchasing token
         // Note that Irecharge api always returns 200, even when an error occurs
@@ -413,6 +452,8 @@ class TokenHandler extends Registry {
          *
          * In the case of 1 and 2, we need to requery the transaction at intervals
          */
+        const responseFromIrecharge = tokenInfo as Awaited<ReturnType<typeof VendorService.irechargeVendToken>>
+        const transactionTimedOutFromIrecharge = responseFromIrecharge.source === 'IRECHARGE' ? ['15', '43'].includes(responseFromIrecharge.status) : false
         let transactionTimedOutFromBuypower = tokenInfo.source === 'BUYPOWERNG' ? tokenInfo.data.responseCode == 202 : false // TODO: Add check for when transaction timeout from baxi
         let tokenInResponse: string | null = null;
         if (tokenInfo.source === 'BUYPOWERNG') {
