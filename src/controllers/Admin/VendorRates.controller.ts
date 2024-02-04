@@ -3,6 +3,7 @@ import ProductService from "../../services/ProductCode.service";
 import { AuthenticatedRequest } from "../../utils/Interface";
 import { BadRequestError, NotFoundError } from "../../utils/Errors";
 import { randomUUID } from "crypto";
+require('newrelic');
 
 export default class VendorRatesController {
 

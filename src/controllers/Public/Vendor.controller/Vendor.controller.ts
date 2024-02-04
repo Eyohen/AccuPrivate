@@ -36,6 +36,7 @@ import { error } from "console";
 import TransactionEventService from "../../../services/TransactionEvent.service";
 import WebhookService from "../../../services/Webhook.service";
 import { AirtimeVendController } from "./Airtime.controller";
+require('newrelic');
 
 interface valideMeterRequestBody {
     meterNumber: string;

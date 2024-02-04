@@ -199,3 +199,7 @@ terraform.tfstate-old.txt
 terraform.tfstate-old2.txt
 old1.txt
 old.txt
+create_cluster.sh
+dist-old
+dist-old-2
+dist-*

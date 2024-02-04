@@ -25,6 +25,7 @@ import User from "../../../models/User.model";
 import WebHook from "../../../models/Webhook.model";
 import { ValueOf } from "kafkajs";
 import { getCurrentWaitTimeForRequeryEvent } from "./Token";
+require('newrelic');
 
 class WebhookHandlerRequestValidator {
     static async validateIncomingWebhookEventRequest(

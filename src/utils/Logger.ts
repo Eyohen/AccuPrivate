@@ -1,5 +1,6 @@
 import winston, { format } from "winston";
 import util from "util";
+require('newrelic');
 
 const { combine, timestamp, printf, colorize } = format;
 const logFormat = printf((info) => {
