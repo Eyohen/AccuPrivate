@@ -26,6 +26,7 @@ import { IRechargeApi } from "../../../services/VendorApi.service/Irecharge";
 import ProductService from "../../../services/Product.service";
 import { VendorProductSchemaData } from "../../../models/VendorProduct.model";
 import BaxiApi from "../../../services/VendorApi.service/Baxi";
+import { token } from "morgan";
 
 interface EventMessage {
     phone: {
@@ -406,7 +407,8 @@ class TokenHandler extends Registry {
         const transactionSuccessFromIrecharge = tokenInfo.source === 'IRECHARGE' ? tokenInfo.status === '00' : false
         const transactionSuccessFromBaxi = tokenInfo.source === 'BAXI' ? tokenInfo.code === 200 : false
 
-        const transactionSuccessFul = tokenInfo.status === '00'
+        const transactionSuccessFul = transactionSuccessFromBaxi || transactionSuccessFromBuypower || transactionSuccessFromIrecharge
+
         transactionFailed = TEST_FAILED ? retry.count > retry.retryCountBeforeSwitchingVendor : transactionFailed // TOGGLE - Will simulate failed irecharge transaction
         if (transactionFailed) requeryFromNewVendor = true
         else {
@@ -433,7 +435,8 @@ class TokenHandler extends Registry {
             );
         }
 
-        await transaction.update({ irecharge_token: tokenInfo.ref })
+        await transaction.update({ irecharge_token: tokenInfo.source === 'IRECHARGE' ? tokenInfo.ref : undefined })
+        
         await transactionEventService.addAirtimeReceivedFromVendorEvent();
         return await VendorPublisher.publishEventForAirtimeReceivedFromVendor({
             transactionId: transaction!.id,

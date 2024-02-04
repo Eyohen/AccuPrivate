@@ -23,6 +23,7 @@ import { Database } from "../../../models";
 import ProductService from "../../../services/Product.service";
 import Vendor from "../../../models/Vendor.model";
 import VendorProduct, { VendorProductSchemaData } from "../../../models/VendorProduct.model";
+import { TokenHandlerUtil } from "../../../kafka/modules/consumers/Token";
 
 
 class AirtimeValidator {
@@ -79,7 +80,6 @@ export class AirtimeVendController {
         next: NextFunction
     ) {
         const { phoneNumber, amount, email, disco } = req.body;
-        const superAgent = DEFAULT_AIRTIME_PROVIDER;
         // TODO: Add request type for request authenticated by API keys
         const partnerId = (req as any).key
 
@@ -93,7 +93,8 @@ export class AirtimeVendController {
             throw new BadRequestError('Invalid product code for airtime')
         }
 
-        console.log({ disco})
+        const superAgent = await TokenHandlerUtil.getBestVendorForPurchase(existingProductCodeForDisco.id, 1000);
+
         const transaction: Transaction =
             await TransactionService.addTransactionWithoutValidatingUserRelationship({
                 id: uuidv4(),

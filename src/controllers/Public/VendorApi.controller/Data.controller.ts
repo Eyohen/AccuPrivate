@@ -23,6 +23,7 @@ import { Database } from "../../../models";
 import ProductService from "../../../services/Product.service";
 import VendorProduct from "../../../models/VendorProduct.model";
 import VendorProductService from "../../../services/VendorProduct.service";
+import { TokenHandlerUtil } from "../../../kafka/modules/consumers/Token";
 
 
 class DataValidator {
@@ -79,7 +80,6 @@ export class DataVendController {
         next: NextFunction
     ) {
         const { phoneNumber, email, disco, vendorProductId } = req.body;
-        const superAgent = DEFAULT_DATA_PROVIDER;
         // TODO: Add request type for request authenticated by API keys
         const partnerId = (req as any).key
 
@@ -102,6 +102,8 @@ export class DataVendController {
         if (!vendor) {
             throw new InternalServerError('Vendor not found for vendor product')
         }
+
+        const superAgent = await TokenHandlerUtil.getBestVendorForPurchase(existingProductCodeForDisco.id, vendorProduct.amount);
 
         const amount = vendorProduct.amount.toString()
         const transaction: Transaction =

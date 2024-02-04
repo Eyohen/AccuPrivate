@@ -391,18 +391,19 @@ export default class VendorController {
             email,
             vendType,
         }: valideMeterRequestBody = req.body;
-        const superagent = DEFAULT_ELECTRICITY_PROVIDER; // BUYPOWERNG or BAXI
         const partnerId = (req as any).key;
-
+        
         const existingProductCodeForDisco = await ProductService.viewSingleProductByMasterProductCode(disco)
         if (!existingProductCodeForDisco) {
             throw new NotFoundError('Product code not found for disco')
         }
-
+        
         if (existingProductCodeForDisco.category !== 'ELECTRICITY') {
             throw new BadRequestError('Invalid product code for electricity')
         }
-
+        
+        const superagent = await TokenHandlerUtil.getBestVendorForPurchase(existingProductCodeForDisco.id, 1000);
+        
         const transaction: Transaction =
             await TransactionService.addTransactionWithoutValidatingUserRelationship({
                 id: uuidv4(),

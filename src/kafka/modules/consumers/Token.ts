@@ -19,7 +19,7 @@ import {
 import MessageProcessor from "../util/MessageProcessor";
 import { v4 as uuidv4 } from "uuid";
 import EventService from "../../../services/Event.service";
-import VendorService, { SuccessResponseForBuyPowerRequery, Vendor } from "../../../services/VendorApi.service";
+import VendorService, { ElectricityPurchaseResponse, SuccessResponseForBuyPowerRequery, Vendor } from "../../../services/VendorApi.service";
 import { generateRandomToken } from "../../../utils/Helper";
 import ProductService from "../../../services/Product.service";
 
@@ -373,13 +373,13 @@ class TokenHandler extends Registry {
 
         // Requery transaction from provider and update transaction status
         const vendResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction);
-        const vendResultFromBuypower = vendResult as Awaited<ReturnType<typeof TokenHandlerUtil.processVendRequest<'BU'>>
-        const vendResultFromBaxi = vendResult as Awaited<ReturnType<typeof VendorService.baxiRequeryTransaction>>
-        const vendResultFromIrecharge = vendResult as Awaited<ReturnType<typeof VendorService.irechargeRequeryTransaction>>
+        const vendResultFromBuypower = vendResult as unknown as ElectricityPurchaseResponse['BUYPOWERNG'] & { source: 'BUYPOWERNG' }
+        const vendResultFromBaxi = vendResult as unknown as ElectricityPurchaseResponse['BAXI'] & { source: 'BAXI' }
+        const vendResultFromIrecharge = vendResult as unknown as ElectricityPurchaseResponse['IRECHARGE'] & { source: 'IRECHARGE' }
 
-        const transactionSuccessFromBuypower = requeryResultFromBuypower.source === 'BUYPOWERNG' ? requeryResultFromBuypower.responseCode === 200 : false
-        const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false
-        const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' : false
+        const transactionSuccessFromBuypower = vendResultFromBuypower.source === 'BUYPOWERNG' ? vendResultFromBuypower.data.responseCode === 200 : false
+        const transactionSuccessFromBaxi = vendResultFromBaxi.source === 'BAXI' ? vendResultFromBaxi.statusCode : false
+        const transactionSuccessFromIrecharge = vendResultFromIrecharge.source === 'IRECHARGE' ? vendResultFromIrecharge.status === '00' : false
 
         const eventMessage = {
             meter: {
@@ -419,7 +419,7 @@ class TokenHandler extends Registry {
                 let responseCode = tokenInfo.response?.data.responseCode as keyof typeof TransactionErrorCodeAndCause;
                 responseCode = tokenInfo.message === 'Transaction timeout' ? 202 : responseCode
 
-                if (tokenInfo.source === 'BUYPOWERNG' && [202, 500, 501].includes(responseCode)) {
+                if (vendResultFromBuypower.source === 'BUYPOWERNG' && [202, 500, 501].includes(responseCode)) {
                     return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
                         {
                             eventService: transactionEventService,
@@ -454,17 +454,18 @@ class TokenHandler extends Registry {
          */
         const responseFromIrecharge = tokenInfo as Awaited<ReturnType<typeof VendorService.irechargeVendToken>>
         const transactionTimedOutFromIrecharge = responseFromIrecharge.source === 'IRECHARGE' ? ['15', '43'].includes(responseFromIrecharge.status) : false
-        let transactionTimedOutFromBuypower = tokenInfo.source === 'BUYPOWERNG' ? tokenInfo.data.responseCode == 202 : false // TODO: Add check for when transaction timeout from baxi
+        let transactionTimedOutFromBuypower = vendResultFromBuypower.source === 'BUYPOWERNG' ? vendResultFromBuypower.data.responseCode == 202 : false // TODO: Add check for when transaction timeout from baxi
+        const transactionTimedOut = transactionTimedOutFromBuypower || transactionTimedOutFromIrecharge
         let tokenInResponse: string | null = null;
-        if (tokenInfo.source === 'BUYPOWERNG') {
-            tokenInResponse = tokenInfo.data.responseCode !== 202 ? tokenInfo.data.token : null
+        if (vendResult.source === 'BUYPOWERNG') {
+            tokenInResponse = vendResultFromBuypower.data.responseCode !== 202 ? vendResultFromBuypower.data.token : null
         } else if (tokenInfo.source === 'BAXI') {
-            tokenInResponse = tokenInfo.data.rawOutput.token
+            tokenInResponse = vendResultFromBaxi.data.rawOutput.token
         } else if (tokenInfo.source === 'IRECHARGE') {
-            tokenInResponse = tokenInfo.meter_token
+            tokenInResponse = vendResultFromIrecharge.meter_token
         }
 
-        let requeryTransactionFromVendor = transactionTimedOutFromBuypower || !tokenInResponse || transactionTimedOutFromIrecharge
+        let requeryTransactionFromVendor = transactionTimedOut || !tokenInResponse 
         if (tokenInResponse && TEST_FAILED) {
             const totalRetries = (retry.retryCountBeforeSwitchingVendor * transaction.previousVendors.length - 1) + retry.count + 1
 

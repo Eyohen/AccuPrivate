@@ -408,7 +408,13 @@ class TokenHandler extends Registry {
         let requeryFromNewVendor = false
         let requeryFromSameVendor = false
         let transactionFailed = !['00', '15', '43'].includes(tokenInfo.status)
-        const transactionSuccessFul = tokenInfo.status === '00'
+
+        const transactionSuccessfulForBuyPower = tokenInfo.source === 'BUYPOWERNG' ? tokenInfo.responseCode === 200 : false
+        const transactionSuccessfulForIrecharge = tokenInfo.source === 'IRECHARGE' ? tokenInfo.status === '00' : false
+        const transactionSuccessfulForBaxi = tokenInfo.source === 'BAXI' ? tokenInfo.code === 200 : false
+
+        const transactionSuccessFul = transactionSuccessfulForBuyPower || transactionSuccessfulForIrecharge || transactionSuccessfulForBaxi
+
         transactionFailed = TEST_FAILED ? retry.count > retry.retryCountBeforeSwitchingVendor : transactionFailed // TOGGLE - Will simulate failed irecharge transaction
         if (transactionFailed) requeryFromNewVendor = true
         else {
@@ -436,7 +442,8 @@ class TokenHandler extends Registry {
             );
         }
 
-        await transaction.update({ irecharge_token: tokenInfo.ref })
+        await transaction.update({ irecharge_token: tokenInfo.source === 'IRECHARGE' ? tokenInfo.ref : undefined })
+
         await transactionEventService.addDataReceivedFromVendorEvent();
         return await VendorPublisher.publishEventForDataReceivedFromVendor({
             transactionId: transaction!.id,
@@ -476,11 +483,11 @@ class TokenHandler extends Registry {
         const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction);
         const requeryResultFromBuypower = requeryResult as Awaited<ReturnType<typeof VendorService.buyPowerRequeryTransaction>>
         const requeryResultFromIrecharge = requeryResult as Awaited<ReturnType<typeof VendorService.irechargeRequeryTransaction>>
-        // const requeryResultFromBaxi = requeryResult as Awaited<ReturnType<typeof VendorService.baxiRequeryTransaction>>
+        const requeryResultFromBaxi = requeryResult as Awaited<ReturnType<typeof VendorService.baxiRequeryTransaction>>
 
         const transactionSuccessFromBuypower = requeryResultFromBuypower.source === 'BUYPOWERNG' ? requeryResultFromBuypower.responseCode === 200 : false
         const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' : false
-        // const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false
+        const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false
 
         const transactionEventService = new DataTransactionEventService(
             transaction,
@@ -488,7 +495,7 @@ class TokenHandler extends Registry {
             transaction.partner.email,
             data.phone.phoneNumber,
         );
-        const transactionSuccess = transactionSuccessFromBuypower || transactionSuccessFromIrecharge
+        const transactionSuccess = transactionSuccessFromBuypower || transactionSuccessFromIrecharge || transactionSuccessFromBaxi
 
         if (!transactionSuccess) {
             await transactionEventService.addDataTransactionRequery()
@@ -555,15 +562,15 @@ class TokenHandler extends Registry {
          */
         const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction)
         const requeryResultFromBuypower = requeryResult as Awaited<ReturnType<typeof VendorService.buyPowerRequeryTransaction>>
-        // const requeryResultFromBaxi = requeryResult as Awaited<ReturnType<typeof VendorService.baxiRequeryTransaction>>
+        const requeryResultFromBaxi = requeryResult as Awaited<ReturnType<typeof VendorService.baxiRequeryTransaction>>
         const requeryResultFromIrecharge = requeryResult as Awaited<ReturnType<typeof VendorService.irechargeRequeryTransaction>>
 
         const transactionSuccessFromBuypower = requeryResultFromBuypower.source === 'BUYPOWERNG' ? requeryResultFromBuypower.responseCode === 200 : false
-        // const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false
+        const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false
         const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' : false
 
         const transactionSuccess = TEST_FAILED ? false : transactionSuccessFromBuypower
-        // console.log({ transactionSuccess, transactionSuccessFromBuypower, transactionSuccessFromBaxi, transactionSuccessFromIrecharge })
+        console.log({ transactionSuccess, transactionSuccessFromBuypower, transactionSuccessFromBaxi, transactionSuccessFromIrecharge })
         // console.log({
         //     requeryResultFromIrecharge
         // })
