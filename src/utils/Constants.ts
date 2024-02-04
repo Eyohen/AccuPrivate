@@ -366,26 +366,26 @@ export const SEED = {
             type: 'POSTPAID',
             vendors: {
                 BAXI: { discoCode: 'glo', commission: 3.50, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'GLO', commission: 1.50, bonus: 0 },
-                IRECHARGE: { discoCode: 'Glo', commission: 1.50, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'GLO', commission: 0, bonus: 0 },
+                IRECHARGE: { discoCode: 'Glo', commission: 4.0, bonus: 0 },
             }
         },
         'TC9MBVT': {
             productName: '9MOBILE',
             type: 'POSTPAID',
             vendors: {
-                BAXI: { discoCode: '9mobile', commission: 1.35, bonus: 0 },
-                BUYPOWERNG: { discoCode: '9MOBILE', commission: 1.50, bonus: 0 },
-                IRECHARGE: { discoCode: '9MOBILE', commission: 1.50, bonus: 0 },
+                BAXI: { discoCode: '9mobile', commission: 3.5, bonus: 0 },
+                BUYPOWERNG: { discoCode: '9MOBILE', commission: 0, bonus: 0 },
+                IRECHARGE: { discoCode: '9MOBILE', commission: 3.5, bonus: 0 },
             }
         },
         'TCATLVT': {
             productName: 'AIRTEL',
             type: 'POSTPAID',
             vendors: {
-                BAXI: { discoCode: 'airtel', commission: 1.35, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'AIRTEL', commission: 1.50, bonus: 0 },
-                IRECHARGE: { discoCode: 'Airtel', commission: 1.50, bonus: 0 },
+                BAXI: { discoCode: 'airtel', commission: 2, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'AIRTEL', commission: 0, bonus: 0 },
+                IRECHARGE: { discoCode: 'Airtel', commission: 3, bonus: 0 },
             }
         },
     },
