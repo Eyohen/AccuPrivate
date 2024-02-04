@@ -32,7 +32,7 @@ export default class Product extends Model<IProduct | Product> {
     @BeforeCreate
     static async checkIfProductNameIsValidForDataAndAirtime(instance: Product) {
         if (instance.category === 'DATA' || instance.category === 'AIRTIME') {
-            if (!['MTN', 'GLO', 'AIRTEL', '9MOBILE'].includes(instance.masterProductCode)) {
+            if (!['MTN', 'GLO', 'AIRTEL', '9MOBILE'].includes(instance.productName)) {
                 throw new Error(`Master code for data must contain either MTN, GLO, AIRTEL, or 9MOBILE`);
             }
         }
