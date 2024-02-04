@@ -30,8 +30,6 @@ export default class TransactionService {
             reference: generateRandomString(10),
         } as Transaction);
 
-        console.log(transactionData)
-
         await transactionData.save({ validate: false });
         const _transaction = await TransactionService.viewSingleTransaction(transactionData.id)
         if (!_transaction) {

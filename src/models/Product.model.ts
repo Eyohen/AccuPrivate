@@ -23,6 +23,9 @@ export default class Product extends Model<IProduct | Product> {
     @Column({ type: DataType.ENUM('POSTPAID', 'PREPAID'), allowNull: false })
     type: 'POSTPAID' | 'PREPAID';
 
+    @Column({ type: DataType.STRING, allowNull: true })
+    productName?: string;
+
     @HasMany(() => VendorProduct)
     vendorProducts: VendorProduct[];
 }
@@ -33,4 +36,12 @@ export interface IProduct {
     masterProductCode: string; // Unique identifier for the product code
     type: 'POSTPAID' | 'PREPAID'; // Type of the product code (POSTPAID or PREPAID)
     category: 'AIRTIME' | 'ELECTRICITY' | 'DATA' | 'CABLE';
+    productName?: string;
+}
+
+
+export interface IUpdateProduct {
+    masterProductCode?: string;
+    type?: 'POSTPAID' | 'PREPAID';
+    productName?: string;
 }

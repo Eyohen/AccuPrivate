@@ -403,7 +403,7 @@ export default class VendorController {
         }
         
         const superagent = await TokenHandlerUtil.getBestVendorForPurchase(existingProductCodeForDisco.id, 1000);
-        
+
         const transaction: Transaction =
             await TransactionService.addTransactionWithoutValidatingUserRelationship({
                 id: uuidv4(),
@@ -416,7 +416,7 @@ export default class VendorController {
                 partnerId: partnerId,
                 transactionType: TransactionType.ELECTRICITY,
                 productCodeId: existingProductCodeForDisco.id,
-                previousVendors: [DEFAULT_ELECTRICITY_PROVIDER]
+                previousVendors: [superagent]
             });
 
         const transactionEventService = new EventService.transactionEventService(

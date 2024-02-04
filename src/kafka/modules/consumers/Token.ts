@@ -255,7 +255,7 @@ export class TokenHandlerUtil {
         // If the next vendor has been used before, switch to the next vendor with the next highest commission rate
         // If all the vendors have been used before, switch to the vendor with the highest commission rate
 
-        const sortedVendorProductsAccordingToCommissionRate = vendorProducts.sort((a, b) => (b.commission + b.bonus) - (a.commission + a.bonus))
+        const sortedVendorProductsAccordingToCommissionRate = vendorProducts.sort((a, b) => ((b.commission * amount) + b.bonus) - ((a.commission * amount) + a.bonus))
         const vendorRates = sortedVendorProductsAccordingToCommissionRate.map(vendorProduct => {
             const vendor = vendorProduct.vendor
             if (!vendor) throw new Error('Vendor not found')
@@ -274,7 +274,7 @@ export class TokenHandlerUtil {
 
         if (previousVendors.length === vendors.length) {
             // If all vendors have been used before, switch to the vendor with the highest commission rate
-            return vendorRates.sort((a, b) => (b.commission + b.bonus) - (a.commission + a.bonus))[0].vendorName as Transaction['superagent']
+            return vendorRates.sort((a, b) => ((b.commission * amount) + b.bonus) - ((a.commission * amount) + a.bonus))[0].vendorName as Transaction['superagent']
         }
 
         // If the current vendor is the vendor with the highest commission rate, then switch to the vendor with the next highest commission rate
@@ -294,22 +294,26 @@ export class TokenHandlerUtil {
             return vendor
         }))
 
+        logger.info('Getting best vendor for purchase')
         // Check other vendors, sort them according to their commission rates
         // If the current vendor is the vendor with the highest commission rate, then switch to the vendor with the next highest commission rate
         // If the next vendor has been used before, switch to the next vendor with the next highest commission rate
         // If all the vendors have been used before, switch to the vendor with the highest commission rate
 
-        const sortedVendorProductsAccordingToCommissionRate = vendorProducts.sort((a, b) => (b.commission + b.bonus) - (a.commission + a.bonus))
+        const sortedVendorProductsAccordingToCommissionRate = vendorProducts.sort((a, b) => ((b.commission * amount) + b.bonus) - ((a.commission * amount) + a.bonus))
+
         const vendorRates = sortedVendorProductsAccordingToCommissionRate.map(vendorProduct => {
             const vendor = vendorProduct.vendor
             if (!vendor) throw new Error('Vendor not found')
             return {
                 vendorName: vendor.name,
                 commission: vendorProduct.commission,
-                bonus: vendorProduct.bonus
+                bonus: vendorProduct.bonus,
+                value: (vendorProduct.commission * amount)+ vendorProduct.bonus
             }
         })
 
+        console.log({ vendorRates })
         return vendorRates[0].vendorName as Transaction['superagent']
     }
 }
@@ -465,7 +469,7 @@ class TokenHandler extends Registry {
             tokenInResponse = vendResultFromIrecharge.meter_token
         }
 
-        let requeryTransactionFromVendor = transactionTimedOut || !tokenInResponse 
+        let requeryTransactionFromVendor = transactionTimedOut || !tokenInResponse
         if (tokenInResponse && TEST_FAILED) {
             const totalRetries = (retry.retryCountBeforeSwitchingVendor * transaction.previousVendors.length - 1) + retry.count + 1
 

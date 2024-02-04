@@ -16,6 +16,14 @@ export default class Vendor extends Model<IVendor | Vendor> {
     @Column({ type: DataType.STRING, allowNull: false, unique: true })
     name: string;
 
+    @Column({ type: DataType.JSONB, allowNull: true })
+    schemaData: {
+        airtime: Record<string, any>,
+        data: Record<string, any>,
+        electricity: Record<string, any>,
+        cable: Record<string, any>,
+    };
+
     @HasMany(() => VendorProduct)
     vendorProducts: VendorProduct[];
 
@@ -34,4 +42,10 @@ export default class Vendor extends Model<IVendor | Vendor> {
 export interface IVendor {
     id: string;
     name: string;
+    schemaData?: {
+        airtime: Record<string, any>,
+        data: Record<string, any>,
+        electricity: Record<string, any>,
+        cable: Record<string, any>
+    }
 }

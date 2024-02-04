@@ -1,6 +1,6 @@
 // Import necessary types and the models
 import { Transaction } from "sequelize";
-import Product, { IProduct } from "../models/Product.model";
+import Product, { IProduct, IUpdateProduct } from "../models/Product.model";
 import VendorProduct from "../models/VendorProduct.model";
 import { NotFoundError } from "../utils/Errors";
 
@@ -14,7 +14,7 @@ export default class ProductService {
     }
 
     // Method for updating an existing product
-    static async updateProduct(productId: string, data: Partial<Product>, transaction?: Transaction): Promise<Product> {
+    static async updateProduct(productId: string, data: Partial<IUpdateProduct>, transaction?: Transaction): Promise<Product> {
         const product = await Product.findByPk(productId);
         if (!product) {
             throw new NotFoundError('Product not found');

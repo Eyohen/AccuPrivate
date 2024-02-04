@@ -94,7 +94,7 @@ export class AirtimeVendController {
         }
 
         const superAgent = await TokenHandlerUtil.getBestVendorForPurchase(existingProductCodeForDisco.id, 1000);
-
+        console.log({ superAgent})
         const transaction: Transaction =
             await TransactionService.addTransactionWithoutValidatingUserRelationship({
                 id: uuidv4(),
@@ -107,10 +107,9 @@ export class AirtimeVendController {
                 partnerId: partnerId,
                 transactionType: TransactionType.AIRTIME,
                 productCodeId: existingProductCodeForDisco.id,
-                previousVendors: [DEFAULT_AIRTIME_PROVIDER],
+                previousVendors: [superAgent],
             });
 
-        console.log("pre save")
         const transactionEventService = new AirtimeTransactionEventService(transaction, superAgent, partnerId, phoneNumber);
         await transactionEventService.addPhoneNumberValidationRequestedEvent()
 

@@ -6,10 +6,11 @@ import { randomUUID } from "crypto";
 
 export default class ProductController {
     static async createProduct(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { masterProductCode, category, type } = req.body as {
+        const { masterProductCode, category, type, productName } = req.body as {
             masterProductCode: string,
             category: 'AIRTIME' | 'ELECTRICITY' | 'DATA' | 'CABLE',
             type: 'POSTPAID' | 'PREPAID',
+            productName: string
         };
 
         if (!masterProductCode || !category || !type) {
@@ -32,7 +33,7 @@ export default class ProductController {
             }
         }
 
-        const data = { masterProductCode, category, type, id: randomUUID() };
+        const data = { masterProductCode, category, type, id: randomUUID(), productName };
         const product = await ProductService.addProduct(data);
 
         res.status(201).json({
@@ -44,11 +45,12 @@ export default class ProductController {
     }
 
     static async updateProduct(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { productId, masterProductCode, category, type } = req.body as {
+        const { productId, masterProductCode, category, type, productName } = req.body as {
             productId: string,
             masterProductCode?: string,
             category?: 'AIRTIME' | 'ELECTRICITY' | 'DATA' | 'CABLE',
             type?: 'POSTPAID' | 'PREPAID',
+            productName?: string
         };
 
         if (!productId) {
@@ -62,7 +64,7 @@ export default class ProductController {
             }
         }
 
-        const data = { masterProductCode, category, type };
+        const data = { masterProductCode, category, type, productName };
         const updatedProduct = await ProductService.updateProduct(productId, data);
 
         if (!updatedProduct) {
