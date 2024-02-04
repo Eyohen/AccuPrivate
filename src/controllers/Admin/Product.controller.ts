@@ -22,13 +22,8 @@ export default class ProductController {
             throw new BadRequestError('Product with same master product code already exists');
         }
 
-        if (category === 'DATA') {
-            const mtn = masterProductCode.includes('MTN')
-            const glo = masterProductCode.includes('GLO')
-            const airtel = masterProductCode.includes('AIRTEL')
-            const nineMobile = masterProductCode.includes('9MOBILE')
-
-            if (!mtn && !glo && !airtel && !nineMobile) {
+        if (category === 'DATA' || category === 'AIRTIME') {
+            if (!['MTN', 'GLO', 'AIRTEL', '9MOBILE'].includes(masterProductCode)) {
                 throw new BadRequestError(`Master code for data must contain either MTN, GLO, AIRTEL, or 9MOBILE`);
             }
         }
@@ -61,6 +56,18 @@ export default class ProductController {
             const existingProductWithSameMasterProductCode = await ProductService.viewSingleProductByMasterProductCode(masterProductCode);
             if (existingProductWithSameMasterProductCode) {
                 throw new BadRequestError('Product with same master product code already exists');
+            }
+        }
+
+        const product = await ProductService.viewSingleProduct(productId);
+        if (!product) {
+            throw new NotFoundError('Product not found');
+        }
+
+        if ((category === 'DATA' || category === 'AIRTIME') && productName) {
+            const existingProductcodeWithSameName = await ProductService.viewProductCodeByProductName(productName);
+            if (existingProductcodeWithSameName) {
+                throw new BadRequestError('Product with same name already exists');
             }
         }
 

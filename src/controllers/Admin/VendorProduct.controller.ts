@@ -12,7 +12,7 @@ export default class VendorProductController {
             productId: string,
             commission: number,
             bonus: number,
-            schemaData: Record<string, any>,
+            schemaData: { code: string },
             vendorHttpUrl: string,
             amount: number,
         };
@@ -25,7 +25,7 @@ export default class VendorProductController {
         if (docWithSameVendorIdAndProductId) {
             throw new BadRequestError('Vendor Product with same Vendor ID and Product ID already exists');
         }
-        
+
         const product = await ProductService.viewSingleProduct(productId);
         if (!product) {
             throw new NotFoundError('Product not found');
@@ -34,7 +34,7 @@ export default class VendorProductController {
         if (product.category === 'DATA' && !amount) {
             throw new BadRequestError('Amount is required for Data product');
         }
-        
+
         const data = { vendorId, productId, commission, bonus, amount, schemaData, vendorHttpUrl, id: randomUUID() };
         const vendorProduct = await VendorProductService.addVendorProduct(data);
 
@@ -47,18 +47,27 @@ export default class VendorProductController {
     }
 
     static async updateVendorProduct(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { vendorProductId, commission, bonus, schemaData, vendorHttpUrl } = req.body as {
+        const { vendorProductId, commission, bonus, vendorHttpUrl } = req.body as {
             vendorProductId: string,
             commission?: number,
             bonus?: number,
-            schemaData?: Record<string, any>,
             vendorHttpUrl?: string,
         };
+
+        let { schemaData } = req.body as { schemaData: { code: string } };
 
         if (!vendorProductId) {
             throw new BadRequestError('Vendor Product ID is required');
         }
 
+        const vendorProduct = await VendorProductService.viewSingleVendorProduct(vendorProductId);
+        if (!vendorProduct) {
+            throw new NotFoundError('Vendor Product not found');
+        }
+
+        if (schemaData && vendorProduct.schemaData) {
+            schemaData = { ...vendorProduct.schemaData, ...schemaData};
+        }
         const data = { commission, bonus, schemaData, vendorHttpUrl };
         const updatedVendorProduct = await VendorProductService.updateVendorProduct(vendorProductId, data);
 

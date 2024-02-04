@@ -200,7 +200,7 @@ export class AirtimeVendController {
                 // Create product
                 const product = await ProductService.addProduct({
                     masterProductCode: productCode,
-                    category: 'AIRTIME',
+                    category: productType,
                     type: productInfo.type as 'PREPAID' | 'POSTPAID',
                     productName: productInfo.productName,
                     id: randomUUID(),

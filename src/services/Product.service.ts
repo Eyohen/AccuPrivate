@@ -30,6 +30,11 @@ export default class ProductService {
         return product;
     }
 
+    static async viewProductCodeByProductName(productName: string): Promise<Product | null> {
+        const product = await Product.findOne({ where: { productName }, include: VendorProduct });
+        return product;
+    }
+
     static async viewSingleProductByMasterProductCode(masterProductCode: string): Promise<Product | null> {
         const product = await Product.findOne({ where: { masterProductCode }, include: VendorProduct });
         return product;
