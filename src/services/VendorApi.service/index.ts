@@ -366,6 +366,7 @@ export default class VendorService {
                 return res
             }
 
+            console.log(err.data.errors)
             throw new Error(error.message)
         }
     }
@@ -402,7 +403,7 @@ export default class VendorService {
     static async baxiValidateMeter(disco: string, meterNumber: string, vendType: 'PREPAID' | 'POSTPAID') {
         const serviceType = disco.toLowerCase() + '_electric' + `_${vendType.toLowerCase()}`  // e.g. aedc_electric_prepaid
         const postData = {
-            service_type: serviceType,
+            service_type: disco,
             account_number: NODE_ENV === 'development' ? '6528651914' : meterNumber // Baxi has a test meter number
         }
 

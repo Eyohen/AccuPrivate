@@ -228,7 +228,7 @@ export const SEED = {
             productName: 'ABUJA',
             type: 'POSTPAID',
             vendors: {
-                BAXI: { discoCode: 'abuja_electric_postpaid', commission: 1.80, bonus: 0 },
+                BAXI: { discoCode: 'abuja_electric_postpaid', commission: 1.20, bonus: 0 },
                 BUYPOWERNG: { discoCode: 'ABUJA', commission: 1.80, bonus: 0 },
                 IRECHARGE: { discoCode: 'AEDC', commission: 1.80, bonus: 0 },
             }
@@ -356,16 +356,16 @@ export const SEED = {
             productName: 'MTN',
             type: 'POSTPAID',
             vendors: {
-                BAXI: { discoCode: 'eko_electric_postpaid', commission: 1.35, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'EKO', commission: 1.50, bonus: 0 },
-                IRECHARGE: { discoCode: 'Eko_Postpaid', commission: 1.50, bonus: 0 },
+                BAXI: { discoCode: 'eko_electric_postpaid', commission: 2, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'EKO', commission: 0, bonus: 0 },
+                IRECHARGE: { discoCode: 'Eko_Postpaid', commission: 2.50, bonus: 0 },
             }
         },
         'TCGLOVT': {
             productName: 'GLO',
             type: 'POSTPAID',
             vendors: {
-                BAXI: { discoCode: 'glo', commission: 1.35, bonus: 0 },
+                BAXI: { discoCode: 'glo', commission: 3.50, bonus: 0 },
                 BUYPOWERNG: { discoCode: 'GLO', commission: 1.50, bonus: 0 },
                 IRECHARGE: { discoCode: 'Glo', commission: 1.50, bonus: 0 },
             }
