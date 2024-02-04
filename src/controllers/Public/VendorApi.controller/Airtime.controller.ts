@@ -220,7 +220,7 @@ export class AirtimeVendController {
                         vendorId: vendor.id,
                         productId: product.id,
                         commission: productInfo.vendors[vendorName].commission,
-                        bonus: parseFloat(generateRandonNumbers(1)),
+                        bonus: productInfo.vendors[vendorName].bonus,
                         schemaData: {
                             code: productInfo.vendors[vendorName].discoCode,
                         },
