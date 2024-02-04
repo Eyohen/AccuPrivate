@@ -366,7 +366,6 @@ export default class VendorService {
                 return res
             }
 
-            console.log(err.data.errors)
             throw new Error(error.message)
         }
     }
