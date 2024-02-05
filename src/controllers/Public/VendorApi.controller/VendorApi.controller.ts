@@ -42,7 +42,8 @@ import ProductService from "../../../services/Product.service";
 import VendorProduct, { VendorProductSchemaData } from "../../../models/VendorProduct.model";
 import Vendor from "../../../models/Vendor.model";
 require('newrelic');
-
+import VendorProductService from "../../../services/VendorProduct.service";
+import VendorDocService from '../../../services/Vendor.service'
 interface valideMeterRequestBody {
     meterNumber: string;
     superagent: "BUYPOWERNG" | "BAXI";
@@ -360,24 +361,54 @@ class VendorControllerUtil {
     static async validateMeter({ meterNumber, disco, vendType, transaction }: {
         meterNumber: string, disco: string, vendType: 'PREPAID' | 'POSTPAID', transaction: Transaction
     }) {
-        function validateWithBuypower() {
+        async function validateWithBuypower() {
             logger.info('Validating meter with buypower')
+            const buypowerVendor = await VendorDocService.viewSingleVendorByName('BUYPOWERNG')
+            if (!buypowerVendor) {
+                throw new InternalServerError('Buypower vendor not found')
+            }
+
+            const buypowerVendorProduct = await VendorProductService.viewSingleVendorProductByVendorIdAndProductId(buypowerVendor.id, transaction.productCodeId)
+            if (!buypowerVendorProduct) {
+                throw new InternalServerError('Buypower vendor product not found')
+            }
+
             return VendorService.buyPowerValidateMeter({
                 transactionId: transaction.id,
                 meterNumber,
-                disco,
+                disco: buypowerVendorProduct.schemaData.code,
                 vendType,
             })
         }
 
-        function validateWithBaxi() {
+        async function validateWithBaxi() {
             logger.info('Validating meter with baxi')
-            return VendorService.baxiValidateMeter(disco, meterNumber, vendType)
+            const baxiVendor = await VendorDocService.viewSingleVendorByName('BAXI')
+            if (!baxiVendor) {
+                throw new InternalServerError('Baxi vendor not found')
+            }
+
+            const baxiVendorProduct = await VendorProductService.viewSingleVendorProductByVendorIdAndProductId(baxiVendor.id, transaction.productCodeId)
+            if (!baxiVendorProduct) {
+                throw new InternalServerError('Baxi vendor product not found')
+            }
+
+            return VendorService.baxiValidateMeter(baxiVendorProduct.schemaData.code, meterNumber, vendType)
         }
 
-        function validateWithIrecharge() {
+        async function validateWithIrecharge() {
             logger.info('Validating meter with irecharge')
-            return VendorService.baxiValidateMeter(disco, meterNumber, vendType)
+            const irechargeVendor = await VendorDocService.viewSingleVendorByName('IRECHARGE')
+            if (!irechargeVendor) {
+                throw new InternalServerError('Irecharge vendor not found')
+            }
+
+            const irechargeVendorProduct = await VendorProductService.viewSingleVendorProductByVendorIdAndProductId(irechargeVendor.id, transaction.productCodeId)
+            if (!irechargeVendorProduct) {
+                throw new InternalServerError('Irecharge vendor product not found')
+            }
+
+            return VendorService.irechargeValidateMeter(irechargeVendorProduct.schemaData.code, meterNumber, vendType)
         }
 
         // Try with the first super agetn, if it fails try with the next, then update the transaction superagent
@@ -385,11 +416,11 @@ class VendorControllerUtil {
         let response: any
 
         // Set first super agent to be the one in the transaction
-        const previousSuperAgent = transaction.superagent 
+        const previousSuperAgent = transaction.superagent
         superAgents.splice(superAgents.indexOf(previousSuperAgent), 1)
         superAgents.unshift(previousSuperAgent)
 
-        
+
         for (const superAgent of superAgents) {
             try {
                 response = superAgent === "BUYPOWERNG" ? await validateWithBuypower() :
@@ -418,16 +449,16 @@ export default class VendorController {
             vendType,
         }: valideMeterRequestBody = req.body;
         const partnerId = (req as any).key;
-        
+
         const existingProductCodeForDisco = await ProductService.viewSingleProductByMasterProductCode(disco)
         if (!existingProductCodeForDisco) {
             throw new NotFoundError('Product code not found for disco')
         }
-        
+
         if (existingProductCodeForDisco.category !== 'ELECTRICITY') {
             throw new BadRequestError('Invalid product code for electricity')
         }
-        
+
         const superagent = await TokenHandlerUtil.getBestVendorForPurchase(existingProductCodeForDisco.id, 1000);
 
         const transaction: Transaction =
