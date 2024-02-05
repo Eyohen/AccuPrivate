@@ -359,24 +359,49 @@ class VendorControllerUtil {
     static async validateMeter({ meterNumber, disco, vendType, transaction }: {
         meterNumber: string, disco: string, vendType: 'PREPAID' | 'POSTPAID', transaction: Transaction
     }) {
-        if (transaction.superagent === 'BUYPOWERNG') {
-            return await VendorService.buyPowerValidateMeter({
+        function validateWithBuypower() {
+            logger.info('Validating meter with buypower')
+            return VendorService.buyPowerValidateMeter({
                 transactionId: transaction.id,
                 meterNumber,
                 disco,
                 vendType,
             })
-        } else if (transaction.superagent === 'BAXI') {
-            return await VendorService.baxiValidateMeter(disco, meterNumber, vendType)
-        } else if (transaction.superagent === 'IRECHARGE') {
-            const response = await VendorService.irechargeValidateMeter(disco, meterNumber, transaction.reference)
-            return {
-                name: response.customer.address,
-                address: response.customer.address,
-                access_token: response.access_token
+        }
+
+        function validateWithBaxi() {
+            logger.info('Validating meter with baxi')
+            return VendorService.baxiValidateMeter(disco, meterNumber, vendType)
+        }
+
+        function validateWithIrecharge() {
+            logger.info('Validating meter with irecharge')
+            return VendorService.irechargeValidateMeter(disco, meterNumber, transaction.reference)
+        }
+
+        // Try with the first super agetn, if it fails try with the next, then update the transaction superagent
+        const superAgents = await TokenHandlerUtil.getSortedVendorsAccordingToCommissionRate(transaction.productCodeId, parseFloat(transaction.amount))
+        let response: any
+
+        // Set first super agent to be the one in the transaction
+        const previousSuperAgent = transaction.superagent 
+        superAgents.splice(superAgents.indexOf(previousSuperAgent), 1)
+        superAgents.unshift(previousSuperAgent)
+
+        
+        for (const superAgent of superAgents) {
+            try {
+                response = superAgent === "BUYPOWERNG" ? await validateWithBuypower() :
+                    superAgent === "BAXI" ? await validateWithBaxi() : await validateWithIrecharge()
+                if (response instanceof Error) {
+                    throw response
+                }
+                await transaction.update({ superagent: superAgent as any })
+                return response
+            } catch (error) {
+                logger.error(`Error validating meter with ${superAgent}`)
+                logger.info(`Trying to validate meter with next super agent - ${superAgents[superAgents.indexOf(superAgent) + 1]}`)
             }
-        } else {
-            throw new BadRequestError('Invalid superagent')
         }
     }
 }

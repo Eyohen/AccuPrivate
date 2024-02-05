@@ -281,6 +281,38 @@ export class TokenHandlerUtil {
         return sortedOtherVendors[0].vendorName as Transaction['superagent']
     }
 
+    static async getSortedVendorsAccordingToCommissionRate(productCodeId: NonNullable<Transaction['productCodeId']>, amount: number): Promise<Transaction['superagent'][]> {
+        const product = await ProductService.viewSingleProduct(productCodeId)
+        if (!product) throw new Error('Product code not found')
+
+        const vendorProducts = await product.$get('vendorProducts')
+        // Populate all te vendors
+        const vendors = await Promise.all(vendorProducts.map(async vendorProduct => {
+            const vendor = await vendorProduct.$get('vendor')
+            if (!vendor) throw new Error('Vendor not found')
+            vendorProduct.vendor = vendor
+            return vendor
+        }))
+
+        // Check other vendors, sort them according to their commission rates
+        // If the current vendor is the vendor with the highest commission rate, then switch to the vendor with the next highest commission rate
+        // If the next vendor has been used before, switch to the next vendor with the next highest commission rate
+        // If all the vendors have been used before, switch to the vendor with the highest commission rate
+
+        const sortedVendorProductsAccordingToCommissionRate = vendorProducts.sort((a, b) => ((b.commission * amount) + b.bonus) - ((a.commission * amount) + a.bonus))
+        const vendorRates = sortedVendorProductsAccordingToCommissionRate.map(vendorProduct => {
+            const vendor = vendorProduct.vendor
+            if (!vendor) throw new Error('Vendor not found')
+            return {
+                vendorName: vendor.name,
+                commission: vendorProduct.commission,
+                bonus: vendorProduct.bonus
+            }
+        })
+
+        return vendorRates.map(vendorRate => vendorRate.vendorName as Transaction['superagent'])
+    }
+
     static async getBestVendorForPurchase(productCodeId: NonNullable<Transaction['productCodeId']>, amount: number): Promise<Transaction['superagent']> {
         const product = await ProductService.viewSingleProduct(productCodeId)
         if (!product) throw new Error('Product code not found')
@@ -309,7 +341,7 @@ export class TokenHandlerUtil {
                 vendorName: vendor.name,
                 commission: vendorProduct.commission,
                 bonus: vendorProduct.bonus,
-                value: (vendorProduct.commission * amount)+ vendorProduct.bonus
+                value: (vendorProduct.commission * amount) + vendorProduct.bonus
             }
         })
 
