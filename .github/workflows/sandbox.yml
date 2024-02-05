@@ -1,0 +1,327 @@
+name: ci-cd
+
+on:
+  push:
+    branches: 
+      - sandbox
+  pull_request: 
+    branches: 
+      - sandbox
+
+jobs:
+  # test-backend: 
+  #   name: test-backend
+  #   runs-on: ubuntu-latest
+  #   steps: 
+  #     - name: Checkout
+  #       uses: actions/checkout@v2
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 18
+  #     - run: npm ci
+  #     - run: npm test
+
+  generate-env-file:
+    name: generate-env-file
+    # needs: [push-build]
+    runs-on: ubuntu-latest
+    if : github.ref == 'refs/heads/sandbox'
+    steps:
+    - name: chechkout
+      uses: actions/checkout@v2
+    - name: Configure AWS Credentials 2
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: eu-west-2
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_ACCESS_SECRET_KEY }}
+    - name: save .env to file 
+      run: |
+        BAXI_TOKEN=${{ secrets.BAXI_TOKEN}}
+        BAXI_URL=${{ secrets.BAXI_URL}}
+        BUYPOWER_TOKEN=${{ secrets.BUYPOWER_TOKEN}}
+        BUYPOWER_URL=${{ secrets.BUYPOWER_URL}}
+        CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY}}
+        CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET}}
+        CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME}}
+        CRYPTO_ALGORITHM=${{ secrets.CRYPTO_ALGORITHM}}
+        CRYPTO_IV=${{ secrets.CRYPTO_IV}}
+        CRYPTO_PASSWORD=${{ secrets.CRYPTO_PASSWORD}}
+        DB_DB_NAME=${{ secrets.DB_DB_NAME}}
+        DB_DIALECT=${{ secrets.DB_DIALECT}}
+        DB_HOST=${{ secrets.DB_HOST}}
+        DB_NAME=${{ secrets.DB_NAME}}
+        DB_PASS=${{ secrets.DB_PASS}}
+        DB_PASSWORD=${{ secrets.DB_PASSWORD}}
+        DB_URL=${{ secrets.DB_URL}}
+        DB_USER_NAME=${{ secrets.DB_USER_NAME}}
+        DEFAULT_ELECTRICITY_PROVIDER=${{ secrets.DEFAULT_ELECTRICITY_PROVIDER}}
+        DEPLOYMENT_PREFIX=${{ secrets.DEPLOYMENT_PREFIX}}
+        EMAIL_HOST=${{ secrets.EMAIL_HOST}}
+        EMAIL_HOST_ADDRESS=${{ secrets.EMAIL_HOST_ADDRESS}}
+        EMAIL_PORT=${{ secrets.EMAIL_PORT}}
+        IRECHARGE_PRIVATE_KEY=${{ secrets.IRECHARGE_PRIVATE_KEY}}
+        IRECHARGE_PUBLIC_KEY=${{ secrets.IRECHARGE_PUBLIC_KEY}}
+        IRECHARGE_VENDOR_CODE=${{ secrets.IRECHARGE_VENDOR_CODE}}
+        JWT_SECRET=${{ secrets.JWT_SECRET}}
+        KAFKA_INSTANCE_TYPE=${{ secrets.KAFKA_INSTANCE_TYPE}}
+        LOAD_TEST_MODE=${{ secrets.LOAD_TEST_MODE}}
+        LOGO_URL=${{ secrets.LOGO_URL}}
+        NEW_RELIC_APP_NAME=${{ secrets.NEW_RELIC_APP_NAME}}
+        NEW_RELIC_ENABLED=${{ secrets.NEW_RELIC_ENABLED}}
+        NEW_RELIC_LICENSE_KEY=${{ secrets.NEW_RELIC_LICENSE_KEY}}
+        NEW_RELIC_LOG_LEVEL=${{ secrets.NEW_RELIC_LOG_LEVEL}}
+        NODE_ENV=${{ secrets.NODE_ENV}}
+        NODE_TLS_REJECT_UNAUTHORIZED=${{ secrets.NODE_TLS_REJECT_UNAUTHORIZED}}
+        OAUTH_CLIENT_ID=${{ secrets.OAUTH_CLIENT_ID}}
+        OAUTH_CLIENT_SECRET=${{ secrets.OAUTH_CLIENT_SECRET}}
+        OAUTH_REFRESH_TOKEN=${{ secrets.OAUTH_REFRESH_TOKEN}}
+        ONESIGNAL_API_KEY=${{ secrets.ONESIGNAL_API_KEY}}
+        ONESIGNAL_APP_ID=${{ secrets.ONESIGNAL_APP_ID}}
+        REDIS_HOST=${{ secrets.REDIS_HOST}}
+        REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD}}
+        REDIS_PORT=${{ secrets.REDIS_PORT}}
+        REDIS_URL=${{ secrets.REDIS_URL}}
+        REDIS_USERNAME=${{ secrets.REDIS_USERNAME}}
+        SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY}}
+        SU_HOST_EMAIL_1=${{ secrets.SU_HOST_EMAIL_1}}
+        SU_HOST_EMAIL_2=${{ secrets.SU_HOST_EMAIL_2}}
+        SU_HOST_EMAIL_3=${{ secrets.SU_HOST_EMAIL_3}}
+        
+        echo "BAXI_TOKEN=$BAXI_TOKEN" >> .env
+        echo "BAXI_URL=$BAXI_URL" >> .env
+        echo "BUYPOWER_TOKEN=$BUYPOWER_TOKEN" >> .env
+        echo "BUYPOWER_URL=$BUYPOWER_URL" >> .env
+        echo "CLOUDINARY_API_KEY=$CLOUDINARY_API_KEY" >> .env
+        echo "CLOUDINARY_API_SECRET=$CLOUDINARY_API_SECRET" >> .env
+        echo "CLOUDINARY_CLOUD_NAME=$CLOUDINARY_CLOUD_NAME" >> .env
+        echo "CRYPTO_ALGORITHM=$CRYPTO_ALGORITHM" >> .env
+        echo "CRYPTO_IV=$CRYPTO_IV" >> .env
+        echo "CRYPTO_PASSWORD=$CRYPTO_PASSWORD" >> .env
+        echo "DB_DB_NAME=$DB_DB_NAME" >> .env
+        echo "DB_DIALECT=$DB_DIALECT" >> .env
+        echo "DB_HOST=$DB_HOST" >> .env
+        echo "DB_NAME=$DB_NAME" >> .env
+        echo "DB_PASS=$DB_PASS" >> .env
+        echo "DB_PASSWORD=$DB_PASSWORD" >> .env
+        echo "DB_USER_NAME=$DB_USER_NAME" >> .env
+        echo "DEFAULT_ELECTRICITY_PROVIDER=$DEFAULT_ELECTRICITY_PROVIDER" >> .env
+        echo "DEPLOYMENT_PREFIX=$DEPLOYMENT_PREFIX" >> .env
+        echo "EMAIL_HOST=$EMAIL_HOST" >> .env
+        echo "EMAIL_HOST_ADDRESS=$EMAIL_HOST_ADDRESS" >> .env
+        echo "EMAIL_PORT=$EMAIL_PORT" >> .env
+        echo "IRECHARGE_PRIVATE_KEY=$IRECHARGE_PRIVATE_KEY" >> .env
+        echo "IRECHARGE_PUBLIC_KEY=$IRECHARGE_PUBLIC_KEY" >> .env
+        echo "IRECHARGE_VENDOR_CODE=$IRECHARGE_VENDOR_CODE" >> .env
+        echo "JWT_SECRET=$JWT_SECRET" >> .env
+        echo "LOAD_TEST_MODE=$LOAD_TEST_MODE" >> .env
+        echo "LOGO_URL=$LOGO_URL" >> .env
+        echo "NEW_RELIC_APP_NAME=$NEW_RELIC_APP_NAME" >> .env
+        echo "NEW_RELIC_ENABLED=$NEW_RELIC_ENABLED" >> .env
+        echo "NEW_RELIC_LICENSE_KEY=$NEW_RELIC_LICENSE_KEY" >> .env
+        echo "NEW_RELIC_LOG_LEVEL=$NEW_RELIC_LOG_LEVEL" >> .env
+        echo "NODE_ENV=$NODE_ENV" >> .env
+        echo "NODE_TLS_REJECT_UNAUTHORIZED=$NODE_TLS_REJECT_UNAUTHORIZED" >> .env
+        echo "OAUTH_CLIENT_ID=$OAUTH_CLIENT_ID" >> .env
+        echo "OAUTH_CLIENT_SECRET=$OAUTH_CLIENT_SECRET" >> .env
+        echo "OAUTH_REFRESH_TOKEN=$OAUTH_REFRESH_TOKEN" >> .env
+        echo "ONESIGNAL_API_KEY=$ONESIGNAL_API_KEY" >> .env
+        echo "ONESIGNAL_APP_ID=$ONESIGNAL_APP_ID" >> .env
+        echo "REDIS_HOST=$REDIS_HOST" >> .env
+        echo "REDIS_PASSWORD=$REDIS_PASSWORD" >> .env
+        echo "REDIS_PORT=$REDIS_PORT" >> .env
+        echo "REDIS_URL=$REDIS_URL" >> .env
+        echo "REDIS_USERNAME=$REDIS_USERNAME" >> .env
+        echo "SENDGRID_API_KEY=$SENDGRID_API_KEY" >> .env
+        echo "SU_HOST_EMAIL_1=$SU_HOST_EMAIL_1" >> .env
+        echo "SU_HOST_EMAIL_2=$SU_HOST_EMAIL_2" >> .env
+        echo "SU_HOST_EMAIL_3=$SU_HOST_EMAIL_3" >> .env
+        cat .env
+    - name: push to state to s3
+      run: |
+        aws s3 cp ./.env s3://accuvend-bucket-configuration/ 
+    - name: Save env file
+      uses: actions/cache@v2
+      with:
+        path: ./.env
+        key: env-file
+      
+  scan-backend: 
+    name: scan-backend
+    runs-on: ubuntu-latest
+    if : github.ref == 'refs/heads/sandbox'
+    # needs: [test-backend]
+    needs: [generate-env-file]
+    steps: 
+      - name: Checkout
+        uses: actions/checkout@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm ci
+      - run: npm audit fix --force
+      - run: npm audit fix --audit-level=critical --force
+      - run: npm audit --audit-level=critical
+      - name: Save nodemodules cache
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: backend-build
+
+        
+  build-backend:
+    name: build-backend
+    needs: [scan-backend]
+    if : github.ref == 'refs/heads/sandbox'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Restore frontend cache
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: backend-build
+      - name: Restore env file
+        uses: actions/cache@v2
+        with:
+          path: ./.env
+          key: env-file
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Back-end build
+        run: |
+          ls
+          rm -rf dist
+          npm install
+          npm run build
+          cp .env dist/.env
+          ls ./src/utils/Email/templates && cp -r src/utils/Email/templates/ dist/utils/Email/  && rm -f ./dist/utils/Email/templates/index.ts  && ls ./dist/utils/Email/templates
+      - name: cache dist 
+        uses: actions/checkout@v2
+        with:
+          path: dist
+          key: dist-folder
+      - run: |
+          tsc --version
+         
+        
+  push-build:
+    name: push-build
+    needs: [build-backend]
+    if : github.ref == 'refs/heads/sandbox'
+    runs-on: ubuntu-latest
+    steps:
+      - name: chechkout
+        uses: actions/checkout@v2
+      - name: restore dist 
+        uses: actions/checkout@v2
+        with:
+          path: dist
+          key: dist-folder
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_ACCESS_SECRET_KEY }}
+          aws-region: eu-west-2
+      - name: push to state to s3
+        run: |
+          zip -r dist.zip dist
+          aws s3 cp ./dist.zip s3://staging-bucket-deployment/ 
+        
+      
+  # create-update-environment:
+  #   name: create-environment
+  #   needs: [push-build]
+  #   if : github.ref == 'refs/heads/sandbox'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - name: Checkout
+  #     uses: actions/checkout@v2
+  #   - name: Configure AWS Credentials 2
+  #     uses: aws-actions/configure-aws-credentials@v4
+  #     with:
+  #       aws-region: eu-west-2
+  #       aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #       aws-secret-access-key: ${{ secrets.AWS_ACCESS_SECRET_KEY }}
+  #   - name: pull terraform state from s3
+  #     run: |
+  #       aws s3 cp s3://sandbox-terraform-item/terraform.tfstate ./terraform/sandbox && echo "Success: The AWS CLI command completed successfully." || echo "Error: The AWS CLI command failed."
+    
+  #   - name: Terraform Setup
+  #     uses: hashicorp/setup-terraform@v3
+  #     env:
+  #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       TF_ACTION_WORKING_DIR: 'terraform/sandbox'
+  #       TF_AWS_ACCESS_KEY_ID:  ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #       TF_AWS_SECRET_ACCESS_KEY:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #       TF_VAR_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #       TF_VAR_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #       TF_VAR_region: "eu-west-2"
+  #       TF_VAR_subnet_1: ${{secrets.SUBNET_1}}
+  #       TF_VAR_subnet_2: ${{secrets.SUBNET_2}}
+  #       TF_VAR_subnet_3: ${{secrets.SUBNET_3}}
+  #       TF_VAR_accountId: ${{secrets.ACCOUNTID}}
+  #       TF_VAR_image_id: ${{secrets.IMAGE_ID}}
+  #       TF_VAR_instance_type: ${{secrets.INSTANCE_TYPE}}
+  #       TF_VAR_kafka_instance_type: "kafka.t3.small"
+  #       TF_VAR_instance_keypair: "sandbox-key-pair"
+      
+  #   - name: Terraform fmt
+  #     id: fmt
+  #     run: | 
+  #        cd terraform/sandbox
+  #        pwd
+  #        terraform fmt -check
+  #     continue-on-error: true
+
+  #   - name: Terraform Init
+  #     id: init
+  #     run:  | 
+  #        cd terraform/sandbox
+  #        pwd
+  #        terraform init
+    
+  #   - name: Terraform Validate
+  #     id: validate
+  #     run:  | 
+  #        cd terraform/sandbox
+  #        pwd
+  #        terraform validate -no-color
+    
+  #   - name: Terraform Plan
+  #     id: plan
+  #     run:  | 
+  #        cd terraform/sandbox
+  #        pwd
+  #        terraform plan -no-color
+  #     continue-on-error: true
+      
+  #   - name: Terraform apply
+  #     id: apply
+  #     run: |
+  #         cd terraform/sandbox
+  #         pwd
+  #         terraform apply -auto-approve -no-color
+  #     continue-on-error: true
+
+  #   - run: echo ${{ steps.plan.outputs.stdout }}
+  #   - run: echo ${{ steps.plan.outputs.stderr }}
+  #   - run: echo ${{ steps.plan.outputs.exitcode }}
+  #   - run: echo ${{ steps.apply.outputs.stdout }}
+  #   - run: echo ${{ steps.apply.outputs.stderr }}
+  #   - run: echo ${{ steps.apply.outputs.exitcode }}
+
+  #   - name: Save tft.state file 
+  #     run: |
+  #         cd terraform/sandbox
+  #         pwd
+  #         aws s3 cp terraform.tfstate s3://sandbox-terraform-item/
+      
+   
+      
+
+    
+      
