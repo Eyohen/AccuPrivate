@@ -9,6 +9,7 @@ import UserConsumer from "./User";
 import VendorConsumer from "./Vendor";
 import WebhookConsumer from "./Webhook";
 import DataConsumer from "./Data";
+require('newrelic');
 
 export default class ConsumerRouter {
     static async init() {

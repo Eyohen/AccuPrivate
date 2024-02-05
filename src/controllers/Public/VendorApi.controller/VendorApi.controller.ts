@@ -41,6 +41,7 @@ import VendorRates from "../../../models/VendorRates.model";
 import ProductService from "../../../services/Product.service";
 import VendorProduct, { VendorProductSchemaData } from "../../../models/VendorProduct.model";
 import Vendor from "../../../models/Vendor.model";
+require('newrelic');
 
 interface valideMeterRequestBody {
     meterNumber: string;
