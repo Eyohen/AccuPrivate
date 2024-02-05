@@ -10,7 +10,9 @@ import Transaction from "../../models/Transaction.model";
 import { generateRandomString, generateRandomToken, generateRandonNumbers } from "../../utils/Helper";
 import { response } from "express";
 import BuypowerApi from "./Buypower";
-import { BuypowerAirtimePurchaseData } from "./Buypower/Airtime.";
+import { BuypowerAirtimePurchaseData } from "./Buypower/Airtime";
+import { IRechargeApi } from "./Irecharge";
+import BaxiApi from "./Baxi";
 
 export interface PurchaseResponse extends BaseResponse {
     source: 'BUYPOWERNG';
@@ -145,7 +147,7 @@ interface IRechargeMeterValidationResponse {
 
 type BuypowerRequeryResponse = _RequeryBuypowerSuccessResponse | InprogressResponseForBuyPowerRequery | FailedResponseForBuyPowerRequery
 
-abstract class Vendor {
+abstract class VendorApi {
     protected static client: AxiosInstance
 
     static getDiscos: () => Promise<any>
@@ -235,15 +237,17 @@ export class IRechargeVendorService {
         const combinedString = this.VENDOR_CODE + "|" + accessToken + "|" + this.PUBLIC_KEY
         const hash = this.generateHash(combinedString)
 
-        const response = await this.client.get<IRechargeRequeryResponse>('/vend_status.php', {
-            params: {
-                vendor_code: this.VENDOR_CODE,
-                access_token: accessToken,
-                type: serviceType,
-                response_format: 'json',
-                hash
-            }
-        })
+        const params = {
+            vendor_code: this.VENDOR_CODE,
+            access_token: accessToken,
+            type: serviceType,
+            response_format: 'json',
+            hash
+        }
+
+        console.log({ params })
+
+        const response = await this.client.get<IRechargeRequeryResponse>('/vend_status.php', { params })
 
         return { ...response.data, source: 'IRECHARGE' }
 
@@ -398,7 +402,7 @@ export default class VendorService {
     static async baxiValidateMeter(disco: string, meterNumber: string, vendType: 'PREPAID' | 'POSTPAID') {
         const serviceType = disco.toLowerCase() + '_electric' + `_${vendType.toLowerCase()}`  // e.g. aedc_electric_prepaid
         const postData = {
-            service_type: serviceType,
+            service_type: disco,
             account_number: NODE_ENV === 'development' ? '6528651914' : meterNumber // Baxi has a test meter number
         }
 
@@ -523,7 +527,7 @@ export default class VendorService {
                 return {
                     'source': 'BUYPOWERNG',
                     "status": true,
-                    "message": "Transaction succesful",
+                    "message": "Transaction successful",
                     'responseCode': 200,
                     "data": {
                         "id": 80142232,
@@ -583,6 +587,7 @@ export default class VendorService {
         }
         const params: string = querystring.stringify(paramsObject);
 
+        console.log(paramsObject)
         try {
             // Make a GET request using the BuyPower Axios instance
             const response = await this.buyPowerAxios().get<IBuyPowerValidateMeterResponse>(`/check/meter?${params}`);
@@ -687,12 +692,82 @@ export default class VendorService {
         return response
     }
 
-    static async purchaseAirtime({ data, vendor }: { data: BuypowerAirtimePurchaseData, vendor: Transaction['superagent'] }) {
-        switch (vendor) {
-            case 'BUYPOWERNG':
-                return await BuypowerApi.Airtime.purchase(data);
-            default:
-                throw new Error('UNAVAILABLE_VENDOR')
+    static async purchaseAirtime<T extends Vendor>({ data, vendor }: { data: BuypowerAirtimePurchaseData, vendor: T }): Promise<AirtimePurchaseResponse[T]> {
+        if (vendor === 'BUYPOWERNG') {
+            return await BuypowerApi.Airtime.purchase(data) as AirtimePurchaseResponse[T]
+        } else if (vendor === 'IRECHARGE') {
+            return await IRechargeApi.Airtime.purchase(data) as AirtimePurchaseResponse[T]
+        } else if (vendor === 'BAXI') {
+            return await BaxiApi.Airtime.purchase(data) as AirtimePurchaseResponse[T]
+        } else {
+            throw new Error('UNAVAILABLE_VENDOR')
+        }
+    }
+
+    static async purchaseData<T extends Vendor>({ data, vendor }: {
+        data: {
+            amount: number,
+            dataCode: string,
+            serviceType: 'MTN' | 'GLO' | 'AIRTEL' | '9MOBILE',
+            phoneNumber: string,
+            reference: string,
+            email: string,
+        },
+        vendor: T
+    }): Promise<DataPurchaseResponse[T]> {
+        if (vendor === 'BUYPOWERNG') {
+            return await BuypowerApi.Data.purchase(data) as DataPurchaseResponse[T]
+        } else if (vendor === 'IRECHARGE') {
+            return await IRechargeApi.Data.purchase(data) as DataPurchaseResponse[T]
+        } else if (vendor === 'BAXI') {
+            return await BaxiApi.Data.purchase(data) as DataPurchaseResponse[T]
+        } else {
+            throw new Error('UNAVAILABLE_VENDOR')
+        }
+    }
+
+    static async purchaseElectricity<T extends Vendor>({ data, vendor }: {
+        data: {
+            reference: string,
+            meterNumber: string,
+            disco: string,
+            amount: string,
+            vendType: 'PREPAID' | 'POSTPAID',
+            phone: string,
+            email: string,
+            accessToken: string
+        }, vendor: T
+    }): Promise<ElectricityPurchaseResponse[T]> {
+        if (vendor === 'BUYPOWERNG') {
+            return await this.buyPowerVendToken(data) as ElectricityPurchaseResponse[T]
+        } else if (vendor === 'IRECHARGE') {
+            return await this.irechargeVendToken(data) as ElectricityPurchaseResponse[T]
+        } else if (vendor === 'BAXI') {
+            return await this.baxiVendToken(data) as ElectricityPurchaseResponse[T]
+        } else {
+            throw new Error('UNAVAILABLE_VENDOR')
         }
     }
 }
+
+interface AirtimePurchaseResponse {
+    BUYPOWERNG: Awaited<ReturnType<typeof BuypowerApi.Airtime.purchase>>,
+    IRECHARGE: Awaited<ReturnType<typeof IRechargeApi.Airtime.purchase>>,
+    BAXI: Awaited<ReturnType<typeof BaxiApi.Airtime.purchase>>,
+}
+
+export interface DataPurchaseResponse {
+    BUYPOWERNG: Awaited<ReturnType<typeof BuypowerApi.Data.purchase>>,
+    IRECHARGE: Awaited<ReturnType<typeof IRechargeApi.Data.purchase>>,
+    BAXI: Awaited<ReturnType<typeof BaxiApi.Data.purchase>>,
+}
+
+export interface ElectricityPurchaseResponse {
+    BUYPOWERNG: PurchaseResponse | TimedOutResponse,
+    IRECHARGE: IRechargeSuccessfulVendResponse,
+    BAXI: IBaxiPurchaseResponse
+}
+
+export type Prettify<T extends {}> = { [K in keyof T]: T[K] }
+
+export type Vendor = 'BUYPOWERNG' | 'IRECHARGE' | 'BAXI'

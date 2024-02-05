@@ -68,19 +68,19 @@ const getKafkaConfig = (configType: string): kafka.KafkaConfig => {
 const kafkaConfig: kafka.KafkaConfig =
     NODE_ENV === "development"
         ? {
-            // clientId: KAFKA_CLIENT_ID,
-            // brokers: [KAFKA_BROKER],
-            // logLevel: isNaN(parseInt(KAFA_LOGS)) ? 0 : parseInt(KAFA_LOGS),
             clientId: KAFKA_CLIENT_ID,
             brokers: [KAFKA_BROKER],
-            connectionTimeout: 450000,
-            ssl: true,
-            sasl: {
-                mechanism: "plain",
-                username: KAFKA_USERNAME,
-                password: KAFKA_PASSWORD,
-            },
             logLevel: isNaN(parseInt(KAFA_LOGS)) ? 0 : parseInt(KAFA_LOGS),
+            // clientId: KAFKA_CLIENT_ID,
+            // brokers: [KAFKA_BROKER],
+            // connectionTimeout: 450000,
+            // ssl: true,
+            // sasl: {
+            //     mechanism: "plain",
+            //     username: KAFKA_USERNAME,
+            //     password: KAFKA_PASSWORD,
+            // },
+            // logLevel: isNaN(parseInt(KAFA_LOGS)) ? 0 : parseInt(KAFA_LOGS),
         }
         : getKafkaConfig(KAFKA_ENV) ;
 console.log(KAFKA_ENV)

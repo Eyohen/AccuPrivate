@@ -8,7 +8,7 @@ import {
 } from "../../utils/Errors";
 import { Status } from "../../models/Event.model";
 import ResponseTrimmer from "../../utils/ResponseTrimmer";
-import VendorService from "../../services/Vendor.service";
+import VendorService from "../../services/VendorApi.service";
 import { AuthenticatedRequest } from "../../utils/Interface";
 import PartnerService from "../../services/Entity/Profiles/PartnerProfile.service";
 import { RoleEnum } from "../../models/Role.model";

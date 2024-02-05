@@ -528,5 +528,132 @@ export class VendorPublisher extends ProducerFactory {
     }
 
 
+    // DATA PUBLISHERS
+    // AIRTIME SPECIFIC PUBLISHERS
+    static async publshEventForDataPurchaseInitiate(
+        data: PublisherEventAndParameters[TOPICS.DATA_PURCHASE_INITIATED_BY_CUSTOMER],
+    ) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.DATA_PURCHASE_INITIATED_BY_CUSTOMER,
+            message: {
+                phone: data.phone,
+                partner: data.partner,
+                user: data.user,
+                transactionId: data.transactionId,
+                superAgent: data.superAgent
+            },
+        }).catch((e) => {
+            logger.error(
+                `An error occured while publishing  ${TOPICS.DATA_PURCHASE_INITIATED_BY_CUSTOMER} event for transaction` +
+                data.transactionId,
+            );
+            return e;
+        });
+    }
+
+    static async publishEventForDataReceivedFromVendor(
+        data: PublisherEventAndParameters[TOPICS.DATA_RECEIVED_FROM_VENDOR],
+    ) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.DATA_RECEIVED_FROM_VENDOR,
+            message: {
+                phone: data.phone,
+                transactionId: data.transactionId,
+                partner: data.partner,
+                user: data.user,
+            },
+        }).catch((e) => {
+            logger.error(
+                `An error occured while publishing  ${TOPICS.DATA_RECEIVED_FROM_VENDOR} event for transaction` +
+                data.transactionId,
+            );
+            return e;
+        });
+    }
+
+    static async publishEventForDataWebhookNotificationSentToPartner(
+        data: PublisherEventAndParameters[TOPICS.DATA_WEBHOOK_NOTIFICATION_SENT_TO_PARTNER],
+    ) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.DATA_WEBHOOK_NOTIFICATION_SENT_TO_PARTNER,
+            message: {
+                phone: data.phone,
+                transactionId: data.transactionId,
+            },
+        }).catch((e) => {
+            logger.error(
+                `An error occured while publishing  ${TOPICS.DATA_WEBHOOK_NOTIFICATION_SENT_TO_PARTNER} event for transaction` +
+                data.transactionId,
+            );
+            return e;
+        });
+    }
+
+    static async publishEventForDataPurchaseComplete(
+        data: PublisherEventAndParameters[TOPICS.DATA_TRANSACTION_COMPLETE],
+    ) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.DATA_TRANSACTION_COMPLETE,
+            message: {
+                phone: data.phone,
+                transactionId: data.transactionId,
+                partner: data.partner,
+                user: data.user,
+                superAgent: data.superAgent
+            },
+        }).catch((e) => {
+            logger.error(
+                `An error occured while publishing  ${TOPICS.DATA_TRANSACTION_COMPLETE} event for transaction` +
+                data.transactionId,
+            );
+            return e;
+        });
+    }
+
+    static async publishEventForGetDataFromVendorRetry(
+        data: PublisherEventAndParameters[TOPICS.GET_DATA_FROM_VENDOR_RETRY],
+    ) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.GET_DATA_FROM_VENDOR_RETRY,
+            message: {
+                phone: data.phone,
+                error: data.error,
+                transactionId: data.transactionId,
+                timeStamp: data.timeStamp,
+                retryCount: data.retryCount,
+                superAgent: data.superAgent,
+                waitTime: data.waitTime
+            },
+        }).catch((e) => {
+            logger.error(
+                `An error occured while publishing ${TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR} event for transaction` +
+                data.transactionId,
+            );
+            return e;
+        });
+    }
+
+    static async publishEventForDataPurchaseRetryFromVendorWithNewVendor(
+        data: PublisherEventAndParameters[TOPICS.DATA_PURCHASE_RETRY_FROM_NEW_VENDOR]
+    ) {
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.DATA_PURCHASE_RETRY_FROM_NEW_VENDOR,
+            message: {
+                phone: data.phone,
+                transactionId: data.transactionId,
+                superAgent: data.superAgent,
+                newVendor: data.newVendor,
+                partner: data.partner,
+                user: data.user
+            }
+        }).catch((e) => {
+            logger.error(
+                `An error occured while publishing ${TOPICS.DATA_PURCHASE_RETRY_FROM_NEW_VENDOR} event for transaction` +
+                data.transactionId,
+            );
+            return e;
+        })
+    }
+
 }
 
