@@ -197,6 +197,72 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
         superAgent: Transaction['superagent'],
         newVendor: Transaction['superagent'],
     };
+   
+    // Data
+    [TOPICS.DATA_PURCHASE_INITIATED_BY_CUSTOMER]: {
+        phone: {
+            phoneNumber: string;
+            amount: number;
+        },
+        user: User;
+        partner: Partner;
+        transactionId: string;
+        superAgent: Transaction['superagent']
+    };
+    [TOPICS.DATA_TRANSACTION_COMPLETE]: {
+        phone: {
+            phoneNumber: string;
+            amount: number;
+        },
+        user: User;
+        partner: Partner;
+        superAgent: Transaction['superagent']
+        transactionId: string;
+    };
+    [TOPICS.RETRY_DATA_PURCHASE_FROM_NEW_VENDOR]: {
+        phone: { phoneNumber: string; amount: number; },
+        user: User;
+        partner: Partner;
+        transactionId: string;
+        superAgent: Transaction['superagent'],
+        newVendor: Transaction['superagent'],
+    };
+    [TOPICS.DATA_PURCHASE_INITIATED_BY_CUSTOMER]: {
+        phone: { phoneNumber: string; amount: number; },
+        user: User;
+        partner: Partner;
+        transactionId: string;
+        superAgent: Transaction['superagent']
+    };
+    [TOPICS.DATA_RECEIVED_FROM_VENDOR]: {
+        phone: { phoneNumber: string; amount: number; },
+        user: User;
+        partner: Partner;
+        transactionId: string;
+    };
+    [TOPICS.GET_DATA_FROM_VENDOR_RETRY]: {
+        phone: {
+            phoneNumber: string;
+            amount: number;
+        };
+        transactionId: string;
+        timeStamp: Date;
+        error: { code: number; cause: TransactionErrorCause };
+        retryCount: number;
+        superAgent: Transaction['superagent'],
+        waitTime: number,
+    };
+    [TOPICS.DATA_PURCHASE_RETRY_FROM_NEW_VENDOR]: {
+        phone: {
+            phoneNumber: string;
+            amount: number;
+        },
+        user: User;
+        partner: Partner;
+        transactionId: string;
+        superAgent: Transaction['superagent'],
+        newVendor: Transaction['superagent'],
+    };
 }
 
 export type PublisherParamsUnion = {

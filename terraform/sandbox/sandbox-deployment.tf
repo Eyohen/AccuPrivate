@@ -413,9 +413,19 @@ resource "aws_instance" "sandbox_db_instance" {
       CREATE DATABASE "$DB_NAME"
       WITH OWNER = "$DB_USERNAME";
   EOSQL
-
+  
 
   # # Restart PostgreSQL for changes to take effect
+
+  #Create Backup
+  #download backup automation file that saves to s3 bucket
+  aws s3 cp s3://accuvend-sand-box-db-backups/backup-db.sh ./backup-db.sh
+  chmod u+x backup-db.sh
+
+  # create a cronjob for backups 
+  echo "0 2 * * * ~/backup-db.sh &>> ~/backup-db.log" | crontab -
+  # echo "0 2 * * * ~/backup-db.sh" | crontab -
+
 
   echo "Installation and configuration completed successfully."
 
@@ -515,9 +525,9 @@ resource "aws_instance" "sandbox_core_engine_instance" {
   sudo systemctl start nginx
 
   #install node and pm2
-  sudo apt-get -y install nodejs
+  curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - &&\
+  sudo apt-get install -y nodejs
   sudo apt-get -y install build-essential
-  sudo apt-get -y install npm
   sudo npm install -g pm2
 
   #Install Kafka
@@ -545,8 +555,30 @@ resource "aws_instance" "sandbox_core_engine_instance" {
   # Get ENV file
   aws s3 cp s3://accuvend-bucket-configuration/.env ./.env
 
+  #GET 
+  DB_USERNAME=$(grep DB_USER_NAME ./.env | cut -d '=' -f2) &&\
+  DB_PASSWORD=$(grep DB_PASSWORD ./.env | cut -d '=' -f2) &&\
+  DB_NAME=$(grep DB_DB_NAME ./.env | cut -d '=' -f2) &&\
+  DB_HOST=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=Sand Box DB Instance" --query "Reservations[].Instances[].[PublicIpAddress]" --output text)
+
+  echo "DB_URL=postgres://$DB_USERNAME:$DB_PASSWORD@$DB_HOST:5432/$DB_NAME" >> .env
+
+  #install depencendies in dist folder
+  npm install
+
+  #Set up pm2 on server restart
+  sudo env PATH=$PATH:/usr/bin /usr/local/lib/node_modules/pm2/bin/pm2 startup systemd -u ubuntu --hp /home/ubuntu
+  pm2 start server.js
+
+  # have to update sudo nano /etc/nginx/sites-available/default
+  sudo systemctl restart nginx
+
+  # NEW RELIC INTEGRATION
+  curl -Ls https://download.newrelic.com/install/newrelic-cli/scripts/install.sh | bash && sudo NEW_RELIC_API_KEY=NRAK-SR2FLMNTNNDE4ONWZ2THTCG1YSC NEW_RELIC_ACCOUNT_ID=4067659 NEW_RELIC_REGION=EU /usr/local/bin/newrelic install -y
+
   EOF
 
+  
 
   tags = {
     "Name" : "Sand Box Core Instance"
@@ -566,7 +598,8 @@ resource "aws_iam_policy" "sandbox_iam_S3_policy" {
         Effect: "Allow",
         Action: [
           "s3:GetObject",
-          "s3:ListBucket"
+          "s3:ListBucket",
+          "s3:*Object"
         ],
         Resource: [
           "arn:aws:s3:::*/*",

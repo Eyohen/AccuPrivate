@@ -7,6 +7,7 @@ import PowerUnit from "./PowerUnit.model";
 import Meter from "./Meter.model";
 import { generateRandomString } from "../utils/Helper";
 import { NigerianDate } from "../utils/Date";
+import ProductCode from "./ProductCode.model";
 
 // Define enums for status and payment type
 export enum Status {
@@ -72,9 +73,16 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     @Column({ type: DataType.STRING, allowNull: true, defaultValue: () => generateRandomString(10) })
     reference: string;
 
+    @ForeignKey(() => ProductCode)
+    @IsUUID(4)
+    @Column({ type: DataType.STRING, allowNull: true })
+    productCodeId: string;
 
     @Column({ type: DataType.STRING, allowNull: true })
     irecharge_token: string
+
+    @Column({ type: DataType.ARRAY(DataType.STRING), allowNull: true })
+    previousVendors: string[]
 
     // Foreign key for the associated User
     @ForeignKey(() => User)
@@ -152,13 +160,22 @@ export default class Transaction extends Model<ITransaction | Transaction> {
                 throw new Error('disco is required')
             }
         }
-    }  
+    }
 
     @BeforeCreate
     static async checkDiscoForAirtime(transaction: Transaction) {
         if (transaction.transactionType === TransactionType.AIRTIME) {
             if (['MTN', 'GLO', 'AIRTEL', '9MOBILE', 'ETISALAT'].indexOf(transaction.disco.toUpperCase()) === -1) {
-                throw new Error('disco is required')
+                // throw new Error('disco is required')
+            }
+        }
+    }
+
+    @BeforeCreate
+    static async checkIfProductCodeExistForElectricity(transaction: Transaction) {
+        if (transaction.transactionType === TransactionType.ELECTRICITY) {
+            if (!transaction.productCodeId) {
+                throw new Error('productCodeId is required')
             }
         }
     }
@@ -181,8 +198,10 @@ export interface ITransaction {
     userId: string; // Unique identifier of the user associated with the transaction
     partnerId: string; // Unique identifier of the Partner associated with the transaction
     meterId?: string; // Unique identifier of the Meter associated with the transaction
-    reference: string
+    reference: string;
+    productCodeId: string;
     irecharge_token?: string
+    previousVendors: string[]
 }
 
 // Define an interface representing the creation of a transaction (ICreateTransaction).
