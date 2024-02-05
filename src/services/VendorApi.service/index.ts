@@ -654,7 +654,6 @@ export default class VendorService {
                     name: provider.code.split('_').join(' ').toUpperCase(),
                     serviceType: serviceType as 'PREPAID' | 'POSTPAID'
                 })
-
             }
 
             return providers
@@ -667,6 +666,7 @@ export default class VendorService {
 
     static async irechargeValidateMeter(disco: string, meterNumber: string, reference: string) {
         const response = await IRechargeVendorService.validateMeter({ disco, meterNumber, reference })
+        console.log(response)
         return response
     }
 

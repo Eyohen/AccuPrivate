@@ -377,7 +377,7 @@ class VendorControllerUtil {
 
         function validateWithIrecharge() {
             logger.info('Validating meter with irecharge')
-            return VendorService.irechargeValidateMeter(disco, meterNumber, transaction.reference)
+            return VendorService.baxiValidateMeter(disco, meterNumber, vendType)
         }
 
         // Try with the first super agetn, if it fails try with the next, then update the transaction superagent
