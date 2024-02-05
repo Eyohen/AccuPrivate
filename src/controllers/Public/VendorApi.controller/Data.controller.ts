@@ -24,6 +24,7 @@ import ProductService from "../../../services/Product.service";
 import VendorProduct from "../../../models/VendorProduct.model";
 import VendorProductService from "../../../services/VendorProduct.service";
 import { TokenHandlerUtil } from "../../../kafka/modules/consumers/Token";
+require('newrelic');
 
 
 class DataValidator {

@@ -47,6 +47,7 @@ redisClient.on('error', (error) => {
     logger.info('An error occured while connecting to REDIS')
     console.error(error)
     logger.error(error)
+    console.log("Error is coming from redis")
     process.exit(1)
 })
 
