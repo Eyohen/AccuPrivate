@@ -233,101 +233,84 @@ export const SEED = {
             vendors: {
                 BAXI: { discoCode: 'abuja_electric_postpaid', commission: 1.20, bonus: 0 },
                 BUYPOWERNG: { discoCode: 'ABUJA', commission: 1.80, bonus: 0 },
-                IRECHARGE: { discoCode: 'AEDC', commission: 1.80, bonus: 0 },
+                IRECHARGE: { discoCode: 'AEDC_Postpaid', commission: 1.80, bonus: 0 },
             }
         },
         'ECEKEPS': {
             productName: 'EKO',
             type: 'POSTPAID',
             vendors: {
-                BAXI: { discoCode: 'eko_electric_postpaid', commission: 1, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'EKO', commission: 1.40, bonus: 0 },
-                IRECHARGE: { discoCode: 'Eko_Postpaid', commission: 1.50, bonus: 60 },
+                BAXI: { discoCode: 'eko_electric_postpaid', commission: 1.50, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'EKO', commission: 1.50, bonus: 0 },
+                IRECHARGE: { discoCode: 'Eko_Postpaid', commission: 1.35, bonus: 70 },
             }
         },
         'ECIKEPS': {
             productName: 'IKEJA',
             type: 'POSTPAID',
             vendors: {
-                BAXI: { discoCode: 'ikeja_electric_postpaid', commission: 1, bonus: 0 },
+                BAXI: { discoCode: 'ikeja_electric_postpaid', commission: 1.0, bonus: 0 },
                 BUYPOWERNG: { discoCode: 'IKEJA', commission: 1.40, bonus: 0 },
-                IRECHARGE: { discoCode: 'Ikeja_Electric_Bill_Payment', commission: 1, bonus: 60 },
-            }
-        },
-        'ECJOPPS': {
-            productName: 'JOS',
-            type: 'POSTPAID',
-            vendors: {
-                BAXI: { discoCode: 'jos_electric_postpaid', commission: 1, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'JOS', commission: 1.80, bonus: 0 },
-                IRECHARGE: { discoCode: 'Jos_Disco_Postpaid', commission: 1.50, bonus: 0 },
-            }
-        },
-        'ECJOPPE': {
-            productName: 'JOS',
-            type: 'PREPAID',
-            vendors: {
-                BAXI: { discoCode: 'jos_electric_prepaid', commission: 1, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'JOS', commission: 1.80, bonus: 0 },
-                IRECHARGE: { discoCode: 'Jos_Disco_Prepaid', commission: 1.50, bonus: 60 },
-            }
-        },
-        'ECKDEPE': {
-            productName: 'KADUNA',
-            type: 'POSTPAID',
-            vendors: {
-                BAXI: { discoCode: 'kaduna_electric_prepaid', commission: 1.20, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'KADUNA', commission: 2.30, bonus: 0 },
-                IRECHARGE: { discoCode: 'Kaduna_Electricity_Disco_Prepaid', commission: 2.00, bonus: 70 },
-            }
-        },
-        'ECEKEPE': {
-            productName: 'EKO',
-            type: 'PREPAID',
-            vendors: {
-                BAXI: { discoCode: 'eko_electric_prepaid', commission: 1, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'EKO', commission: 1.40, bonus: 0 },
-                IRECHARGE: { discoCode: 'Eko_Prepaid', commission: 1.0, bonus: 70 },
-            }
-        },
-        'ECKDEPS': {
-            productName: 'KADUNA',
-            type: 'POSTPAID',
-            vendors: {
-                BAXI: { discoCode: 'kaduna_electric_postpaid', commission: 1.20, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'KADUNA', commission: 2.30, bonus: 0 },
-                IRECHARGE: { discoCode: 'Kaduna_Electricity_Disco_Postpaid', commission: 2.00, bonus: 0 },
-            }
-        },
-        'ECJSEPE': {
-            productName: 'JOS',
-            type: 'PREPAID',
-            vendors: {
-                BAXI: { discoCode: 'jos_electric_prepaid', commission: 1, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'JOS', commission: 1.80, bonus: 0 },
-                IRECHARGE: { discoCode: 'Jos_Disco', commission: 1.50, bonus: 60 },
+                IRECHARGE: { discoCode: 'Ikeja_Electric_Bill_Payment', commission: 1.0, bonus: 60 },
             }
         },
         'ECJSEPS': {
             productName: 'JOS',
             type: 'POSTPAID',
             vendors: {
-                BAXI: { discoCode: 'jos_electric_postpaid', commission: 1, bonus: 0 },
+                BAXI: { discoCode: 'jos_electric_postpaid', commission: 1.0, bonus: 0 },
                 BUYPOWERNG: { discoCode: 'JOS', commission: 1.80, bonus: 0 },
                 IRECHARGE: { discoCode: 'Jos_Disco_Postpaid', commission: 1.50, bonus: 0 },
             }
         },
+        'ECJSEPE': {
+            productName: 'JOS',
+            type: 'PREPAID',
+            vendors: {
+                BAXI: { discoCode: 'jos_electric_prepaid', commission: 1.0, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'JOS', commission: 1.80, bonus: 0 },
+                IRECHARGE: { discoCode: 'Jos_Disco_Prepaid', commission: 1.50, bonus: 60 },
+            }
+        },
+        'ECKDEPS': {
+            productName: 'KADUNA',
+            type: 'POSTPAID',
+            vendors: {
+                BAXI: { discoCode: 'kaduna_electric_prepaid', commission: 1.20, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'KADUNA', commission: 2.30, bonus: 0 },
+                IRECHARGE: { discoCode: 'Kaduna_Electricity_Disco_Prepaid', commission: 2.0, bonus: 0 },
+            }
+        },
+        'ECEKEPE': {
+            productName: 'EKO',
+            type: 'PREPAID',
+            vendors: {
+                BAXI: { discoCode: 'eko_electric_prepaid', commission: 1.50, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'EKO', commission: 1.50, bonus: 0 },
+                IRECHARGE: { discoCode: 'Eko_Prepaid', commission: 1.35, bonus: 70 },
+            }
+        },
+        'ECKDEPE': {
+            productName: 'KADUNA',
+            type: 'PREPAID',
+            vendors: {
+                BAXI: { discoCode: 'kaduna_electric_prepaid', commission: 1.20, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'KADUNA', commission: 2.30, bonus: 0 },
+                IRECHARGE: { discoCode: 'Kaduna_Electricity_Disco', commission: 2.00, bonus: 70 },
+            }
+        },
+     
         'ECPHEPE': {
-            productName: 'PORT-HARCOURT',
+            productName: 'PORTHARCOURT',
             type: 'PREPAID',
             vendors: {
                 BAXI: { discoCode: 'portharcourt_electric_prepaid', commission: 1.20, bonus: 0 },
                 BUYPOWERNG: { discoCode: 'PH', commission: 1.80, bonus: 0 },
-                IRECHARGE: { discoCode: 'PH_Disco', commission: 1.50, bonus: 50 },
+                IRECHARGE: { discoCode: 'PhED_Electricity', commission: 1.50, bonus: 50 },
             }
         },
         'ECPHEPS': {
-            productName: 'PORT-HARCOURT',
+            productName: 'PORTHARCOURT',
             type: 'POSTPAID',
             vendors: {
                 BAXI: { discoCode: 'portharcourt_electric_postpaid', commission: 1.20, bonus: 0 },
@@ -335,47 +318,128 @@ export const SEED = {
                 IRECHARGE: { discoCode: 'PH_Disco', commission: 1.50, bonus: 50 },
             }
         },
-        'ECBNEPS': {
-            productName: 'BENIN',
-            type: 'POSTPAID',
-            vendors: {
-                BAXI: { discoCode: 'ECBNEPS', commission: 2.20, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'BENIN', commission: 2.20, bonus: 0 },
-                IRECHARGE: { discoCode: 'Benin', commission: 2.20, bonus: 0 },
-            }
-        },
-        'ECBNEPE': {
-            productName: 'BENIN',
+        // 'ECBNEPS': {
+        //     productName: 'BENIN',
+        //     type: 'POSTPAID',
+        //     vendors: {
+        //         // BAXI: { discoCode: 'ECBNEPS', commission: 2.20, bonus: 0 },
+        //         BUYPOWERNG: { discoCode: 'BENIN', commission: 2.20, bonus: 0 },
+        //         IRECHARGE: { discoCode: 'BEDC_Postpaid', commission: 0.0, bonus: 0 },
+        //     }
+        // },
+        // 'ECBNEPE': {
+        //     productName: 'BENIN',
+        //     type: 'PREPAID',
+        //     vendors: {
+        //         // BAXI: { discoCode: 'ECBNEPE', commission: 2.20, bonus: 0 },
+        //         BUYPOWERNG: { discoCode: 'BENIN', commission: 2.20, bonus: 0 },
+        //         IRECHARGE: { discoCode: 'BEDC', commission: 0.0, bonus: 0 },
+        //     }
+        // },
+        'ECEGEPE': {
+            productName: 'ENUGU',
             type: 'PREPAID',
             vendors: {
-                BAXI: { discoCode: 'ECBNEPE', commission: 2.20, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'BENIN', commission: 2.20, bonus: 0 },
-                IRECHARGE: { discoCode: 'Benin', commission: 2.20, bonus: 0 },
+                BAXI: { discoCode: 'enugu_electric_prepaid', commission: 1.80, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'ENUGU', commission: 2.20, bonus: 0 },
+                IRECHARGE: { discoCode: 'Enugu_Electricity_Distribution_Prepaid', commission: 1.50, bonus: 50 },
             }
         },
-        'ECAHBEPS': {
-            productName: 'YOLA',
+        'ECEGEPS': {
+            productName: 'ENUGU',
             type: 'POSTPAID',
             vendors: {
-                BAXI: { discoCode: 'YOLA', commission: 1.80, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'YOLA', commission: 1.80, bonus: 0 },
-                IRECHARGE: { discoCode: 'YOLA', commission: 1.20, bonus: 0 },
+                BAXI: { discoCode: 'enugu_electric_postpaid', commission: 1.80, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'ENUGU', commission: 2.20, bonus: 0 },
+                IRECHARGE: { discoCode: 'Enugu_Electricity_Distribution_Postpaid', commission: 1.50, bonus: 50 },
+            }
+        },
+        'ECIKEPE': {
+            productName: 'IKEJA',
+            type: 'PREPAID',
+            vendors: {
+                BAXI: { discoCode: 'ikeja_electric_prepaid', commission: 1.0, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'IKEJA', commission: 1.40, bonus: 0 },
+                IRECHARGE: { discoCode: 'Ikeja_Token_Purchase', commission: 1.0, bonus: 60 },
+            }
+        },
+        'ECABEPE': {
+            productName: 'ABUJA',
+            type: 'PREPAID',
+            vendors: {
+                BAXI: { discoCode: 'abuja_electric_prepaid', commission: 1.20, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'ABUJA', commission: 1.80, bonus: 0 },
+                IRECHARGE: { discoCode: 'AEDC', commission: 1.80, bonus: 50 },
+            }
+        },
+        // 'ECAAEPE': {
+        //     productName: 'ABA',
+        //     type: 'PREPAID',
+        //     vendors: {
+        //         //BAXI: { discoCode: 'abuja_electric_prepaid', commission: 2.30, bonus: 0 },
+        //         BUYPOWERNG: { discoCode: 'ABA', commission: 0.0, bonus: 0 },
+        //         IRECHARGE: { discoCode: 'Aba_Power_Prepaid', commission: 0.0, bonus: 0 },
+        //     }
+        // },
+        // 'ECAAEPS': {
+        //     productName: 'ABA',
+        //     type: 'POSTPAID',
+        //     vendors: {
+        //         //BAXI: { discoCode: 'abuja_electric_prepaid', commission: 2.30, bonus: 0 },
+        //         BUYPOWERNG: { discoCode: 'ABA', commission: 0.0, bonus: 0 },
+        //         IRECHARGE: { discoCode: 'Aba_Power_Postpaid', commission: 0.0, bonus: 0 },
+        //     }
+        // },
+        'ECIBEPE': {
+            productName: 'IBADAN',
+            type: 'POSTPAID',
+            vendors: {
+                BAXI: { discoCode: 'ibadan_electric_postpaid', commission: 0.6, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'IBADAN', commission: 1.0, bonus: 0 },
+                IRECHARGE: { discoCode: 'Ibadan_Disco_Postpaid', commission: 0.0, bonus: 0 },
+            }
+        },
+        'ECIBEPS': {
+            productName: 'IBADAN',
+            type: 'PREPAID',
+            vendors: {
+                BAXI: { discoCode: 'ibadan_electric_prepaid', commission: 0.6, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'IBADAN', commission: 1.0, bonus: 0 },
+                IRECHARGE: { discoCode: 'Ibadan_Disco_Prepaid', commission: 1.30, bonus: 70 },
+            }
+        },
+        'ECKAEPS': {
+            productName: 'KANO',
+            type: 'POSTPAID',
+            vendors: {
+                BAXI: { discoCode: 'kedco_electric_postpaid', commission: 1.0, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'KANO', commission: 1.8, bonus: 0 },
+                IRECHARGE: { discoCode: 'Kano_Electricity_Disco_Postpaid', commission: 1.50, bonus: 0 },
+            }
+        },
+        'ECKAEPE': {
+            productName: 'KANO',
+            type: 'PREPAID',
+            vendors: {
+                BAXI: { discoCode: 'kedco_electric_prepaid', commission: 1.0, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'KANO', commission: 1.8, bonus: 0 },
+                IRECHARGE: { discoCode: 'Kano_Electricity_Disco', commission: 1.50, bonus: 0 },
             }
         },
     },
     AIRTIME: {
         'TCMTNVT': {
             productName: 'MTN',
-            type: 'POSTPAID',
+            type: '',
             vendors: {
-                BAXI: { discoCode: 'eko_electric_postpaid', commission: 2, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'EKO', commission: 0, bonus: 0 },
-                IRECHARGE: { discoCode: 'Eko_Postpaid', commission: 2.50, bonus: 0 },
+                BAXI: { discoCode: 'mtn', commission: 2.0, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'MTN', commission: 0, bonus: 0 },
+                IRECHARGE: { discoCode: 'MTN', commission: 2.50, bonus: 0 },
             }
         },
         'TCGLOVT': {
             productName: 'GLO',
-            type: 'POSTPAID',
+            type: '',
             vendors: {
                 BAXI: { discoCode: 'glo', commission: 3.50, bonus: 0 },
                 BUYPOWERNG: { discoCode: 'GLO', commission: 0, bonus: 0 },
@@ -384,7 +448,7 @@ export const SEED = {
         },
         'TC9MBVT': {
             productName: '9MOBILE',
-            type: 'POSTPAID',
+            type: '',
             vendors: {
                 BAXI: { discoCode: '9mobile', commission: 3.5, bonus: 0 },
                 BUYPOWERNG: { discoCode: '9MOBILE', commission: 0, bonus: 0 },
@@ -393,11 +457,11 @@ export const SEED = {
         },
         'TCATLVT': {
             productName: 'AIRTEL',
-            type: 'POSTPAID',
+            type: '',
             vendors: {
-                BAXI: { discoCode: 'airtel', commission: 2, bonus: 0 },
+                BAXI: { discoCode: 'airtel', commission: 2.0, bonus: 0 },
                 BUYPOWERNG: { discoCode: 'AIRTEL', commission: 0, bonus: 0 },
-                IRECHARGE: { discoCode: 'Airtel', commission: 3, bonus: 0 },
+                IRECHARGE: { discoCode: 'Airtel', commission: 3.0, bonus: 0 },
             }
         },
     },
