@@ -104,7 +104,7 @@ export class DataVendController {
             throw new InternalServerError('Vendor not found for vendor product')
         }
 
-        const superAgent = await TokenHandlerUtil.getBestVendorForPurchase(existingProductCodeForDisco.id, vendorProduct.amount);
+        const superAgent = vendor.name as 'IRECHARGE' | 'BUYPOWERNG' | 'BAXI'
 
         const amount = vendorProduct.amount.toString()
         const transaction: Transaction =

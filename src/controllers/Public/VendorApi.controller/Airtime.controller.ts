@@ -269,85 +269,84 @@ export class AirtimeVendController {
 
             vendorDoc[vendorName] = vendor;
             console.log(`Vendor ${vendorName} created with ID ${vendor.id}`);
+            const productNames = ['MTN', 'AIRTEL', '9MOBILE', 'GLO'] as const;
 
             for (let j = 0; j < productTypes.length; j++) {
                 const productType = productTypes[j] as typeof productTypes[number];
                 console.log(`Creating products for type: ${productType}`);
                 const productCodeData = SEED_DATA.IRECHARGE[productType];
-                const productNames = Object.keys(SEED_DATA.IRECHARGE) as (keyof typeof SEED_DATA.IRECHARGE)[];
 
-                for (let k = 0; k < productNames.length; k++) {
-                    const productCode = productNames[k];
-                    console.log(`Creating product: ${productCode}`);
-                    const productInfo = productCodeData[productCode as keyof typeof productCodeData] as unknown as typeof SEED_DATA.IRECHARGE.MTN;
+                const productCode =  productType;
+                console.log(`Creating product: ${productCode}`);
+                const productInfo = productCodeData
 
-                    const map = {
-                        MTN: 'MTN',
-                        AIRTEL: 'ATL',
-                        '9MOBILE': '9MB',
-                        GLO: 'GLO',
-                    }
-                    const productData = {
-                        masterProductCode: `VT${map[productCode]}DT`,
-                        category: 'DATA',
-                        productName: productType,
+                const map = {
+                    MTN: 'MTN',
+                    AIRTEL: 'ATL',
+                    '9MOBILE': '9MB',
+                    GLO: 'GLO',
+                }
+                const productData = {
+                    masterProductCode: `VT${map[productCode]}DT`,
+                    category: 'DATA',
+                    productName: productType,
+                    id: randomUUID(),
+                } as any
+
+                // Create product
+                const product = await ProductService.addProduct(productData);
+                console.log(`Product ${productCode} created with ID ${product.id}`);
+
+                const commissions = {
+                    IRECHARGE: {
+                        MTN: 0.02,
+                        AIRTEL: 0.02,
+                        '9MOBILE': 0.02,
+                        GLO: 0.02,
+                    },
+                    BUYPOWERNG: {
+                        MTN: 0.02,
+                        AIRTEL: 0.02,
+                        '9MOBILE': 0.02,
+                        GLO: 0.02,
+                    },
+                    BAXI: {
+                        MTN: 0.02,
+                        AIRTEL: 0.02,
+                        '9MOBILE': 0.02,
+                        GLO: 0.02,
+                    },
+                }
+
+                const IRECHARGEDATACODE = {
+                    'MTN': 'MTN',
+                    'AIRTEL': 'Airtel',
+                    'GLO': 'Glo',
+                    '9MOBILE': '9mobile'
+                }
+
+                console.log(productInfo)
+                for (let m = 0; m < productInfo.length; m++) {
+                    const dataBundle = productInfo[m];
+
+                    console.log(`Adding VendorProduct for vendor ${vendorName} and product ${productCode}`);
+                    await VendorProductService.addVendorProduct({
                         id: randomUUID(),
-                    } as any
-
-                    // Create product
-                    const product = await ProductService.addProduct(productData);
-                    console.log(`Product ${productCode} created with ID ${product.id}`);
-
-                    const commissions = {
-                        IRECHARGE: {
-                            MTN: 0.02,
-                            AIRTEL: 0.02,
-                            '9MOBILE': 0.02,
-                            GLO: 0.02,
+                        vendorId: vendor.id,
+                        productId: product.id,
+                        commission: commissions[vendorName][productType],
+                        bonus: 0,
+                        amount: parseFloat(dataBundle.price.toString()),
+                        schemaData: {
+                            bundleName: dataBundle.title,
+                            validity: dataBundle.validity,
+                            datacode: dataBundle.code,
+                            code: vendorName === 'IRECHARGE' ? IRECHARGEDATACODE[productType] : productType,
                         },
-                        BUYPOWERNG: {
-                            MTN: 0.02,
-                            AIRTEL: 0.02,
-                            '9MOBILE': 0.02,
-                            GLO: 0.02,
-                        },
-                        BAXI: {
-                            MTN: 0.02,
-                            AIRTEL: 0.02,
-                            '9MOBILE': 0.02,
-                            GLO: 0.02,
-                        },
-                    }
+                        vendorHttpUrl: HTTP_URL[vendorName]['DATA'],
+                    });
 
-                    const IRECHARGEDATACODE ={
-                        'MTN': 'MTN',
-                        'AIRTEL': 'Airtel',
-                        'GLO': 'Glo',
-                        '9MOBILE': '9mobile'
-                    }
-
-
-                    console.log(productInfo)
-                    for (let m = 0; m < productInfo.length; m++) {
-                        const dataBundle = productInfo[m];
-
-                        console.log(`Adding VendorProduct for vendor ${vendorName} and product ${productCode}`);
-                        await VendorProductService.addVendorProduct({
-                            id: randomUUID(),
-                            vendorId: vendor.id,
-                            productId: product.id,
-                            commission: commissions[vendorName][productType],
-                            bonus: 0,
-                            amount: parseFloat(dataBundle.price.toString()),
-                            schemaData: {
-                                datacode: dataBundle.code,
-                                code: vendorName === 'IRECHARGE' ? IRECHARGEDATACODE[productType] : productType,
-                            },
-                            vendorHttpUrl: HTTP_URL[vendorName]['DATA'],
-                        });
-
-                        console.log(`VendorProduct added for vendor ${vendorName} and Code}`);
-                    }
+                    console.log(`VendorProduct added for vendor ${vendorName} and Code}`);
                 }
             }
         }

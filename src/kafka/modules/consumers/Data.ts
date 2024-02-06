@@ -289,13 +289,14 @@ class TokenHandler extends Registry {
             if (!vendor) throw new Error('Vendor not found')
             return {
                 vendorName: vendor.name,
-                discoCode: (vendorProduct.schemaData as VendorProductSchemaData.BUYPOWERNG).code
+                discoCode: (vendorProduct.schemaData as VendorProductSchemaData.BUYPOWERNG).code,
+                dataCode: vendorProduct.schemaData.datacode
             }
         }))
 
         console.log({ vendorAndDiscos, superagent: transaction.superagent })
 
-        const vendorProductCode = vendorAndDiscos.find(vendorAndDisco => vendorAndDisco.vendorName === transaction.superagent)?.discoCode
+        const vendorProductCode = vendorAndDiscos.find(vendorAndDisco => vendorAndDisco.vendorName === transaction.superagent)?.dataCode
         if (!vendorProductCode) throw new Error('Vendor product code not found')
 
         // find MTN, GLO, AIRTEL, 9MOBILE In the product code using regex
@@ -304,8 +305,8 @@ class TokenHandler extends Registry {
 
         const mtn = product.masterProductCode.includes('MTN')
         const glo = product.masterProductCode.includes('GLO')
-        const airtel = product.masterProductCode.includes('AIRTEL')
-        const nineMobile = product.masterProductCode.includes('9MOBILE')
+        const airtel = product.masterProductCode.includes('ATEL')
+        const nineMobile = product.masterProductCode.includes('9MB')
 
         const network = mtn ? 'MTN' : glo ? 'GLO' : airtel ? 'AIRTEL' : nineMobile ? '9MOBILE' : null
         if (!network) throw new Error('Network not found')
