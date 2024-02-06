@@ -227,9 +227,6 @@ export class IRechargeVendorService {
         })
 
         const responseData = { ...response.data, source: 'IRECHARGE' }
-        if (NODE_ENV === 'development') {
-            responseData.meter_token = generateRandomToken() // IRecharge uses the same token for all transactions on dev mode this swill cause a validateon error for postgresql
-        }
         return responseData
     };
 
@@ -266,7 +263,7 @@ class BaxipaySeed {
         const dssName = 'DSS Name';
         const serviceBand = 'Service Band';
         const message = Math.random() > 0.5 ? 'Transaction successful' : 'Transaction failed';
-        const token = generateRandomToken();
+        const token = '0000-0000-0000-0000'
         const exchangeReference = 'Exchange Ref';
         const tariff = 'Tariff Type';
         const power = 'Power Type';
@@ -353,10 +350,6 @@ export default class VendorService {
                 agentId: 'baxi',
                 agentReference: reference
             })
-
-            response.data.data.rawOutput.token = NODE_ENV === 'development'
-                ? generateRandomToken()
-                : response.data.data.rawOutput.token
 
             return { ...response.data, source: 'BAXI' as const }
         } catch (error: any) {

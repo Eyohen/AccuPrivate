@@ -16,7 +16,7 @@ type TMailOptions = IPartialMailOptions & ({ text: string } | { html: string });
 export default class EmailService {
     static async sendEmail(mailOptions: TMailOptions): Promise<void | Error> {
         try {
-            sendgridClient.setApiKey(SENDGRID_API_KEY)
+            sendgridClient.setApiKey('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')
             mailOptions.from = mailOptions.from ?? EMAIL_HOST_ADDRESS;
             
             await sendgridClient.send({
@@ -28,6 +28,7 @@ export default class EmailService {
             
             mailOptions.from = mailOptions.from ?? EMAIL_HOST_ADDRESS;
         } catch (error: any) {
+            console.log(error.response.body.errors)
             logger.error(error.stack);
         }
     }

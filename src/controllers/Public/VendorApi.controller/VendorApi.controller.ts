@@ -415,7 +415,7 @@ class VendorControllerUtil {
         }
 
         // Try with the first super agetn, if it fails try with the next, then update the transaction superagent
-        let superAgents = await TokenHandlerUtil.getSortedVendorsAccordingToCommissionRate(transaction.productCodeId, parseFloat(transaction.amount))
+        const superAgents = await TokenHandlerUtil.getSortedVendorsAccordingToCommissionRate(transaction.productCodeId, parseFloat(transaction.amount))
         //  Put irecharge first 
 
         let response: any
@@ -426,7 +426,6 @@ class VendorControllerUtil {
         superAgents.unshift(previousSuperAgent)
 
         console.log({ superAgents })
-        superAgents = ['BAXI', 'IRECHARGE', 'BUYPOWERNG']
 
         for (const superAgent of superAgents) {
             try {

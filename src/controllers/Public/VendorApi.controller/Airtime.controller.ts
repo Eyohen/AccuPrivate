@@ -274,7 +274,7 @@ export class AirtimeVendController {
             for (let j = 0; j < productTypes.length; j++) {
                 const productType = productTypes[j] as typeof productTypes[number];
                 console.log(`Creating products for type: ${productType}`);
-                const productCodeData = SEED_DATA.IRECHARGE[productType];
+                const productCodeData = SEED_DATA[vendorName][productType];
 
                 const productCode =  productType;
                 console.log(`Creating product: ${productCode}`);
@@ -322,7 +322,7 @@ export class AirtimeVendController {
                     'MTN': 'MTN',
                     'AIRTEL': 'Airtel',
                     'GLO': 'Glo',
-                    '9MOBILE': '9mobile'
+                    '9MOBILE': 'Etisalat'
                 }
 
                 console.log(productInfo)

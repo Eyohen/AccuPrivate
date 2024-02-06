@@ -1355,234 +1355,117 @@ export const SEED_DATA = {
         ],
         '9MOBILE': [
             {
-                "code": "55",
-                "title": "Airtel D-MFIN-1-40MB for 1 day",
-                "price": "50",
-                "validity": "1 day"
+                "code": "93",
+                "title": "Etisalat D-MFIN-2-1.5GB for 30 days \t\r\n4.2GB (2GB+2.2GB Night)",
+                "price": "1000",
+                "validity": "30 days \t\r\n4.2GB (2GB+2.2GB Night)"
             },
             {
-                "code": "56",
-                "title": "Airtel D-MFIN-1-100MB for 1 day",
-                "price": "99",
-                "validity": "1 day"
+                "code": "94",
+                "title": "Etisalat D-MFIN-2-2GB for 30 days 6.5GB (2.5GB+4GB Night)",
+                "price": "1200",
+                "validity": "30 days 6.5GB (2.5GB+4GB Night)"
             },
             {
-                "code": "57",
-                "title": "Airtel D-MFIN-1-200MB for 3 days",
-                "price": "199",
-                "validity": "3 days"
+                "code": "95",
+                "title": "Etisalat D-MFIN-2-4.5GB for 30 days 9.5GB (5.5GB+4GB Night)",
+                "price": "2000",
+                "validity": "30 days 9.5GB (5.5GB+4GB Night)"
             },
             {
-                "code": "58",
-                "title": "Airtel D-MFIN-1-350MB for 7 days",
-                "price": "349",
-                "validity": "7 days"
-            },
-            {
-                "code": "59",
-                "title": "Airtel D-MFIN-1-750MB for 7 days",
-                "price": "499",
-                "validity": "7 days"
-            },
-            {
-                "code": "60",
-                "title": "Airtel D-MFIN-1-1.5GB for 30 days",
-                "price": "999",
+                "code": "96",
+                "title": "Etisalat D-MFIN-2-40GB for 30 days",
+                "price": "10000",
                 "validity": "30 days"
             },
             {
-                "code": "61",
-                "title": "Airtel D-MFIN-1-3GB for 30 days",
-                "price": "1499",
-                "validity": "30 days"
-            },
-            {
-                "code": "62",
-                "title": "Airtel D-MFIN-1-6GB for 30 days",
-                "price": "2499",
-                "validity": "30 days"
-            },
-            {
-                "code": "63",
-                "title": "Airtel D-MFIN-1-11GB for 30 days",
-                "price": "3999",
-                "validity": "30 days"
-            },
-            {
-                "code": "64",
-                "title": "Airtel D-MFIN-1-20GB for 30 days",
-                "price": "4999",
-                "validity": "30 days"
-            },
-            {
-                "code": "65",
-                "title": "Airtel D-MFIN-1-40GB for 30 days",
-                "price": "9999",
-                "validity": "30 days"
-            },
-            {
-                "code": "66",
-                "title": "Airtel D-MFIN-1-75GB for 30 days",
-                "price": "14999",
-                "validity": "30 days"
-            },
-            {
-                "code": "67",
-                "title": "Airtel D-MFIN-1-8GB for 30 days",
-                "price": "2999",
-                "validity": "30 days"
-            },
-            {
-                "code": "68",
-                "title": "Airtel D-MFIN-1-120GB for 30 days",
-                "price": "19999",
-                "validity": "30 days"
-            },
-            {
-                "code": "69",
-                "title": "Airtel D-MFIN-1-1GB1D for 1 day",
-                "price": "349",
-                "validity": "1 day"
-            },
-            {
-                "code": "70",
-                "title": "Airtel D-MFIN-1-2GB1D for 1 day",
-                "price": "499",
-                "validity": "1 day"
-            },
-            {
-                "code": "71",
-                "title": "Airtel D-MFIN-1-6GB1W for 7 days",
-                "price": "1499",
-                "validity": "7 days"
-            },
-            {
-                "code": "72",
-                "title": "Airtel D-MFIN-1-2GB1M for 30 days",
-                "price": "1199",
-                "validity": "30 days"
-            },
-            {
-                "code": "73",
-                "title": "Airtel D-MFIN-1-4.5GB for 30 days",
-                "price": "1999",
-                "validity": "30 days"
-            },
-            {
-                "code": "74",
-                "title": "Airtel D-MFIN-1-25GB1M for 30 days",
-                "price": "7999",
-                "validity": "30 days"
-            },
-            {
-                "code": "75",
-                "title": "Airtel D-MFIN-1-200GB1M for 30 days",
-                "price": "29999",
-                "validity": "30 days"
-            },
-            {
-                "code": "76",
-                "title": "Airtel D-MFIN-1-280GB1M for 30 days",
-                "price": "35999",
-                "validity": "30 days"
-            },
-            {
-                "code": "77",
-                "title": "Airtel D-MFIN-1-400GB3M for 90 days",
-                "price": "49999",
-                "validity": "90 days"
-            },
-            {
-                "code": "78",
-                "title": "Airtel D-MFIN-1-500GB4M for 120 days",
-                "price": "59999",
-                "validity": "120 days"
-            },
-            {
-                "code": "79",
-                "title": "Airtel D-MFIN-1-1TB1Y for 365 days",
-                "price": "99999",
-                "validity": "365 days"
-            },
-            {
-                "code": "80",
-                "title": "Airtel D-MFIN-1-1GB for 14 day",
-                "price": "599",
-                "validity": "14 day"
-            },
-            {
-                "code": "81",
-                "title": "Airtel D-MFIN-1-15GB for 7 day",
-                "price": "999",
-                "validity": "7 day"
-            },
-            {
-                "code": "82",
-                "title": "Airtel D-MFIN-1-7GB for 7 day",
-                "price": "1999",
-                "validity": "7 day"
-            },
-            {
-                "code": "83",
-                "title": "Airtel D-MFIN-1-25GB for 7 day",
-                "price": "4999",
-                "validity": "7 day"
-            },
-            {
-                "code": "84",
-                "title": "Airtel D-MFIN-1-15MB for 1 day",
-                "price": "399",
-                "validity": "1 day"
-            },
-            {
-                "code": "85",
-                "title": "Airtel D-MFIN-1-35GB for 2 day",
-                "price": "799",
-                "validity": "2 day"
-            },
-            {
-                "code": "86",
-                "title": "Airtel D-MFIN-1-23GB for 30 day",
-                "price": "5999",
-                "validity": "30 day"
-            },
-            {
-                "code": "87",
-                "title": "Airtel D-MFIN-1-50MB for This Data plan gives 40MB for N50 valid for 1day (Social Plan)",
-                "price": "50",
-                "validity": "This Data plan gives 40MB for N50 valid for 1day (Social Plan)"
-            },
-            {
-                "code": "88",
-                "title": "Airtel D-MFIN-1-200MB2 for This Data plan gives 200MB for N100 valid for 5day (Social Plan)",
-                "price": "100",
-                "validity": "This Data plan gives 200MB for N100 valid for 5day (Social Plan)"
-            },
-            {
-                "code": "89",
-                "title": "Airtel D-MFIN-1-400MB for This Data plan gives 400MB for N100 valid for 3day (TikTok)",
-                "price": "100",
-                "validity": "This Data plan gives 400MB for N100 valid for 3day (TikTok)"
-            },
-            {
-                "code": "90",
-                "title": "Airtel D-MFIN-1-1024MB for This Data plan gives 1,024MB for N200 valid for 14day (Tik Tok)",
-                "price": "200",
-                "validity": "This Data plan gives 1,024MB for N200 valid for 14day (Tik Tok)"
-            },
-            {
-                "code": "91",
-                "title": "Airtel D-MFIN-1-2048MB for This Data plan gives 2,048MB for N200 valid for 1 hr",
-                "price": "200",
-                "validity": "This Data plan gives 2,048MB for N200 valid for 1 hr"
-            },
-            {
-                "code": "92",
-                "title": "Airtel D-MFIN-1-700MB for This Data plan gives 700MB for N300 valid for 25days (Social Plan)",
+                "code": "97",
+                "title": "Etisalat D-MFIN-2-165GB for 1 days",
                 "price": "300",
-                "validity": "This Data plan gives 700MB for N300 valid for 25days (Social Plan)"
+                "validity": "1 days"
+            },
+            {
+                "code": "98",
+                "title": "Etisalat D-MFIN-2-365GB for 30 days",
+                "price": "3000",
+                "validity": "30 days"
+            },
+            {
+                "code": "99",
+                "title": "Etisalat D-MFIN-2-11GB for 30 days 18.5GB (15GB+3.5GB Night)",
+                "price": "4000",
+                "validity": "30 days 18.5GB (15GB+3.5GB Night)"
+            },
+            {
+                "code": "100",
+                "title": "Etisalat D-MFIN-2-25MB for 1 day",
+                "price": "50",
+                "validity": "1 day"
+            },
+            {
+                "code": "101",
+                "title": "Etisalat D-MFIN-2-100MB for 1 day",
+                "price": "100",
+                "validity": "1 day"
+            },
+            {
+                "code": "102",
+                "title": "Etisalat D-MFIN-2-650MB for 1 day",
+                "price": "200",
+                "validity": "1 day"
+            },
+            {
+                "code": "103",
+                "title": "Etisalat D-MFIN-2-15GB for 30 days",
+                "price": "5000",
+                "validity": "30 days"
+            },
+            {
+                "code": "104",
+                "title": "Etisalat D-MFIN-2-100GB for 1 days",
+                "price": "150",
+                "validity": "1 days"
+            },
+            {
+                "code": "105",
+                "title": "Etisalat D-MFIN-2-7GB1W for 7 days",
+                "price": "1500",
+                "validity": "7 days"
+            },
+            {
+                "code": "106",
+                "title": "Etisalat D-MFIN-2-5M for 30 days",
+                "price": "500",
+                "validity": "30 days"
+            },
+            {
+                "code": "107",
+                "title": "Etisalat D-MFIN-2-75M30 for 30 days",
+                "price": "15000",
+                "validity": "30 days"
+            },
+            {
+                "code": "108",
+                "title": "Etisalat D-MFIN-2-75M for 30 days",
+                "price": "20000",
+                "validity": "30 days"
+            },
+            {
+                "code": "109",
+                "title": "Etisalat D-MFIN-2-2.5GB for 30 days \t11GB (7GB+ 4GB Night)",
+                "price": "2500",
+                "validity": "30 days \t11GB (7GB+ 4GB Night)"
+            },
+            {
+                "code": "110",
+                "title": "Etisalat D-MFIN-2-35GB for 30 days",
+                "price": "7000",
+                "validity": "30 days"
             }
         ]
+    },
+    BUYPOWERNG: {
+        
     }
 } as const
 

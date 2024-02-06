@@ -84,7 +84,9 @@ export default class VendorProductController {
     }
 
     static async getAllVendorProducts(req: Request, res: Response, next: NextFunction) {
-        const vendorProducts = await VendorProductService.getAllVendorProducts();
+        const productId = req.query.productId as string;
+
+        const vendorProducts = productId ? await VendorProductService.getAllVendorProductsByProductId(productId) : await VendorProductService.getAllVendorProducts();
 
         res.status(200).json({
             status: 'success',
