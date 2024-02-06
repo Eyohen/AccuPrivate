@@ -32,7 +32,7 @@ export class IRechargeDataApi extends IRechargeBaseConfig {
         }
         const response = await this.API.get<IRechargeApi.DataSuccessfulVendResponse | IRechargeApi.RequeryResponse>('/vend_airtime.php', { params })
 
-
+        console.log(response)
         return (NODE_ENV === 'development'
             ? {
                 status: '00',

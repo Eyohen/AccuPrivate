@@ -41,7 +41,7 @@ export default class VendorProduct extends Model<IVendorProduct | VendorProduct>
     @Column({ type: DataType.JSONB, allowNull: true })
     schemaData: {
         code: string
-    };
+    } & Record<string, any>;
 
     // Vendor HTTP URL
     @Column({ type: DataType.STRING, allowNull: false })
@@ -77,7 +77,7 @@ export interface IVendorProduct {
     bonus: number;
     schemaData: {
         code: string
-    };
+    } & Record<string, any>;
     vendorHttpUrl: string;
     amount?: number;
 }

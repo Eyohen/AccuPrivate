@@ -69,7 +69,7 @@ const retry = {
     retryCountBeforeSwitchingVendor: 2,
 }
 
-const TEST_FAILED = NODE_ENV === 'production' ? false : true // TOGGLE - Will simulate failed transaction
+const TEST_FAILED = NODE_ENV === 'production' ? false : false // TOGGLE - Will simulate failed transaction
 
 const TransactionErrorCodeAndCause = {
     501: TransactionErrorCause.MAINTENANCE_ACCOUNT_ACTIVATION_REQUIRED,
@@ -281,6 +281,38 @@ export class TokenHandlerUtil {
         return sortedOtherVendors[0].vendorName as Transaction['superagent']
     }
 
+    static async getSortedVendorsAccordingToCommissionRate(productCodeId: NonNullable<Transaction['productCodeId']>, amount: number): Promise<Transaction['superagent'][]> {
+        const product = await ProductService.viewSingleProduct(productCodeId)
+        if (!product) throw new Error('Product code not found')
+
+        const vendorProducts = await product.$get('vendorProducts')
+        // Populate all te vendors
+        const vendors = await Promise.all(vendorProducts.map(async vendorProduct => {
+            const vendor = await vendorProduct.$get('vendor')
+            if (!vendor) throw new Error('Vendor not found')
+            vendorProduct.vendor = vendor
+            return vendor
+        }))
+
+        // Check other vendors, sort them according to their commission rates
+        // If the current vendor is the vendor with the highest commission rate, then switch to the vendor with the next highest commission rate
+        // If the next vendor has been used before, switch to the next vendor with the next highest commission rate
+        // If all the vendors have been used before, switch to the vendor with the highest commission rate
+
+        const sortedVendorProductsAccordingToCommissionRate = vendorProducts.sort((a, b) => ((b.commission * amount) + b.bonus) - ((a.commission * amount) + a.bonus))
+        const vendorRates = sortedVendorProductsAccordingToCommissionRate.map(vendorProduct => {
+            const vendor = vendorProduct.vendor
+            if (!vendor) throw new Error('Vendor not found')
+            return {
+                vendorName: vendor.name,
+                commission: vendorProduct.commission,
+                bonus: vendorProduct.bonus
+            }
+        })
+
+        return vendorRates.map(vendorRate => vendorRate.vendorName as Transaction['superagent'])
+    }
+
     static async getBestVendorForPurchase(productCodeId: NonNullable<Transaction['productCodeId']>, amount: number): Promise<Transaction['superagent']> {
         const product = await ProductService.viewSingleProduct(productCodeId)
         if (!product) throw new Error('Product code not found')
@@ -309,7 +341,7 @@ export class TokenHandlerUtil {
                 vendorName: vendor.name,
                 commission: vendorProduct.commission,
                 bonus: vendorProduct.bonus,
-                value: (vendorProduct.commission * amount)+ vendorProduct.bonus
+                value: (vendorProduct.commission * amount) + vendorProduct.bonus
             }
         })
 
@@ -461,12 +493,19 @@ class TokenHandler extends Registry {
         let transactionTimedOutFromBuypower = vendResultFromBuypower.source === 'BUYPOWERNG' ? vendResultFromBuypower.data.responseCode == 202 : false // TODO: Add check for when transaction timeout from baxi
         const transactionTimedOut = transactionTimedOutFromBuypower || transactionTimedOutFromIrecharge
         let tokenInResponse: string | null = null;
-        if (vendResult.source === 'BUYPOWERNG') {
-            tokenInResponse = vendResultFromBuypower.data.responseCode !== 202 ? vendResultFromBuypower.data.token : null
-        } else if (tokenInfo.source === 'BAXI') {
-            tokenInResponse = vendResultFromBaxi.data.rawOutput.token
-        } else if (tokenInfo.source === 'IRECHARGE') {
-            tokenInResponse = vendResultFromIrecharge.meter_token
+
+        const prepaid = meter.vendType === 'PREPAID';
+
+        if (prepaid) {
+            if (vendResult.source === 'BUYPOWERNG') {
+                tokenInResponse = vendResultFromBuypower.data.responseCode !== 202 ? vendResultFromBuypower.data.token : null
+            } else if (tokenInfo.source === 'BAXI') {
+                tokenInResponse = vendResultFromBaxi.data.rawOutput.token
+            } else if (tokenInfo.source === 'IRECHARGE') {
+                tokenInResponse = vendResultFromIrecharge.meter_token
+            }
+        } else {
+            tokenInResponse = '' // There is no token for postpaid meters
         }
 
         let requeryTransactionFromVendor = transactionTimedOut || !tokenInResponse
@@ -560,7 +599,10 @@ class TokenHandler extends Registry {
             );
 
         // BuyPower returnes the same token on test mode, this causes a conflict when trying to update the power unit
-        data.meter.token = NODE_ENV === 'development' ? data.meter.token === '0000-0000-0000-0000-0000' ? generateRandomToken() : data.meter.token : data.meter.token
+        // data.meter.token = NODE_ENV === 'development' ? data.meter.token === '0000-0000-0000-0000-0000' ? generateRandomToken() : data.meter.token : data.meter.token
+
+        const prepaid = data.meter.vendType === 'PREPAID';
+        data.meter.token = !prepaid ? '' : data.meter.token
 
         const discoLogo =
             DISCO_LOGO[data.meter.disco as keyof typeof DISCO_LOGO] ?? LOGO_URL

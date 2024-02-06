@@ -233,101 +233,84 @@ export const SEED = {
             vendors: {
                 BAXI: { discoCode: 'abuja_electric_postpaid', commission: 1.20, bonus: 0 },
                 BUYPOWERNG: { discoCode: 'ABUJA', commission: 1.80, bonus: 0 },
-                IRECHARGE: { discoCode: 'AEDC', commission: 1.80, bonus: 0 },
+                IRECHARGE: { discoCode: 'AEDC_Postpaid', commission: 1.80, bonus: 0 },
             }
         },
         'ECEKEPS': {
             productName: 'EKO',
             type: 'POSTPAID',
             vendors: {
-                BAXI: { discoCode: 'eko_electric_postpaid', commission: 1, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'EKO', commission: 1.40, bonus: 0 },
-                IRECHARGE: { discoCode: 'Eko_Postpaid', commission: 1.50, bonus: 60 },
+                BAXI: { discoCode: 'eko_electric_postpaid', commission: 1.50, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'EKO', commission: 1.50, bonus: 0 },
+                IRECHARGE: { discoCode: 'Eko_Postpaid', commission: 1.35, bonus: 70 },
             }
         },
         'ECIKEPS': {
             productName: 'IKEJA',
             type: 'POSTPAID',
             vendors: {
-                BAXI: { discoCode: 'ikeja_electric_postpaid', commission: 1, bonus: 0 },
+                BAXI: { discoCode: 'ikeja_electric_postpaid', commission: 1.0, bonus: 0 },
                 BUYPOWERNG: { discoCode: 'IKEJA', commission: 1.40, bonus: 0 },
-                IRECHARGE: { discoCode: 'Ikeja_Electric_Bill_Payment', commission: 1, bonus: 60 },
-            }
-        },
-        'ECJOPPS': {
-            productName: 'JOS',
-            type: 'POSTPAID',
-            vendors: {
-                BAXI: { discoCode: 'jos_electric_postpaid', commission: 1, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'JOS', commission: 1.80, bonus: 0 },
-                IRECHARGE: { discoCode: 'Jos_Disco_Postpaid', commission: 1.50, bonus: 0 },
-            }
-        },
-        'ECJOPPE': {
-            productName: 'JOS',
-            type: 'PREPAID',
-            vendors: {
-                BAXI: { discoCode: 'jos_electric_prepaid', commission: 1, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'JOS', commission: 1.80, bonus: 0 },
-                IRECHARGE: { discoCode: 'Jos_Disco_Prepaid', commission: 1.50, bonus: 60 },
-            }
-        },
-        'ECKDEPE': {
-            productName: 'KADUNA',
-            type: 'POSTPAID',
-            vendors: {
-                BAXI: { discoCode: 'kaduna_electric_prepaid', commission: 1.20, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'KADUNA', commission: 2.30, bonus: 0 },
-                IRECHARGE: { discoCode: 'Kaduna_Electricity_Disco_Prepaid', commission: 2.00, bonus: 70 },
-            }
-        },
-        'ECEKEPE': {
-            productName: 'EKO',
-            type: 'PREPAID',
-            vendors: {
-                BAXI: { discoCode: 'eko_electric_prepaid', commission: 1, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'EKO', commission: 1.40, bonus: 0 },
-                IRECHARGE: { discoCode: 'Eko_Prepaid', commission: 1.0, bonus: 70 },
-            }
-        },
-        'ECKDEPS': {
-            productName: 'KADUNA',
-            type: 'POSTPAID',
-            vendors: {
-                BAXI: { discoCode: 'kaduna_electric_postpaid', commission: 1.20, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'KADUNA', commission: 2.30, bonus: 0 },
-                IRECHARGE: { discoCode: 'Kaduna_Electricity_Disco_Postpaid', commission: 2.00, bonus: 0 },
-            }
-        },
-        'ECJSEPE': {
-            productName: 'JOS',
-            type: 'PREPAID',
-            vendors: {
-                BAXI: { discoCode: 'jos_electric_prepaid', commission: 1, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'JOS', commission: 1.80, bonus: 0 },
-                IRECHARGE: { discoCode: 'Jos_Disco', commission: 1.50, bonus: 60 },
+                IRECHARGE: { discoCode: 'Ikeja_Electric_Bill_Payment', commission: 1.0, bonus: 60 },
             }
         },
         'ECJSEPS': {
             productName: 'JOS',
             type: 'POSTPAID',
             vendors: {
-                BAXI: { discoCode: 'jos_electric_postpaid', commission: 1, bonus: 0 },
+                BAXI: { discoCode: 'jos_electric_postpaid', commission: 1.0, bonus: 0 },
                 BUYPOWERNG: { discoCode: 'JOS', commission: 1.80, bonus: 0 },
                 IRECHARGE: { discoCode: 'Jos_Disco_Postpaid', commission: 1.50, bonus: 0 },
             }
         },
+        'ECJSEPE': {
+            productName: 'JOS',
+            type: 'PREPAID',
+            vendors: {
+                BAXI: { discoCode: 'jos_electric_prepaid', commission: 1.0, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'JOS', commission: 1.80, bonus: 0 },
+                IRECHARGE: { discoCode: 'Jos_Disco_Prepaid', commission: 1.50, bonus: 60 },
+            }
+        },
+        'ECKDEPS': {
+            productName: 'KADUNA',
+            type: 'POSTPAID',
+            vendors: {
+                BAXI: { discoCode: 'kaduna_electric_prepaid', commission: 1.20, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'KADUNA', commission: 2.30, bonus: 0 },
+                IRECHARGE: { discoCode: 'Kaduna_Electricity_Disco_Prepaid', commission: 2.0, bonus: 0 },
+            }
+        },
+        'ECEKEPE': {
+            productName: 'EKO',
+            type: 'PREPAID',
+            vendors: {
+                BAXI: { discoCode: 'eko_electric_prepaid', commission: 1.50, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'EKO', commission: 1.50, bonus: 0 },
+                IRECHARGE: { discoCode: 'Eko_Prepaid', commission: 1.35, bonus: 70 },
+            }
+        },
+        'ECKDEPE': {
+            productName: 'KADUNA',
+            type: 'PREPAID',
+            vendors: {
+                BAXI: { discoCode: 'kaduna_electric_prepaid', commission: 1.20, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'KADUNA', commission: 2.30, bonus: 0 },
+                IRECHARGE: { discoCode: 'Kaduna_Electricity_Disco', commission: 2.00, bonus: 70 },
+            }
+        },
+     
         'ECPHEPE': {
-            productName: 'PORT-HARCOURT',
+            productName: 'PORTHARCOURT',
             type: 'PREPAID',
             vendors: {
                 BAXI: { discoCode: 'portharcourt_electric_prepaid', commission: 1.20, bonus: 0 },
                 BUYPOWERNG: { discoCode: 'PH', commission: 1.80, bonus: 0 },
-                IRECHARGE: { discoCode: 'PH_Disco', commission: 1.50, bonus: 50 },
+                IRECHARGE: { discoCode: 'PhED_Electricity', commission: 1.50, bonus: 50 },
             }
         },
         'ECPHEPS': {
-            productName: 'PORT-HARCOURT',
+            productName: 'PORTHARCOURT',
             type: 'POSTPAID',
             vendors: {
                 BAXI: { discoCode: 'portharcourt_electric_postpaid', commission: 1.20, bonus: 0 },
@@ -335,47 +318,128 @@ export const SEED = {
                 IRECHARGE: { discoCode: 'PH_Disco', commission: 1.50, bonus: 50 },
             }
         },
-        'ECBNEPS': {
-            productName: 'BENIN',
-            type: 'POSTPAID',
-            vendors: {
-                BAXI: { discoCode: 'ECBNEPS', commission: 2.20, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'BENIN', commission: 2.20, bonus: 0 },
-                IRECHARGE: { discoCode: 'Benin', commission: 2.20, bonus: 0 },
-            }
-        },
-        'ECBNEPE': {
-            productName: 'BENIN',
+        // 'ECBNEPS': {
+        //     productName: 'BENIN',
+        //     type: 'POSTPAID',
+        //     vendors: {
+        //         // BAXI: { discoCode: 'ECBNEPS', commission: 2.20, bonus: 0 },
+        //         BUYPOWERNG: { discoCode: 'BENIN', commission: 2.20, bonus: 0 },
+        //         IRECHARGE: { discoCode: 'BEDC_Postpaid', commission: 0.0, bonus: 0 },
+        //     }
+        // },
+        // 'ECBNEPE': {
+        //     productName: 'BENIN',
+        //     type: 'PREPAID',
+        //     vendors: {
+        //         // BAXI: { discoCode: 'ECBNEPE', commission: 2.20, bonus: 0 },
+        //         BUYPOWERNG: { discoCode: 'BENIN', commission: 2.20, bonus: 0 },
+        //         IRECHARGE: { discoCode: 'BEDC', commission: 0.0, bonus: 0 },
+        //     }
+        // },
+        'ECEGEPE': {
+            productName: 'ENUGU',
             type: 'PREPAID',
             vendors: {
-                BAXI: { discoCode: 'ECBNEPE', commission: 2.20, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'BENIN', commission: 2.20, bonus: 0 },
-                IRECHARGE: { discoCode: 'Benin', commission: 2.20, bonus: 0 },
+                BAXI: { discoCode: 'enugu_electric_prepaid', commission: 1.80, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'ENUGU', commission: 2.20, bonus: 0 },
+                IRECHARGE: { discoCode: 'Enugu_Electricity_Distribution_Prepaid', commission: 1.50, bonus: 50 },
             }
         },
-        'ECAHBEPS': {
-            productName: 'YOLA',
+        'ECEGEPS': {
+            productName: 'ENUGU',
             type: 'POSTPAID',
             vendors: {
-                BAXI: { discoCode: 'YOLA', commission: 1.80, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'YOLA', commission: 1.80, bonus: 0 },
-                IRECHARGE: { discoCode: 'YOLA', commission: 1.20, bonus: 0 },
+                BAXI: { discoCode: 'enugu_electric_postpaid', commission: 1.80, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'ENUGU', commission: 2.20, bonus: 0 },
+                IRECHARGE: { discoCode: 'Enugu_Electricity_Distribution_Postpaid', commission: 1.50, bonus: 50 },
+            }
+        },
+        'ECIKEPE': {
+            productName: 'IKEJA',
+            type: 'PREPAID',
+            vendors: {
+                BAXI: { discoCode: 'ikeja_electric_prepaid', commission: 1.0, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'IKEJA', commission: 1.40, bonus: 0 },
+                IRECHARGE: { discoCode: 'Ikeja_Token_Purchase', commission: 1.0, bonus: 60 },
+            }
+        },
+        'ECABEPE': {
+            productName: 'ABUJA',
+            type: 'PREPAID',
+            vendors: {
+                BAXI: { discoCode: 'abuja_electric_prepaid', commission: 1.20, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'ABUJA', commission: 1.80, bonus: 0 },
+                IRECHARGE: { discoCode: 'AEDC', commission: 1.80, bonus: 50 },
+            }
+        },
+        // 'ECAAEPE': {
+        //     productName: 'ABA',
+        //     type: 'PREPAID',
+        //     vendors: {
+        //         //BAXI: { discoCode: 'abuja_electric_prepaid', commission: 2.30, bonus: 0 },
+        //         BUYPOWERNG: { discoCode: 'ABA', commission: 0.0, bonus: 0 },
+        //         IRECHARGE: { discoCode: 'Aba_Power_Prepaid', commission: 0.0, bonus: 0 },
+        //     }
+        // },
+        // 'ECAAEPS': {
+        //     productName: 'ABA',
+        //     type: 'POSTPAID',
+        //     vendors: {
+        //         //BAXI: { discoCode: 'abuja_electric_prepaid', commission: 2.30, bonus: 0 },
+        //         BUYPOWERNG: { discoCode: 'ABA', commission: 0.0, bonus: 0 },
+        //         IRECHARGE: { discoCode: 'Aba_Power_Postpaid', commission: 0.0, bonus: 0 },
+        //     }
+        // },
+        'ECIBEPE': {
+            productName: 'IBADAN',
+            type: 'POSTPAID',
+            vendors: {
+                BAXI: { discoCode: 'ibadan_electric_postpaid', commission: 0.6, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'IBADAN', commission: 1.0, bonus: 0 },
+                IRECHARGE: { discoCode: 'Ibadan_Disco_Postpaid', commission: 0.0, bonus: 0 },
+            }
+        },
+        'ECIBEPS': {
+            productName: 'IBADAN',
+            type: 'PREPAID',
+            vendors: {
+                BAXI: { discoCode: 'ibadan_electric_prepaid', commission: 0.6, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'IBADAN', commission: 1.0, bonus: 0 },
+                IRECHARGE: { discoCode: 'Ibadan_Disco_Prepaid', commission: 1.30, bonus: 70 },
+            }
+        },
+        'ECKAEPS': {
+            productName: 'KANO',
+            type: 'POSTPAID',
+            vendors: {
+                BAXI: { discoCode: 'kedco_electric_postpaid', commission: 1.0, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'KANO', commission: 1.8, bonus: 0 },
+                IRECHARGE: { discoCode: 'Kano_Electricity_Disco_Postpaid', commission: 1.50, bonus: 0 },
+            }
+        },
+        'ECKAEPE': {
+            productName: 'KANO',
+            type: 'PREPAID',
+            vendors: {
+                BAXI: { discoCode: 'kedco_electric_prepaid', commission: 1.0, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'KANO', commission: 1.8, bonus: 0 },
+                IRECHARGE: { discoCode: 'Kano_Electricity_Disco', commission: 1.50, bonus: 0 },
             }
         },
     },
     AIRTIME: {
         'TCMTNVT': {
             productName: 'MTN',
-            type: 'POSTPAID',
+            type: '',
             vendors: {
-                BAXI: { discoCode: 'eko_electric_postpaid', commission: 2, bonus: 0 },
-                BUYPOWERNG: { discoCode: 'EKO', commission: 0, bonus: 0 },
-                IRECHARGE: { discoCode: 'Eko_Postpaid', commission: 2.50, bonus: 0 },
+                BAXI: { discoCode: 'mtn', commission: 2.0, bonus: 0 },
+                BUYPOWERNG: { discoCode: 'MTN', commission: 0, bonus: 0 },
+                IRECHARGE: { discoCode: 'MTN', commission: 2.50, bonus: 0 },
             }
         },
         'TCGLOVT': {
             productName: 'GLO',
-            type: 'POSTPAID',
+            type: '',
             vendors: {
                 BAXI: { discoCode: 'glo', commission: 3.50, bonus: 0 },
                 BUYPOWERNG: { discoCode: 'GLO', commission: 0, bonus: 0 },
@@ -384,7 +448,7 @@ export const SEED = {
         },
         'TC9MBVT': {
             productName: '9MOBILE',
-            type: 'POSTPAID',
+            type: '',
             vendors: {
                 BAXI: { discoCode: '9mobile', commission: 3.5, bonus: 0 },
                 BUYPOWERNG: { discoCode: '9MOBILE', commission: 0, bonus: 0 },
@@ -393,11 +457,11 @@ export const SEED = {
         },
         'TCATLVT': {
             productName: 'AIRTEL',
-            type: 'POSTPAID',
+            type: '',
             vendors: {
-                BAXI: { discoCode: 'airtel', commission: 2, bonus: 0 },
+                BAXI: { discoCode: 'airtel', commission: 2.0, bonus: 0 },
                 BUYPOWERNG: { discoCode: 'AIRTEL', commission: 0, bonus: 0 },
-                IRECHARGE: { discoCode: 'Airtel', commission: 3, bonus: 0 },
+                IRECHARGE: { discoCode: 'Airtel', commission: 3.0, bonus: 0 },
             }
         },
     },
@@ -461,6 +525,1012 @@ export const SCHEMADATA = {
             agentId: BAXI_AGENT_ID
         },
     },
+} as const
+
+export const SEED_DATA = {
+    IRECHARGE:{
+        MTN: [
+            {
+                "code": "1",
+                "title": "MTN D-MFIN-5-Combo-97 for Xtradata 20000 Monthly Bundle",
+                "price": "20000",
+                "validity": "Xtradata 20000 Monthly Bundle"
+            },
+            {
+                "code": "2",
+                "title": "MTN D-MFIN-5-Combo-96 for Xtradata 15000 Monthly Bundle",
+                "price": "15000",
+                "validity": "Xtradata 15000 Monthly Bundle"
+            },
+            {
+                "code": "3",
+                "title": "MTN D-MFIN-5-Combo-95 for Xtradata 10000 Monthly Bundle",
+                "price": "10000",
+                "validity": "Xtradata 10000 Monthly Bundle"
+            },
+            {
+                "code": "4",
+                "title": "MTN D-MFIN-5-Combo-94 for Xtradata 5000 Monthly Bundle",
+                "price": "5000",
+                "validity": "Xtradata 5000 Monthly Bundle"
+            },
+            {
+                "code": "5",
+                "title": "MTN D-MFIN-5-Combo-93 for Xtradata 2000 Monthly Bundle",
+                "price": "2000",
+                "validity": "Xtradata 2000 Monthly Bundle"
+            },
+            {
+                "code": "6",
+                "title": "MTN D-MFIN-5-Combo-92 for Xtradata 1000 Monthly Bundle",
+                "price": "1000",
+                "validity": "Xtradata 1000 Monthly Bundle"
+            },
+            {
+                "code": "7",
+                "title": "MTN D-MFIN-5-Combo-91 for Xtradata 500 Weekly Bundle",
+                "price": "500",
+                "validity": "Xtradata 500 Weekly Bundle"
+            },
+            {
+                "code": "8",
+                "title": "MTN D-MFIN-5-Combo-89 for Xtratalk 20000 Monthly Bundle",
+                "price": "20000",
+                "validity": "Xtratalk 20000 Monthly Bundle"
+            },
+            {
+                "code": "9",
+                "title": "MTN D-MFIN-5-Combo-88 for Xtratalk 15000 Monthly Bundle",
+                "price": "15000",
+                "validity": "Xtratalk 15000 Monthly Bundle"
+            },
+            {
+                "code": "10",
+                "title": "MTN D-MFIN-5-Combo-87 for Xtratalk 10000 Monthly Bundle",
+                "price": "10000",
+                "validity": "Xtratalk 10000 Monthly Bundle"
+            },
+            {
+                "code": "11",
+                "title": "MTN D-MFIN-5-Combo-86 for Xtratalk 5000 Monthly Bundle",
+                "price": "5000",
+                "validity": "Xtratalk 5000 Monthly Bundle"
+            },
+            {
+                "code": "12",
+                "title": "MTN D-MFIN-5-Combo-85 for Xtratalk 2000 Monthly Bundle",
+                "price": "2000",
+                "validity": "Xtratalk 2000 Monthly Bundle"
+            },
+            {
+                "code": "13",
+                "title": "MTN D-MFIN-5-Combo-84 for Xtratalk 1000 Monthly Bundle",
+                "price": "1000",
+                "validity": "Xtratalk 1000 Monthly Bundle"
+            },
+            {
+                "code": "14",
+                "title": "MTN D-MFIN-5-Combo-83 for Xtratalk 500 Weekly Bundle",
+                "price": "500",
+                "validity": "Xtratalk 500 Weekly Bundle"
+            },
+            {
+                "code": "15",
+                "title": "MTN D-MFIN-5-Combo-73 for Xtratalk 300 Weekly Bundle\r\nXtratalk 300 Weekly Bundle",
+                "price": "300",
+                "validity": "Xtratalk 300 Weekly Bundle\r\nXtratalk 300 Weekly Bundle"
+            },
+            {
+                "code": "16",
+                "title": "MTN D-MFIN-5-Combo-1588 for Xtradata 300 Weekly Bundle",
+                "price": "300",
+                "validity": "Xtradata 300 Weekly Bundle"
+            },
+            {
+                "code": "17",
+                "title": "MTN D-MFIN-5-Combo-1587 for Xtratalk 200 3days Bundle\r\nXtratalk 200 3days Bundle",
+                "price": "200",
+                "validity": "Xtratalk 200 3days Bundle\r\nXtratalk 200 3days Bundle"
+            },
+            {
+                "code": "18",
+                "title": "MTN D-MFIN-5-7GB-A for 7GB Weekly Bundle",
+                "price": "2000",
+                "validity": "7GB Weekly Bundle"
+            },
+            {
+                "code": "19",
+                "title": "MTN D-MFIN-5-774 for 1TB SME 3-Months Plan",
+                "price": "350000",
+                "validity": "1TB SME 3-Months Plan"
+            },
+            {
+                "code": "20",
+                "title": "MTN D-MFIN-5-773 for 165GB SME 2-Months Plan",
+                "price": "50000",
+                "validity": "165GB SME 2-Months Plan"
+            },
+            {
+                "code": "21",
+                "title": "MTN D-MFIN-5-755 for 400GB Yearly Plan",
+                "price": "120000",
+                "validity": "400GB Yearly Plan"
+            },
+            {
+                "code": "22",
+                "title": "MTN D-MFIN-5-746 for 120GB Monthly Plan + 80mins.",
+                "price": "22000",
+                "validity": "120GB Monthly Plan + 80mins."
+            },
+            {
+                "code": "23",
+                "title": "MTN D-MFIN-5-745 for 10GB+2GB YouTube Night+300MB YouTube Music + 20mins.",
+                "price": "3500",
+                "validity": "10GB+2GB YouTube Night+300MB YouTube Music + 20mins."
+            },
+            {
+                "code": "24",
+                "title": "MTN D-MFIN-5-744 for 8GB+2GB YouTube Night+200MB YouTube Music + 15mins.",
+                "price": "3000",
+                "validity": "8GB+2GB YouTube Night+200MB YouTube Music + 15mins."
+            },
+            {
+                "code": "25",
+                "title": "MTN D-MFIN-5-743 for 5GB Weekly Plan",
+                "price": "1500",
+                "validity": "5GB Weekly Plan"
+            },
+            {
+                "code": "26",
+                "title": "MTN D-MFIN-5-742 for 1GB Weekly Plan + FREE 1GB for YouTube and 100MB for YouTube Music + 5mins.",
+                "price": "600",
+                "validity": "1GB Weekly Plan + FREE 1GB for YouTube and 100MB for YouTube Music + 5mins."
+            },
+            {
+                "code": "27",
+                "title": "MTN D-MFIN-5-600 for 2.5GB 2-Day Plan",
+                "price": "600",
+                "validity": "2.5GB 2-Day Plan"
+            },
+            {
+                "code": "28",
+                "title": "MTN D-MFIN-5-422 for 25GB SME Monthly Plan",
+                "price": "10000",
+                "validity": "25GB SME Monthly Plan"
+            },
+            {
+                "code": "29",
+                "title": "MTN D-MFIN-5-3GB-A for 3GB 2-Days Bundle",
+                "price": "800",
+                "validity": "3GB 2-Days Bundle"
+            },
+            {
+                "code": "30",
+                "title": "MTN D-MFIN-5-360GB for 360GB SME 3-Months Plan",
+                "price": "100000",
+                "validity": "360GB SME 3-Months Plan"
+            },
+            {
+                "code": "31",
+                "title": "MTN D-MFIN-5-307 for DataPlan 100MB Daily",
+                "price": "100",
+                "validity": "DataPlan 100MB Daily"
+            },
+            {
+                "code": "32",
+                "title": "MTN D-MFIN-5-278 for 75GB Monthly Plan + 40mins.",
+                "price": "16000",
+                "validity": "75GB Monthly Plan + 40mins."
+            },
+            {
+                "code": "33",
+                "title": "MTN D-MFIN-5-276 for 1GB Daily Plan + 3mins.",
+                "price": "350",
+                "validity": "1GB Daily Plan + 3mins."
+            },
+            {
+                "code": "34",
+                "title": "MTN D-MFIN-5-212 for 25GB+2GB YouTube Night + 25mins.",
+                "price": "6500",
+                "validity": "25GB+2GB YouTube Night + 25mins."
+            },
+            {
+                "code": "35",
+                "title": "MTN D-MFIN-5-211 for 3GB+2GB YouTube Night+200MB YouTube Music + 5mins.",
+                "price": "1600",
+                "validity": "3GB+2GB YouTube Night+200MB YouTube Music + 5mins."
+            },
+            {
+                "code": "36",
+                "title": "MTN D-MFIN-5-210 for 160GB 2-Month Plan",
+                "price": "30000",
+                "validity": "160GB 2-Month Plan"
+            },
+            {
+                "code": "37",
+                "title": "MTN D-MFIN-5-204 for 1-Year Plan",
+                "price": "450000",
+                "validity": "1-Year Plan"
+            },
+            {
+                "code": "38",
+                "title": "MTN D-MFIN-5-203 for 2.5TB Yearly Plan",
+                "price": "250000",
+                "validity": "2.5TB Yearly Plan"
+            },
+            {
+                "code": "39",
+                "title": "MTN D-MFIN-5-202 for 1 year Plan",
+                "price": "100000",
+                "validity": "1 year Plan"
+            },
+            {
+                "code": "40",
+                "title": "MTN D-MFIN-5-201 for 600GB 3-Month Plan",
+                "price": "75000",
+                "validity": "600GB 3-Month Plan"
+            },
+            {
+                "code": "41",
+                "title": "MTN D-MFIN-5-200 for 400GB 3-Month Plan",
+                "price": "50000",
+                "validity": "400GB 3-Month Plan"
+            },
+            {
+                "code": "42",
+                "title": "MTN D-MFIN-5-199 for 100GB 2-Month Plan",
+                "price": "20000",
+                "validity": "100GB 2-Month Plan"
+            },
+            {
+                "code": "43",
+                "title": "MTN D-MFIN-5-198 for 40GB Monthly Plan + 40mins.",
+                "price": "11000",
+                "validity": "40GB Monthly Plan + 40mins."
+            },
+            {
+                "code": "44",
+                "title": "MTN D-MFIN-5-197 for 20GB+2GB YouTube Night+300MB YouTube Music + 25mins.",
+                "price": "5500",
+                "validity": "20GB+2GB YouTube Night+300MB YouTube Music + 25mins."
+            },
+            {
+                "code": "45",
+                "title": "MTN D-MFIN-5-196 for 12GB+2GB YouTube Night + 25mins.",
+                "price": "4000",
+                "validity": "12GB+2GB YouTube Night + 25mins."
+            },
+            {
+                "code": "46",
+                "title": "MTN D-MFIN-5-195 for 4GB+2GB YouTube Night+200MB YouTube Music + 10mins.",
+                "price": "2000",
+                "validity": "4GB+2GB YouTube Night+200MB YouTube Music + 10mins."
+            },
+            {
+                "code": "47",
+                "title": "MTN D-MFIN-5-192 for Data Plan 200MB 3-Day Plan",
+                "price": "200",
+                "validity": "Data Plan 200MB 3-Day Plan"
+            },
+            {
+                "code": "48",
+                "title": "MTN D-MFIN-5-15AD for 1.2GB Monthly Plan + FREE 2GB for YouTube and 200MB for YouTube Music + 5mins.",
+                "price": "1000",
+                "validity": "1.2GB Monthly Plan + FREE 2GB for YouTube and 200MB for YouTube Music + 5mins."
+            },
+            {
+                "code": "49",
+                "title": "MTN D-MFIN-5-1596 for 27GB Monthly Plan + 25mins.",
+                "price": "6500",
+                "validity": "27GB Monthly Plan + 25mins."
+            },
+            {
+                "code": "50",
+                "title": "MTN D-MFIN-5-1595 for 22GB Monthly Plan + 25mins.",
+                "price": "5500",
+                "validity": "22GB Monthly Plan + 25mins."
+            },
+            {
+                "code": "51",
+                "title": "MTN D-MFIN-5-1594 for 13GB Monthly Plan + 25mins.",
+                "price": "4000",
+                "validity": "13GB Monthly Plan + 25mins."
+            },
+            {
+                "code": "52",
+                "title": "MTN D-MFIN-5-1593 for 11GB Monthly Plan + 20mins.",
+                "price": "3500",
+                "validity": "11GB Monthly Plan + 20mins."
+            },
+            {
+                "code": "53",
+                "title": "MTN D-MFIN-5-153 for 1.5GB+2.4GB YouTube Night+3hr-200MB-YouTube Weekly + 5mins.",
+                "price": "1200",
+                "validity": "1.5GB+2.4GB YouTube Night+3hr-200MB-YouTube Weekly + 5mins."
+            },
+            {
+                "code": "54",
+                "title": "MTN D-MFIN-5-13500 for 35GB SME Monthly Plan",
+                "price": "13500",
+                "validity": "35GB SME Monthly Plan"
+            }
+        ],
+        GLO:[
+            {
+                "code": "111",
+                "title": "Glo D-MFIN-6-DATA400 for Day Plan 1 days",
+                "price": "50",
+                "validity": "Day Plan 1 days"
+            },
+            {
+                "code": "112",
+                "title": "Glo D-MFIN-6-DATA401 for Day Plan 1 days",
+                "price": "100",
+                "validity": "Day Plan 1 days"
+            },
+            {
+                "code": "113",
+                "title": "Glo D-MFIN-6-DATA402 for Day Plan 2 days",
+                "price": "200",
+                "validity": "Day Plan 2 days"
+            },
+            {
+                "code": "114",
+                "title": "Glo D-MFIN-6-DATA403 for Weekly Plan 14 days",
+                "price": "500",
+                "validity": "Weekly Plan 14 days"
+            },
+            {
+                "code": "115",
+                "title": "Glo D-MFIN-6-DATA404 for Monthly Plan 30 days",
+                "price": "1000",
+                "validity": "Monthly Plan 30 days"
+            },
+            {
+                "code": "116",
+                "title": "Glo D-MFIN-6-DATA433 for Monthly Plan 30 days",
+                "price": "1500",
+                "validity": "Monthly Plan 30 days"
+            },
+            {
+                "code": "117",
+                "title": "Glo D-MFIN-6-DATA405 for Monthly Plan 30 days",
+                "price": "2000",
+                "validity": "Monthly Plan 30 days"
+            },
+            {
+                "code": "118",
+                "title": "Glo D-MFIN-6-DATA406 for Monthly Plan 30 days",
+                "price": "2500",
+                "validity": "Monthly Plan 30 days"
+            },
+            {
+                "code": "119",
+                "title": "Glo D-MFIN-6-DATA407 for Monthly Plan 30 days",
+                "price": "3000",
+                "validity": "Monthly Plan 30 days"
+            },
+            {
+                "code": "120",
+                "title": "Glo D-MFIN-6-DATA408 for Monthly Plan 30 days",
+                "price": "4000",
+                "validity": "Monthly Plan 30 days"
+            },
+            {
+                "code": "121",
+                "title": "Glo D-MFIN-6-DATA409 for Monthly Plan 30 days",
+                "price": "5000",
+                "validity": "Monthly Plan 30 days"
+            },
+            {
+                "code": "122",
+                "title": "Glo D-MFIN-6-DATA410 for Monthly Plan 30 days",
+                "price": "8000",
+                "validity": "Monthly Plan 30 days"
+            },
+            {
+                "code": "123",
+                "title": "Glo D-MFIN-6-DATA430 for Monthly Plan 30 days",
+                "price": "10000",
+                "validity": "Monthly Plan 30 days"
+            },
+            {
+                "code": "124",
+                "title": "Glo D-MFIN-6-DATA411 for Monthly Plan 30 days",
+                "price": "15000",
+                "validity": "Monthly Plan 30 days"
+            },
+            {
+                "code": "125",
+                "title": "Glo D-MFIN-6-DATA412 for Monthly Plan 30 days",
+                "price": "18000",
+                "validity": "Monthly Plan 30 days"
+            },
+            {
+                "code": "126",
+                "title": "Glo D-MFIN-6-DATA432 for Monthly Plan 30 days",
+                "price": "20000",
+                "validity": "Monthly Plan 30 days"
+            },
+            {
+                "code": "127",
+                "title": "Glo D-MFIN-6-DATA15 for Night Plan 1 days",
+                "price": "25",
+                "validity": "Night Plan 1 days"
+            },
+            {
+                "code": "128",
+                "title": "Glo D-MFIN-6-DATA30 for Night Plan 1 days",
+                "price": "50",
+                "validity": "Night Plan 1 days"
+            },
+            {
+                "code": "129",
+                "title": "Glo D-MFIN-6-DATA31 for Night Plan 5 days",
+                "price": "100",
+                "validity": "Night Plan 5 days"
+            },
+            {
+                "code": "130",
+                "title": "Glo D-MFIN-6-DATA35 for Special Plan 1 days",
+                "price": "300",
+                "validity": "Special Plan 1 days"
+            },
+            {
+                "code": "131",
+                "title": "Glo D-MFIN-6-DATA36 for Special Plan 2 days",
+                "price": "500",
+                "validity": "Special Plan 2 days"
+            },
+            {
+                "code": "132",
+                "title": "Glo D-MFIN-6-DATA24 for Special Plan 7 days",
+                "price": "1500",
+                "validity": "Special Plan 7 days"
+            },
+            {
+                "code": "133",
+                "title": "Glo D-MFIN-6-DATA14 for Weekend Plan 2 (Sat & Sun) days",
+                "price": "500",
+                "validity": "Weekend Plan 2 (Sat & Sun) days"
+            },
+            {
+                "code": "134",
+                "title": "Glo D-MFIN-6-DATA37 for Weekend Plan 1 (Sun) days",
+                "price": "200",
+                "validity": "Weekend Plan 1 (Sun) days"
+            },
+            {
+                "code": "135",
+                "title": "Glo D-MFIN-6-DATA434 for Mega Plan 30 days",
+                "price": "30000",
+                "validity": "Mega Plan 30 days"
+            },
+            {
+                "code": "136",
+                "title": "Glo D-MFIN-6-DATA435 for Mega Plan 30 days",
+                "price": "36000",
+                "validity": "Mega Plan 30 days"
+            },
+            {
+                "code": "137",
+                "title": "Glo D-MFIN-6-DATA436 for Mega Plan 90 days",
+                "price": "50000",
+                "validity": "Mega Plan 90 days"
+            },
+            {
+                "code": "138",
+                "title": "Glo D-MFIN-6-DATA437 for Mega Plan 120 days",
+                "price": "60000",
+                "validity": "Mega Plan 120 days"
+            },
+            {
+                "code": "139",
+                "title": "Glo D-MFIN-6-DATA438 for Mega Plan 120 days",
+                "price": "75000",
+                "validity": "Mega Plan 120 days"
+            },
+            {
+                "code": "140",
+                "title": "Glo D-MFIN-6-DATA439 for Mega Plan 365 days",
+                "price": "100000",
+                "validity": "Mega Plan 365 days"
+            },
+            {
+                "code": "141",
+                "title": "Glo D-MFIN-6-DATA780 for Glo TV 3 days",
+                "price": "150",
+                "validity": "Glo TV 3 days"
+            },
+            {
+                "code": "142",
+                "title": "Glo D-MFIN-6-DATA781 for Glo TV 7 days",
+                "price": "450",
+                "validity": "Glo TV 7 days"
+            },
+            {
+                "code": "143",
+                "title": "Glo D-MFIN-6-DATA782 for Glo TV 30 days",
+                "price": "1400",
+                "validity": "Glo TV 30 days"
+            },
+            {
+                "code": "144",
+                "title": "Glo D-MFIN-6-DATA783 for Glo TV 7 days",
+                "price": "900",
+                "validity": "Glo TV 7 days"
+            },
+            {
+                "code": "145",
+                "title": "Glo D-MFIN-6-DATA784 for Glo TV 30 days",
+                "price": "3200",
+                "validity": "Glo TV 30 days"
+            },
+            {
+                "code": "146",
+                "title": "Glo D-MFIN-6-DATA850 for Social Plan 1 days",
+                "price": "25",
+                "validity": "Social Plan 1 days"
+            },
+            {
+                "code": "147",
+                "title": "Glo D-MFIN-6-DATA851 for Social Plan 7 days",
+                "price": "50",
+                "validity": "Social Plan 7 days"
+            },
+            {
+                "code": "148",
+                "title": "Glo D-MFIN-6-DATA852 for Social Plan 30 days",
+                "price": "100",
+                "validity": "Social Plan 30 days"
+            },
+            {
+                "code": "149",
+                "title": "Glo D-MFIN-6-DATA853 for Social Plan 1 days",
+                "price": "25",
+                "validity": "Social Plan 1 days"
+            },
+            {
+                "code": "150",
+                "title": "Glo D-MFIN-6-DATA854 for Social Plan 7 days",
+                "price": "50",
+                "validity": "Social Plan 7 days"
+            },
+            {
+                "code": "151",
+                "title": "Glo D-MFIN-6-DATA855 for Social Plan 30 days",
+                "price": "100",
+                "validity": "Social Plan 30 days"
+            },
+            {
+                "code": "152",
+                "title": "Glo D-MFIN-6-DATA856 for Social Plan 1 days",
+                "price": "25",
+                "validity": "Social Plan 1 days"
+            },
+            {
+                "code": "153",
+                "title": "Glo D-MFIN-6-DATA857 for Social Plan 7 days",
+                "price": "50",
+                "validity": "Social Plan 7 days"
+            },
+            {
+                "code": "154",
+                "title": "Glo D-MFIN-6-DATA858 for Social Plan 30 days",
+                "price": "100",
+                "validity": "Social Plan 30 days"
+            },
+            {
+                "code": "155",
+                "title": "Glo D-MFIN-6-DATA859 for Social Plan 1 days",
+                "price": "25",
+                "validity": "Social Plan 1 days"
+            },
+            {
+                "code": "156",
+                "title": "Glo D-MFIN-6-DATA860 for Social Plan 7 days",
+                "price": "50",
+                "validity": "Social Plan 7 days"
+            },
+            {
+                "code": "157",
+                "title": "Glo D-MFIN-6-DATA861 for Social Plan 30 days",
+                "price": "100",
+                "validity": "Social Plan 30 days"
+            },
+            {
+                "code": "158",
+                "title": "Glo D-MFIN-6-DATA869 for Social Plan 7 days",
+                "price": "50",
+                "validity": "Social Plan 7 days"
+            },
+            {
+                "code": "159",
+                "title": "Glo D-MFIN-6-DATA871 for Social Plan 1 days",
+                "price": "50",
+                "validity": "Social Plan 1 days"
+            },
+            {
+                "code": "160",
+                "title": "Glo D-MFIN-6-DATA872 for Social Plan 7 days",
+                "price": "100",
+                "validity": "Social Plan 7 days"
+            },
+            {
+                "code": "161",
+                "title": "Glo D-MFIN-6-DATA873 for Social Plan 30 days",
+                "price": "250",
+                "validity": "Social Plan 30 days"
+            },
+            {
+                "code": "162",
+                "title": "Glo D-MFIN-6-DATA874 for Social Plan 1 days",
+                "price": "50",
+                "validity": "Social Plan 1 days"
+            },
+            {
+                "code": "163",
+                "title": "Glo D-MFIN-6-DATA875 for Social Plan 1 days",
+                "price": "130",
+                "validity": "Social Plan 1 days"
+            },
+            {
+                "code": "164",
+                "title": "Glo D-MFIN-6-DATA876 for Social Plan 1 days",
+                "price": "50",
+                "validity": "Social Plan 1 days"
+            },
+            {
+                "code": "165",
+                "title": "Glo D-MFIN-6-DATA877 for Social Plan 7 days",
+                "price": "200",
+                "validity": "Social Plan 7 days"
+            }
+        ],
+        AIRTEL: [
+            {
+                "code": "55",
+                "title": "Airtel D-MFIN-1-40MB for 1 day",
+                "price": "50",
+                "validity": "1 day"
+            },
+            {
+                "code": "56",
+                "title": "Airtel D-MFIN-1-100MB for 1 day",
+                "price": "99",
+                "validity": "1 day"
+            },
+            {
+                "code": "57",
+                "title": "Airtel D-MFIN-1-200MB for 3 days",
+                "price": "199",
+                "validity": "3 days"
+            },
+            {
+                "code": "58",
+                "title": "Airtel D-MFIN-1-350MB for 7 days",
+                "price": "349",
+                "validity": "7 days"
+            },
+            {
+                "code": "59",
+                "title": "Airtel D-MFIN-1-750MB for 7 days",
+                "price": "499",
+                "validity": "7 days"
+            },
+            {
+                "code": "60",
+                "title": "Airtel D-MFIN-1-1.5GB for 30 days",
+                "price": "999",
+                "validity": "30 days"
+            },
+            {
+                "code": "61",
+                "title": "Airtel D-MFIN-1-3GB for 30 days",
+                "price": "1499",
+                "validity": "30 days"
+            },
+            {
+                "code": "62",
+                "title": "Airtel D-MFIN-1-6GB for 30 days",
+                "price": "2499",
+                "validity": "30 days"
+            },
+            {
+                "code": "63",
+                "title": "Airtel D-MFIN-1-11GB for 30 days",
+                "price": "3999",
+                "validity": "30 days"
+            },
+            {
+                "code": "64",
+                "title": "Airtel D-MFIN-1-20GB for 30 days",
+                "price": "4999",
+                "validity": "30 days"
+            },
+            {
+                "code": "65",
+                "title": "Airtel D-MFIN-1-40GB for 30 days",
+                "price": "9999",
+                "validity": "30 days"
+            },
+            {
+                "code": "66",
+                "title": "Airtel D-MFIN-1-75GB for 30 days",
+                "price": "14999",
+                "validity": "30 days"
+            },
+            {
+                "code": "67",
+                "title": "Airtel D-MFIN-1-8GB for 30 days",
+                "price": "2999",
+                "validity": "30 days"
+            },
+            {
+                "code": "68",
+                "title": "Airtel D-MFIN-1-120GB for 30 days",
+                "price": "19999",
+                "validity": "30 days"
+            },
+            {
+                "code": "69",
+                "title": "Airtel D-MFIN-1-1GB1D for 1 day",
+                "price": "349",
+                "validity": "1 day"
+            },
+            {
+                "code": "70",
+                "title": "Airtel D-MFIN-1-2GB1D for 1 day",
+                "price": "499",
+                "validity": "1 day"
+            },
+            {
+                "code": "71",
+                "title": "Airtel D-MFIN-1-6GB1W for 7 days",
+                "price": "1499",
+                "validity": "7 days"
+            },
+            {
+                "code": "72",
+                "title": "Airtel D-MFIN-1-2GB1M for 30 days",
+                "price": "1199",
+                "validity": "30 days"
+            },
+            {
+                "code": "73",
+                "title": "Airtel D-MFIN-1-4.5GB for 30 days",
+                "price": "1999",
+                "validity": "30 days"
+            },
+            {
+                "code": "74",
+                "title": "Airtel D-MFIN-1-25GB1M for 30 days",
+                "price": "7999",
+                "validity": "30 days"
+            },
+            {
+                "code": "75",
+                "title": "Airtel D-MFIN-1-200GB1M for 30 days",
+                "price": "29999",
+                "validity": "30 days"
+            },
+            {
+                "code": "76",
+                "title": "Airtel D-MFIN-1-280GB1M for 30 days",
+                "price": "35999",
+                "validity": "30 days"
+            },
+            {
+                "code": "77",
+                "title": "Airtel D-MFIN-1-400GB3M for 90 days",
+                "price": "49999",
+                "validity": "90 days"
+            },
+            {
+                "code": "78",
+                "title": "Airtel D-MFIN-1-500GB4M for 120 days",
+                "price": "59999",
+                "validity": "120 days"
+            },
+            {
+                "code": "79",
+                "title": "Airtel D-MFIN-1-1TB1Y for 365 days",
+                "price": "99999",
+                "validity": "365 days"
+            },
+            {
+                "code": "80",
+                "title": "Airtel D-MFIN-1-1GB for 14 day",
+                "price": "599",
+                "validity": "14 day"
+            },
+            {
+                "code": "81",
+                "title": "Airtel D-MFIN-1-15GB for 7 day",
+                "price": "999",
+                "validity": "7 day"
+            },
+            {
+                "code": "82",
+                "title": "Airtel D-MFIN-1-7GB for 7 day",
+                "price": "1999",
+                "validity": "7 day"
+            },
+            {
+                "code": "83",
+                "title": "Airtel D-MFIN-1-25GB for 7 day",
+                "price": "4999",
+                "validity": "7 day"
+            },
+            {
+                "code": "84",
+                "title": "Airtel D-MFIN-1-15MB for 1 day",
+                "price": "399",
+                "validity": "1 day"
+            },
+            {
+                "code": "85",
+                "title": "Airtel D-MFIN-1-35GB for 2 day",
+                "price": "799",
+                "validity": "2 day"
+            },
+            {
+                "code": "86",
+                "title": "Airtel D-MFIN-1-23GB for 30 day",
+                "price": "5999",
+                "validity": "30 day"
+            },
+            {
+                "code": "87",
+                "title": "Airtel D-MFIN-1-50MB for This Data plan gives 40MB for N50 valid for 1day (Social Plan)",
+                "price": "50",
+                "validity": "This Data plan gives 40MB for N50 valid for 1day (Social Plan)"
+            },
+            {
+                "code": "88",
+                "title": "Airtel D-MFIN-1-200MB2 for This Data plan gives 200MB for N100 valid for 5day (Social Plan)",
+                "price": "100",
+                "validity": "This Data plan gives 200MB for N100 valid for 5day (Social Plan)"
+            },
+            {
+                "code": "89",
+                "title": "Airtel D-MFIN-1-400MB for This Data plan gives 400MB for N100 valid for 3day (TikTok)",
+                "price": "100",
+                "validity": "This Data plan gives 400MB for N100 valid for 3day (TikTok)"
+            },
+            {
+                "code": "90",
+                "title": "Airtel D-MFIN-1-1024MB for This Data plan gives 1,024MB for N200 valid for 14day (Tik Tok)",
+                "price": "200",
+                "validity": "This Data plan gives 1,024MB for N200 valid for 14day (Tik Tok)"
+            },
+            {
+                "code": "91",
+                "title": "Airtel D-MFIN-1-2048MB for This Data plan gives 2,048MB for N200 valid for 1 hr",
+                "price": "200",
+                "validity": "This Data plan gives 2,048MB for N200 valid for 1 hr"
+            },
+            {
+                "code": "92",
+                "title": "Airtel D-MFIN-1-700MB for This Data plan gives 700MB for N300 valid for 25days (Social Plan)",
+                "price": "300",
+                "validity": "This Data plan gives 700MB for N300 valid for 25days (Social Plan)"
+            }
+        ],
+        '9MOBILE': [
+            {
+                "code": "93",
+                "title": "Etisalat D-MFIN-2-1.5GB for 30 days \t\r\n4.2GB (2GB+2.2GB Night)",
+                "price": "1000",
+                "validity": "30 days \t\r\n4.2GB (2GB+2.2GB Night)"
+            },
+            {
+                "code": "94",
+                "title": "Etisalat D-MFIN-2-2GB for 30 days 6.5GB (2.5GB+4GB Night)",
+                "price": "1200",
+                "validity": "30 days 6.5GB (2.5GB+4GB Night)"
+            },
+            {
+                "code": "95",
+                "title": "Etisalat D-MFIN-2-4.5GB for 30 days 9.5GB (5.5GB+4GB Night)",
+                "price": "2000",
+                "validity": "30 days 9.5GB (5.5GB+4GB Night)"
+            },
+            {
+                "code": "96",
+                "title": "Etisalat D-MFIN-2-40GB for 30 days",
+                "price": "10000",
+                "validity": "30 days"
+            },
+            {
+                "code": "97",
+                "title": "Etisalat D-MFIN-2-165GB for 1 days",
+                "price": "300",
+                "validity": "1 days"
+            },
+            {
+                "code": "98",
+                "title": "Etisalat D-MFIN-2-365GB for 30 days",
+                "price": "3000",
+                "validity": "30 days"
+            },
+            {
+                "code": "99",
+                "title": "Etisalat D-MFIN-2-11GB for 30 days 18.5GB (15GB+3.5GB Night)",
+                "price": "4000",
+                "validity": "30 days 18.5GB (15GB+3.5GB Night)"
+            },
+            {
+                "code": "100",
+                "title": "Etisalat D-MFIN-2-25MB for 1 day",
+                "price": "50",
+                "validity": "1 day"
+            },
+            {
+                "code": "101",
+                "title": "Etisalat D-MFIN-2-100MB for 1 day",
+                "price": "100",
+                "validity": "1 day"
+            },
+            {
+                "code": "102",
+                "title": "Etisalat D-MFIN-2-650MB for 1 day",
+                "price": "200",
+                "validity": "1 day"
+            },
+            {
+                "code": "103",
+                "title": "Etisalat D-MFIN-2-15GB for 30 days",
+                "price": "5000",
+                "validity": "30 days"
+            },
+            {
+                "code": "104",
+                "title": "Etisalat D-MFIN-2-100GB for 1 days",
+                "price": "150",
+                "validity": "1 days"
+            },
+            {
+                "code": "105",
+                "title": "Etisalat D-MFIN-2-7GB1W for 7 days",
+                "price": "1500",
+                "validity": "7 days"
+            },
+            {
+                "code": "106",
+                "title": "Etisalat D-MFIN-2-5M for 30 days",
+                "price": "500",
+                "validity": "30 days"
+            },
+            {
+                "code": "107",
+                "title": "Etisalat D-MFIN-2-75M30 for 30 days",
+                "price": "15000",
+                "validity": "30 days"
+            },
+            {
+                "code": "108",
+                "title": "Etisalat D-MFIN-2-75M for 30 days",
+                "price": "20000",
+                "validity": "30 days"
+            },
+            {
+                "code": "109",
+                "title": "Etisalat D-MFIN-2-2.5GB for 30 days \t11GB (7GB+ 4GB Night)",
+                "price": "2500",
+                "validity": "30 days \t11GB (7GB+ 4GB Night)"
+            },
+            {
+                "code": "110",
+                "title": "Etisalat D-MFIN-2-35GB for 30 days",
+                "price": "7000",
+                "validity": "30 days"
+            }
+        ]
+    },
+    BUYPOWERNG: {
+        
+    }
 } as const
 
 export const HTTP_URL = {

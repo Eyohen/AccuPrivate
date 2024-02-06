@@ -82,7 +82,7 @@ export interface IBaxiPurchaseResponse extends BaseResponse {
 }
 
 export interface IBaxiValidateMeterResponse {
-    status: 'success',
+    status: 'success' |  'pending',
     message: 'Successful',
     code: 200,
     data: {

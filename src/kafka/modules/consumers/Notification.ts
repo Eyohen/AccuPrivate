@@ -64,12 +64,16 @@ class NotificationHandler extends Registry {
             await transactionEventService.addTokenSentToPartnerEvent()
         }
 
+        const handlers = {
+            PREPAID: new EmailTemplate().receipt,
+            POSTPAID: new EmailTemplate().postpaid_receipt
+        }
         // If you've not notified the user before, notify them
         if (!notifyUserEvent) {
             await EmailService.sendEmail({
                 to: transaction.user.email,
                 subject: "Token Purchase",
-                html: await new EmailTemplate().receipt({
+                html: await handlers[transaction.meter.vendType]({
                     transaction: transaction,
                     meterNumber: data.meter.meterNumber,
                     token: data.meter.token,
