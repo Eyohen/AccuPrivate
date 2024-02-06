@@ -20,8 +20,8 @@ export default class Product extends Model<IProduct | Product> {
     category: 'AIRTIME' | 'ELECTRICITY' | 'DATA' | 'CABLE';
 
     // Type of the product code (POSTPAID or PREPAID)
-    @Column({ type: DataType.ENUM('POSTPAID', 'PREPAID'), allowNull: false })
-    type: 'POSTPAID' | 'PREPAID';
+    @Column({ type: DataType.ENUM('POSTPAID', 'PREPAID'), allowNull: true })
+    type?: 'POSTPAID' | 'PREPAID';
 
     @Column({ type: DataType.STRING, allowNull: false })
     productName: string;
@@ -43,7 +43,7 @@ export default class Product extends Model<IProduct | Product> {
 export interface IProduct {
     id: string;
     masterProductCode: string; // Unique identifier for the product code
-    type: 'POSTPAID' | 'PREPAID'; // Type of the product code (POSTPAID or PREPAID)
+    type?: 'POSTPAID' | 'PREPAID'; // Type of the product code (POSTPAID or PREPAID)
     category: 'AIRTIME' | 'ELECTRICITY' | 'DATA' | 'CABLE';
     productName?: string;
 }

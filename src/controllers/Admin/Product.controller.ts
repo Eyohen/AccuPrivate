@@ -9,7 +9,7 @@ export default class ProductController {
         const { masterProductCode, category, type, productName } = req.body as {
             masterProductCode: string,
             category: 'AIRTIME' | 'ELECTRICITY' | 'DATA' | 'CABLE',
-            type: 'POSTPAID' | 'PREPAID',
+            type?: 'POSTPAID' | 'PREPAID',
             productName: string
         };
 
@@ -28,7 +28,9 @@ export default class ProductController {
             }
         }
 
-        const data = { masterProductCode, category, type, id: randomUUID(), productName };
+        const data = { masterProductCode, category, type, id: randomUUID(), productName } as { masterProductCode: string, category: 'AIRTIME' | 'ELECTRICITY' | 'DATA' | 'CABLE', type?: 'POSTPAID' | 'PREPAID', id: string, productName: string}
+        ['DATA', 'AIRTIME'].includes(category) && delete data.type;
+
         const product = await ProductService.addProduct(data);
 
         res.status(201).json({

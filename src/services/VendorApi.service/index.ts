@@ -408,7 +408,13 @@ export default class VendorService {
 
         try {
             const response = await this.baxiAxios().post<IBaxiValidateMeterResponse>('/electricity/verify', postData)
-            return response.data.data
+            const responseData =  response.data
+
+            if ((responseData as any).status == 'pending') {
+                throw new Error('Transaction timeout')
+            }
+
+            return responseData
         } catch (error: any) {
             console.log(error.response)
             throw new Error(error.message)

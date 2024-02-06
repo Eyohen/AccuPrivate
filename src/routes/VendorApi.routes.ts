@@ -16,6 +16,7 @@ router
     .post('/validate/airtime/phone', validateApiKey, AirtimeVendController.validateAirtimeRequest)
     .get('/airtime', validateApiKey, AirtimeVendController.requestAirtime)
     .get('/seed', AirtimeVendController.seedDataToDb)
+    .get('/seed/data', AirtimeVendController.seedDataBundlesToDb)
     
     .post('/validate/data/phone', validateApiKey, DataVendController.validateDataRequest)
     .get('/data', validateApiKey, DataVendController.requestData)
