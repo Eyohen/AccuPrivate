@@ -384,6 +384,38 @@ class VendorControllerUtil {
 
 
 export default class VendorController {
+
+    static async validateMeterMock(req: Request, res: Response, next: NextFunction) {
+        const {
+            meterNumber,
+            disco,
+            phoneNumber,
+            email,
+            vendType,
+        }: valideMeterRequestBody = req.body;
+        const partnerId = (req as any).key;
+
+        res.status(200).json({
+            status: "success",
+            data: {
+                "transaction": {
+                  "transactionId": "3f8d14d9-9933-44a5-ac46-1840beed2500",
+                  "status": "PENDING"
+                },
+                "meter": {
+                  "disco": "ECEKEPE",
+                  "number": "12345678910",
+                  "address": "012 Fake Cresent, Fake City, Fake State",
+                  "phone": "0801234567",
+                  "vendType": "PREPAID",
+                  "name": "Ciroma Chukwuma Adekunle"
+                }
+              },
+        });
+
+       
+    }
+
     static async validateMeter(req: Request, res: Response, next: NextFunction) {
         const {
             meterNumber,

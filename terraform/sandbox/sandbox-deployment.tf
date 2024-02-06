@@ -429,6 +429,33 @@ resource "aws_instance" "sandbox_db_instance" {
 
   echo "Installation and configuration completed successfully."
 
+  #Creating a new-relic user in the sandbox postgres
+
+  NEWRELIC_DB_PASSWORD=$(grep NEWRELIC_DB_PASSWORD ~/default.env | cut -d '=' -f2) 
+  NEWRELIC_DB_USERNAME=$(grep NEWRELIC_DB_USER_NAME ~/default.env | cut -d '=' -f2)
+
+  psql -c "CREATE USER $NEWRELIC_DB_USERNAME WITH PASSWORD '$NEWRELIC_DB_PASSWORD';"
+  psql -v ON_ERROR_STOP=1  <<-EOSQL 
+    Granting the user SELECT privileges 
+    GRANT SELECT ON pg_stat_database, pg_stat_database_conflicts, pg_stat_bgwriter TO $NEWRELIC_DB_USERNAME;
+  EOSQL
+
+  # Install new_relic postgresql 
+  sudo apt-get install nri-postgresql -y
+
+  cd 
+
+  #pull new relic install from s3 
+  # completed 
+  cd /etc/newrelic-infra/integrations.d
+
+  sudo aws s3 cp  s3://accuvend-bucket-configuration/new_relic_sandbox_db_config/postgresql-config.yml ./postgresql-config.yml
+
+  sudo /usr/bin/newrelic-infra -dry_run -integration_config_path /etc/newrelic-infra/integrations.d/postgresql-config.yml | grep -wo "Integration health check finished with success"
+
+  # setting up logs
+  cd /etc/newrelic-infra/logging.d/
+  sudo aws s3 cp  s3://accuvend-bucket-configuration/new_relic_sandbox_db_config/postgresql-log.yml ./postgresql-log.yml
 
   EOF
 
@@ -484,6 +511,19 @@ resource "aws_lb_listener" "sandbox_application_load_balancer_listner_http" {
   load_balancer_arn = aws_lb.sandbox_load_balancer.arn
   port              = "80"
   protocol          = "HTTP"  
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.sandbox_target_group_http.arn
+  }
+}
+
+# Set up HTTPS Listener
+
+resource "aws_lb_listener" "sandbox_application_load_balancer_listner_https" {
+  load_balancer_arn = aws_lb.sandbox_load_balancer.arn
+  port              = "443"
+  protocol          = "HTTPS"  
 
   default_action {
     type             = "forward"

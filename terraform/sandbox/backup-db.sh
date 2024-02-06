@@ -22,3 +22,5 @@ echo "Latest S3 backup: $BACKUP_RESULT"
 
 #clean up and delete the local backup file
 rm $BACKUP_FILE
+
+sudo service postgresql restart
