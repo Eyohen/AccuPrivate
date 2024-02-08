@@ -457,17 +457,19 @@ export default class VendorController {
     static async validateMeter(req: Request, res: Response, next: NextFunction) {
         const {
             meterNumber,
-            disco,
             phoneNumber,
             email,
             vendType,
         }: valideMeterRequestBody = req.body;
+        let { disco } = req.body;
         const partnerId = (req as any).key;
 
-        const existingProductCodeForDisco = await ProductService.viewSingleProductByMasterProductCode(disco)
+        const existingProductCodeForDisco = await ProductService.viewSingleProductByProductNameAndVendType(disco, vendType)
         if (!existingProductCodeForDisco) {
             throw new NotFoundError('Product code not found for disco')
         }
+
+        disco = existingProductCodeForDisco.masterProductCode
 
         if (existingProductCodeForDisco.category !== 'ELECTRICITY') {
             throw new BadRequestError('Invalid product code for electricity')

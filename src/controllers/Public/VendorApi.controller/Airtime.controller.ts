@@ -83,16 +83,19 @@ export class AirtimeVendController {
         next: NextFunction
     ) {
         const { phoneNumber, amount, email, networkProvider } = req.body;
-        const disco = networkProvider
-        // TODO: Add request type for request authenticated by API keys
-        const partnerId = (req as any).key
+        let disco = networkProvider
 
-        // TODO: I'm using this for now to allow the schema validation since product code hasn't been created for airtime
-        const existingProductCodeForDisco = await ProductService.viewSingleProductByMasterProductCode(disco)
+        const existingProductCodeForDisco = await ProductService.viewProductCodeByProductName(disco)
         if (!existingProductCodeForDisco) {
             throw new NotFoundError('Product code not found for disco')
         }
 
+        disco = existingProductCodeForDisco.masterProductCode
+
+        // TODO: Add request type for request authenticated by API keys
+        const partnerId = (req as any).key
+
+        // TODO: I'm using this for now to allow the schema validation since product code hasn't been created for airtime
         if (existingProductCodeForDisco.category !== 'AIRTIME') {
             throw new BadRequestError('Invalid product code for airtime')
         }

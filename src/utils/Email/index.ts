@@ -26,47 +26,35 @@ class Mailer {
     }
 
     public async sendEmailWithSendgrid(): Promise<void | Error> {
-        try {
-            sendgridClient.setApiKey(SENDGRID_API_KEY)
-            this.mailOptions.from = this.mailOptions.from ?? EMAIL_HOST_ADDRESS;
+        sendgridClient.setApiKey(SENDGRID_API_KEY)
+        this.mailOptions.from = this.mailOptions.from ?? EMAIL_HOST_ADDRESS;
 
-            await sendgridClient.send({
-                ...this.mailOptions,
-                from: EMAIL_HOST_ADDRESS,
-                to: this.mailOptions.to,
-                subject: this.mailOptions.subject,
-            })
-        } catch (error: any) {
-            console.error(error.response.body.errors)
-            console.error(error)
-            logger.error(error.message, { meta: { stack: error.stack, ...error } });
-        }
+        await sendgridClient.send({
+            ...this.mailOptions,
+            from: EMAIL_HOST_ADDRESS,
+            to: this.mailOptions.to,
+            subject: this.mailOptions.subject,
+        })
     }
 
     public async sendEmailWithNodemailer(): Promise<void | Error> {
-        try {
-            const transporter = nodemailer.createTransport({
-                host: EMAIL_HOST,
-                port: EMAIL_PORT,
-                secure: true,
-                auth: {
-                    type: 'OAuth2',
-                    user: EMAIL_HOST_ADDRESS,
-                    clientId: OAUTH_CLIENT_ID,
-                    clientSecret: OAUTH_CLIENT_SECRET,
-                    refreshToken: OAUTH_REFRESH_TOKEN,
-                    accessToken: OAUTH_ACCESS_TOKEN,
-                },
-            });
+        const transporter = nodemailer.createTransport({
+            host: EMAIL_HOST,
+            port: EMAIL_PORT,
+            secure: true,
+            auth: {
+                type: 'OAuth2',
+                user: EMAIL_HOST_ADDRESS,
+                clientId: OAUTH_CLIENT_ID,
+                clientSecret: OAUTH_CLIENT_SECRET,
+                refreshToken: OAUTH_REFRESH_TOKEN,
+                accessToken: OAUTH_ACCESS_TOKEN,
+            },
+        });
 
-            this.mailOptions.from = this.mailOptions.from ?? EMAIL_HOST_ADDRESS;
+        this.mailOptions.from = this.mailOptions.from ?? EMAIL_HOST_ADDRESS;
 
-            await transporter.sendMail(this.mailOptions);
-        } catch (error: any) {
-            console.error(error.response.body.errors)
-            logger.error(error.message, { meta: { stack: error.stack, ...error } });
-            // throw error;
-        }
+        await transporter.sendMail(this.mailOptions);
     }
 }
 
@@ -77,7 +65,7 @@ export default class EmailService {
             mailOptions.from = mailOptions.from ?? EMAIL_HOST_ADDRESS;
             await new Mailer(mailOptions).send()
         } catch (error: any) {
-            console.log(error.response.body.errors)
+            console.log(error)
             logger.error(error.stack);
         }
     }

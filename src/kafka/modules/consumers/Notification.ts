@@ -223,7 +223,7 @@ class NotificationHandler extends Registry {
 
     static registry = {
         [TOPICS.TOKEN_SENT_TO_PARTNER_RETRY]: this.handleReceivedToken,
-        [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: this.handleReceivedToken,
+        // [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: this.handleReceivedToken,
         [TOPICS.TOKEN_REQUEST_FAILED]: this.failedTokenRequest,
         [TOPICS.AIRTIME_RECEIVED_FROM_VENDOR]: this.handleReceivedAirtime,
     }
