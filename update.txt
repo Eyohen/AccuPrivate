@@ -1,3 +1,4 @@
+
 import { NextFunction, Request, Response } from "express";
 import TransactionService from "../../../services/Transaction.service";
 import Transaction, {
@@ -393,9 +394,7 @@ class VendorControllerUtil {
                 throw new InternalServerError('Baxi vendor product not found')
             }
 
-            const res = await VendorService.baxiValidateMeter(baxiVendorProduct.schemaData.code, meterNumber, vendType)
-            console.log(res)
-            return res
+            return VendorService.baxiValidateMeter(baxiVendorProduct.schemaData.code, meterNumber, vendType)
         }
 
         async function validateWithIrecharge() {
@@ -410,14 +409,11 @@ class VendorControllerUtil {
                 throw new InternalServerError('Irecharge vendor product not found')
             }
 
-            throw new Error('sdfas')
-            // return VendorService.irechargeValidateMeter(irechargeVendorProduct.schemaData.code, meterNumber, vendType).then((res) => res.customer)
+            return VendorService.irechargeValidateMeter(irechargeVendorProduct.schemaData.code, meterNumber, vendType)
         }
 
         // Try with the first super agetn, if it fails try with the next, then update the transaction superagent
         const superAgents = await TokenHandlerUtil.getSortedVendorsAccordingToCommissionRate(transaction.productCodeId, parseFloat(transaction.amount))
-        //  Put irecharge first 
-
         let response: any
 
         // Set first super agent to be the one in the transaction
@@ -425,29 +421,19 @@ class VendorControllerUtil {
         superAgents.splice(superAgents.indexOf(previousSuperAgent), 1)
         superAgents.unshift(previousSuperAgent)
 
-        console.log({ superAgents })
 
         for (const superAgent of superAgents) {
             try {
-                console.log({ superAgent })
                 response = superAgent === "BUYPOWERNG" ? await validateWithBuypower() :
                     superAgent === "BAXI" ? await validateWithBaxi() : await validateWithIrecharge()
                 if (response instanceof Error) {
                     throw response
                 }
                 await transaction.update({ superagent: superAgent as any })
-                console.log(response)
                 return response
             } catch (error) {
                 logger.error(`Error validating meter with ${superAgent}`)
-
-                console.log(superAgents.indexOf(superAgent))
-                const isLastSuperAgent = superAgents.indexOf(superAgent) === superAgents.length - 1
-                if (isLastSuperAgent) {
-                    throw error
-                } else {
-                    logger.info(`Trying to validate meter with next super agent - ${superAgents[superAgents.indexOf(superAgent) + 1]}`)
-                }
+                logger.info(`Trying to validate meter with next super agent - ${superAgents[superAgents.indexOf(superAgent) + 1]}`)
             }
         }
     }
@@ -455,38 +441,6 @@ class VendorControllerUtil {
 
 
 export default class VendorController {
-
-    static async validateMeterMock(req: Request, res: Response, next: NextFunction) {
-        const {
-            meterNumber,
-            disco,
-            phoneNumber,
-            email,
-            vendType,
-        }: valideMeterRequestBody = req.body;
-        const partnerId = (req as any).key;
-
-        res.status(200).json({
-            status: "success",
-            data: {
-                "transaction": {
-                  "transactionId": "3f8d14d9-9933-44a5-ac46-1840beed2500",
-                  "status": "PENDING"
-                },
-                "meter": {
-                  "disco": "ECEKEPE",
-                  "number": "12345678910",
-                  "address": "012 Fake Cresent, Fake City, Fake State",
-                  "phone": "0801234567",
-                  "vendType": "PREPAID",
-                  "name": "Ciroma Chukwuma Adekunle"
-                }
-              },
-        });
-
-       
-    }
-
     static async validateMeter(req: Request, res: Response, next: NextFunction) {
         const {
             meterNumber,

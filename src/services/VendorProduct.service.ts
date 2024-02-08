@@ -44,7 +44,12 @@ export default class VendorProductService {
         const vendorProducts = await VendorProduct.findAll();
         return vendorProducts;
     }
-
+    
+    static async getAllVendorProductsByProductId(productId: string): Promise<VendorProduct[]> {
+        const vendorProducts = await VendorProduct.findAll({ where: { productId } });
+        return vendorProducts;
+    }
+    
     static async viewSingleVendorProductByVendorIdAndProductId(vendorId: string, productId: string): Promise<VendorProduct | null> {
         const vendorProduct = await VendorProduct.findOne({ where: { vendorId, productId } });
         return vendorProduct;

@@ -234,47 +234,7 @@ export class TokenHandlerUtil {
     static async getNextBestVendorForVendRePurchase({
         productCodeId, currentVendor, previousVendors = [], amount
     }: { productCodeId: NonNullable<Transaction['productCodeId']>, currentVendor: Transaction['superagent'], previousVendors: Transaction['previousVendors'], amount: number }): Promise<Transaction['superagent']> {
-        const product = await ProductService.viewSingleProduct(productCodeId)
-        if (!product) throw new Error('Product code not found')
-
-        const vendorProducts = await product.$get('vendorProducts')
-        // Populate all te vendors
-        const vendors = await Promise.all(vendorProducts.map(async vendorProduct => {
-            const vendor = await vendorProduct.$get('vendor')
-            if (!vendor) throw new Error('Vendor not found')
-            vendorProduct.vendor = vendor
-            return vendor
-        }))
-
-        // Check other vendors, sort them according to their commission rates
-        // If the current vendor is the vendor with the highest commission rate, then switch to the vendor with the next highest commission rate
-        // If the next vendor has been used before, switch to the next vendor with the next highest commission rate
-        // If all the vendors have been used before, switch to the vendor with the highest commission rate
-
-        const sortedVendorProductsAccordingToCommissionRate = vendorProducts.sort((a, b) => ((b.commission * amount) + b.bonus) - ((a.commission * amount) + a.bonus))
-        const vendorRates = sortedVendorProductsAccordingToCommissionRate.map(vendorProduct => {
-            const vendor = vendorProduct.vendor
-            if (!vendor) throw new Error('Vendor not found')
-            return {
-                vendorName: vendor.name,
-                commission: vendorProduct.commission,
-                bonus: vendorProduct.bonus
-            }
-        })
-
-        const sortedOtherVendors = vendorRates.filter(vendorRate => vendorRate.vendorName !== currentVendor)
-
-        nextBestVendor: for (const vendorRate of sortedOtherVendors) {
-            if (!previousVendors.includes(vendorRate.vendorName)) return vendorRate.vendorName as Transaction['superagent']
-        }
-
-        if (previousVendors.length === vendors.length) {
-            // If all vendors have been used before, switch to the vendor with the highest commission rate
-            return vendorRates.sort((a, b) => ((b.commission * amount) + b.bonus) - ((a.commission * amount) + a.bonus))[0].vendorName as Transaction['superagent']
-        }
-
-        // If the current vendor is the vendor with the highest commission rate, then switch to the vendor with the next highest commission rate
-        return sortedOtherVendors[0].vendorName as Transaction['superagent']
+        return currentVendor
     }
 }
 
@@ -329,13 +289,14 @@ class TokenHandler extends Registry {
             if (!vendor) throw new Error('Vendor not found')
             return {
                 vendorName: vendor.name,
-                discoCode: (vendorProduct.schemaData as VendorProductSchemaData.BUYPOWERNG).code
+                discoCode: (vendorProduct.schemaData as VendorProductSchemaData.BUYPOWERNG).code,
+                dataCode: vendorProduct.schemaData.datacode
             }
         }))
 
         console.log({ vendorAndDiscos, superagent: transaction.superagent })
 
-        const vendorProductCode = vendorAndDiscos.find(vendorAndDisco => vendorAndDisco.vendorName === transaction.superagent)?.discoCode
+        const vendorProductCode = vendorAndDiscos.find(vendorAndDisco => vendorAndDisco.vendorName === transaction.superagent)?.dataCode
         if (!vendorProductCode) throw new Error('Vendor product code not found')
 
         // find MTN, GLO, AIRTEL, 9MOBILE In the product code using regex
@@ -344,8 +305,8 @@ class TokenHandler extends Registry {
 
         const mtn = product.masterProductCode.includes('MTN')
         const glo = product.masterProductCode.includes('GLO')
-        const airtel = product.masterProductCode.includes('AIRTEL')
-        const nineMobile = product.masterProductCode.includes('9MOBILE')
+        const airtel = product.masterProductCode.includes('ATEL')
+        const nineMobile = product.masterProductCode.includes('9MB')
 
         const network = mtn ? 'MTN' : glo ? 'GLO' : airtel ? 'AIRTEL' : nineMobile ? '9MOBILE' : null
         if (!network) throw new Error('Network not found')

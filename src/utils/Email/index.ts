@@ -28,6 +28,7 @@ export default class EmailService {
             
             mailOptions.from = mailOptions.from ?? EMAIL_HOST_ADDRESS;
         } catch (error: any) {
+            console.log(error.response.body.errors)
             logger.error(error.stack);
         }
     }

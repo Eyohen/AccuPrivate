@@ -20,7 +20,7 @@ import ProductService from "../../../services/Product.service";
 import Vendor from "../../../models/Vendor.model";
 import VendorProduct, { VendorProductSchemaData } from "../../../models/VendorProduct.model";
 import { TokenHandlerUtil } from "../../../kafka/modules/consumers/Token";
-import { BAXI_AGENT_ID, HTTP_URL, SCHEMADATA, SEED } from "../../../utils/Constants";
+import { BAXI_AGENT_ID, HTTP_URL, SCHEMADATA, SEED, SEED_DATA } from "../../../utils/Constants";
 import Product from "../../../models/Product.model";
 import { randomUUID } from "crypto";
 import VendorService from "../../../services/Vendor.service";
@@ -153,7 +153,7 @@ export class AirtimeVendController {
             },
         })
     }
-    
+
     static async seedDataToDb(
         req: Request,
         res: Response,
@@ -197,14 +197,19 @@ export class AirtimeVendController {
                 console.log(`Creating product: ${productCode}`);
                 const productInfo = productCodeData[productCode as keyof typeof productCodeData] as unknown as typeof SEED.ELECTRICITY.ECABEPS;
 
-                // Create product
-                const product = await ProductService.addProduct({
+                const productData = {
                     masterProductCode: productCode,
                     category: productType,
                     type: productInfo.type as 'PREPAID' | 'POSTPAID',
                     productName: productInfo.productName,
                     id: randomUUID(),
-                });
+                } as any
+
+                if (productType === 'AIRTIME') {
+                    delete productData.type;
+                }
+                // Create product
+                const product = await ProductService.addProduct(productData);
 
                 console.log(`Product ${productCode} created with ID ${product.id}`);
 
@@ -235,6 +240,119 @@ export class AirtimeVendController {
         console.log('Data seeding completed.');
     }
 
+    static async seedDataBundlesToDb(
+        req: Request,
+        res: Response,
+        next: NextFunction
+    ) {
+        console.log('Start seeding data to the database...');
+
+        const vendors = ['IRECHARGE'] as const;
+        const productTypes = ['MTN', 'AIRTEL', '9MOBILE', 'GLO'] as const;
+
+        const vendorDoc = {} as {
+            BUYPOWERNG: Vendor,
+            IRECHARGE: Vendor,
+            BAXI: Vendor,
+        };
+
+        // Create vendors
+        for (let i = 0; i < vendors.length; i++) {
+            const vendorName = vendors[i] as typeof vendors[number];
+            console.log(`Creating vendor: ${vendorName}`);
+            const existingVendor = await VendorService.viewSingleVendorByName(vendorName);
+            const vendor = existingVendor ?? await VendorService.addVendor({
+                name: vendorName,
+                id: randomUUID(),
+                schemaData: SCHEMADATA[vendorName],
+            });
+
+            vendorDoc[vendorName] = vendor;
+            console.log(`Vendor ${vendorName} created with ID ${vendor.id}`);
+            const productNames = ['MTN', 'AIRTEL', '9MOBILE', 'GLO'] as const;
+
+            for (let j = 0; j < productTypes.length; j++) {
+                const productType = productTypes[j] as typeof productTypes[number];
+                console.log(`Creating products for type: ${productType}`);
+                const productCodeData = SEED_DATA[vendorName][productType];
+
+                const productCode =  productType;
+                console.log(`Creating product: ${productCode}`);
+                const productInfo = productCodeData
+
+                const map = {
+                    MTN: 'MTN',
+                    AIRTEL: 'ATL',
+                    '9MOBILE': '9MB',
+                    GLO: 'GLO',
+                }
+                const productData = {
+                    masterProductCode: `VT${map[productCode]}DT`,
+                    category: 'DATA',
+                    productName: productType,
+                    id: randomUUID(),
+                } as any
+
+                // Create product
+                const product = await ProductService.addProduct(productData);
+                console.log(`Product ${productCode} created with ID ${product.id}`);
+
+                const commissions = {
+                    IRECHARGE: {
+                        MTN: 0.02,
+                        AIRTEL: 0.02,
+                        '9MOBILE': 0.02,
+                        GLO: 0.02,
+                    },
+                    BUYPOWERNG: {
+                        MTN: 0.02,
+                        AIRTEL: 0.02,
+                        '9MOBILE': 0.02,
+                        GLO: 0.02,
+                    },
+                    BAXI: {
+                        MTN: 0.02,
+                        AIRTEL: 0.02,
+                        '9MOBILE': 0.02,
+                        GLO: 0.02,
+                    },
+                }
+
+                const IRECHARGEDATACODE = {
+                    'MTN': 'MTN',
+                    'AIRTEL': 'Airtel',
+                    'GLO': 'Glo',
+                    '9MOBILE': 'Etisalat'
+                }
+
+                console.log(productInfo)
+                for (let m = 0; m < productInfo.length; m++) {
+                    const dataBundle = productInfo[m];
+
+                    console.log(`Adding VendorProduct for vendor ${vendorName} and product ${productCode}`);
+                    await VendorProductService.addVendorProduct({
+                        id: randomUUID(),
+                        vendorId: vendor.id,
+                        productId: product.id,
+                        commission: commissions[vendorName][productType],
+                        bonus: 0,
+                        amount: parseFloat(dataBundle.price.toString()),
+                        schemaData: {
+                            bundleName: dataBundle.title,
+                            validity: dataBundle.validity,
+                            datacode: dataBundle.code,
+                            code: vendorName === 'IRECHARGE' ? IRECHARGEDATACODE[productType] : productType,
+                        },
+                        vendorHttpUrl: HTTP_URL[vendorName]['DATA'],
+                    });
+
+                    console.log(`VendorProduct added for vendor ${vendorName} and Code}`);
+                }
+            }
+        }
+    }
+
+    // Create vendor products
 
     static async requestAirtime(
         req: Request,
