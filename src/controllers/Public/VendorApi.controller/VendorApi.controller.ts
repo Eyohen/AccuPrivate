@@ -636,7 +636,6 @@ export default class VendorController {
             throw new InternalServerError("Transaction does not have a meter");
         }
 
-        console.log({ transaction: transaction.superagent })
         const vendor = await Vendor.findOne({ where: { name: transaction.superagent } })
         if (!vendor) throw new InternalServerError('Vendor not found')
 

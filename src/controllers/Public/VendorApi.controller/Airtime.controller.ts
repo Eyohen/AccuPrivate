@@ -82,7 +82,8 @@ export class AirtimeVendController {
         res: Response,
         next: NextFunction
     ) {
-        const { phoneNumber, amount, email, disco } = req.body;
+        const { phoneNumber, amount, email, networkProvider } = req.body;
+        const disco = networkProvider
         // TODO: Add request type for request authenticated by API keys
         const partnerId = (req as any).key
 
