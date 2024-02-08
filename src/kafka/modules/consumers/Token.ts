@@ -22,6 +22,7 @@ import EventService from "../../../services/Event.service";
 import VendorService, { ElectricityPurchaseResponse, SuccessResponseForBuyPowerRequery, Vendor } from "../../../services/VendorApi.service";
 import { generateRandomToken } from "../../../utils/Helper";
 import ProductService from "../../../services/Product.service";
+import { CustomError } from "../../../utils/Errors";
 
 interface EventMessage {
     meter: {
@@ -97,7 +98,9 @@ export class TokenHandlerUtil {
         // Check if the transaction has hit the requery limit
         // If yes, flag transaction
         if (retryCount >= MAX_REQUERY_PER_VENDOR) {
-            logger.info(`Flagged transaction with id ${eventData.transactionId} after hitting requery limit`)
+            logger.info(`Flagged transaction with id ${eventData.transactionId} after hitting requery limit`, {
+                meta: { transactionId: eventData.transactionId }
+            })
             return await TransactionService.updateSingleTransaction(eventData.transactionId, { status: Status.FLAGGED })
         }
 
@@ -126,7 +129,9 @@ export class TokenHandlerUtil {
 
         logger.info(
             `Retrying transaction with id ${eventData.transactionId} from vendor`,
-        );
+            {
+                meta: { transactionId: eventData.transactionId }
+            });
 
         await eventService.addGetTransactionTokenRequestedFromVendorRetryEvent(_eventMessage.error, retryCount);
         const eventMetaData = {
@@ -143,7 +148,9 @@ export class TokenHandlerUtil {
         async function countDownTimer(time: number) {
             for (let i = time; i > 0; i--) {
                 setTimeout(() => {
-                    logger.info(`Retrying transaction ${i} seconds`)
+                    logger.info(`Retrying transaction ${i} seconds`, {
+                        meta: { transactionId: eventData.transactionId }
+                    })
                 }, (time - i) * 1000)
             }
         }
@@ -152,7 +159,9 @@ export class TokenHandlerUtil {
         // Publish event in increasing intervals of seconds i.e 1, 2, 4, 8, 16, 32, 64, 128, 256, 512
         // TODO: Use an external service to schedule this task
         setTimeout(async () => {
-            logger.info('Retrying transaction from vendor')
+            logger.info('Retrying transaction from vendor', {
+                meta: { transactionId: eventData.transactionId }
+            })
             await VendorPublisher.publishEventForGetTransactionTokenRequestedFromVendorRetry(
                 eventMetaData,
             );
@@ -169,16 +178,16 @@ export class TokenHandlerUtil {
         }
     ) {
         // Attempt purchase from new vendor
-        if (!transaction.bankRefId) throw new Error('BankRefId not found')
+        if (!transaction.bankRefId) throw new CustomError('BankRefId not found')
 
         const newVendor = await TokenHandlerUtil.getNextBestVendorForVendRePurchase(transaction.productCodeId, transaction.superagent, transaction.previousVendors, parseFloat(transaction.amount))
         await transactionEventService.addPowerPurchaseRetryWithNewVendor({ bankRefId: transaction.bankRefId, currentVendor: transaction.superagent, newVendor })
 
         const user = await transaction.$get('user')
-        if (!user) throw new Error('User not found for transaction')
+        if (!user) throw new CustomError('User not found for transaction')
 
         const partner = await transaction.$get('partner')
-        if (!partner) throw new Error('Partner not found for transaction')
+        if (!partner) throw new CustomError('Partner not found for transaction')
 
         retry.count = 0
         await transaction.update({ previousVendors: [...transaction.previousVendors, newVendor] })
@@ -199,7 +208,7 @@ export class TokenHandlerUtil {
 
     static async processVendRequest<T extends Vendor>(data: TokenPurchaseData) {
         const user = await data.transaction.$get('user')
-        if (!user) throw new Error('User not found for transaction')
+        if (!user) throw new CustomError('User not found for transaction')
 
         const _data = {
             reference: data.transaction.reference,
@@ -220,7 +229,7 @@ export class TokenHandlerUtil {
             case "IRECHARGE":
                 return await VendorService.purchaseElectricity({ data: _data, vendor: 'IRECHARGE' })
             default:
-                throw new Error("Invalid superagent");
+                throw new CustomError("Invalid superagent");
         }
     }
 
@@ -233,19 +242,19 @@ export class TokenHandlerUtil {
             case 'IRECHARGE':
                 return await VendorService.irechargeRequeryTransaction({ accessToken: transaction.irecharge_token, serviceType: 'power' })
             default:
-                throw new Error('Unsupported superagent')
+                throw new CustomError('Unsupported superagent')
         }
     }
 
     static async getNextBestVendorForVendRePurchase(productCodeId: NonNullable<Transaction['productCodeId']>, currentVendor: Transaction['superagent'], previousVendors: Transaction['previousVendors'] = [], amount: number): Promise<Transaction['superagent']> {
         const product = await ProductService.viewSingleProduct(productCodeId)
-        if (!product) throw new Error('Product code not found')
+        if (!product) throw new CustomError('Product code not found')
 
         const vendorProducts = await product.$get('vendorProducts')
         // Populate all te vendors
         const vendors = await Promise.all(vendorProducts.map(async vendorProduct => {
             const vendor = await vendorProduct.$get('vendor')
-            if (!vendor) throw new Error('Vendor not found')
+            if (!vendor) throw new CustomError('Vendor not found')
             vendorProduct.vendor = vendor
             return vendor
         }))
@@ -258,7 +267,7 @@ export class TokenHandlerUtil {
         const sortedVendorProductsAccordingToCommissionRate = vendorProducts.sort((a, b) => ((b.commission * amount) + b.bonus) - ((a.commission * amount) + a.bonus))
         const vendorRates = sortedVendorProductsAccordingToCommissionRate.map(vendorProduct => {
             const vendor = vendorProduct.vendor
-            if (!vendor) throw new Error('Vendor not found')
+            if (!vendor) throw new CustomError('Vendor not found')
             return {
                 vendorName: vendor.name,
                 commission: vendorProduct.commission,
@@ -283,13 +292,13 @@ export class TokenHandlerUtil {
 
     static async getSortedVendorsAccordingToCommissionRate(productCodeId: NonNullable<Transaction['productCodeId']>, amount: number): Promise<Transaction['superagent'][]> {
         const product = await ProductService.viewSingleProduct(productCodeId)
-        if (!product) throw new Error('Product code not found')
+        if (!product) throw new CustomError('Product code not found')
 
         const vendorProducts = await product.$get('vendorProducts')
         // Populate all te vendors
         const vendors = await Promise.all(vendorProducts.map(async vendorProduct => {
             const vendor = await vendorProduct.$get('vendor')
-            if (!vendor) throw new Error('Vendor not found')
+            if (!vendor) throw new CustomError('Vendor not found')
             vendorProduct.vendor = vendor
             return vendor
         }))
@@ -302,7 +311,7 @@ export class TokenHandlerUtil {
         const sortedVendorProductsAccordingToCommissionRate = vendorProducts.sort((a, b) => ((b.commission * amount) + b.bonus) - ((a.commission * amount) + a.bonus))
         const vendorRates = sortedVendorProductsAccordingToCommissionRate.map(vendorProduct => {
             const vendor = vendorProduct.vendor
-            if (!vendor) throw new Error('Vendor not found')
+            if (!vendor) throw new CustomError('Vendor not found')
             return {
                 vendorName: vendor.name,
                 commission: vendorProduct.commission,
@@ -315,13 +324,13 @@ export class TokenHandlerUtil {
 
     static async getBestVendorForPurchase(productCodeId: NonNullable<Transaction['productCodeId']>, amount: number): Promise<Transaction['superagent']> {
         const product = await ProductService.viewSingleProduct(productCodeId)
-        if (!product) throw new Error('Product code not found')
+        if (!product) throw new CustomError('Product code not found')
 
         const vendorProducts = await product.$get('vendorProducts')
         // Populate all te vendors
         const vendors = await Promise.all(vendorProducts.map(async vendorProduct => {
             const vendor = await vendorProduct.$get('vendor')
-            if (!vendor) throw new Error('Vendor not found')
+            if (!vendor) throw new CustomError('Vendor not found')
             vendorProduct.vendor = vendor
             return vendor
         }))
@@ -336,7 +345,7 @@ export class TokenHandlerUtil {
 
         const vendorRates = sortedVendorProductsAccordingToCommissionRate.map(vendorProduct => {
             const vendor = vendorProduct.vendor
-            if (!vendor) throw new Error('Vendor not found')
+            if (!vendor) throw new CustomError('Vendor not found')
             return {
                 vendorName: vendor.name,
                 commission: vendorProduct.commission,
@@ -355,10 +364,10 @@ class TokenHandler extends Registry {
     private static async retryPowerPurchaseWithNewVendor(data: PublisherEventAndParameters[TOPICS.RETRY_PURCHASE_FROM_NEW_VENDOR]) {
         const transaction = await TransactionService.viewSingleTransaction(data.transactionId);
         if (!transaction) {
-            throw new Error(`Error fetching transaction with id ${data.transactionId}`);
+            throw new CustomError(`Error fetching transaction with id ${data.transactionId}`);
         }
         if (!transaction.bankRefId) {
-            throw new Error('BankRefId not found')
+            throw new CustomError('BankRefId not found')
         }
 
         await TransactionService.updateSingleTransaction(transaction.id, { superagent: data.newVendor })
@@ -387,6 +396,11 @@ class TokenHandler extends Registry {
         if (!transaction) {
             logger.error(
                 `Error fetching transaction with id ${data.transactionId}`,
+                {
+                    meta: {
+                        transactionId: data.transactionId
+                    }
+                }
             );
             return;
         }
@@ -563,15 +577,21 @@ class TokenHandler extends Registry {
             data.transactionId,
         );
         if (!transaction) {
-            throw new Error(
+            throw new CustomError(
                 `Error fetching transaction with id ${data.transactionId}`,
+                {
+                    transactionId: data.transactionId
+                }
             );
         }
 
         // Check if transaction is already complete
         if (transaction.status === Status.COMPLETE) {
-            throw new Error(
+            throw new CustomError(
                 `Transaction with id ${data.transactionId} is already complete`,
+                {
+                    transactionId: data.transactionId
+                }
             );
         }
 
@@ -587,7 +607,7 @@ class TokenHandler extends Registry {
 
         const transactionSuccess = transactionSuccessFromBuypower || transactionSuccessFromBaxi || transactionSuccessFromIrecharge
         if (!transactionSuccess) {
-            throw new Error(
+            throw new CustomError(
                 `Error requerying transaction with id ${data.transactionId}`,
             );
         }
@@ -650,7 +670,7 @@ class TokenHandler extends Registry {
         const meter = await transaction.$get('meter')
         const partner = await transaction.$get('partner')
         if (!user || !meter || !partner) {
-            throw new Error("Transaction  required relations not found");
+            throw new CustomError("Transaction  required relations not found");
         }
 
         const transactionEventService = new TransactionEventService(
@@ -737,7 +757,7 @@ class TokenHandler extends Registry {
             }
 
             logger.error(
-                `Error requerying transaction with id ${data.transactionId} `,
+                `Error requerying transaction with id ${data.transactionId} `, { meta: { transactionId: transaction.id}}
             );
 
             if (requeryFromNewVendor) {

@@ -99,7 +99,7 @@ class VendorTokenHandler implements Registry {
 
             this.tokenSent = true
         } catch (error) {
-            logger.error('Error sending token to user')
+            logger.error('Error sending token to user', { meta: { transactionId: this.transaction.id } })
         }
     }
 
@@ -362,7 +362,7 @@ class VendorControllerUtil {
         meterNumber: string, disco: string, vendType: 'PREPAID' | 'POSTPAID', transaction: Transaction
     }) {
         async function validateWithBuypower() {
-            logger.info('Validating meter with buypower')
+            logger.info('Validating meter with buypower', { meta: { transactionId: transaction.id } })
             const buypowerVendor = await VendorDocService.viewSingleVendorByName('BUYPOWERNG')
             if (!buypowerVendor) {
                 throw new InternalServerError('Buypower vendor not found')
@@ -382,7 +382,7 @@ class VendorControllerUtil {
         }
 
         async function validateWithBaxi() {
-            logger.info('Validating meter with baxi')
+            logger.info('Validating meter with baxi', { meta: { transactionId: transaction.id } })
             const baxiVendor = await VendorDocService.viewSingleVendorByName('BAXI')
             if (!baxiVendor) {
                 throw new InternalServerError('Baxi vendor not found')
@@ -399,7 +399,7 @@ class VendorControllerUtil {
         }
 
         async function validateWithIrecharge() {
-            logger.info('Validating meter with irecharge')
+            logger.info('Validating meter with irecharge', { meta: { transactionId: transaction.id } })
             const irechargeVendor = await VendorDocService.viewSingleVendorByName('IRECHARGE')
             if (!irechargeVendor) {
                 throw new InternalServerError('Irecharge vendor not found')
@@ -410,8 +410,7 @@ class VendorControllerUtil {
                 throw new InternalServerError('Irecharge vendor product not found')
             }
 
-            throw new Error('sdfas')
-            // return VendorService.irechargeValidateMeter(irechargeVendorProduct.schemaData.code, meterNumber, vendType).then((res) => res.customer)
+            return VendorService.irechargeValidateMeter(irechargeVendorProduct.schemaData.code, meterNumber, vendType).then((res) => res.customer)
         }
 
         // Try with the first super agetn, if it fails try with the next, then update the transaction superagent
@@ -439,14 +438,14 @@ class VendorControllerUtil {
                 console.log(response)
                 return response
             } catch (error) {
-                logger.error(`Error validating meter with ${superAgent}`)
+                logger.error(`Error validating meter with ${superAgent}`, { meta: { transactionId: transaction.id } })
 
                 console.log(superAgents.indexOf(superAgent))
                 const isLastSuperAgent = superAgents.indexOf(superAgent) === superAgents.length - 1
                 if (isLastSuperAgent) {
                     throw error
                 } else {
-                    logger.info(`Trying to validate meter with next super agent - ${superAgents[superAgents.indexOf(superAgent) + 1]}`)
+                    logger.info(`Trying to validate meter with next super agent - ${superAgents[superAgents.indexOf(superAgent) + 1]}`, { meta: { transactionId: transaction.id } })
                 }
             }
         }

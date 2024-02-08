@@ -5,6 +5,7 @@ const deployed = process.env.DEPLOYED;
 const path = deployed ? `/etc/secrets/.env` : `${__dirname}/../.env`;
 dotenv.config({ path });
 
+export const MONGO_URI_LOG  = process.env.MONGO_URI_LOG as string;
 export const BAXI_URL: string | undefined = process.env.BAXI_URL
 export const BAXI_TOKEN: string | undefined = process.env.BAXI_TOKEN
 export const BAXI_AGENT_ID: string | undefined = process.env.BAXI_AGENT_ID

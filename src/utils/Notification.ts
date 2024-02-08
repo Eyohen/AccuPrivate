@@ -38,7 +38,7 @@ class NotificationUtil {
             await this.API.post('', notificationDetails)
             return 'success'
         } catch (error: AxiosError | unknown) {
-            logger.error('Error sending notification to users', { meta: { error } })
+            logger.error('Error sending notification to users', { meta: { error: (error as Error).stack } })
             return null
         }
     }

@@ -1,6 +1,17 @@
 type HttpStatusCode = 400 | 401 | 403 | 404 | 407 | 408 | 500 | 504;
 
-export class CustomAPIError extends Error {
+export class CustomError extends Error {
+    meta?: {
+        transactionId: string;
+    }
+
+    constructor(message: string, meta?: { transactionId: string }) {
+        super(message);
+        this.meta = meta;
+    }
+}
+
+export class CustomAPIError extends CustomError {
     statusCode: HttpStatusCode;
 
     constructor(message: string, statusCode: HttpStatusCode) {

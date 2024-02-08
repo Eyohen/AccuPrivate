@@ -664,8 +664,8 @@ export default class VendorService {
     }
 
     static async irechargeValidateMeter(disco: string, meterNumber: string, reference: string) {
+        console.log('start')
         const response = await IRechargeVendorService.validateMeter({ disco, meterNumber, reference })
-        console.log(response)
         return response
     }
 
