@@ -618,9 +618,6 @@ class TokenHandler extends Registry {
                 data.transactionId,
             );
 
-        // BuyPower returnes the same token on test mode, this causes a conflict when trying to update the power unit
-        // data.meter.token = NODE_ENV === 'development' ? data.meter.token === '0000-0000-0000-0000-0000' ? generateRandomToken() : data.meter.token : data.meter.token
-
         const prepaid = data.meter.vendType === 'PREPAID';
         data.meter.token = !prepaid ? '' : data.meter.token
 

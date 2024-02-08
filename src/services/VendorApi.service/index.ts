@@ -539,7 +539,7 @@ export default class VendorService {
                         "receiptNo": "342544321342",
                         "tax": "0.00",
                         "vendTime": new Date(),
-                        "token": this.generateToken(),
+                        "token": '0000-0000-0000-0000-0000',
                         "totalAmountPaid": 16600,
                         "units": "1",
                         "vendAmount": "16600",
@@ -666,6 +666,7 @@ export default class VendorService {
     static async irechargeValidateMeter(disco: string, meterNumber: string, reference: string) {
         console.log('start')
         const response = await IRechargeVendorService.validateMeter({ disco, meterNumber, reference })
+        console.log(response)
         return response
     }
 

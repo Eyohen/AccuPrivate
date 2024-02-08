@@ -434,8 +434,8 @@ class VendorControllerUtil {
                 if (response instanceof Error) {
                     throw response
                 }
+                console.log({ superAgent })
                 await transaction.update({ superagent: superAgent as any })
-                console.log(response)
                 return response
             } catch (error) {
                 logger.error(`Error validating meter with ${superAgent}`, { meta: { transactionId: transaction.id } })
@@ -552,7 +552,7 @@ export default class VendorController {
             throw new InternalServerError("An error occured while validating meter");
 
 
-        await transaction.update({ userId: user?.id, irecharge_token: (response as any).access_token });
+        await TransactionService.updateSingleTransaction(transaction.id, { userId: user?.id, irecharge_token: (response as any).access_token, });
         await transactionEventService.addCRMUserConfirmedEvent({ user: userInfo });
         await CRMPublisher.publishEventForConfirmedUser({
             user: userInfo,
@@ -582,8 +582,8 @@ export default class VendorController {
             vendType,
         });
 
-        await transaction.update({ meterId: meter.id });
-
+        const update = await TransactionService.updateSingleTransaction(transaction.id, { meterId: meter.id })
+        console.log({ update: update?.superagent})
         const successful =
             transaction instanceof Transaction &&
             user instanceof User &&
@@ -636,21 +636,13 @@ export default class VendorController {
             throw new InternalServerError("Transaction does not have a meter");
         }
 
-        const existingProductCodeForDisco = await ProductService.viewSingleProduct(transaction.productCodeId)
-        if (!existingProductCodeForDisco) {
-            throw new NotFoundError('Product code not found for disco')
-        }
-
-        if (existingProductCodeForDisco.category !== 'ELECTRICITY') {
-            throw new BadRequestError('Invalid product code for electricity')
-        }
-
+        console.log({ transaction: transaction.superagent })
         const vendor = await Vendor.findOne({ where: { name: transaction.superagent } })
         if (!vendor) throw new InternalServerError('Vendor not found')
 
         const vendorProduct = await VendorProduct.findOne({
             where: {
-                productId: existingProductCodeForDisco.id,
+                productId: transaction.productCodeId,
                 vendorId: vendor.id
             }
         })
@@ -681,6 +673,7 @@ export default class VendorController {
         await vendorTokenConsumer.start()
         vendorTokenConsumer.setConsumerInstance(vendorTokenConsumer)
         try {
+            console.log({ transaction: transaction.superagent })
             const response = await VendorPublisher.publishEventForInitiatedPowerPurchase({
                 transactionId: transaction.id,
                 user: {
