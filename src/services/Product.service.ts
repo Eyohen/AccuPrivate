@@ -41,7 +41,7 @@ export default class ProductService {
     }
 
     static async viewSingleProductByProductNameAndVendType(productName: string, vendType: string): Promise<Product | null> {
-        const product = await Product.findOne({ where: { productName }, include: VendorProduct });
+        const product = await Product.findOne({ where: { productName, type: vendType }, include: VendorProduct });
         return product;
     }
 

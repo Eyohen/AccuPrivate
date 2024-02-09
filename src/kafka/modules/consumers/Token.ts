@@ -23,6 +23,8 @@ import VendorService, { ElectricityPurchaseResponse, SuccessResponseForBuyPowerR
 import { generateRandomToken } from "../../../utils/Helper";
 import ProductService from "../../../services/Product.service";
 import { CustomError } from "../../../utils/Errors";
+import VendorProductService from "../../../services/VendorProduct.service";
+import VendorModelService from "../../../services/Vendor.service"
 
 interface EventMessage {
     meter: {
@@ -411,11 +413,23 @@ class TokenHandler extends Registry {
         //     throw 'Unsupported superagent'
         // }
 
+        const vendor = await VendorModelService.viewSingleVendorByName(data.superAgent)
+        if (!vendor) throw new Error('Vendor not found')
+
+        console.log ({ disco: transaction.disco })
+        const product = await ProductService.viewSingleProductByMasterProductCode(transaction.disco)
+        if (!product) throw new Error('Product not found')
+
+        const vendorProduct = await VendorProductService.viewSingleVendorProductByVendorIdAndProductId(vendor.id, product.id)
+        if (!vendorProduct) throw new Error('Vendor product not found')
+
+        const disco = vendorProduct.schemaData.code
+
         // Purchase token from vendor
         const tokenInfo = await TokenHandlerUtil.processVendRequest({
             transaction: transaction as TokenPurchaseData['transaction'],
             meterNumber: meter.meterNumber,
-            disco: transaction.disco,
+            disco: disco,
             vendType: meter.vendType,
             phone: user.phoneNumber,
             accessToken: transaction.irecharge_token
@@ -434,7 +448,7 @@ class TokenHandler extends Registry {
         const eventMessage = {
             meter: {
                 meterNumber: meter.meterNumber,
-                disco: transaction.disco,
+                disco: disco,
                 vendType: meter.vendType,
                 id: meter.id,
             },
@@ -510,6 +524,7 @@ class TokenHandler extends Registry {
 
         const prepaid = meter.vendType === 'PREPAID';
 
+        console.log({ requeryTransactionFromVendor: vendResultFromBaxi.data})
         if (prepaid) {
             if (vendResult.source === 'BUYPOWERNG') {
                 tokenInResponse = vendResultFromBuypower.data.responseCode !== 202 ? vendResultFromBuypower.data.token : null
@@ -779,11 +794,24 @@ class TokenHandler extends Registry {
             }
         }
 
+        console.log({ requeryResult: (requeryResult as any).data.rawData})
+
         let token: string | undefined = undefined
         if (requeryResult.source === 'BUYPOWERNG') token = (requeryResultFromBuypower as SuccessResponseForBuyPowerRequery).data?.token
         else if (requeryResult.source === 'BAXI') token = requeryResultFromBaxi.data?.rawOutput.token
         else if (requeryResult.source === 'IRECHARGE') token = requeryResultFromIrecharge.token
 
+
+        const vendor = await VendorModelService.viewSingleVendorByName(data.superAgent)
+        if (!vendor) throw new Error('Vendor not found')
+
+        const product = await ProductService.viewSingleProductByNameAndCategory(transaction.disco, 'ELECTRICITY')
+        if (!product) throw new Error('Product not found')
+
+        const vendorProduct = await VendorProductService.viewSingleVendorProductByVendorIdAndProductId(vendor.id, product.id)
+        if (!vendorProduct) throw new Error('Vendor product not found')
+
+        const disco = vendorProduct.schemaData.code
 
         if (!token) {
             return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
@@ -792,7 +820,7 @@ class TokenHandler extends Registry {
                     eventData: {
                         meter: {
                             meterNumber: meter.meterNumber,
-                            disco: transaction.disco,
+                            disco: disco,
                             vendType: meter.vendType,
                             id: meter.id,
                         },

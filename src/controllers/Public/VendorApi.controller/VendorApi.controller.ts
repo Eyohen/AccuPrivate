@@ -393,7 +393,7 @@ class VendorControllerUtil {
                 throw new InternalServerError('Baxi vendor product not found')
             }
 
-            const res = await VendorService.baxiValidateMeter(baxiVendorProduct.schemaData.code, meterNumber, vendType)
+            const res = await VendorService.baxiValidateMeter(baxiVendorProduct.schemaData.code, meterNumber, vendType).then(r => r.data)
             console.log(res)
             return res
         }
@@ -414,7 +414,7 @@ class VendorControllerUtil {
         }
 
         // Try with the first super agetn, if it fails try with the next, then update the transaction superagent
-        const superAgents = await TokenHandlerUtil.getSortedVendorsAccordingToCommissionRate(transaction.productCodeId, parseFloat(transaction.amount))
+        let superAgents = await TokenHandlerUtil.getSortedVendorsAccordingToCommissionRate(transaction.productCodeId, parseFloat(transaction.amount))
         //  Put irecharge first 
 
         let response: any
@@ -425,7 +425,7 @@ class VendorControllerUtil {
         superAgents.unshift(previousSuperAgent)
 
         console.log({ superAgents })
-
+        superAgents = ['BAXI', 'BUYPOWERNG', 'IRECHARGE']
         for (const superAgent of superAgents) {
             try {
                 console.log({ superAgent })
@@ -438,6 +438,7 @@ class VendorControllerUtil {
                 await transaction.update({ superagent: superAgent as any })
                 return response
             } catch (error) {
+                console.log(error)
                 logger.error(`Error validating meter with ${superAgent}`, { meta: { transactionId: transaction.id } })
 
                 console.log(superAgents.indexOf(superAgent))

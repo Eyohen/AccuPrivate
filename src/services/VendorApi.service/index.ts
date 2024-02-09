@@ -346,19 +346,17 @@ export default class VendorService {
                 amount,
                 phone,
                 account_number: meterNumber,
-                service_type: disco.toLowerCase() + '_electric' + '_prepaid',
+                service_type: disco,
                 agentId: 'baxi',
                 agentReference: reference
             })
 
             return { ...response.data, source: 'BAXI' as const }
         } catch (error: any) {
-            if (NODE_ENV === 'development') {
-                // This is because baxi API currently has been failing on dev mode
-                const res = BaxipaySeed.generateDataForSuccessfulVend(reference, amount)
-                return res
-            }
-
+            console.log({
+                message: error.message,
+                response: error.response?.data.errors
+            })
             throw new Error(error.message)
         }
     }
@@ -378,9 +376,7 @@ export default class VendorService {
                 }
             }
 
-            return NODE_ENV === 'development'
-                ? BaxipaySeed.generateDataForSuccessfulVend(reference, '10000')
-                : {
+            return {
                     source: 'BAXI' as const,
                     status: false,
                     message: responseData.message,
@@ -403,6 +399,7 @@ export default class VendorService {
             const response = await this.baxiAxios().post<IBaxiValidateMeterResponse>('/electricity/verify', postData)
             const responseData =  response.data
 
+            console.log({ responseData })
             if ((responseData as any).status == 'pending') {
                 throw new Error('Transaction timeout')
             }
@@ -503,8 +500,10 @@ export default class VendorService {
         try {
             // Make a POST request using the BuyPower Axios instance
             const response = await this.buyPowerAxios().post<PurchaseResponse | TimedOutResponse>(`/vend?strict=0`, postData);
+            console.log(response.data)
             return { ...response.data, source: 'BUYPOWERNG' };
         } catch (error: any) {
+            console.log(error.response?.data)
             if (error instanceof AxiosError) {
                 const requery = error.response?.data?.message === "An unexpected error occurred. Please requery." || error.response?.data?.responseCode === 500
                 if (requery) {
@@ -521,41 +520,6 @@ export default class VendorService {
 
     static async buyPowerRequeryTransaction({ reference }: { reference: string }) {
         try {
-            // Buypower requery has been returning 500 error on dev mode
-            if (NODE_ENV === 'development') {
-                return {
-                    'source': 'BUYPOWERNG',
-                    "status": true,
-                    "message": "Transaction successful",
-                    'responseCode': 200,
-                    "data": {
-                        "id": 80142232,
-                        "amountGenerated": "16600.00",
-                        "tariff": null,
-                        "disco": "DSTV",
-                        "debtAmount": "0.00",
-                        "debtRemaining": "0.00",
-                        "orderId": reference,
-                        "receiptNo": "342544321342",
-                        "tax": "0.00",
-                        "vendTime": new Date(),
-                        "token": '0000-0000-0000-0000-0000',
-                        "totalAmountPaid": 16600,
-                        "units": "1",
-                        "vendAmount": "16600",
-                        "vendRef": "sfasdfa2432323",
-                        "responseCode": 100,
-                        "responseMessage": "Request successful",
-                        "address": "12342112345",
-                        "name": "23456564345",
-                        "phoneNo": null,
-                        "charges": "0.00",
-                        "tariffIndex": null,
-                        "parcels": [],
-                    }
-                } as SuccessResponseForBuyPowerRequery
-            }
-
             const response = await this.buyPowerAxios().get<BuypowerRequeryResponse>(`/transaction/${reference}`)
 
             const successResponse = response.data as _RequeryBuypowerSuccessResponse
@@ -738,6 +702,7 @@ export default class VendorService {
             accessToken: string
         }, vendor: T
     }): Promise<ElectricityPurchaseResponse[T]> {
+        console.log({ data, vendor })
         if (vendor === 'BUYPOWERNG') {
             return await this.buyPowerVendToken(data) as ElectricityPurchaseResponse[T]
         } else if (vendor === 'IRECHARGE') {
