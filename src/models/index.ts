@@ -2,7 +2,6 @@
 import Redis from 'ioredis'
 import { Dialect, DataTypes } from 'sequelize'
 import { Sequelize } from 'sequelize-typescript';
-import logger from '../utils/Logger';
 import Mongoose from 'mongoose';
 import { DB_CONFIG, MONGO_URI_LOG, REDIS_HOST, REDIS_PASSWORD, REDIS_PORT, REDIS_URL } from '../utils/Constants';
 import mongoose from 'mongoose';
@@ -33,17 +32,17 @@ async function initiateDB(db: Sequelize): Promise<void> {
         await db.addModels([__dirname + '/**/*.model.js']);
 
         // Log a success message when the connection is established
-        logger.info('Connection has been established successfully.');
+        console.log('Connection has been established successfully.');
     } catch (error) {
         console.log(error)
         // Handle errors if unable to connect to the database
-        logger.error('Unable to connect to the database:', error);
+        console.error('Unable to connect to the database:', error);
     }
 }
 
 const loggerDBConnection = mongoose.createConnection(MONGO_URI_LOG)
 const loggerDB = loggerDBConnection.asPromise().then((connection) => {
-    logger.info('Connection to loggerDB database successful')
+    console.log('Connection to loggerDB database successful')
     return connection
 })
 
@@ -51,15 +50,15 @@ const redisClient = new Redis(REDIS_URL)
 console.log(REDIS_URL)
 
 redisClient.on('error', (error) => {
-    logger.info('An error occured while connecting to REDIS')
+    console.log('An error occured while connecting to REDIS')
     console.error(error)
-    logger.error(error)
+    console.error(error)
     console.log("Error is coming from redis")
     process.exit(1)
 })
 
 redisClient.on('connect', () => {
-    logger.info('Connection to REDIS database successful')
+    console.log('Connection to REDIS database successful')
 })
 
 // Export Sequelize, the Database instance, the initiateDB function, and DataTypes for use in other parts of the application

@@ -613,7 +613,7 @@ export class VendorPublisher extends ProducerFactory {
             meta: {
                 transactionId: data.transactionId,
             }
-        }.}`)
+        }}`)
         return ProducerFactory.sendMessage({
             topic: TOPICS.AIRTIME_PURCHASE_RETRY_FROM_NEW_VENDOR,
             message: {
