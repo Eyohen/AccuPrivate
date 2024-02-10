@@ -14,44 +14,44 @@ export class CustomError extends Error {
 export class CustomAPIError extends CustomError {
     statusCode: HttpStatusCode;
 
-    constructor(message: string, statusCode: HttpStatusCode) {
-        super(message);
+    constructor(message: string, statusCode: HttpStatusCode, meta: { transactionId: string } | undefined = undefined) {
+        super(message, meta);
         this.statusCode = statusCode;
     }
 }
 
 export class BadRequestError extends CustomAPIError {
-    constructor(message: string) {
-        super(message, 400)
+    constructor(message: string, meta?: { transactionId: string }) {
+        super(message, 400, meta)
     }
 }
 
 export class UnauthenticatedError extends CustomAPIError {
-    constructor(message: string) {
-        super(message, 401)
+    constructor(message: string, meta?: { transactionId: string }) {
+        super(message, 401, meta)
     }
 }
 
 export class ForbiddenError extends CustomAPIError {
-    constructor(message: string) {
-        super(message, 403)
+    constructor(message: string, meta?: { transactionId: string }) {
+        super(message, 403, meta)
     }
 }
 
 export class NotFoundError extends CustomAPIError {
-    constructor(message: string) {
-        super(message, 404)
+    constructor(message: string, meta?: { transactionId: string }) {
+        super(message, 404, meta)
     }
 }
 
 export class InternalServerError extends CustomAPIError {
-    constructor(message: string) {
-        super(message, 500)
+    constructor(message: string, meta?: { transactionId: string }) {
+        super(message, 500, meta)
     }
 }
 
 export class GateWayTimeoutError extends CustomAPIError {
-    constructor(message: string) {
-        super(message, 504)
+    constructor(message: string, meta?: { transactionId: string }) {
+        super(message, 504, meta)
     }
 }
