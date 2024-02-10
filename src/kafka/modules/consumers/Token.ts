@@ -25,6 +25,7 @@ import ProductService from "../../../services/Product.service";
 import { CustomError } from "../../../utils/Errors";
 import VendorProductService from "../../../services/VendorProduct.service";
 import VendorModelService from "../../../services/Vendor.service"
+import { BaxiRequeryResultForPurchase, BaxiSuccessfulPuchaseResponse } from "../../../services/VendorApi.service/Baxi/Config";
 
 interface EventMessage {
     meter: {
@@ -416,7 +417,7 @@ class TokenHandler extends Registry {
         const vendor = await VendorModelService.viewSingleVendorByName(data.superAgent)
         if (!vendor) throw new Error('Vendor not found')
 
-        console.log ({ disco: transaction.disco })
+        console.log({ disco: transaction.disco })
         const product = await ProductService.viewSingleProductByMasterProductCode(transaction.disco)
         if (!product) throw new Error('Product not found')
 
@@ -438,11 +439,17 @@ class TokenHandler extends Registry {
         // Requery transaction from provider and update transaction status
         const vendResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction);
         const vendResultFromBuypower = vendResult as unknown as ElectricityPurchaseResponse['BUYPOWERNG'] & { source: 'BUYPOWERNG' }
-        const vendResultFromBaxi = vendResult as unknown as ElectricityPurchaseResponse['BAXI'] & { source: 'BAXI' }
+        const vendResultFromBaxi = vendResult as {
+            source: 'BAXI',
+            data: BaxiRequeryResultForPurchase['Prepaid']['data'],
+            responseCode: 200 | 202,
+            status: boolean,
+            message: 'Transaction successful'
+        }
         const vendResultFromIrecharge = vendResult as unknown as ElectricityPurchaseResponse['IRECHARGE'] & { source: 'IRECHARGE' }
 
         const transactionSuccessFromBuypower = vendResultFromBuypower.source === 'BUYPOWERNG' ? vendResultFromBuypower.data.responseCode === 200 : false
-        const transactionSuccessFromBaxi = vendResultFromBaxi.source === 'BAXI' ? vendResultFromBaxi.statusCode : false
+        const transactionSuccessFromBaxi = vendResultFromBaxi.source === 'BAXI' ? vendResultFromBaxi.status : false
         const transactionSuccessFromIrecharge = vendResultFromIrecharge.source === 'IRECHARGE' ? vendResultFromIrecharge.status === '00' : false
 
         const eventMessage = {
@@ -524,12 +531,12 @@ class TokenHandler extends Registry {
 
         const prepaid = meter.vendType === 'PREPAID';
 
-        console.log({ requeryTransactionFromVendor: vendResultFromBaxi.data})
+        console.log({ requeryTransactionFromVendor: vendResultFromBaxi })
         if (prepaid) {
             if (vendResult.source === 'BUYPOWERNG') {
                 tokenInResponse = vendResultFromBuypower.data.responseCode !== 202 ? vendResultFromBuypower.data.token : null
             } else if (tokenInfo.source === 'BAXI') {
-                tokenInResponse = vendResultFromBaxi.data.rawOutput.token
+                tokenInResponse = vendResultFromBaxi.data.rawData.standardTokenValue
             } else if (tokenInfo.source === 'IRECHARGE') {
                 tokenInResponse = vendResultFromIrecharge.meter_token
             }
@@ -714,11 +721,17 @@ class TokenHandler extends Registry {
          */
         const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction)
         const requeryResultFromBuypower = requeryResult as Awaited<ReturnType<typeof VendorService.buyPowerRequeryTransaction>>
-        const requeryResultFromBaxi = requeryResult as Awaited<ReturnType<typeof VendorService.baxiRequeryTransaction>>
+        const requeryResultFromBaxi = requeryResult as {
+            source: 'BAXI',
+            data: BaxiRequeryResultForPurchase['Prepaid']['data'],
+            responseCode: 200 | 202,
+            status: boolean,
+            message: 'Transaction successful'
+        }
         const requeryResultFromIrecharge = requeryResult as Awaited<ReturnType<typeof VendorService.irechargeRequeryTransaction>>
 
         const transactionSuccessFromBuypower = requeryResultFromBuypower.source === 'BUYPOWERNG' ? requeryResultFromBuypower.responseCode === 200 : false
-        const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false
+        const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.status : false
         const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' : false
 
         let transactionSuccess = (transactionSuccessFromBuypower || transactionSuccessFromBaxi || transactionSuccessFromIrecharge)
@@ -769,7 +782,7 @@ class TokenHandler extends Registry {
             }
 
             logger.error(
-                `Error requerying transaction with id ${data.transactionId} `, { meta: { transactionId: transaction.id}}
+                `Error requerying transaction with id ${data.transactionId} `, { meta: { transactionId: transaction.id } }
             );
 
             if (requeryFromNewVendor) {
@@ -794,11 +807,11 @@ class TokenHandler extends Registry {
             }
         }
 
-        console.log({ requeryResult: (requeryResult as any).data.rawData})
+        console.log({ requeryResult: requeryResultFromBaxi.data.rawData.standardTokenValue })
 
         let token: string | undefined = undefined
         if (requeryResult.source === 'BUYPOWERNG') token = (requeryResultFromBuypower as SuccessResponseForBuyPowerRequery).data?.token
-        else if (requeryResult.source === 'BAXI') token = requeryResultFromBaxi.data?.rawOutput.token
+        else if (requeryResult.source === 'BAXI') token = requeryResultFromBaxi.data.rawData.standardTokenValue
         else if (requeryResult.source === 'IRECHARGE') token = requeryResultFromIrecharge.token
 
 

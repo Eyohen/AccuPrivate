@@ -13,6 +13,7 @@ import BuypowerApi from "./Buypower";
 import { BuypowerAirtimePurchaseData } from "./Buypower/Airtime";
 import { IRechargeApi } from "./Irecharge";
 import BaxiApi from "./Baxi";
+import { BaxiRequeryResultForPurchase, BaxiSuccessfulPuchaseResponse } from "./Baxi/Config";
 
 export interface PurchaseResponse extends BaseResponse {
     source: 'BUYPOWERNG';
@@ -251,86 +252,11 @@ export class IRechargeVendorService {
     };
 }
 
-class BaxipaySeed {
-    static generateDataForSuccessfulVend(reference: string, amount: string) {
-        const statuses = ['success', 'failure', 'pending'];
-        const transactionStatuses = ['completed', 'pending', 'failed'];
-        const statusCode = Math.floor(Math.random() * 1000).toString();
-        const tokenAmount = Math.random() > 0.5 ? null : Math.floor(Math.random() * 100);
-        const amountOfPower = amount
-        const feesAmount = Math.floor(Math.random() * 10);
-        const feeder = 'Feeder Name';
-        const dssName = 'DSS Name';
-        const serviceBand = 'Service Band';
-        const message = Math.random() > 0.5 ? 'Transaction successful' : 'Transaction failed';
-        const token = '0000-0000-0000-0000'
-        const exchangeReference = 'Exchange Ref';
-        const tariff = 'Tariff Type';
-        const power = 'Power Type';
-        const status = 'OK';
-        const providerMessage = 'Provider Message';
-        const baxiReference = Math.floor(Math.random() * 100000);
-
-        return {
-            source: 'BAXI' as const,
-            status: statuses[Math.floor(Math.random() * statuses.length)],
-            statusCode: statusCode,
-            message: message,
-            data: {
-                transactionStatus: transactionStatuses[Math.floor(Math.random() * transactionStatuses.length)],
-                transactionReference: reference,
-                statusCode: statusCode,
-                transactionMessage: message,
-                tokenCode: 'Token Code',
-                tokenAmount: tokenAmount,
-                amountOfPower: amountOfPower,
-                rawOutput: {
-                    fees: [
-                        {
-                            amount: feesAmount,
-                            kind: 'Kind of Fee',
-                            description: 'Fee Description',
-                            taxAmount: Math.floor(Math.random() * 5)
-                        }
-                    ],
-                    feeder: feeder,
-                    dssName: dssName,
-                    serviceBand: serviceBand,
-                    message: message,
-                    token: token,
-                    rate: 'Exchange Rate',
-                    exchangeReference: exchangeReference,
-                    tariff: tariff,
-                    power: power,
-                    status: status,
-                    statusCode: statusCode
-                },
-                provider_message: providerMessage,
-                baxiReference: baxiReference
-            },
-            responseCode: 200
-        }
-    }
-}
-
 export class VendorAirtimeService {
 
 }
 // Define the VendorService class for handling provider-related operations
 export default class VendorService {
-    private static generateToken(): string {
-        // format 1234-1234-1234-1234-1234
-        let token = ''
-        for (let i = 0; i < 5; i++) {
-            for (let j = 0; j < 4; j++) {
-                token += Math.floor(Math.random() * 10).toString()
-            }
-            token += '-'
-        }
-
-        return token
-    }
-
     // Static method for obtaining a Baxi vending token
     static async baxiVendToken(body: IVendToken) {
         const {
@@ -342,13 +268,17 @@ export default class VendorService {
         } = body
 
         try {
-            const response = await this.baxiAxios().post<IBaxiPurchaseResponse>('/electricity/request', {
+            const response = await this.baxiAxios().post<BaxiSuccessfulPuchaseResponse['Postpaid' | 'Prepaid']>('/electricity/request', {
                 amount,
                 phone,
                 account_number: meterNumber,
                 service_type: disco,
                 agentId: 'baxi',
                 agentReference: reference
+            })
+
+            console.log({
+                BAXI: response.data
             })
 
             return { ...response.data, source: 'BAXI' as const }
@@ -361,11 +291,13 @@ export default class VendorService {
         }
     }
 
-    static async baxiRequeryTransaction({ reference }: { reference: string }) {
+    static async baxiRequeryTransaction<T extends keyof BaxiRequeryResultForPurchase>({ reference }: { reference: string }) {
         try {
-            const response = await this.baxiAxios().get<IBaxiPurchaseResponse>(`/superagent/transaction/requery?agentReference=${reference}`)
+            const response = await this.baxiAxios().get<BaxiRequeryResultForPurchase[T]>(`/superagent/transaction/requery?agentReference=${reference}`)
 
             const responseData = response.data
+
+            console.log({ reqRes: responseData })
             if (responseData.status === 'success') {
                 return {
                     source: 'BAXI' as const,
@@ -377,11 +309,12 @@ export default class VendorService {
             }
 
             return {
-                    source: 'BAXI' as const,
-                    status: false,
-                    message: responseData.message,
-                    responseCode: 202
-                }
+                source: 'BAXI' as const,
+                status: false,
+                message: responseData.message,
+                data: responseData.data,
+                responseCode: 202
+            }
         } catch (error) {
             throw error
         }
@@ -389,7 +322,7 @@ export default class VendorService {
 
     // Static method for validating a meter with Baxi
     static async baxiValidateMeter(disco: string, meterNumber: string, vendType: 'PREPAID' | 'POSTPAID') {
-        const serviceType = disco.toLowerCase() + '_electric' + `_${vendType.toLowerCase()}`  // e.g. aedc_electric_prepaid
+        const serviceType = disco.toLowerCase()
         const postData = {
             service_type: disco,
             account_number: NODE_ENV === 'development' ? '6528651914' : meterNumber // Baxi has a test meter number
@@ -397,7 +330,7 @@ export default class VendorService {
 
         try {
             const response = await this.baxiAxios().post<IBaxiValidateMeterResponse>('/electricity/verify', postData)
-            const responseData =  response.data
+            const responseData = response.data
 
             console.log({ responseData })
             if ((responseData as any).status == 'pending') {
@@ -730,7 +663,7 @@ export interface DataPurchaseResponse {
 export interface ElectricityPurchaseResponse {
     BUYPOWERNG: PurchaseResponse | TimedOutResponse,
     IRECHARGE: IRechargeSuccessfulVendResponse,
-    BAXI: IBaxiPurchaseResponse
+    BAXI: Awaited<ReturnType<typeof VendorService.baxiVendToken>>,
 }
 
 export type Prettify<T extends {}> = { [K in keyof T]: T[K] }

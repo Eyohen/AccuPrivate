@@ -35,6 +35,8 @@ class Mailer {
             to: this.mailOptions.to,
             subject: this.mailOptions.subject,
         })
+
+        console.log('Sending with sendgrid')
     }
 
     public async sendEmailWithNodemailer(): Promise<void | Error> {
@@ -54,15 +56,14 @@ class Mailer {
 
         this.mailOptions.from = this.mailOptions.from ?? EMAIL_HOST_ADDRESS;
 
-        await transporter.sendMail(this.mailOptions);
+        const response  = await transporter.sendMail(this.mailOptions);
+        console.log({ response })
     }
 }
 
 export default class EmailService {
     static async sendEmail(mailOptions: TMailOptions): Promise<void | Error> {
         try {
-            sendgridClient.setApiKey(SENDGRID_API_KEY)
-            mailOptions.from = mailOptions.from ?? EMAIL_HOST_ADDRESS;
             await new Mailer(mailOptions).send()
         } catch (error: any) {
             console.log(error)
