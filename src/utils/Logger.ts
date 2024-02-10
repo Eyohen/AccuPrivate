@@ -77,7 +77,7 @@ const productionLogger = winston.createLogger({
         winston.format.simple(),
         enumerateErrorFormat(),
     ),
-    transports
+    transports: transports as any
 });
 
 const logger = productionLogger;
