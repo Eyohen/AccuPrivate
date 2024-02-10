@@ -424,8 +424,7 @@ class VendorControllerUtil {
         superAgents.splice(superAgents.indexOf(previousSuperAgent), 1)
         superAgents.unshift(previousSuperAgent)
 
-        console.log({ superAgents })
-        superAgents = ['BAXI', 'BUYPOWERNG', 'IRECHARGE']
+        superAgents = ['BUYPOWERNG', 'IRECHARGE']
         for (const superAgent of superAgents) {
             try {
                 console.log({ superAgent })

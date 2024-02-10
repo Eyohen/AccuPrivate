@@ -468,9 +468,6 @@ export const SEED = {
     },
 } as const;
 
-console.log(SEED);
-
-
 export const SCHEMADATA = {
     BUYPOWERNG: {
         AIRTIME: {

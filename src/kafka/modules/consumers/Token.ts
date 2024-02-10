@@ -73,7 +73,7 @@ const retry = {
     retryCountBeforeSwitchingVendor: 2,
 }
 
-const TEST_FAILED = NODE_ENV === 'production' ? false : false // TOGGLE - Will simulate failed transaction
+const TEST_FAILED = NODE_ENV === 'production' ? false : true // TOGGLE - Will simulate failed transaction
 
 const TransactionErrorCodeAndCause = {
     501: TransactionErrorCause.MAINTENANCE_ACCOUNT_ACTIVATION_REQUIRED,
@@ -410,10 +410,6 @@ class TokenHandler extends Registry {
 
         const { user, meter, partner } = transaction;
 
-        // if (transaction.superagent === 'IRECHARGE') {
-        //     throw 'Unsupported superagent'
-        // }
-
         const vendor = await VendorModelService.viewSingleVendorByName(data.superAgent)
         if (!vendor) throw new Error('Vendor not found')
 
@@ -434,10 +430,10 @@ class TokenHandler extends Registry {
             vendType: meter.vendType,
             phone: user.phoneNumber,
             accessToken: transaction.irecharge_token
-        });
+        }).catch(e => e);
 
         // Requery transaction from provider and update transaction status
-        const vendResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction);
+        const vendResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction).catch(e => e);
         const vendResultFromBuypower = vendResult as unknown as ElectricityPurchaseResponse['BUYPOWERNG'] & { source: 'BUYPOWERNG' }
         const vendResultFromBaxi = vendResult as {
             source: 'BAXI',
@@ -447,10 +443,6 @@ class TokenHandler extends Registry {
             message: 'Transaction successful'
         }
         const vendResultFromIrecharge = vendResult as unknown as ElectricityPurchaseResponse['IRECHARGE'] & { source: 'IRECHARGE' }
-
-        const transactionSuccessFromBuypower = vendResultFromBuypower.source === 'BUYPOWERNG' ? vendResultFromBuypower.data.responseCode === 200 : false
-        const transactionSuccessFromBaxi = vendResultFromBaxi.source === 'BAXI' ? vendResultFromBaxi.status : false
-        const transactionSuccessFromIrecharge = vendResultFromIrecharge.source === 'IRECHARGE' ? vendResultFromIrecharge.status === '00' : false
 
         const eventMessage = {
             meter: {
@@ -478,6 +470,7 @@ class TokenHandler extends Registry {
 
         // Check if error occured while purchasing token
         // Note that Irecharge api always returns 200, even when an error occurs
+        console.log({ resData: vendResult })
         if (tokenInfo instanceof Error) {
             if (tokenInfo instanceof AxiosError) {
                 /**
@@ -490,7 +483,9 @@ class TokenHandler extends Registry {
                 let responseCode = tokenInfo.response?.data.responseCode as keyof typeof TransactionErrorCodeAndCause;
                 responseCode = tokenInfo.message === 'Transaction timeout' ? 202 : responseCode
 
-                if (vendResultFromBuypower.source === 'BUYPOWERNG' && [202, 500, 501].includes(responseCode)) {
+                const requeryWasTriggeredTooEarly = (vendResult instanceof AxiosError) && vendResult.response?.status === 429
+
+                if (vendResultFromBuypower.source === 'BUYPOWERNG' && ([202, 500, 501].includes(responseCode) || requeryWasTriggeredTooEarly)) {
                     return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
                         {
                             eventService: transactionEventService,
@@ -541,11 +536,12 @@ class TokenHandler extends Registry {
                 tokenInResponse = vendResultFromIrecharge.meter_token
             }
         } else {
-            tokenInResponse = '' // There is no token for postpaid meters
+            tokenInResponse = null // There is no token for postpaid meters
         }
 
-        let requeryTransactionFromVendor = transactionTimedOut || !tokenInResponse
-        if (tokenInResponse && TEST_FAILED) {
+        let requeryTransactionFromVendor = transactionTimedOut
+        if (((tokenInResponse && prepaid) || (!tokenInResponse && !prepaid)) && TEST_FAILED) {
+            console.log('Test failed')
             const totalRetries = (retry.retryCountBeforeSwitchingVendor * transaction.previousVendors.length - 1) + retry.count + 1
 
             // If we are in test mode, and the transaction is successful, after a number of retries, we should assume the transaction is successful
@@ -553,8 +549,10 @@ class TokenHandler extends Registry {
             requeryTransactionFromVendor = !shouldAssumeToBeSuccessful
         }
 
+        console.log({ requeryTransactionFromVendor, tokenInResponse, transactionTimedOutFromBuypower, transactionTimedOut })
+
         // If Transaction timedout - Requery the transaction at intervals
-        if (requeryTransactionFromVendor || !tokenInResponse) {
+        if (requeryTransactionFromVendor || (!tokenInResponse && prepaid)) {
             return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
                 {
                     eventService: transactionEventService,
@@ -570,7 +568,7 @@ class TokenHandler extends Registry {
         // Token purchase was successful
         // And token was found in request
         // Add and publish token received event
-        await transactionEventService.addTokenReceivedEvent(tokenInResponse);
+        await transactionEventService.addTokenReceivedEvent(tokenInResponse ?? 'null');
         return await VendorPublisher.publishEventForTokenReceivedFromVendor({
             transactionId: transaction!.id,
             user: {
@@ -587,7 +585,7 @@ class TokenHandler extends Registry {
                 meterNumber: meter.meterNumber,
                 disco: transaction!.disco,
                 vendType: meter.vendType,
-                token: tokenInResponse,
+                token: tokenInResponse ?? 'null',
             },
         });
     }
@@ -719,7 +717,31 @@ class TokenHandler extends Registry {
          *
          * When requerying a transaction, the response code is 201.
          */
-        const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction)
+        const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction).catch(e => e);
+
+        if (requeryResult instanceof Error) {
+            if (requeryResult instanceof AxiosError) {
+                const requeryWasTriggeredTooEarly = requeryResult.response?.status === 429 && transaction.superagent === 'BUYPOWERNG'
+                if (requeryWasTriggeredTooEarly) {
+                    return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
+                        {
+                            eventService: transactionEventService,
+                            eventData: {
+                                meter: data.meter,
+                                transactionId: data.transactionId,
+                                error: { code: 202, cause: TransactionErrorCause.TRANSACTION_TIMEDOUT },
+                            },
+                            retryCount: data.retryCount + 1,
+                            superAgent: data.superAgent,
+                            tokenInResponse: null,
+                            transactionTimedOutFromBuypower: false,
+                        },
+                    );
+                }
+            }
+            throw requeryResult
+        }
+
         const requeryResultFromBuypower = requeryResult as Awaited<ReturnType<typeof VendorService.buyPowerRequeryTransaction>>
         const requeryResultFromBaxi = requeryResult as {
             source: 'BAXI',
@@ -764,7 +786,14 @@ class TokenHandler extends Registry {
                     error.cause = requeryResultFromBuypower.responseCode === 201 ? TransactionErrorCause.TRANSACTION_TIMEDOUT : TransactionErrorCause.TRANSACTION_FAILED
                 }
             } else if (requeryResult.source === 'BAXI') {
-                // TODO: Add logic to handle baxi requery
+                let transactionFailed = !requeryResultFromBaxi.status
+                transactionFailed = TEST_FAILED ? retry.count > retry.retryCountBeforeSwitchingVendor : transactionFailed // TOGGLE - Will simulate failed baxi transaction
+                if (transactionFailed) requeryFromNewVendor = true
+                else {
+                    requeryFromSameVendor = true
+                    error.code = requeryResultFromBaxi.responseCode === 200 ? 200 : 202
+                    error.cause = requeryResultFromBaxi.responseCode === 200 ? TransactionErrorCause.TRANSACTION_TIMEDOUT : TransactionErrorCause.TRANSACTION_FAILED
+                }
             } else if (requeryResult.source === 'IRECHARGE') {
                 console.log(`
                 
@@ -807,7 +836,7 @@ class TokenHandler extends Registry {
             }
         }
 
-        console.log({ requeryResult: requeryResultFromBaxi.data.rawData.standardTokenValue })
+        // console.log({ requeryResult: requeryResultFromBaxi.data.rawData.standardTokenValue })
 
         let token: string | undefined = undefined
         if (requeryResult.source === 'BUYPOWERNG') token = (requeryResultFromBuypower as SuccessResponseForBuyPowerRequery).data?.token
@@ -818,7 +847,8 @@ class TokenHandler extends Registry {
         const vendor = await VendorModelService.viewSingleVendorByName(data.superAgent)
         if (!vendor) throw new Error('Vendor not found')
 
-        const product = await ProductService.viewSingleProductByNameAndCategory(transaction.disco, 'ELECTRICITY')
+        console.log({ disco: transaction.disco })
+        const product = await ProductService.viewSingleProductByMasterProductCode(transaction.disco)
         if (!product) throw new Error('Product not found')
 
         const vendorProduct = await VendorProductService.viewSingleVendorProductByVendorIdAndProductId(vendor.id, product.id)
@@ -826,7 +856,8 @@ class TokenHandler extends Registry {
 
         const disco = vendorProduct.schemaData.code
 
-        if (!token) {
+        const prepaid = data.meter.vendType === 'PREPAID';
+        if (!token && prepaid) {
             return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
                 {
                     eventService: transactionEventService,
@@ -851,11 +882,11 @@ class TokenHandler extends Registry {
             );
         }
 
-        await transactionEventService.addTokenReceivedEvent(token)
+        await transactionEventService.addTokenReceivedEvent(prepaid ? token! : 'null')
         await VendorPublisher.publishEventForTokenReceivedFromVendor({
             meter: {
                 ...data.meter,
-                token
+                token: prepaid ? token! : 'null'
             },
             transactionId: transaction.id,
             user: {

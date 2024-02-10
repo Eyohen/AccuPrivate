@@ -359,7 +359,7 @@ export default class VendorService {
                         name: serviceProvider + ` ${serviceType}`,
                         serviceType: serviceType as 'PREPAID' | 'POSTPAID',
                     })
-                }
+                }ooo
             }
 
             return providers
