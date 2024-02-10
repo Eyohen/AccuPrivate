@@ -73,7 +73,7 @@ const retry = {
     retryCountBeforeSwitchingVendor: 2,
 }
 
-const TEST_FAILED = NODE_ENV === 'production' ? false : true // TOGGLE - Will simulate failed transaction
+const TEST_FAILED = NODE_ENV === 'production' ? false : false // TOGGLE - Will simulate failed transaction
 
 const TransactionErrorCodeAndCause = {
     501: TransactionErrorCause.MAINTENANCE_ACCOUNT_ACTIVATION_REQUIRED,
@@ -85,7 +85,7 @@ const TransactionErrorCodeAndCause = {
 export function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
     // Use geometric progression  calculate wait time, where R = 2
     const waitTime = 2 ** (retryCount - 1)
-    return waitTime
+    return waitTime * 10
 }
 
 type TransactionWithProductId = Exclude<Transaction, 'productCodeId'> & { productCodeId: NonNullable<Transaction['productCodeId']> }
@@ -388,10 +388,7 @@ class TokenHandler extends Registry {
     private static async handleTokenRequest(
         data: PublisherEventAndParameters[TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER],
     ) {
-        console.log({
-            log: 'New token request',
-            currentVendor: data.superAgent
-        })
+        console.log({log: 'New token request',currentVendor: data.superAgent})
 
         const transaction = await TransactionService.viewSingleTransaction(
             data.transactionId,
@@ -413,7 +410,6 @@ class TokenHandler extends Registry {
         const vendor = await VendorModelService.viewSingleVendorByName(data.superAgent)
         if (!vendor) throw new Error('Vendor not found')
 
-        console.log({ disco: transaction.disco })
         const product = await ProductService.viewSingleProductByMasterProductCode(transaction.disco)
         if (!product) throw new Error('Product not found')
 
@@ -430,7 +426,7 @@ class TokenHandler extends Registry {
             vendType: meter.vendType,
             phone: user.phoneNumber,
             accessToken: transaction.irecharge_token
-        }).catch(e => e);
+        })
 
         // Requery transaction from provider and update transaction status
         const vendResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction).catch(e => e);
@@ -470,7 +466,6 @@ class TokenHandler extends Registry {
 
         // Check if error occured while purchasing token
         // Note that Irecharge api always returns 200, even when an error occurs
-        console.log({ resData: vendResult })
         if (tokenInfo instanceof Error) {
             if (tokenInfo instanceof AxiosError) {
                 /**
@@ -526,7 +521,6 @@ class TokenHandler extends Registry {
 
         const prepaid = meter.vendType === 'PREPAID';
 
-        console.log({ requeryTransactionFromVendor: vendResultFromBaxi })
         if (prepaid) {
             if (vendResult.source === 'BUYPOWERNG') {
                 tokenInResponse = vendResultFromBuypower.data.responseCode !== 202 ? vendResultFromBuypower.data.token : null
@@ -541,15 +535,12 @@ class TokenHandler extends Registry {
 
         let requeryTransactionFromVendor = transactionTimedOut
         if (((tokenInResponse && prepaid) || (!tokenInResponse && !prepaid)) && TEST_FAILED) {
-            console.log('Test failed')
             const totalRetries = (retry.retryCountBeforeSwitchingVendor * transaction.previousVendors.length - 1) + retry.count + 1
 
             // If we are in test mode, and the transaction is successful, after a number of retries, we should assume the transaction is successful
             const shouldAssumeToBeSuccessful = (totalRetries > retry.limitToStopRetryingWhenTransactionIsSuccessful) && TEST_FAILED
             requeryTransactionFromVendor = !shouldAssumeToBeSuccessful
         }
-
-        console.log({ requeryTransactionFromVendor, tokenInResponse, transactionTimedOutFromBuypower, transactionTimedOut })
 
         // If Transaction timedout - Requery the transaction at intervals
         if (requeryTransactionFromVendor || (!tokenInResponse && prepaid)) {
@@ -615,22 +606,28 @@ class TokenHandler extends Registry {
             );
         }
 
-        // Requery transaction from provider and update transaction status
-        const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction);
-        const requeryResultFromBuypower = requeryResult as Awaited<ReturnType<typeof VendorService.buyPowerRequeryTransaction>>
-        const requeryResultFromBaxi = requeryResult as Awaited<ReturnType<typeof VendorService.baxiRequeryTransaction>>
-        const requeryResultFromIrecharge = requeryResult as Awaited<ReturnType<typeof VendorService.irechargeRequeryTransaction>>
+        /**
+         * This check was removed because BUYPOWERNG throws an error when you try to requery a transaction that has already been completed within 10s,
+         * And the event that triggers this consumer is also used by other consumers which also requery the transaction.
+         * 
+         * Plus there is no need for extra check because only completed transactions are published to this topic
+         */
+        // // Requery transaction from provider and update transaction status
+        // const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction);
+        // const requeryResultFromBuypower = requeryResult as Awaited<ReturnType<typeof VendorService.buyPowerRequeryTransaction>>
+        // const requeryResultFromBaxi = requeryResult as Awaited<ReturnType<typeof VendorService.baxiRequeryTransaction>>
+        // const requeryResultFromIrecharge = requeryResult as Awaited<ReturnType<typeof VendorService.irechargeRequeryTransaction>>
 
-        const transactionSuccessFromBuypower = requeryResultFromBuypower.source === 'BUYPOWERNG' ? requeryResultFromBuypower.responseCode === 200 : false
-        const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false
-        const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' : false
+        // const transactionSuccessFromBuypower = requeryResultFromBuypower.source === 'BUYPOWERNG' ? requeryResultFromBuypower.responseCode === 200 : false
+        // const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false
+        // const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' : false
 
-        const transactionSuccess = transactionSuccessFromBuypower || transactionSuccessFromBaxi || transactionSuccessFromIrecharge
-        if (!transactionSuccess) {
-            throw new CustomError(
-                `Error requerying transaction with id ${data.transactionId}`,
-            );
-        }
+        // const transactionSuccess = transactionSuccessFromBuypower || transactionSuccessFromBaxi || transactionSuccessFromIrecharge
+        // if (!transactionSuccess) {
+        //     throw new CustomError(
+        //         `Error requerying transaction with id ${data.transactionId}`,
+        //     );
+        // }
 
         // If successful, check if a power unit exists for the transaction, if none exists, create one
         let powerUnit =
@@ -672,9 +669,6 @@ class TokenHandler extends Registry {
         data: PublisherEventAndParameters[TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY],
     ) {
         retry.count = data.retryCount;
-        console.log({
-            retryCount: data.retryCount
-        })
 
         // Check if token has been found
         const transaction = await TransactionService.viewSingleTransaction(data.transactionId);
@@ -795,11 +789,6 @@ class TokenHandler extends Registry {
                     error.cause = requeryResultFromBaxi.responseCode === 200 ? TransactionErrorCause.TRANSACTION_TIMEDOUT : TransactionErrorCause.TRANSACTION_FAILED
                 }
             } else if (requeryResult.source === 'IRECHARGE') {
-                console.log(`
-                
-                    SHIFTING
-                
-                `)
                 let transactionFailed = !['00', '15', '43'].includes(requeryResultFromIrecharge.status)
                 transactionFailed = TEST_FAILED ? retry.count > retry.retryCountBeforeSwitchingVendor : transactionFailed // TOGGLE - Will simulate failed irecharge transaction
                 if (transactionFailed) requeryFromNewVendor = true
@@ -835,8 +824,6 @@ class TokenHandler extends Registry {
                 );
             }
         }
-
-        // console.log({ requeryResult: requeryResultFromBaxi.data.rawData.standardTokenValue })
 
         let token: string | undefined = undefined
         if (requeryResult.source === 'BUYPOWERNG') token = (requeryResultFromBuypower as SuccessResponseForBuyPowerRequery).data?.token

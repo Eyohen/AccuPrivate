@@ -278,7 +278,8 @@ export default class VendorService {
             })
 
             console.log({
-                BAXI: response.data
+                info: 'Vend response from baxi',
+                data: response.data
             })
 
             return { ...response.data, source: 'BAXI' as const }
@@ -297,7 +298,10 @@ export default class VendorService {
 
             const responseData = response.data
 
-            console.log({ reqRes: responseData })
+            console.log({
+                info: 'Requery response from baxi',
+                data: responseData
+            })
             if (responseData.status === 'success') {
                 return {
                     source: 'BAXI' as const,
@@ -359,7 +363,7 @@ export default class VendorService {
                         name: serviceProvider + ` ${serviceType}`,
                         serviceType: serviceType as 'PREPAID' | 'POSTPAID',
                     })
-                }ooo
+                }
             }
 
             return providers
@@ -433,10 +437,12 @@ export default class VendorService {
         try {
             // Make a POST request using the BuyPower Axios instance
             const response = await this.buyPowerAxios().post<PurchaseResponse | TimedOutResponse>(`/vend?strict=0`, postData);
-            console.log(response.data)
+            console.log({
+                info: 'Vend response from buypower',
+                data: response.data
+            })
             return { ...response.data, source: 'BUYPOWERNG' };
         } catch (error: any) {
-            console.log(error.response?.data)
             if (error instanceof AxiosError) {
                 const requery = error.response?.data?.message === "An unexpected error occurred. Please requery." || error.response?.data?.responseCode === 500
                 if (requery) {
@@ -456,6 +462,10 @@ export default class VendorService {
             const response = await this.buyPowerAxios().get<BuypowerRequeryResponse>(`/transaction/${reference}`)
 
             const successResponse = response.data as _RequeryBuypowerSuccessResponse
+            console.log({
+                info: 'Requery response from buypower',
+                data: successResponse
+            })
             if (successResponse.result.status === true) {
                 return {
                     source: 'BUYPOWERNG',
@@ -483,7 +493,6 @@ export default class VendorService {
         }
         const params: string = querystring.stringify(paramsObject);
 
-        console.log(paramsObject)
         try {
             // Make a GET request using the BuyPower Axios instance
             const response = await this.buyPowerAxios().get<IBuyPowerValidateMeterResponse>(`/check/meter?${params}`);
@@ -561,7 +570,6 @@ export default class VendorService {
     }
 
     static async irechargeValidateMeter(disco: string, meterNumber: string, reference: string) {
-        console.log('start')
         const response = await IRechargeVendorService.validateMeter({ disco, meterNumber, reference })
         console.log(response)
         return response
@@ -579,13 +587,33 @@ export default class VendorService {
             email
         } = body
 
+        console.log({
+            info: 'Vending token with IRecharge',
+            data: {
+                reference,
+                meterNumber,
+                disco,
+                amount,
+                phone,
+                vendType,
+                accessToken,
+                email
+            }
+        })
         const response = await IRechargeVendorService.vend({ disco, reference, meterNumber, accessToken, amount: parseInt(amount, 10), phone, email, vendType })
+        console.log({
+            info: 'Vend response',
+            data: response
+        })
         return response
     }
 
     static async irechargeRequeryTransaction({ serviceType, accessToken }: { accessToken: string, serviceType: 'power' | 'airtime' | 'data' | 'tv' }) {
         const response = await IRechargeVendorService.requery({ serviceType, accessToken })
-
+        console.log({
+            info: 'Requery response from irecharge',
+            data: response
+        })
         return response
     }
 
@@ -635,7 +663,6 @@ export default class VendorService {
             accessToken: string
         }, vendor: T
     }): Promise<ElectricityPurchaseResponse[T]> {
-        console.log({ data, vendor })
         if (vendor === 'BUYPOWERNG') {
             return await this.buyPowerVendToken(data) as ElectricityPurchaseResponse[T]
         } else if (vendor === 'IRECHARGE') {
