@@ -234,7 +234,7 @@ export const SEED = {
             vendors: {
                 BAXI: { discoCode: 'abuja_electric_postpaid', commission: 1.20, bonus: 0 },
                 BUYPOWERNG: { discoCode: 'ABUJA', commission: 1.80, bonus: 0 },
-                IRECHARGE: { discoCode: 'AEDC_Postpaid', commission: 1.80, bonus: 0 },
+                IRECHARGE: { discoCode: 'AEDC_Postpaid', commission: 2.00, bonus: 0 },
             }
         },
         'ECEKEPS': {
@@ -370,7 +370,7 @@ export const SEED = {
             vendors: {
                 BAXI: { discoCode: 'abuja_electric_prepaid', commission: 1.20, bonus: 0 },
                 BUYPOWERNG: { discoCode: 'ABUJA', commission: 1.80, bonus: 0 },
-                IRECHARGE: { discoCode: 'AEDC', commission: 1.80, bonus: 50 },
+                IRECHARGE: { discoCode: 'AEDC', commission: 2.00, bonus: 0 },
             }
         },
         // 'ECAAEPE': {
