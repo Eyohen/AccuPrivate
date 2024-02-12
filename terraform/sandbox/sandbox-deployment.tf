@@ -614,8 +614,7 @@ resource "aws_instance" "sandbox_core_engine_instance" {
   sudo systemctl restart nginx
 
   # NEW RELIC INTEGRATION
-  curl -Ls https://download.newrelic.com/install/newrelic-cli/scripts/install.sh | bash && sudo NEW_RELIC_API_KEY=NRAK-SR2FLMNTNNDE4ONWZ2THTCG1YSC NEW_RELIC_ACCOUNT_ID=4067659 NEW_RELIC_REGION=EU /usr/local/bin/newrelic install -y
-
+  
   EOF
 
   
