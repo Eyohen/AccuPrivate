@@ -99,7 +99,7 @@ class VendorTokenHandler implements Registry {
 
             this.tokenSent = true
         } catch (error) {
-            logger.error('Error sending token to user', { meta: { transactionId: this.transaction.id } })
+            logger.info('Already sent token to user', { meta: { transactionId: this.transaction.id } })
         }
     }
 

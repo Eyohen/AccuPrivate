@@ -109,7 +109,7 @@ export class DataVendController {
 
         const superAgent = vendor.name as 'IRECHARGE' | 'BUYPOWERNG' | 'BAXI'
 
-        const amount = vendorProduct.amount.toString()
+        const amount = vendorProduct.bundleAmount.toString()
         const transaction: Transaction =
             await TransactionService.addTransactionWithoutValidatingUserRelationship({
                 id: uuidv4(),

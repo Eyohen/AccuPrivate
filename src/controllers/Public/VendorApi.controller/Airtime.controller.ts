@@ -230,6 +230,7 @@ export class AirtimeVendController {
                         productId: product.id,
                         commission: productInfo.vendors[vendorName].commission,
                         bonus: productInfo.vendors[vendorName].bonus,
+                        productCode: product.masterProductCode,
                         schemaData: {
                             code: productInfo.vendors[vendorName].discoCode,
                         },
@@ -340,7 +341,8 @@ export class AirtimeVendController {
                         productId: product.id,
                         commission: commissions[vendorName][productType],
                         bonus: 0,
-                        amount: parseFloat(dataBundle.price.toString()),
+                        bundleAmount: parseFloat(dataBundle.price.toString()),
+                        productCode: product.masterProductCode,
                         schemaData: {
                             bundleName: dataBundle.title,
                             validity: dataBundle.validity,
