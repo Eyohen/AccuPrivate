@@ -302,7 +302,7 @@ class WebhookHandler extends Registry {
     }
 
     private static async handleWebhookRequestForAirtime<T extends Status>(
-        data: IWebhookParamsBaseForAirtime[T] ,
+        data: IWebhookParamsBaseForAirtime[T],
     ): Promise<void> {
         const validationData =
             await WebhookHandlerRequestValidator.validateIncomingWebhookEventRequestForAirtime({
@@ -390,7 +390,7 @@ class WebhookHandler extends Registry {
                     phoneNumber: phone.phoneNumber,
                 },
                 retryCount:
-                data instanceof RetryWebhookParams ? data.retryCount : null,
+                    data instanceof RetryWebhookParams ? data.retryCount : null,
             };
             throw error
 
@@ -459,11 +459,11 @@ class WebhookHandler extends Registry {
     }
 
     static registry = {
-        [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: this
-            .handleWebhookRequest<Status.FIRST_TIME>,
-        [TOPICS.WEBHOOK_NOTIFICATION_TO_PARTNER_RETRY]: this
-            .handleWebhookRequest<Status.RETRY>,
-        [TOPICS.AIRTIME_RECEIVED_FROM_VENDOR]: this.handleWebhookRequestForAirtime<Status.FIRST_TIME>,
+        // [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: this
+        //     .handleWebhookRequest<Status.FIRST_TIME>,
+        // [TOPICS.WEBHOOK_NOTIFICATION_TO_PARTNER_RETRY]: this
+        //     .handleWebhookRequest<Status.RETRY>,
+        // [TOPICS.AIRTIME_RECEIVED_FROM_VENDOR]: this.handleWebhookRequestForAirtime<Status.FIRST_TIME>,
     };
 }
 

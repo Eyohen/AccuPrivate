@@ -438,6 +438,7 @@ export default class VendorService {
             // Make a POST request using the BuyPower Axios instance
             const response = await this.buyPowerAxios().post<PurchaseResponse | TimedOutResponse>(`/vend?strict=0`, postData);
             console.log({
+                requestData: postData,
                 info: 'Vend response from buypower',
                 data: response.data
             })
@@ -463,6 +464,7 @@ export default class VendorService {
 
             const successResponse = response.data as _RequeryBuypowerSuccessResponse
             console.log({
+                requestData: { reference },
                 info: 'Requery response from buypower',
                 data: successResponse
             })
@@ -588,6 +590,7 @@ export default class VendorService {
         } = body
 
         console.log({
+            requestData: body,
             info: 'Vending token with IRecharge',
             data: {
                 reference,
@@ -611,6 +614,7 @@ export default class VendorService {
     static async irechargeRequeryTransaction({ serviceType, accessToken }: { accessToken: string, serviceType: 'power' | 'airtime' | 'data' | 'tv' }) {
         const response = await IRechargeVendorService.requery({ serviceType, accessToken })
         console.log({
+            requestData: { serviceType, accessToken },
             info: 'Requery response from irecharge',
             data: response
         })

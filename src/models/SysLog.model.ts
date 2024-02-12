@@ -17,7 +17,7 @@ export default class SysLog extends Model {
     level: string;
 
     // Message of the log
-    @Column(DataType.STRING)
+    @Column(DataType.TEXT)
     message: string;
 
     // Additional metadata associated with the log

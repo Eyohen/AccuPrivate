@@ -58,10 +58,10 @@ class NotificationHandler extends Registry {
 
         // If you've not notified the partner before, notify them
         if (!notifyPartnerEvent) {
-            // await NotificationUtil.sendNotificationToUser(
-            //     partnerEntity.id,
-            //     notification
-            // );
+            await NotificationUtil.sendNotificationToUser(
+                partnerEntity.id,
+                notification
+            );
             await transactionEventService.addTokenSentToPartnerEvent()
         }
 
@@ -131,10 +131,10 @@ class NotificationHandler extends Registry {
 
         // If you've not notified the partner before, notify them
         if (!notifyPartnerEvent) {
-            // await NotificationUtil.sendNotificationToUser(
-            //     partnerEntity.id,
-            //     notification
-            // );
+            await NotificationUtil.sendNotificationToUser(
+                partnerEntity.id,
+                notification
+            );
             await transactionEventService.addAirtimeSentToPartner()
         }
 
