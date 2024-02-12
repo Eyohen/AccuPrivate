@@ -35,7 +35,7 @@ export default class VendorProductController {
             throw new BadRequestError('Amount is required for Data product');
         }
 
-        const data = { vendorId, productId, commission, bonus, amount, schemaData, vendorHttpUrl, id: randomUUID() };
+        const data = { vendorId, productId, commission, bonus, bundleAmount: amount, schemaData, vendorHttpUrl, id: randomUUID(), productCode: product.masterProductCode };
         const vendorProduct = await VendorProductService.addVendorProduct(data);
 
         res.status(201).json({
