@@ -180,6 +180,7 @@ export class TokenHandlerUtil {
             meter: MeterInfo & { id: string },
         }
     ) {
+        logger.info('Retrying transaction with new vendor', { meta: { transactionId: transaction.id } })
         const meta = {
             transactionId: transaction.id,
         }
@@ -432,7 +433,8 @@ class TokenHandler extends Registry {
             if (!vendorProduct) throw new CustomError('Vendor product not found')
 
             const disco = vendorProduct.schemaData.code
-
+            const logMeta = { meta: { transactionId: data.transactionId } }
+            logger.info('Processing token request', logMeta);
             // Purchase token from vendor
             const tokenInfo = await TokenHandlerUtil.processVendRequest({
                 transaction: transaction as TokenPurchaseData['transaction'],
@@ -443,6 +445,7 @@ class TokenHandler extends Registry {
                 accessToken: transaction.irecharge_token
             })
 
+            logger.info('Token request processed', logMeta);
             // Requery transaction from provider and update transaction status
             const vendResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction).catch(e => e);
             const vendResultFromBuypower = vendResult as unknown as ElectricityPurchaseResponse['BUYPOWERNG'] & { source: 'BUYPOWERNG' }
@@ -482,6 +485,7 @@ class TokenHandler extends Registry {
             // Check if error occured while purchasing token
             // Note that Irecharge api always returns 200, even when an error occurs
             if (tokenInfo instanceof CustomError) {
+                logger.error('Error occured while purchasing token', logMeta)
                 if (tokenInfo instanceof AxiosError) {
                     /**
                      * Note that these error codes are only valid for Buypower
@@ -609,6 +613,7 @@ class TokenHandler extends Registry {
         data: PublisherEventAndParameters[TOPICS.TOKEN_RECIEVED_FROM_VENDOR],
     ) {
         try {
+            const logMeta = { meta: { transactionId: data.transactionId } }
 
             const transaction = await TransactionService.viewSingleTransaction(
                 data.transactionId,
@@ -666,6 +671,8 @@ class TokenHandler extends Registry {
 
             const discoLogo =
                 DISCO_LOGO[data.meter.disco as keyof typeof DISCO_LOGO] ?? LOGO_URL
+
+            logger.info('Saving token record', logMeta);
             powerUnit = powerUnit
                 ? await PowerUnitService.updateSinglePowerUnit(powerUnit.id, {
                     token: data.meter.token,

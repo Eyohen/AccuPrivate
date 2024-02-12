@@ -4,6 +4,11 @@ import { NODE_ENV } from "./Constants";
 import util from "util";
 import { randomUUID } from "crypto";
 
+declare module "winston" {
+    export class Transport {
+        log(info: any, callback: Function): void;
+    }
+}
 
 // Define a custom transport to write logs to PostgreSQL using Sequelize
 class YourCustomPostgresTransport extends winston.Transport {
