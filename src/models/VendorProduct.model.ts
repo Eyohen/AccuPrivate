@@ -26,6 +26,9 @@ export default class VendorProduct extends Model<IVendorProduct | VendorProduct>
     @Column({ type: DataType.STRING, allowNull: false })
     productId: string;
 
+    @Column({ type: DataType.STRING, allowNull: false })
+    productCode: string;
+
     @Column({ type: DataType.FLOAT, allowNull: true })
     bundleAmount: number;
 
