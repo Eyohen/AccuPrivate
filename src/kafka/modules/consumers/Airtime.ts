@@ -320,6 +320,9 @@ class TokenHandler extends Registry {
                 currentVendor: data.superAgent
             })
 
+            const logMeta = { meta: { transactionId: data.transactionId } }
+            logger.info('New token request', logMeta)
+
             const transaction = await TransactionService.viewSingleTransaction(
                 data.transactionId,
             );
@@ -335,6 +338,7 @@ class TokenHandler extends Registry {
             const product = await ProductService.viewSingleProduct(transaction.productCodeId)
             if (!product) throw new CustomError('Product code not found')
 
+            logger.info('Fetching vendor products', logMeta)
             const vendorProducts = await product.$get('vendorProducts')
             const vendorAndDiscos = await Promise.all(vendorProducts.map(async vendorProduct => {
                 const vendor = await vendorProduct.$get('vendor')
@@ -351,6 +355,7 @@ class TokenHandler extends Registry {
             if (!vendorProductCode) throw new CustomError('Vendor product code not found')
 
             // Purchase token from vendor
+            logger.info('Processing vend request', logMeta)
             const tokenInfo = await TokenHandlerUtil.processVendRequest({
                 transaction: transaction as TokenPurchaseData['transaction'],
                 phoneNumber: data.phone.phoneNumber,
@@ -360,6 +365,7 @@ class TokenHandler extends Registry {
                 serviceProvider: vendorProductCode as TokenPurchaseData['serviceProvider'],
             });
 
+            logger.info('Vend request processed', logMeta)
             const error = { code: 202, cause: TransactionErrorCause.UNKNOWN }
             const transactionEventService = new AirtimeTransactionEventService(
                 transaction,
@@ -390,6 +396,7 @@ class TokenHandler extends Registry {
             const eventMessage = { phone: data.phone, transactionId: transaction.id, error: error, };
 
             if (!transactionSuccessFul) {
+                logger.error('Transaction unsuccessful', logMeta)
                 if (requeryFromNewVendor) {
                     return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ phone: data.phone, transaction, transactionEventService })
                 }
@@ -436,6 +443,9 @@ class TokenHandler extends Registry {
         data: PublisherEventAndParameters[TOPICS.AIRTIME_RECEIVED_FROM_VENDOR],
     ) {
         try {
+            const logMeta = { meta: { transactionId: data.transactionId } }
+
+            logger.info('Airtime received from vendor', logMeta)
             const transaction = await TransactionService.viewSingleTransaction(
                 data.transactionId,
             );
@@ -452,6 +462,7 @@ class TokenHandler extends Registry {
                 );
             }
 
+            logger.info('Processing airtime received from vendor', logMeta)
             // Requery transaction from provider and update transaction status
             const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction);
             const requeryResultFromBuypower = requeryResult as Awaited<ReturnType<typeof VendorService.buyPowerRequeryTransaction>>
@@ -488,6 +499,7 @@ class TokenHandler extends Registry {
                 })
             }
 
+            logger.info('Airtime received from vendor', logMeta)
             return await TransactionService.updateSingleTransaction(data.transactionId, {
                 status: Status.COMPLETE,
             });
@@ -511,6 +523,9 @@ class TokenHandler extends Registry {
                 retryCount: data.retryCount
             })
 
+            const logMeta = { meta: { transactionId: data.transactionId } }
+
+            logger.info('Retrying transaction from vendor', logMeta)
             // Check if token has been found
             const transaction = await TransactionService.viewSingleTransaction(data.transactionId);
             if (!transaction) {
@@ -533,6 +548,7 @@ class TokenHandler extends Registry {
             await transactionEventService.addAirtimeTranasctionRequeryInitiated();
 
             // Requery transaction from provider and update transaction status
+            logger.info('Requerying transaction from vendor', logMeta)
             /**
              * When requerying a transaction, it is important to note that,
              * the response code for 'Processing transaction' is 201,
@@ -544,6 +560,7 @@ class TokenHandler extends Registry {
              * When requerying a transaction, the response code is 201.
              */
             const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction)
+            logger.info('Transaction requeried successfully result', logMeta)
             const requeryResultFromBuypower = requeryResult as Awaited<ReturnType<typeof VendorService.buyPowerRequeryTransaction>>
             // const requeryResultFromBaxi = requeryResult as Awaited<ReturnType<typeof VendorService.baxiRequeryTransaction>>
             const requeryResultFromIrecharge = requeryResult as Awaited<ReturnType<typeof VendorService.irechargeRequeryTransaction>>
@@ -593,9 +610,7 @@ class TokenHandler extends Registry {
                     }
                 }
 
-                logger.error(
-                    `CustomError requerying transaction with id ${data.transactionId} 1213 `,
-                );
+                logger.error(`CustomError requerying transaction with id ${data.transactionId}`, logMeta);
 
                 if (requeryFromNewVendor) {
                     return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ phone: data.phone, transaction, transactionEventService })
