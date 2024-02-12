@@ -4,6 +4,7 @@ import { AuthenticatedRequest } from "../../utils/Interface";
 import { BadRequestError, NotFoundError } from "../../utils/Errors";
 import { randomUUID } from "crypto";
 import ProductService from "../../services/Product.service";
+import VendorService from "../../services/Vendor.service";
 
 export default class VendorProductController {
     static async createVendorProduct(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -21,6 +22,11 @@ export default class VendorProductController {
             throw new BadRequestError('Vendor ID, Product ID, Commission, Bonus, Schema Data, and Vendor HTTP URL are required');
         }
 
+        const vendor = await VendorService.viewSingleVendor(vendorId);
+        if (!vendor) {
+            throw new NotFoundError('Vendor not found');
+        }
+
         const docWithSameVendorIdAndProductId = await VendorProductService.viewSingleVendorProductByVendorIdAndProductId(vendorId, productId);
         if (docWithSameVendorIdAndProductId) {
             throw new BadRequestError('Vendor Product with same Vendor ID and Product ID already exists');
@@ -35,7 +41,7 @@ export default class VendorProductController {
             throw new BadRequestError('Amount is required for Data product');
         }
 
-        const data = { vendorId, productId, commission, bonus, bundleAmount: amount, schemaData, vendorHttpUrl, id: randomUUID(), productCode: product.masterProductCode };
+        const data = { vendorId, vendorName: vendor.name, vendorCode: schemaData.code, productId, commission, bonus, bundleAmount: amount, schemaData, vendorHttpUrl, id: randomUUID(), productCode: product.masterProductCode };
         const vendorProduct = await VendorProductService.addVendorProduct(data);
 
         res.status(201).json({
@@ -66,7 +72,7 @@ export default class VendorProductController {
         }
 
         if (schemaData && vendorProduct.schemaData) {
-            schemaData = { ...vendorProduct.schemaData, ...schemaData};
+            schemaData = { ...vendorProduct.schemaData, ...schemaData };
         }
         const data = { commission, bonus, schemaData, vendorHttpUrl };
         const updatedVendorProduct = await VendorProductService.updateVendorProduct(vendorProductId, data);

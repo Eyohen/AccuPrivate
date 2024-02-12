@@ -234,6 +234,8 @@ export class AirtimeVendController {
                         schemaData: {
                             code: productInfo.vendors[vendorName].discoCode,
                         },
+                        vendorCode: productInfo.vendors[vendorName].discoCode,
+                        vendorName: vendorName,
                         vendorHttpUrl: HTTP_URL[vendorName][productType],
                     });
 
@@ -350,6 +352,8 @@ export class AirtimeVendController {
                             code: vendorName === 'IRECHARGE' ? IRECHARGEDATACODE[productType] : productType,
                         },
                         vendorHttpUrl: HTTP_URL[vendorName]['DATA'],
+                        vendorName: vendorName,
+                        vendorCode: vendorName === 'IRECHARGE' ? IRECHARGEDATACODE[productType] : productType,
                     });
 
                     console.log(`VendorProduct added for vendor ${vendorName} and Code}`);

@@ -40,6 +40,12 @@ export default class VendorProduct extends Model<IVendorProduct | VendorProduct>
     @Column({ type: DataType.FLOAT, allowNull: false })
     bonus: number;
 
+    @Column({ type: DataType.STRING, allowNull: true })
+    vendorCode: string;
+
+    @Column({ type: DataType.STRING, allowNull: true })
+    vendorName: string;
+
     // Schema data for the product
     @Column({ type: DataType.JSONB, allowNull: true })
     schemaData: {
@@ -84,4 +90,6 @@ export interface IVendorProduct {
     } & Record<string, any>;
     vendorHttpUrl: string;
     bundleAmount?: number;
+    vendorName: string;
+    vendorCode: string;
 }
