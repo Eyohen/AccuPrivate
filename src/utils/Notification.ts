@@ -33,8 +33,4 @@ class NotificationUtil {
     }
 }
 
-
-
-NotificationUtil.sendNotificationToUser('123', sampleNotification)
-
 export default NotificationUtil
