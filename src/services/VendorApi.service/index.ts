@@ -204,13 +204,14 @@ export class IRechargeVendorService {
         return response.data
     };
 
-    static async vend({ disco, reference, meterNumber, accessToken, amount, phone, email }: { disco: string, meterNumber: string, vendType: "PREPAID" | "POSTPAID", reference: string, accessToken: string, phone: string, email: string, amount: number }): Promise<any> {
+    static async vend({ disco, reference, meterNumber, accessToken, amount, phone, email, transactionId }: { transactionId: string, disco: string, meterNumber: string, vendType: "PREPAID" | "POSTPAID", reference: string, accessToken: string, phone: string, email: string, amount: number }) {
         amount = NODE_ENV === 'development' ? 900 : amount  // IRecharge has a minimum amount of 500 naira and the wallet balance is limited
         meterNumber = NODE_ENV === 'development' ? '1234567890' : meterNumber
 
         const combinedString = this.VENDOR_CODE + "|" + reference + "|" + meterNumber + "|" + disco + "|" + amount + "|" + accessToken + "|" + this.PUBLIC_KEY
         const hash = this.generateHash(combinedString)
 
+        logger.info('Vending token with irecharge', { meta: { reference, meterNumber, disco, amount, phone, email, transactionId } })
         const response = await this.client.get<IRechargeSuccessfulVendResponse>('/vend_power.php', {
             params: {
                 vendor_code: this.VENDOR_CODE,
@@ -226,13 +227,16 @@ export class IRechargeVendorService {
             }
         })
 
+        logger.info('Vend response from irecharge', { meta: { responseData: response.data, transactionId } })
+
         const responseData = { ...response.data, source: 'IRECHARGE' }
         return responseData
     };
 
-    static async requery({ accessToken, serviceType }: { accessToken: string, serviceType: string }) {
+    static async requery({ accessToken, serviceType, transactionId }: { transactionId: string, accessToken: string, serviceType: string }) {
         const combinedString = this.VENDOR_CODE + "|" + accessToken + "|" + this.PUBLIC_KEY
         const hash = this.generateHash(combinedString)
+        logger.info('Requerying transaction with irecharge', { meta: { accessToken, serviceType, transactionId } })
 
         const params = {
             vendor_code: this.VENDOR_CODE,
@@ -246,6 +250,7 @@ export class IRechargeVendorService {
 
         const response = await this.client.get<IRechargeRequeryResponse>('/vend_status.php', { params })
 
+        logger.info('Requery response from irecharge', { meta: { responseData: response.data, transactionId } })
         return { ...response.data, source: 'IRECHARGE' }
 
     };
@@ -267,6 +272,7 @@ export default class VendorService {
         } = body
 
         try {
+            logger.info('Vending token with baxi', { meta: { reference, meterNumber, disco, amount, phone, transactionId: body.transactionId } })
             const response = await this.baxiAxios().post<BaxiSuccessfulPuchaseResponse['Postpaid' | 'Prepaid']>('/electricity/request', {
                 amount,
                 phone,
@@ -281,6 +287,7 @@ export default class VendorService {
                 data: response.data
             })
 
+            logger.info('Vend response from baxi', { meta: { responseData: response.data, transactionId: body.transactionId } })
             return { ...response.data, source: 'BAXI' as const }
         } catch (error: any) {
             console.log({
@@ -291,8 +298,9 @@ export default class VendorService {
         }
     }
 
-    static async baxiRequeryTransaction<T extends keyof BaxiRequeryResultForPurchase>({ reference }: { reference: string }) {
+    static async baxiRequeryTransaction<T extends keyof BaxiRequeryResultForPurchase>({ reference, transactionId }: { transactionId: string, reference: string }) {
         try {
+            logger.info('Requerying transaction with baxi', { meta: { reference, transactionId } })
             const response = await this.baxiAxios().get<BaxiRequeryResultForPurchase[T]>(`/superagent/transaction/requery?agentReference=${reference}`)
 
             const responseData = response.data
@@ -301,6 +309,7 @@ export default class VendorService {
                 info: 'Requery response from baxi',
                 data: responseData
             })
+            logger.info('Requery response from baxi', { meta: { responseData, transactionId } })
             if (responseData.status === 'success') {
                 return {
                     source: 'BAXI' as const,
@@ -324,18 +333,20 @@ export default class VendorService {
     }
 
     // Static method for validating a meter with Baxi
-    static async baxiValidateMeter(disco: string, meterNumber: string, vendType: 'PREPAID' | 'POSTPAID') {
+    static async baxiValidateMeter(disco: string, meterNumber: string, vendType: 'PREPAID' | 'POSTPAID', transactionId: string) {
         const serviceType = disco.toLowerCase()
         const postData = {
             service_type: disco,
             account_number: NODE_ENV === 'development' ? '6528651914' : meterNumber // Baxi has a test meter number
         }
 
+        logger.info('Validating meter with baxi', { meta: { disco, meterNumber, vendType, transactionId } })
         try {
             const response = await this.baxiAxios().post<IBaxiValidateMeterResponse>('/electricity/verify', postData)
             const responseData = response.data
 
-            console.log({ responseData, info: 'Meter validation request', input: { disco, meterNumber} })
+            logger.info('Meter validation response from baxi', { meta: { responseData, transactionId } })
+            console.log({ responseData, info: 'Meter validation request', input: { disco, meterNumber } })
             if ((responseData as any).status == 'pending') {
                 throw new Error('Transaction timeout')
             }
@@ -434,6 +445,7 @@ export default class VendorService {
         }
 
         try {
+            logger.info('Vending token with buypower', { meta: { postData } })
             // Make a POST request using the BuyPower Axios instance
             const response = await this.buyPowerAxios().post<PurchaseResponse | TimedOutResponse>(`/vend?strict=0`, postData);
             console.log({
@@ -441,6 +453,7 @@ export default class VendorService {
                 info: 'Vend response from buypower',
                 data: response.data
             })
+            logger.info('Vend response from buypower', { meta: { responseData: response.data, transactionId: body.transactionId } })
             return { ...response.data, source: 'BUYPOWERNG' };
         } catch (error: any) {
             if (error instanceof AxiosError) {
@@ -457,16 +470,19 @@ export default class VendorService {
         // TODO: Use event emitter to requery transaction after 10s
     }
 
-    static async buyPowerRequeryTransaction({ reference }: { reference: string }) {
+    static async buyPowerRequeryTransaction({ reference, transactionId }: { reference: string, transactionId: string }) {
         try {
+            logger.info('Requerying transaction with buypower', { meta: { reference, transactionId } })
             const response = await this.buyPowerAxios().get<BuypowerRequeryResponse>(`/transaction/${reference}`)
 
+            logger.info('Requery response from buypower', { meta: { responseData: response.data, transactionId } })
             const successResponse = response.data as _RequeryBuypowerSuccessResponse
             console.log({
                 requestData: { reference },
                 info: 'Requery response from buypower',
                 data: successResponse
             })
+
             if (successResponse.result.status === true) {
                 return {
                     source: 'BUYPOWERNG',
@@ -495,8 +511,11 @@ export default class VendorService {
         const params: string = querystring.stringify(paramsObject);
 
         try {
+            logger.info('Validating meter with buypower', { meta: { params, transactionId: body.transactionId } })
             // Make a GET request using the BuyPower Axios instance
             const response = await this.buyPowerAxios().get<IBuyPowerValidateMeterResponse>(`/check/meter?${params}`);
+
+            logger.info('Meter validation response from buypower', { meta: { responseData: response.data, transactionId: body.transactionId } })
             console.log({ responseData: response.data, info: 'Meter validation request', input: body })
             return response.data;
         } catch (error: any) {
@@ -573,7 +592,7 @@ export default class VendorService {
 
     static async irechargeValidateMeter(disco: string, meterNumber: string, reference: string) {
         const response = await IRechargeVendorService.validateMeter({ disco, meterNumber, reference })
-        console.log({ responseData: response, info: 'Meter validation request', input: { disco, meterNumber, reference} })
+        console.log({ responseData: response, info: 'Meter validation request', input: { disco, meterNumber, reference } })
         return response
     }
 
@@ -603,16 +622,18 @@ export default class VendorService {
                 email
             }
         })
-        const response = await IRechargeVendorService.vend({ disco, reference, meterNumber, accessToken, amount: parseInt(amount, 10), phone, email, vendType })
+        logger.info('Vending token with IRecharge', { meta: { requestData: body, transactionId: body.transactionId } })
+        const response = await IRechargeVendorService.vend({ disco, reference, meterNumber, accessToken, transactionId: body.transactionId, amount: parseInt(amount, 10), phone, email, vendType })
         console.log({
             info: 'Vend response',
             data: response
         })
-        return response
+        logger.info('Vend response from IRecharge', { meta: { responseData: response, transactionId: body.transactionId } })
+        return { ...response, source: 'IRECHARGE' }
     }
 
-    static async irechargeRequeryTransaction({ serviceType, accessToken }: { accessToken: string, serviceType: 'power' | 'airtime' | 'data' | 'tv' }) {
-        const response = await IRechargeVendorService.requery({ serviceType, accessToken })
+    static async irechargeRequeryTransaction({ serviceType, accessToken, transactionId }: { transactionId: string; accessToken: string, serviceType: 'power' | 'airtime' | 'data' | 'tv' }) {
+        const response = await IRechargeVendorService.requery({ serviceType, accessToken, transactionId })
         console.log({
             requestData: { serviceType, accessToken },
             info: 'Requery response from irecharge',
@@ -664,7 +685,8 @@ export default class VendorService {
             vendType: 'PREPAID' | 'POSTPAID',
             phone: string,
             email: string,
-            accessToken: string
+            accessToken: string,
+            transactionId: string,
         }, vendor: T
     }): Promise<ElectricityPurchaseResponse[T]> {
         if (vendor === 'BUYPOWERNG') {

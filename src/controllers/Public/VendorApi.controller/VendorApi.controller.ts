@@ -394,7 +394,7 @@ class VendorControllerUtil {
                 throw new InternalServerError('Baxi vendor product not found')
             }
 
-            const res = await VendorService.baxiValidateMeter(baxiVendorProduct.schemaData.code, meterNumber, vendType).then(r => r.data)
+            const res = await VendorService.baxiValidateMeter(baxiVendorProduct.schemaData.code, meterNumber, vendType, transaction.id).then(r => r.data)
             return res
         }
 
@@ -503,6 +503,7 @@ export default class VendorController {
                 vendorReferenceId: generateRandonNumbers(12)
             });
 
+        logger.info("Validate meter requested", { meta: { transactionId: transaction.id, ...req.body } })
         const transactionEventService = new EventService.transactionEventService(
             transaction, { meterNumber, disco, vendType }, superagent, transaction.partner.email
         );
@@ -603,24 +604,10 @@ export default class VendorController {
         if (!successful)
             throw new InternalServerError("An error occured while validating meter", errorMeta);
 
-        res.status(200).json({
-            status: "success",
-            data: {
-                transaction: {
-                    transactionId: transaction.id,
-                    status: transaction.status,
-                },
-                meter: {
-                    disco: meter.disco,
-                    number: meter.meterNumber,
-                    address: meter.address,
-                    phone: user.phoneNumber,
-                    vendType: meter.vendType,
-                    name: user.name,
-                },
-            },
-        });
+        const responseData = { status: 'success', message: 'Meter validated successfully', data: { transaction: transaction, meter: meter } }
+        res.status(200).json(responseData);
 
+        logger.info("Meter validated successfully", { meta: { transactionId: transaction.id, ...responseData } })
         await transactionEventService.addMeterValidationSentEvent(meter.id);
         await VendorPublisher.publishEventForMeterValidationSentToPartner({
             transactionId: transaction.id,
@@ -644,6 +631,8 @@ export default class VendorController {
         if (!transaction) {
             throw new NotFoundError("Transaction not found", errorMeta);
         }
+
+        logger.info('Requesting token for transaction', { meta: { transactionId: transaction.id, ...req.query } })
 
         const meter = await transaction.$get("meter");
         if (!meter) {
@@ -719,14 +708,10 @@ export default class VendorController {
 
             const tokenHasBeenSentFromVendorConsumer = vendorTokenConsumer.getTokenSentState()
             if (!tokenHasBeenSentFromVendorConsumer) {
-                res.status(200).json({
-                    status: "success",
-                    message: "Token purchase initiated successfully",
-                    // data: {
-                    //     transaction: _transaction,
-                    // },
-                });
+                const responseData = { status: 'success', message: 'Token purchase initiated successfully', data: { transaction: _transaction } }
+                res.status(200).json(responseData);
 
+                logger.info('Token purchase initiated successfully', { meta: { transactionId: transaction.id, ...responseData } })
                 return
             }
 

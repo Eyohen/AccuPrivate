@@ -229,7 +229,8 @@ export class TokenHandlerUtil {
             amount: data.transaction.amount,
             phone: data.phone,
             email: user.email,
-            accessToken: data.transaction.irechargeAccessToken
+            accessToken: data.transaction.irechargeAccessToken,
+            transactionId: data.transaction.id
         }
 
         if (!_data.accessToken && data.transaction.superagent === 'IRECHARGE') {
@@ -271,11 +272,11 @@ export class TokenHandlerUtil {
     static async requeryTransactionFromVendor(transaction: Transaction) {
         switch (transaction.superagent) {
             case 'BAXI':
-                return await VendorService.baxiRequeryTransaction({ reference: transaction.reference })
+                return await VendorService.baxiRequeryTransaction({ reference: transaction.reference, transactionId: transaction.id })
             case 'BUYPOWERNG':
-                return await VendorService.buyPowerRequeryTransaction({ reference: transaction.reference })
+                return await VendorService.buyPowerRequeryTransaction({ reference: transaction.reference, transactionId: transaction.id })
             case 'IRECHARGE':
-                return await VendorService.irechargeRequeryTransaction({ accessToken: transaction.irechargeAccessToken, serviceType: 'power' })
+                return await VendorService.irechargeRequeryTransaction({ accessToken: transaction.irechargeAccessToken, serviceType: 'power', transactionId: transaction.id })
             default:
                 throw new CustomError('Unsupported superagent', {
                     transactionId: transaction.id
