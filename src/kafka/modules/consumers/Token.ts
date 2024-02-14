@@ -222,14 +222,14 @@ export class TokenHandlerUtil {
         })
 
         const _data = {
-            reference: data.transaction.reference,
+            reference: data.transaction.superagent === 'IRECHARGE' ? data.transaction.vendorReferenceId : data.transaction.reference,
             meterNumber: data.meterNumber,
             disco: data.disco,
             vendType: data.vendType,
             amount: data.transaction.amount,
             phone: data.phone,
             email: user.email,
-            accessToken: data.accessToken
+            accessToken: data.transaction.irechargeAccessToken
         }
 
         if (!_data.accessToken && data.transaction.superagent === 'IRECHARGE') {
@@ -238,7 +238,7 @@ export class TokenHandlerUtil {
             })
 
             logger.info('Validating meter', { transactionId: data.transaction.id })
-            const meterValidationResult = await VendorService.irechargeValidateMeter(_data.disco, _data.meterNumber, data.transaction.reference).catch((error) => {
+            const meterValidationResult = await VendorService.irechargeValidateMeter(_data.disco, _data.meterNumber, data.transaction.vendorReferenceId).catch((error) => {
                 throw new CustomError('Error validating meter', {
                     transactionId: data.transaction.id,
                 })
@@ -250,7 +250,7 @@ export class TokenHandlerUtil {
 
             _data.accessToken = meterValidationResult.access_token
             console.log({ meterValidationResult, info: 'New meter validation result' })
-            await TransactionService.updateSingleTransaction(data.transaction.id, { irecharge_token: meterValidationResult.access_token })
+            await TransactionService.updateSingleTransaction(data.transaction.id, { irechargeAccessToken: meterValidationResult.access_token })
             logger.info('Generated access token for irecharge meter validation', { transactionId: data.transaction.id })
         }
 
@@ -275,7 +275,7 @@ export class TokenHandlerUtil {
             case 'BUYPOWERNG':
                 return await VendorService.buyPowerRequeryTransaction({ reference: transaction.reference })
             case 'IRECHARGE':
-                return await VendorService.irechargeRequeryTransaction({ accessToken: transaction.irecharge_token, serviceType: 'power' })
+                return await VendorService.irechargeRequeryTransaction({ accessToken: transaction.irechargeAccessToken, serviceType: 'power' })
             default:
                 throw new CustomError('Unsupported superagent', {
                     transactionId: transaction.id
@@ -466,7 +466,7 @@ class TokenHandler extends Registry {
                 disco: disco,
                 vendType: meter.vendType,
                 phone: user.phoneNumber,
-                accessToken: transaction.irecharge_token
+                accessToken: transaction.irechargeAccessToken
             })
 
             logger.info('Token request processed', logMeta);
@@ -567,7 +567,7 @@ class TokenHandler extends Registry {
              * In the case of 1 and 2, we need to requery the transaction at intervals
              */
             const responseFromIrecharge = tokenInfo as Awaited<ReturnType<typeof VendorService.irechargeVendToken>>
-            const transactionTimedOutFromIrecharge = responseFromIrecharge.source === 'IRECHARGE' ? ['15', '43'].includes(responseFromIrecharge.status) : false
+            const transactionTimedOutFromIrecharge = vendResultFromIrecharge.source === 'IRECHARGE' ? ['15', '43'].includes(vendResultFromIrecharge.status) : false
             let transactionTimedOutFromBuypower = vendResultFromBuypower.source === 'BUYPOWERNG' ? vendResultFromBuypower.data.responseCode == 202 : false // TODO: Add check for when transaction timeout from baxi
             const transactionTimedOut = transactionTimedOutFromBuypower || transactionTimedOutFromIrecharge
             let tokenInResponse: string | null = null;
@@ -830,6 +830,7 @@ class TokenHandler extends Registry {
             const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' && requeryResultFromIrecharge.vend_status === 'successful' : false
 
             let transactionSuccess = (transactionSuccessFromBuypower || transactionSuccessFromBaxi || transactionSuccessFromIrecharge)
+            console.log({ transactionSuccess })
             if (transactionSuccess && TEST_FAILED) {
                 const totalRetries = (retry.retryCountBeforeSwitchingVendor * transaction.previousVendors.length - 1) + retry.count + 1
 

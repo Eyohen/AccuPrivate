@@ -238,7 +238,7 @@ export class TokenHandlerUtil {
             case 'BUYPOWERNG':
                 return await VendorService.buyPowerRequeryTransaction({ reference: transaction.reference })
             case 'IRECHARGE':
-                return await VendorService.irechargeRequeryTransaction({ accessToken: transaction.irecharge_token, serviceType: 'airtime' })
+                return await VendorService.irechargeRequeryTransaction({ accessToken: transaction.irechargeAccessToken, serviceType: 'airtime' })
             default:
                 throw new CustomError('Unsupported superagent')
         }
@@ -412,7 +412,7 @@ class TokenHandler extends Registry {
                 );
             }
 
-            await transaction.update({ irecharge_token: tokenInfo.source === 'IRECHARGE' ? tokenInfo.ref : undefined })
+            await transaction.update({ irechargeAccessToken: tokenInfo.source === 'IRECHARGE' ? tokenInfo.ref : undefined })
 
             await transactionEventService.addAirtimeReceivedFromVendorEvent();
             return await VendorPublisher.publishEventForAirtimeReceivedFromVendor({

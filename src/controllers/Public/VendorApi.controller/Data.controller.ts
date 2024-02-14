@@ -24,6 +24,7 @@ import ProductService from "../../../services/Product.service";
 import VendorProduct from "../../../models/VendorProduct.model";
 import VendorProductService from "../../../services/VendorProduct.service";
 import { TokenHandlerUtil } from "../../../kafka/modules/consumers/Token";
+import { generateRandomString, generateRandonNumbers } from "../../../utils/Helper";
 require('newrelic');
 
 
@@ -109,6 +110,7 @@ export class DataVendController {
 
         const superAgent = vendor.name as 'IRECHARGE' | 'BUYPOWERNG' | 'BAXI'
 
+        const reference = generateRandomString(10);
         const amount = vendorProduct.bundleAmount.toString()
         const transaction: Transaction =
             await TransactionService.addTransactionWithoutValidatingUserRelationship({
@@ -123,6 +125,8 @@ export class DataVendController {
                 transactionType: TransactionType.DATA,
                 productCodeId: existingProductCodeForDisco.id,
                 previousVendors: [vendor.name],
+                reference,
+                vendorReferenceId: superAgent === 'IRECHARGE' ? generateRandonNumbers(12) : reference
             });
 
         const transactionEventService = new DataTransactionEventService(transaction, superAgent, partnerId, phoneNumber);

@@ -23,11 +23,11 @@ export default class TransactionService {
     private static eventService: EventService = new EventService();
 
     static async addTransactionWithoutValidatingUserRelationship(
-        transaction: Omit<ICreateTransaction, "userId" | "reference">,
+        transaction: Omit<ICreateTransaction, "userId">,
     ): Promise<Transaction> {
         const transactionData = Transaction.build({
             ...transaction,
-            reference: generateRandomString(10),
+            // reference: generateRandomString(10),
         } as Transaction);
 
         await transactionData.save({ validate: false });

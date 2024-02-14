@@ -194,7 +194,6 @@ export class IRechargeVendorService {
     }
 
     static async validateMeter({ disco, reference, meterNumber }: { disco: string, meterNumber: string, reference: string }) {
-        reference = NODE_ENV === 'development' ? generateRandonNumbers(12) : reference
         meterNumber = NODE_ENV === 'development' ? '1234567890' : meterNumber
 
         const combinedString = this.VENDOR_CODE + "|" + reference + "|" + meterNumber + "|" + disco + "|" + this.PUBLIC_KEY
@@ -206,7 +205,6 @@ export class IRechargeVendorService {
     };
 
     static async vend({ disco, reference, meterNumber, accessToken, amount, phone, email }: { disco: string, meterNumber: string, vendType: "PREPAID" | "POSTPAID", reference: string, accessToken: string, phone: string, email: string, amount: number }): Promise<any> {
-        reference = NODE_ENV === 'development' ? generateRandonNumbers(12) : reference
         amount = NODE_ENV === 'development' ? 900 : amount  // IRecharge has a minimum amount of 500 naira and the wallet balance is limited
         meterNumber = NODE_ENV === 'development' ? '1234567890' : meterNumber
 

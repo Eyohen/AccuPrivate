@@ -79,7 +79,10 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     productCodeId: string;
 
     @Column({ type: DataType.STRING, allowNull: true })
-    irecharge_token: string
+    irechargeAccessToken: string
+
+    @Column({ type: DataType.STRING, allowNull: true })
+    vendorReferenceId: string
 
     @Column({ type: DataType.ARRAY(DataType.STRING), allowNull: true })
     previousVendors: string[]
@@ -147,8 +150,8 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     @BeforeCreate
     static async checkIfAccesstokenExistForIRecharge(transaction: Transaction) {
         if (transaction.superagent === 'IRECHARGE') {
-            if (!transaction.irecharge_token) {
-                // throw new Error('irecharge_token is required')
+            if (!transaction.irechargeAccessToken) {
+                // throw new Error('irechargeAccessToken is required')
             }
         }
     }
@@ -200,7 +203,8 @@ export interface ITransaction {
     meterId?: string; // Unique identifier of the Meter associated with the transaction
     reference: string;
     productCodeId: string;
-    irecharge_token?: string
+    irechargeAccessToken?: string;
+    vendorReferenceId: string;
     previousVendors: string[]
 }
 

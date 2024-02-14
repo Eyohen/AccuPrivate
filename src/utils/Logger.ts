@@ -20,7 +20,8 @@ class YourCustomPostgresTransport extends winston.Transport {
             level,
             message,
             meta,
-            createadAt: new Date()
+            transactionId: meta?.transactionId,
+            createdAt: new Date()
         }).then(() => {
             callback();
         }).catch((error: Error) => {
