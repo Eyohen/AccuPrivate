@@ -703,9 +703,15 @@ class TokenHandler extends Registry {
             const prepaid = data.meter.vendType === 'PREPAID';
             data.meter.token = !prepaid ? '' : data.meter.token
 
-            const discoLogo =
-                DISCO_LOGO[data.meter.disco as keyof typeof DISCO_LOGO] ?? LOGO_URL
+            console.log({ disco: data.meter })
+            const product = await ProductService.viewSingleProduct(transaction.productCodeId)
+            if (!product) throw new CustomError('Product not found')
 
+
+            const discoLogo =
+                DISCO_LOGO[product.productName as keyof typeof DISCO_LOGO] ?? LOGO_URL
+
+            console.log(discoLogo)
             logger.info('Saving token record', logMeta);
             powerUnit = powerUnit
                 ? await PowerUnitService.updateSinglePowerUnit(powerUnit.id, {
