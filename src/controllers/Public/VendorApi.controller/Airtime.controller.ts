@@ -82,16 +82,20 @@ export class AirtimeVendController {
         res: Response,
         next: NextFunction
     ) {
-        const { phoneNumber, amount, email, disco } = req.body;
-        // TODO: Add request type for request authenticated by API keys
-        const partnerId = (req as any).key
+        const { phoneNumber, amount, email, networkProvider } = req.body;
+        let disco = networkProvider
 
-        // TODO: I'm using this for now to allow the schema validation since product code hasn't been created for airtime
-        const existingProductCodeForDisco = await ProductService.viewSingleProductByMasterProductCode(disco)
+        const existingProductCodeForDisco = await ProductService.viewProductCodeByProductName(disco)
         if (!existingProductCodeForDisco) {
             throw new NotFoundError('Product code not found for disco')
         }
 
+        disco = existingProductCodeForDisco.masterProductCode
+
+        // TODO: Add request type for request authenticated by API keys
+        const partnerId = (req as any).key
+
+        // TODO: I'm using this for now to allow the schema validation since product code hasn't been created for airtime
         if (existingProductCodeForDisco.category !== 'AIRTIME') {
             throw new BadRequestError('Invalid product code for airtime')
         }
@@ -226,9 +230,12 @@ export class AirtimeVendController {
                         productId: product.id,
                         commission: productInfo.vendors[vendorName].commission,
                         bonus: productInfo.vendors[vendorName].bonus,
+                        productCode: product.masterProductCode,
                         schemaData: {
                             code: productInfo.vendors[vendorName].discoCode,
                         },
+                        vendorCode: productInfo.vendors[vendorName].discoCode,
+                        vendorName: vendorName,
                         vendorHttpUrl: HTTP_URL[vendorName][productType],
                     });
 
@@ -336,7 +343,8 @@ export class AirtimeVendController {
                         productId: product.id,
                         commission: commissions[vendorName][productType],
                         bonus: 0,
-                        amount: parseFloat(dataBundle.price.toString()),
+                        bundleAmount: parseFloat(dataBundle.price.toString()),
+                        productCode: product.masterProductCode,
                         schemaData: {
                             bundleName: dataBundle.title,
                             validity: dataBundle.validity,
@@ -344,6 +352,8 @@ export class AirtimeVendController {
                             code: vendorName === 'IRECHARGE' ? IRECHARGEDATACODE[productType] : productType,
                         },
                         vendorHttpUrl: HTTP_URL[vendorName]['DATA'],
+                        vendorName: vendorName,
+                        vendorCode: vendorName === 'IRECHARGE' ? IRECHARGEDATACODE[productType] : productType,
                     });
 
                     console.log(`VendorProduct added for vendor ${vendorName} and Code}`);

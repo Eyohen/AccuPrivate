@@ -80,15 +80,18 @@ export class DataVendController {
         res: Response,
         next: NextFunction
     ) {
-        const { phoneNumber, email, disco, vendorProductId } = req.body;
+        const { phoneNumber, email, vendorProductId } = req.body;
         // TODO: Add request type for request authenticated by API keys
         const partnerId = (req as any).key
 
+        let disco = req.body.networkProvider
         // TODO: I'm using this for now to allow the schema validation since product code hasn't been created for airtime
-        const existingProductCodeForDisco = await ProductService.viewSingleProductByMasterProductCode(disco)
+        const existingProductCodeForDisco = await ProductService.viewSingleProductByNameAndCategory(disco, 'DATA')
         if (!existingProductCodeForDisco) {
             throw new NotFoundError('Product code not found for disco')
         }
+
+        disco = existingProductCodeForDisco.masterProductCode
 
         if (existingProductCodeForDisco.category !== 'DATA') {
             throw new BadRequestError('Invalid product code for data')
@@ -106,7 +109,7 @@ export class DataVendController {
 
         const superAgent = vendor.name as 'IRECHARGE' | 'BUYPOWERNG' | 'BAXI'
 
-        const amount = vendorProduct.amount.toString()
+        const amount = vendorProduct.bundleAmount.toString()
         const transaction: Transaction =
             await TransactionService.addTransactionWithoutValidatingUserRelationship({
                 id: uuidv4(),

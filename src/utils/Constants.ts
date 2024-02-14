@@ -5,6 +5,7 @@ const deployed = process.env.DEPLOYED;
 const path = deployed ? `/etc/secrets/.env` : `${__dirname}/../.env`;
 dotenv.config({ path });
 
+export const MONGO_URI_LOG  = process.env.MONGO_URI_LOG as string;
 export const BAXI_URL: string | undefined = process.env.BAXI_URL
 export const BAXI_TOKEN: string | undefined = process.env.BAXI_TOKEN
 export const BAXI_AGENT_ID: string | undefined = process.env.BAXI_AGENT_ID
@@ -19,7 +20,7 @@ export const KAFKA_CA_CERT = process.env.KAFKA_CA_CERT as string
 export const KAFA_LOGS = process.env.KAFA_LOGS as string
 export const KAFA_REGION = process.env.KAFA_LOGS as string
 export const EMAIL_HOST = process.env.EMAIL_HOST as string
-export const EMAIL_PORT = process.env.EMAIL_PORT as string
+export const EMAIL_PORT = parseInt(process.env.EMAIL_PORT as string, 10)
 export const EMAIL_HOST_ADDRESS = process.env.EMAIL_HOST_ADDRESS as string
 export const OAUTH_CLIENT_ID = process.env.OAUTH_CLIENT_ID as string
 export const OAUTH_CLIENT_SECRET = process.env.OAUTH_CLIENT_SECRET as string
@@ -46,6 +47,9 @@ export const KAFKA_PASSWORD = process.env.KAFKA_PASSWORD as string;
 export const KAFKA_BROKER = process.env.KAFKA_BROKER as string;
 export const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY as string;
 export const MAX_REQUERY_PER_VENDOR = parseInt(process.env.MAX_REQUERY_PER_VENDOR as string, 10)
+export const AFRICASTALKING_API_KEY = process.env.AFRICASTALKING_API_KEY as string;
+export const AFRICASTALKING_USERNAME = process.env.AFRICASTALKING_USERNAME as string;
+export const AFRICASTALKING_SENDER = process.env.AFRICASTALKING_SENDER as string;
 
 export const DISCO_LOGO = {
     abuja: "https://res.cloudinary.com/richiepersonaldev/image/upload/v1699947957/dpijlhj08ard76zao2uk.jpg",
@@ -233,7 +237,7 @@ export const SEED = {
             vendors: {
                 BAXI: { discoCode: 'abuja_electric_postpaid', commission: 1.20, bonus: 0 },
                 BUYPOWERNG: { discoCode: 'ABUJA', commission: 1.80, bonus: 0 },
-                IRECHARGE: { discoCode: 'AEDC_Postpaid', commission: 1.80, bonus: 0 },
+                IRECHARGE: { discoCode: 'AEDC_Postpaid', commission: 2.00, bonus: 0 },
             }
         },
         'ECEKEPS': {
@@ -369,7 +373,7 @@ export const SEED = {
             vendors: {
                 BAXI: { discoCode: 'abuja_electric_prepaid', commission: 1.20, bonus: 0 },
                 BUYPOWERNG: { discoCode: 'ABUJA', commission: 1.80, bonus: 0 },
-                IRECHARGE: { discoCode: 'AEDC', commission: 1.80, bonus: 50 },
+                IRECHARGE: { discoCode: 'AEDC', commission: 2.00, bonus: 0 },
             }
         },
         // 'ECAAEPE': {
@@ -466,9 +470,6 @@ export const SEED = {
         },
     },
 } as const;
-
-console.log(SEED);
-
 
 export const SCHEMADATA = {
     BUYPOWERNG: {

@@ -35,6 +35,16 @@ export default class ProductService {
         return product;
     }
 
+    static async viewSingleProductByNameAndCategory(productName: string, category: string): Promise<Product | null> {
+        const product = await Product.findOne({ where: { productName, category }, include: VendorProduct });
+        return product;
+    }
+
+    static async viewSingleProductByProductNameAndVendType(productName: string, vendType: string): Promise<Product | null> {
+        const product = await Product.findOne({ where: { productName, type: vendType }, include: VendorProduct });
+        return product;
+    }
+
     static async viewSingleProductByMasterProductCode(masterProductCode: string): Promise<Product | null> {
         const product = await Product.findOne({ where: { masterProductCode }, include: VendorProduct });
         return product;

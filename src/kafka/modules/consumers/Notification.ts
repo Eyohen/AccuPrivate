@@ -14,6 +14,8 @@ import ConsumerFactory from "../util/Consumer";
 import { PublisherEventAndParameters, Registry, Topic } from "../util/Interface";
 import MessageProcessor from "../util/MessageProcessor";
 import { v4 as uuidv4 } from 'uuid';
+import ProductService from "../../../services/Product.service";
+import { SmsService } from "../../../utils/Sms";
 
 class NotificationHandler extends Registry {
     private static async handleReceivedToken(data: PublisherEventAndParameters[TOPICS.TOKEN_RECIEVED_FROM_VENDOR]) {
@@ -68,6 +70,15 @@ class NotificationHandler extends Registry {
             PREPAID: new EmailTemplate().receipt,
             POSTPAID: new EmailTemplate().postpaid_receipt
         }
+
+        const product = await ProductService.viewSingleProduct(transaction.productCodeId)
+        if (!product) {
+            throw new Error(`Error fetching product with id ${transaction.productCodeId}`)
+        }
+
+        transaction.disco = product.productName
+        console.log({ productName: transaction.disco })
+
         // If you've not notified the user before, notify them
         if (!notifyUserEvent) {
             await EmailService.sendEmail({
@@ -128,6 +139,13 @@ class NotificationHandler extends Registry {
             await transactionEventService.addAirtimeSentToPartner()
         }
 
+        const product = await ProductService.viewSingleProduct(transaction.productCodeId)
+        if (!product) {
+            throw new Error(`Error fetching product with id ${transaction.productCodeId}`)
+        }
+
+        transaction.disco = product.productName
+
         // If you've not notified the user before, notify them
         if (!notifyUserEvent) {
             await EmailService.sendEmail({
@@ -137,6 +155,13 @@ class NotificationHandler extends Registry {
                     transaction: transaction,
                     phoneNumber: data.phone.phoneNumber,
                 }),
+            })
+
+            await SmsService.sendSms('+2349038563916', `
+                Successful transaction of ${transaction.amount} for ${data.phone.phoneNumber}
+            `).catch((error: AxiosError) => {
+                console.log(error.response?.data)
+                logger.error('Error sending sms', error)
             })
             await transactionEventService.addAirtimeSentToUserEmail()
         }

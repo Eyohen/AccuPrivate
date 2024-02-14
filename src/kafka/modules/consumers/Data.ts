@@ -25,6 +25,7 @@ import BuypowerApi from "../../../services/VendorApi.service/Buypower";
 import { IRechargeApi } from "../../../services/VendorApi.service/Irecharge";
 import ProductService from "../../../services/Product.service";
 import { VendorProductSchemaData } from "../../../models/VendorProduct.model";
+import { CustomError } from "../../../utils/Errors";
 
 interface EventMessage {
     phone: {
@@ -91,8 +92,9 @@ export class TokenHandlerUtil {
     }: TriggerRequeryTransactionTokenProps) {
         // Check if the transaction has hit the requery limit
         // If yes, flag transaction
+        const logMeta = { meta: { transactionId: eventData.transactionId } }
         if (retryCount >= MAX_REQUERY_PER_VENDOR) {
-            logger.info(`Flagged transaction with id ${eventData.transactionId} after hitting requery limit`)
+            logger.info(`Flagged transaction with id ${eventData.transactionId} after hitting requery limit`, logMeta)
             return await TransactionService.updateSingleTransaction(eventData.transactionId, { status: Status.FLAGGED })
         }
 
@@ -120,6 +122,7 @@ export class TokenHandlerUtil {
 
         logger.info(
             `Retrying transaction with id ${eventData.transactionId} from vendor`,
+            logMeta
         );
 
         await eventService.addGetDataFromVendorRetryEvent(_eventMessage.error, retryCount);
@@ -163,7 +166,7 @@ export class TokenHandlerUtil {
         }
     ) {
         // Attempt purchase from new vendor
-        if (!transaction.bankRefId) throw new Error('BankRefId not found')
+        if (!transaction.bankRefId) throw new CustomError('BankRefId not found')
 
         const newVendor = await TokenHandlerUtil.getNextBestVendorForVendRePurchase({
             productCodeId: transaction.productCodeId,
@@ -174,10 +177,10 @@ export class TokenHandlerUtil {
         await transactionEventService.addDataPurchaseWithNewVendorEvent({ currentVendor: transaction.superagent, newVendor })
 
         const user = await transaction.$get('user')
-        if (!user) throw new Error('User not found for transaction')
+        if (!user) throw new CustomError('User not found for transaction')
 
         const partner = await transaction.$get('partner')
-        if (!partner) throw new Error('Partner not found for transaction')
+        if (!partner) throw new CustomError('Partner not found for transaction')
 
         retry.count = 0
         await transaction.update({ previousVendors: [...transaction.previousVendors, newVendor] })
@@ -214,7 +217,7 @@ export class TokenHandlerUtil {
         } else if (transaction.superagent === "BUYPOWERNG") {
             return await VendorService.purchaseData({ data: _data, vendor: 'BUYPOWERNG' }).then(response => ({ ...response, source: 'BUYPOWERNG' as const }))
         } else {
-            throw new Error('Unsupported superagent')
+            throw new CustomError('Unsupported superagent')
         }
     }
 
@@ -227,7 +230,7 @@ export class TokenHandlerUtil {
             case 'IRECHARGE':
                 return await VendorService.irechargeRequeryTransaction({ accessToken: transaction.irecharge_token, serviceType: 'airtime' })
             default:
-                throw new Error('Unsupported superagent')
+                throw new CustomError('Unsupported superagent')
         }
     }
 
@@ -242,10 +245,10 @@ class TokenHandler extends Registry {
     private static async retryPowerPurchaseWithNewVendor(data: PublisherEventAndParameters[TOPICS.RETRY_DATA_PURCHASE_FROM_NEW_VENDOR]) {
         const transaction = await TransactionService.viewSingleTransaction(data.transactionId);
         if (!transaction) {
-            throw new Error(`Error fetching transaction with id ${data.transactionId}`);
+            throw new CustomError(`Error fetching transaction with id ${data.transactionId}`);
         }
         if (!transaction.bankRefId) {
-            throw new Error('BankRefId not found')
+            throw new CustomError('BankRefId not found')
         }
 
         await TransactionService.updateSingleTransaction(transaction.id, { superagent: data.newVendor })
@@ -267,13 +270,14 @@ class TokenHandler extends Registry {
             log: 'New token request',
             currentVendor: data.superAgent
         })
-
+        const logMeta = { meta: { transactionId: data.transactionId} }
+        logger.info('New Data request', logMeta)
         const transaction = await TransactionService.viewSingleTransaction(
             data.transactionId,
         );
         if (!transaction) {
             logger.error(
-                `Error fetching transaction with id ${data.transactionId}`,
+                `Error fetching transaction with id ${data.transactionId}`, logMeta
             );
             return;
         }
@@ -281,12 +285,12 @@ class TokenHandler extends Registry {
         const { user, partner } = transaction;
 
         const product = await ProductService.viewSingleProduct(transaction.productCodeId)
-        if (!product) throw new Error('Product code not found')
+        if (!product) throw new CustomError('Product code not found')
 
         const vendorProducts = await product.$get('vendorProducts')
         const vendorAndDiscos = await Promise.all(vendorProducts.map(async vendorProduct => {
             const vendor = await vendorProduct.$get('vendor')
-            if (!vendor) throw new Error('Vendor not found')
+            if (!vendor) throw new CustomError('Vendor not found')
             return {
                 vendorName: vendor.name,
                 discoCode: (vendorProduct.schemaData as VendorProductSchemaData.BUYPOWERNG).code,
@@ -297,11 +301,11 @@ class TokenHandler extends Registry {
         console.log({ vendorAndDiscos, superagent: transaction.superagent })
 
         const vendorProductCode = vendorAndDiscos.find(vendorAndDisco => vendorAndDisco.vendorName === transaction.superagent)?.dataCode
-        if (!vendorProductCode) throw new Error('Vendor product code not found')
+        if (!vendorProductCode) throw new CustomError('Vendor product code not found')
 
         // find MTN, GLO, AIRTEL, 9MOBILE In the product code using regex
         const validMasterProductCode = product.masterProductCode.match(/MTN|GLO|AIRTEL|9MOBILE/g)
-        if (!validMasterProductCode) throw new Error('Product code not found')
+        if (!validMasterProductCode) throw new CustomError('Product code not found')
 
         const mtn = product.masterProductCode.includes('MTN')
         const glo = product.masterProductCode.includes('GLO')
@@ -309,9 +313,10 @@ class TokenHandler extends Registry {
         const nineMobile = product.masterProductCode.includes('9MB')
 
         const network = mtn ? 'MTN' : glo ? 'GLO' : airtel ? 'AIRTEL' : nineMobile ? '9MOBILE' : null
-        if (!network) throw new Error('Network not found')
+        if (!network) throw new CustomError('Network not found')
 
         // Purchase token from vendor
+        logger.info('Processing vend request', logMeta)
         const tokenInfo = await TokenHandlerUtil.processVendRequest({
             transaction: transaction as TokenPurchaseData['transaction'],
             phoneNumber: data.phone.phoneNumber,
@@ -321,6 +326,8 @@ class TokenHandler extends Registry {
             serviceProvider: network as TokenPurchaseData['serviceProvider'],
         })
 
+
+        logger.info('Vend request processed', logMeta)
         const error = { code: 202, cause: TransactionErrorCause.UNKNOWN }
         const transactionEventService = new DataTransactionEventService(
             transaction,
@@ -352,6 +359,7 @@ class TokenHandler extends Registry {
 
         console.log({ tokenInfo, transactionSuccessFul, transactionFailed: retry.count > retry.retryCountBeforeSwitchingVendor, requeryFromNewVendor, requeryFromSameVendor })
         if (!transactionSuccessFul) {
+            logger.error('Transaction unsuccessful', logMeta)
             if (requeryFromNewVendor) {
                 return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ phone: data.phone, transaction, transactionEventService })
             }
@@ -392,14 +400,14 @@ class TokenHandler extends Registry {
             data.transactionId,
         );
         if (!transaction) {
-            throw new Error(
+            throw new CustomError(
                 `Error fetching transaction with id ${data.transactionId}`,
             );
         }
 
         // Check if transaction is already complete
         if (transaction.status === Status.COMPLETE) {
-            throw new Error(
+            throw new CustomError(
                 `Transaction with id ${data.transactionId} is already complete`,
             );
         }
@@ -411,7 +419,7 @@ class TokenHandler extends Registry {
         const requeryResultFromBaxi = requeryResult as Awaited<ReturnType<typeof VendorService.baxiRequeryTransaction>>
 
         const transactionSuccessFromBuypower = requeryResultFromBuypower.source === 'BUYPOWERNG' ? requeryResultFromBuypower.responseCode === 200 : false
-        const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' : false
+        const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' && requeryResultFromIrecharge.vend_status === 'successful' && requeryResultFromIrecharge.vend_status === 'successful': false
         const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false
 
         const transactionEventService = new DataTransactionEventService(
@@ -463,7 +471,7 @@ class TokenHandler extends Registry {
         const user = await transaction.$get('user')
         const partner = await transaction.$get('partner')
         if (!user || !partner) {
-            throw new Error("Transaction  required relations not found");
+            throw new CustomError("Transaction  required relations not found");
         }
 
         const transactionEventService = new DataTransactionEventService(
@@ -492,7 +500,7 @@ class TokenHandler extends Registry {
 
         const transactionSuccessFromBuypower = requeryResultFromBuypower.source === 'BUYPOWERNG' ? requeryResultFromBuypower.responseCode === 200 : false
         const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false
-        const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' : false
+        const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' && requeryResultFromIrecharge.vend_status === 'successful' : false
 
         const transactionSuccess = TEST_FAILED ? false : transactionSuccessFromBuypower
         console.log({ transactionSuccess, transactionSuccessFromBuypower, transactionSuccessFromBaxi, transactionSuccessFromIrecharge })

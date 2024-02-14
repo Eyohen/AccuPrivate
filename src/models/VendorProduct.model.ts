@@ -26,8 +26,11 @@ export default class VendorProduct extends Model<IVendorProduct | VendorProduct>
     @Column({ type: DataType.STRING, allowNull: false })
     productId: string;
 
+    @Column({ type: DataType.STRING, allowNull: false })
+    productCode: string;
+
     @Column({ type: DataType.FLOAT, allowNull: true })
-    amount: number;
+    bundleAmount: number;
 
     // Commission for the product
     @Column({ type: DataType.FLOAT, allowNull: false })
@@ -36,6 +39,12 @@ export default class VendorProduct extends Model<IVendorProduct | VendorProduct>
     // Bonus for the product
     @Column({ type: DataType.FLOAT, allowNull: false })
     bonus: number;
+
+    @Column({ type: DataType.STRING, allowNull: true })
+    vendorCode: string;
+
+    @Column({ type: DataType.STRING, allowNull: true })
+    vendorName: string;
 
     // Schema data for the product
     @Column({ type: DataType.JSONB, allowNull: true })
@@ -74,10 +83,13 @@ export interface IVendorProduct {
     vendorId: string;
     productId: string;
     commission: number;
+    productCode: string;
     bonus: number;
     schemaData: {
         code: string
     } & Record<string, any>;
     vendorHttpUrl: string;
-    amount?: number;
+    bundleAmount?: number;
+    vendorName: string;
+    vendorCode: string;
 }

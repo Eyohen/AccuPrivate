@@ -16,6 +16,7 @@ import partnerRoute from './Partner.routes'
 import complainRoute from './complaint.routes'
 import productCodeRoute from './ProductCode.routes'
 import masterRoute from './MasterProduct.routes'
+import sysLogRoute from './Syslog.routes'
 
 const router = Router()
 
@@ -37,6 +38,7 @@ router
     .use('/complaints', complainRoute)
     .use('/productcode', productCodeRoute)
     .use('/master', masterRoute)
+    .use('/syslog', sysLogRoute)
 
 export default router
 

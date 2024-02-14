@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import { CustomAPIError, } from '../utils/Errors';
+import { CustomAPIError, CustomError, } from '../utils/Errors';
 import logger from '../utils/Logger';
 require('newrelic');
 
-function errorHandler(err: Error, req: Request, res: Response, next: NextFunction): Response {
+function errorHandler(err: CustomError, req: Request, res: Response, next: NextFunction): Response {
     console.error(err)
     logger.error(err.stack);
     if (err instanceof CustomAPIError && err.statusCode !== 500) {
@@ -12,6 +12,8 @@ function errorHandler(err: Error, req: Request, res: Response, next: NextFunctio
             error: true,
             message: err.message,
         });
+    } else if (err instanceof CustomError) {
+        logger.error(err.message, err.meta)
     }
 
     // if the error is not one of the specific types above, return a generic internal server error
