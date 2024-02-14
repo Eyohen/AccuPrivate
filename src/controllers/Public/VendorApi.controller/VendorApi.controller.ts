@@ -722,9 +722,9 @@ export default class VendorController {
                 res.status(200).json({
                     status: "success",
                     message: "Token purchase initiated successfully",
-                    data: {
-                        transaction: _transaction,
-                    },
+                    // data: {
+                    //     transaction: _transaction,
+                    // },
                 });
 
                 return
