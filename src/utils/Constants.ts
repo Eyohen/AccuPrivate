@@ -47,6 +47,9 @@ export const KAFKA_PASSWORD = process.env.KAFKA_PASSWORD as string;
 export const KAFKA_BROKER = process.env.KAFKA_BROKER as string;
 export const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY as string;
 export const MAX_REQUERY_PER_VENDOR = parseInt(process.env.MAX_REQUERY_PER_VENDOR as string, 10)
+export const AFRICASTALKING_API_KEY = process.env.AFRICASTALKING_API_KEY as string;
+export const AFRICASTALKING_USERNAME = process.env.AFRICASTALKING_USERNAME as string;
+export const AFRICASTALKING_SENDER = process.env.AFRICASTALKING_SENDER as string;
 
 export const DISCO_LOGO = {
     abuja: "https://res.cloudinary.com/richiepersonaldev/image/upload/v1699947957/dpijlhj08ard76zao2uk.jpg",

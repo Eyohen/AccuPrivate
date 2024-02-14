@@ -15,6 +15,7 @@ import { PublisherEventAndParameters, Registry, Topic } from "../util/Interface"
 import MessageProcessor from "../util/MessageProcessor";
 import { v4 as uuidv4 } from 'uuid';
 import ProductService from "../../../services/Product.service";
+import { SmsService } from "../../../utils/Sms";
 
 class NotificationHandler extends Registry {
     private static async handleReceivedToken(data: PublisherEventAndParameters[TOPICS.TOKEN_RECIEVED_FROM_VENDOR]) {
@@ -154,6 +155,13 @@ class NotificationHandler extends Registry {
                     transaction: transaction,
                     phoneNumber: data.phone.phoneNumber,
                 }),
+            })
+
+            await SmsService.sendSms('+2349038563916', `
+                Successful transaction of ${transaction.amount} for ${data.phone.phoneNumber}
+            `).catch((error: AxiosError) => {
+                console.log(error.response?.data)
+                logger.error('Error sending sms', error)
             })
             await transactionEventService.addAirtimeSentToUserEmail()
         }
