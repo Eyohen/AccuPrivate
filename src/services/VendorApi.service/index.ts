@@ -697,6 +697,12 @@ export interface ElectricityPurchaseResponse {
     BAXI: Awaited<ReturnType<typeof VendorService.baxiVendToken>>,
 }
 
+export interface ElectricityRequeryResponse {
+    BUYPOWERNG: Awaited<ReturnType<typeof VendorService.buyPowerRequeryTransaction>>,
+    IRECHARGE: Awaited<ReturnType<typeof VendorService.irechargeRequeryTransaction>>,
+    BAXI: Awaited<ReturnType<typeof VendorService.baxiRequeryTransaction>>,
+}
+
 export type Prettify<T extends {}> = { [K in keyof T]: T[K] }
 
 export type Vendor = 'BUYPOWERNG' | 'IRECHARGE' | 'BAXI'

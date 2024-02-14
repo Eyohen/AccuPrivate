@@ -19,7 +19,7 @@ import {
 import MessageProcessor from "../util/MessageProcessor";
 import { v4 as uuidv4 } from "uuid";
 import EventService from "../../../services/Event.service";
-import VendorService, { ElectricityPurchaseResponse, SuccessResponseForBuyPowerRequery, Vendor } from "../../../services/VendorApi.service";
+import VendorService, { ElectricityPurchaseResponse, ElectricityRequeryResponse, SuccessResponseForBuyPowerRequery, Vendor } from "../../../services/VendorApi.service";
 import { generateRandomToken } from "../../../utils/Helper";
 import ProductService from "../../../services/Product.service";
 import { CustomError } from "../../../utils/Errors";
@@ -482,7 +482,9 @@ class TokenHandler extends Registry {
 
             // Requery transaction from provider and update transaction status
             const vendResult = await TokenHandlerUtil.requeryTransactionFromVendor(updatedTransaction).catch(e => e);
-            const vendResultFromBuypower = vendResult as unknown as ElectricityPurchaseResponse['BUYPOWERNG'] & { source: 'BUYPOWERNG' }
+
+            console.log({ vendResult })
+            const vendResultFromBuypower = vendResult as unknown as ElectricityRequeryResponse['BUYPOWERNG'] & { source: 'BUYPOWERNG' }
             const vendResultFromBaxi = vendResult as {
                 source: 'BAXI',
                 data: BaxiRequeryResultForPurchase['Prepaid']['data'],
@@ -490,7 +492,7 @@ class TokenHandler extends Registry {
                 status: boolean,
                 message: 'Transaction successful'
             }
-            const vendResultFromIrecharge = vendResult as unknown as ElectricityPurchaseResponse['IRECHARGE'] & { source: 'IRECHARGE' }
+            const vendResultFromIrecharge = vendResult as unknown as ElectricityRequeryResponse['IRECHARGE'] & { source: 'IRECHARGE' }
 
             const eventMessage = {
                 meter: {
@@ -568,7 +570,7 @@ class TokenHandler extends Registry {
              */
             const responseFromIrecharge = tokenInfo as Awaited<ReturnType<typeof VendorService.irechargeVendToken>>
             const transactionTimedOutFromIrecharge = vendResultFromIrecharge.source === 'IRECHARGE' ? ['15', '43'].includes(vendResultFromIrecharge.status) : false
-            let transactionTimedOutFromBuypower = vendResultFromBuypower.source === 'BUYPOWERNG' ? vendResultFromBuypower.data.responseCode == 202 : false // TODO: Add check for when transaction timeout from baxi
+            let transactionTimedOutFromBuypower = vendResultFromBuypower.source === 'BUYPOWERNG' ? vendResultFromBuypower.status === true && vendResultFromBuypower.data.responseCode == 202 : false // TODO: Add check for when transaction timeout from baxi
             const transactionTimedOut = transactionTimedOutFromBuypower || transactionTimedOutFromIrecharge
             let tokenInResponse: string | null = null;
 
@@ -576,15 +578,16 @@ class TokenHandler extends Registry {
 
             if (prepaid) {
                 if (vendResult.source === 'BUYPOWERNG') {
-                    tokenInResponse = vendResultFromBuypower.data.responseCode !== 202 ? vendResultFromBuypower.data.token : null
+                    tokenInResponse = vendResultFromBuypower.status === true && vendResultFromBuypower.data.responseCode !== 202 ? vendResultFromBuypower.data.token : null
                 } else if (tokenInfo.source === 'BAXI') {
                     tokenInResponse = vendResultFromBaxi.data.rawData.standardTokenValue
                 } else if (tokenInfo.source === 'IRECHARGE') {
-                    tokenInResponse = vendResultFromIrecharge.meter_token
+                    tokenInResponse = vendResultFromIrecharge.token
                 }
             } else {
                 tokenInResponse = null // There is no token for postpaid meters
             }
+
 
             let requeryTransactionFromVendor = transactionTimedOut
             if (((tokenInResponse && prepaid) || (!tokenInResponse && !prepaid)) && TEST_FAILED) {
@@ -595,6 +598,7 @@ class TokenHandler extends Registry {
                 requeryTransactionFromVendor = !shouldAssumeToBeSuccessful
             }
 
+            console.log({ tokenInResponse, requeryTransactionFromVendor })
             // If Transaction timedout - Requery the transaction at intervals
             if (requeryTransactionFromVendor || (!tokenInResponse && prepaid)) {
                 return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
