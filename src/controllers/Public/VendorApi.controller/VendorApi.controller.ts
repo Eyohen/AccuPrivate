@@ -634,7 +634,7 @@ export default class VendorController {
         console.log({ transactionId, bankComment, amount, vendType })
 
         const errorMeta = { transactionId: transactionId };
-        const bankRefId = process.env.LOAD_TEST_MODE ? randomUUID() : req.body.bankRefId;
+        const bankRefId = process.env.LOAD_TEST_MODE ? randomUUID() : req.query.bankRefId as string;
         if (parseInt(amount) < 500) {
             throw new BadRequestError("Amount must be greater than 500", errorMeta);
         }
