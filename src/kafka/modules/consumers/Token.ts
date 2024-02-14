@@ -26,6 +26,8 @@ import { CustomError } from "../../../utils/Errors";
 import VendorProductService from "../../../services/VendorProduct.service";
 import VendorModelService from "../../../services/Vendor.service"
 import { BaxiRequeryResultForPurchase, BaxiSuccessfulPuchaseResponse } from "../../../services/VendorApi.service/Baxi/Config";
+import { error } from "console";
+import test from "node:test";
 
 interface EventMessage {
     meter: {
@@ -85,7 +87,7 @@ const TransactionErrorCodeAndCause = {
 export function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
     // Use geometric progression  calculate wait time, where R = 2
     const waitTime = 2 ** (retryCount - 1)
-    return waitTime * 10
+    return waitTime < 5 ? 5 : waitTime
 }
 
 type TransactionWithProductId = Exclude<Transaction, 'productCodeId'> & { productCodeId: NonNullable<Transaction['productCodeId']> }
@@ -228,6 +230,28 @@ export class TokenHandlerUtil {
             phone: data.phone,
             email: user.email,
             accessToken: data.accessToken
+        }
+
+        if (!_data.accessToken && data.transaction.superagent === 'IRECHARGE') {
+            logger.warn('No access token found for irecharge meter validation', {
+                transactionId: data.transaction.id
+            })
+
+            logger.info('Validating meter', { transactionId: data.transaction.id })
+            const meterValidationResult = await VendorService.irechargeValidateMeter(_data.disco, _data.meterNumber, data.transaction.reference).catch((error) => {
+                throw new CustomError('Error validating meter', {
+                    transactionId: data.transaction.id,
+                })
+            })
+
+            if (!meterValidationResult) throw new CustomError('Error validating meter', {
+                transactionId: data.transaction.id,
+            })
+
+            _data.accessToken = meterValidationResult.access_token
+            console.log({ meterValidationResult, info: 'New meter validation result' })
+            await TransactionService.updateSingleTransaction(data.transaction.id, { irecharge_token: meterValidationResult.access_token })
+            logger.info('Generated access token for irecharge meter validation', { transactionId: data.transaction.id })
         }
 
         switch (data.transaction.superagent) {
@@ -446,8 +470,18 @@ class TokenHandler extends Registry {
             })
 
             logger.info('Token request processed', logMeta);
+            const updatedTransaction = await TransactionService.viewSingleTransaction(data.transactionId);
+            if (!updatedTransaction) {
+                throw new CustomError(
+                    `CustomError fetching transaction with id ${data.transactionId}`,
+                    {
+                        transactionId: data.transactionId
+                    }
+                );
+            }
+
             // Requery transaction from provider and update transaction status
-            const vendResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction).catch(e => e);
+            const vendResult = await TokenHandlerUtil.requeryTransactionFromVendor(updatedTransaction).catch(e => e);
             const vendResultFromBuypower = vendResult as unknown as ElectricityPurchaseResponse['BUYPOWERNG'] & { source: 'BUYPOWERNG' }
             const vendResultFromBaxi = vendResult as {
                 source: 'BAXI',
@@ -484,7 +518,7 @@ class TokenHandler extends Registry {
 
             // Check if error occured while purchasing token
             // Note that Irecharge api always returns 200, even when an error occurs
-            if (tokenInfo instanceof CustomError) {
+            if (tokenInfo instanceof Error) {
                 logger.error('Error occured while purchasing token', logMeta)
                 if (tokenInfo instanceof AxiosError) {
                     /**
@@ -651,7 +685,7 @@ class TokenHandler extends Registry {
 
             // const transactionSuccessFromBuypower = requeryResultFromBuypower.source === 'BUYPOWERNG' ? requeryResultFromBuypower.responseCode === 200 : false
             // const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false
-            // const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' : false
+            // const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' && requeryResultFromIrecharge. : false
 
             // const transactionSuccess = transactionSuccessFromBuypower || transactionSuccessFromBaxi || transactionSuccessFromIrecharge
             // if (!transactionSuccess) {
@@ -712,6 +746,7 @@ class TokenHandler extends Registry {
     ) {
         try {
 
+            console.warn(" Retrying transaction from vendor")
             retry.count = data.retryCount;
 
             // Check if token has been found
@@ -757,7 +792,7 @@ class TokenHandler extends Registry {
              */
             const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction).catch(e => e);
 
-            if (requeryResult instanceof CustomError) {
+            if (requeryResult instanceof Error) {
                 if (requeryResult instanceof AxiosError) {
                     const requeryWasTriggeredTooEarly = requeryResult.response?.status === 429 && transaction.superagent === 'BUYPOWERNG'
                     if (requeryWasTriggeredTooEarly) {
@@ -792,7 +827,7 @@ class TokenHandler extends Registry {
 
             const transactionSuccessFromBuypower = requeryResultFromBuypower.source === 'BUYPOWERNG' ? requeryResultFromBuypower.responseCode === 200 : false
             const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.status : false
-            const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' : false
+            const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' && requeryResultFromIrecharge.vend_status === 'successful' : false
 
             let transactionSuccess = (transactionSuccessFromBuypower || transactionSuccessFromBaxi || transactionSuccessFromIrecharge)
             if (transactionSuccess && TEST_FAILED) {
@@ -803,6 +838,7 @@ class TokenHandler extends Registry {
             }
 
             if (!transactionSuccess) {
+                console.log({ requeryResult })
                 /**
                  * Transaction may be unsuccessful but it doesn't mean it has failed
                  * The transaction can still be pending
@@ -815,6 +851,7 @@ class TokenHandler extends Registry {
                     cause: TransactionErrorCause
                 } = { code: 202, cause: TransactionErrorCause.UNKNOWN }
                 if (requeryResult.source === 'BUYPOWERNG') {
+                    console.log({ requeryResultFromBuypower, retry, test: TEST_FAILED })
                     let transactionFailed = requeryResultFromBuypower.responseCode === 202
                     transactionFailed = TEST_FAILED ? retry.count > retry.retryCountBeforeSwitchingVendor : transactionFailed // TOGGLE - Will simulate failed buypower transaction
                     if (transactionFailed) requeryFromNewVendor = true
@@ -823,6 +860,7 @@ class TokenHandler extends Registry {
                         error.code = requeryResultFromBuypower.responseCode
                         error.cause = requeryResultFromBuypower.responseCode === 201 ? TransactionErrorCause.TRANSACTION_TIMEDOUT : TransactionErrorCause.TRANSACTION_FAILED
                     }
+
                 } else if (requeryResult.source === 'BAXI') {
                     let transactionFailed = !requeryResultFromBaxi.status
                     transactionFailed = TEST_FAILED ? retry.count > retry.retryCountBeforeSwitchingVendor : transactionFailed // TOGGLE - Will simulate failed baxi transaction
@@ -842,10 +880,6 @@ class TokenHandler extends Registry {
                         error.cause = requeryResultFromIrecharge.status === '00' ? TransactionErrorCause.TRANSACTION_TIMEDOUT : TransactionErrorCause.TRANSACTION_FAILED
                     }
                 }
-
-                logger.error(
-                    `CustomError requerying transaction with id ${data.transactionId} `, { meta: { transactionId: transaction.id } }
-                );
 
                 if (requeryFromNewVendor) {
                     return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter, transaction, transactionEventService })

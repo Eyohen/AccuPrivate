@@ -14,6 +14,7 @@ import { BuypowerAirtimePurchaseData } from "./Buypower/Airtime";
 import { IRechargeApi } from "./Irecharge";
 import BaxiApi from "./Baxi";
 import { BaxiRequeryResultForPurchase, BaxiSuccessfulPuchaseResponse } from "./Baxi/Config";
+import { info } from "console";
 
 export interface PurchaseResponse extends BaseResponse {
     source: 'BUYPOWERNG';
@@ -206,7 +207,7 @@ export class IRechargeVendorService {
 
     static async vend({ disco, reference, meterNumber, accessToken, amount, phone, email }: { disco: string, meterNumber: string, vendType: "PREPAID" | "POSTPAID", reference: string, accessToken: string, phone: string, email: string, amount: number }): Promise<any> {
         reference = NODE_ENV === 'development' ? generateRandonNumbers(12) : reference
-        amount = NODE_ENV === 'development' ? 500 : amount  // IRecharge has a minimum amount of 500 naira and the wallet balance is limited
+        amount = NODE_ENV === 'development' ? 900 : amount  // IRecharge has a minimum amount of 500 naira and the wallet balance is limited
         meterNumber = NODE_ENV === 'development' ? '1234567890' : meterNumber
 
         const combinedString = this.VENDOR_CODE + "|" + reference + "|" + meterNumber + "|" + disco + "|" + amount + "|" + accessToken + "|" + this.PUBLIC_KEY
@@ -336,7 +337,7 @@ export default class VendorService {
             const response = await this.baxiAxios().post<IBaxiValidateMeterResponse>('/electricity/verify', postData)
             const responseData = response.data
 
-            console.log({ responseData })
+            console.log({ responseData, info: 'Meter validation request', input: { disco, meterNumber} })
             if ((responseData as any).status == 'pending') {
                 throw new Error('Transaction timeout')
             }
@@ -498,6 +499,7 @@ export default class VendorService {
         try {
             // Make a GET request using the BuyPower Axios instance
             const response = await this.buyPowerAxios().get<IBuyPowerValidateMeterResponse>(`/check/meter?${params}`);
+            console.log({ responseData: response.data, info: 'Meter validation request', input: body })
             return response.data;
         } catch (error: any) {
             console.error(error)
@@ -573,7 +575,7 @@ export default class VendorService {
 
     static async irechargeValidateMeter(disco: string, meterNumber: string, reference: string) {
         const response = await IRechargeVendorService.validateMeter({ disco, meterNumber, reference })
-        console.log(response)
+        console.log({ responseData: response, info: 'Meter validation request', input: { disco, meterNumber, reference} })
         return response
     }
 
