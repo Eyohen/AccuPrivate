@@ -430,6 +430,7 @@ class VendorControllerUtil {
         superAgents.splice(superAgents.indexOf(previousSuperAgent), 1)
         superAgents.unshift(previousSuperAgent)
 
+        let selectedVendor = superAgents[0]
         for (const superAgent of superAgents) {
             try {
                 console.log({ superAgent })
@@ -441,6 +442,8 @@ class VendorControllerUtil {
                 console.log({ superAgent })
                 const token = superAgent === 'IRECHARGE' ? (response as IResponses['IRECHARGE']).access_token : undefined
                 await transaction.update({ superagent: superAgent as any, irechargeAccessToken: token })
+                
+                selectedVendor = superAgent
                 return response
             } catch (error) {
                 console.log(error)
@@ -454,6 +457,19 @@ class VendorControllerUtil {
                     logger.info(`Trying to validate meter with next super agent - ${superAgents[superAgents.indexOf(superAgent) + 1]}`, { meta: { transactionId: transaction.id } })
                 }
             }
+        }
+
+        // Try validating with IRECHARGE 
+        try {
+            if (selectedVendor != 'IRECHARGE') {
+                logger.info(`Trying to backup validation with IRECHARGE`, { meta: { transactionId: transaction.id } })
+                const response = await validateWithIrecharge()
+                const token = response.access_token
+            
+                await transaction.update({  irechargeAccessToken: token })
+            }
+        } catch (error) {
+            logger.error(`Error validating meter with IRECHARGE`, { meta: { transactionId: transaction.id } })              
         }
     }
 }
