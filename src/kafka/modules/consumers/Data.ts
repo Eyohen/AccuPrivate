@@ -224,11 +224,11 @@ export class TokenHandlerUtil {
     static async requeryTransactionFromVendor(transaction: Transaction) {
         switch (transaction.superagent) {
             case 'BAXI':
-                return await VendorService.baxiRequeryTransaction({ reference: transaction.reference })
+                return await VendorService.baxiRequeryTransaction({ reference: transaction.reference, transactionId: transaction.id })
             case 'BUYPOWERNG':
-                return await VendorService.buyPowerRequeryTransaction({ reference: transaction.reference })
+                return await VendorService.buyPowerRequeryTransaction({ reference: transaction.reference, transactionId: transaction.id })
             case 'IRECHARGE':
-                return await VendorService.irechargeRequeryTransaction({ accessToken: transaction.irecharge_token, serviceType: 'airtime' })
+                return await VendorService.irechargeRequeryTransaction({ accessToken: transaction.irechargeAccessToken, serviceType: 'airtime', transactionId: transaction.id })
             default:
                 throw new CustomError('Unsupported superagent')
         }
@@ -270,7 +270,7 @@ class TokenHandler extends Registry {
             log: 'New token request',
             currentVendor: data.superAgent
         })
-        const logMeta = { meta: { transactionId: data.transactionId} }
+        const logMeta = { meta: { transactionId: data.transactionId } }
         logger.info('New Data request', logMeta)
         const transaction = await TransactionService.viewSingleTransaction(
             data.transactionId,
@@ -375,7 +375,7 @@ class TokenHandler extends Registry {
             );
         }
 
-        await transaction.update({ irecharge_token: tokenInfo.source === 'IRECHARGE' ? tokenInfo.ref : undefined })
+        await transaction.update({ irechargeAccessToken: tokenInfo.source === 'IRECHARGE' ? tokenInfo.ref : undefined })
 
         await transactionEventService.addDataReceivedFromVendorEvent();
         return await VendorPublisher.publishEventForDataReceivedFromVendor({
@@ -419,7 +419,7 @@ class TokenHandler extends Registry {
         const requeryResultFromBaxi = requeryResult as Awaited<ReturnType<typeof VendorService.baxiRequeryTransaction>>
 
         const transactionSuccessFromBuypower = requeryResultFromBuypower.source === 'BUYPOWERNG' ? requeryResultFromBuypower.responseCode === 200 : false
-        const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' && requeryResultFromIrecharge.vend_status === 'successful' && requeryResultFromIrecharge.vend_status === 'successful': false
+        const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' && requeryResultFromIrecharge.vend_status === 'successful' && requeryResultFromIrecharge.vend_status === 'successful' : false
         const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false
 
         const transactionEventService = new DataTransactionEventService(

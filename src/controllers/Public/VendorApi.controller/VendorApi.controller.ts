@@ -44,6 +44,7 @@ import Vendor from "../../../models/Vendor.model";
 require('newrelic');
 import VendorProductService from "../../../services/VendorProduct.service";
 import VendorDocService from '../../../services/Vendor.service'
+import { generateRandomString, generateRandonNumbers } from "../../../utils/Helper";
 interface valideMeterRequestBody {
     meterNumber: string;
     superagent: "BUYPOWERNG" | "BAXI";
@@ -393,8 +394,7 @@ class VendorControllerUtil {
                 throw new InternalServerError('Baxi vendor product not found')
             }
 
-            const res = await VendorService.baxiValidateMeter(baxiVendorProduct.schemaData.code, meterNumber, vendType).then(r => r.data)
-            console.log(res)
+            const res = await VendorService.baxiValidateMeter(baxiVendorProduct.schemaData.code, meterNumber, vendType, transaction.id).then(r => r.data)
             return res
         }
 
@@ -410,14 +410,20 @@ class VendorControllerUtil {
                 throw new InternalServerError('Irecharge vendor product not found')
             }
 
-            return VendorService.irechargeValidateMeter(irechargeVendorProduct.schemaData.code, meterNumber, vendType).then((res) => res.customer)
+            return VendorService.irechargeValidateMeter(irechargeVendorProduct.schemaData.code, meterNumber, transaction.vendorReferenceId).then((res) => ({ ...res, ...res.customer, }))
         }
 
         // Try with the first super agetn, if it fails try with the next, then update the transaction superagent
         let superAgents = await TokenHandlerUtil.getSortedVendorsAccordingToCommissionRate(transaction.productCodeId, parseFloat(transaction.amount))
         //  Put irecharge first 
 
-        let response: any
+        interface IResponses {
+            BUYPOWERNG: Awaited<ReturnType<typeof validateWithBuypower>>,
+            BAXI: Awaited<ReturnType<typeof validateWithBaxi>>,
+            IRECHARGE: Awaited<ReturnType<typeof validateWithIrecharge>>,
+        }
+
+        let response: IResponses[keyof IResponses]
 
         // Set first super agent to be the one in the transaction
         const previousSuperAgent = transaction.superagent
@@ -433,7 +439,8 @@ class VendorControllerUtil {
                     throw response
                 }
                 console.log({ superAgent })
-                await transaction.update({ superagent: superAgent as any })
+                const token = superAgent === 'IRECHARGE' ? (response as IResponses['IRECHARGE']).access_token : undefined
+                await transaction.update({ superagent: superAgent as any, irechargeAccessToken: token })
                 return response
             } catch (error) {
                 console.log(error)
@@ -510,6 +517,7 @@ export default class VendorController {
 
         const superagent = await TokenHandlerUtil.getBestVendorForPurchase(existingProductCodeForDisco.id, 1000);
 
+        const transactionReference = generateRandomString(10)
         const transaction: Transaction =
             await TransactionService.addTransactionWithoutValidatingUserRelationship({
                 id: transactionId,
@@ -520,11 +528,14 @@ export default class VendorController {
                 transactionTimestamp: new Date(),
                 disco: disco,
                 partnerId: partnerId,
+                reference: transactionReference,
                 transactionType: TransactionType.ELECTRICITY,
                 productCodeId: existingProductCodeForDisco.id,
-                previousVendors: [superagent]
+                previousVendors: [superagent],
+                vendorReferenceId: generateRandonNumbers(12)
             });
 
+        logger.info("Validate meter requested", { meta: { transactionId: transaction.id, ...req.body } })
         const transactionEventService = new EventService.transactionEventService(
             transaction, { meterNumber, disco, vendType }, superagent, transaction.partner.email
         );
@@ -553,9 +564,9 @@ export default class VendorController {
         // We Check for Meter User *
         const response = await VendorControllerUtil.validateMeter({ meterNumber, disco: vendorDiscoCode, vendType, transaction })
         const userInfo = {
-            name: response.name,
+            name: (response as any).name,
             email: email,
-            address: response.address,
+            address: (response as any).address,
             phoneNumber: phoneNumber,
             id: uuidv4(),
         };
@@ -576,9 +587,9 @@ export default class VendorController {
         // // Add User if no record of user in db
         const user = await UserService.addUserIfNotExists({
             id: userInfo.id,
-            address: response.address,
+            address: (response as any).address,
             email: email,
-            name: response.name,
+            name: (response as any).name,
             phoneNumber: phoneNumber,
         });
 
@@ -587,7 +598,7 @@ export default class VendorController {
             throw new InternalServerError("An error occured while validating meter", errorMeta);
 
 
-        await TransactionService.updateSingleTransaction(transaction.id, { userId: user?.id, irecharge_token: (response as any).access_token, });
+        await TransactionService.updateSingleTransaction(transaction.id, { userId: user?.id, irechargeAccessToken: (response as any).access_token, });
         await transactionEventService.addCRMUserConfirmedEvent({ user: userInfo });
         await CRMPublisher.publishEventForConfirmedUser({
             user: userInfo,
@@ -607,10 +618,9 @@ export default class VendorController {
         })
 
         // // TODO: Publish event for disco up to kafka
-
         const meter: Meter = await MeterService.addMeter({
             id: uuidv4(),
-            address: response.address,
+            address: (response as any).address,
             meterNumber: meterNumber,
             userId: user.id,
             disco: disco,
@@ -626,24 +636,10 @@ export default class VendorController {
         if (!successful)
             throw new InternalServerError("An error occured while validating meter", errorMeta);
 
-        res.status(200).json({
-            status: "success",
-            data: {
-                transaction: {
-                    transactionId: transaction.id,
-                    status: transaction.status,
-                },
-                meter: {
-                    disco: meter.disco,
-                    number: meter.meterNumber,
-                    address: meter.address,
-                    phone: user.phoneNumber,
-                    vendType: meter.vendType,
-                    name: user.name,
-                },
-            },
-        });
+        const responseData = { status: 'success', message: 'Meter validated successfully', data: { transaction: transaction, meter: meter } }
+        res.status(200).json(responseData);
 
+        logger.info("Meter validated successfully", { meta: { transactionId: transaction.id, ...responseData } })
         await transactionEventService.addMeterValidationSentEvent(meter.id);
         await VendorPublisher.publishEventForMeterValidationSentToPartner({
             transactionId: transaction.id,
@@ -657,7 +653,7 @@ export default class VendorController {
         console.log({ transactionId, bankComment, amount, vendType })
 
         const errorMeta = { transactionId: transactionId };
-        const bankRefId = process.env.LOAD_TEST_MODE ? randomUUID() : req.body.bankRefId;
+        const bankRefId = process.env.LOAD_TEST_MODE ? randomUUID() : req.query.bankRefId as string;
         if (parseInt(amount) < 500) {
             throw new BadRequestError("Amount must be greater than 500", errorMeta);
         }
@@ -667,6 +663,8 @@ export default class VendorController {
         if (!transaction) {
             throw new NotFoundError("Transaction not found", errorMeta);
         }
+
+        logger.info('Requesting token for transaction', { meta: { transactionId: transaction.id, ...req.query } })
 
         const meter = await transaction.$get("meter");
         if (!meter) {
@@ -694,7 +692,10 @@ export default class VendorController {
             vendType: meter.vendType,
             id: meter.id,
         }
-        const transactionEventService = new EventService.transactionEventService(transaction, meterInfo, transaction.superagent, transaction.partner.email);
+        const updatedTransaction = await TransactionService.viewSingleTransaction(transactionId)
+        if (!updatedTransaction) { throw new NotFoundError('Transaction not found') }
+
+        const transactionEventService = new EventService.transactionEventService(updatedTransaction, meterInfo, transaction.superagent, transaction.partner.email);
         await transactionEventService.addPowerPurchaseInitiatedEvent(bankRefId, amount);
 
         const { user, partnerEntity } = await VendorControllerValdator.requestToken({ bankRefId, transactionId, vendorDiscoCode });
@@ -729,16 +730,20 @@ export default class VendorController {
                 throw error
             }
 
+            const updatedTransaction = await TransactionService.viewSingleTransaction(transactionId)
+            if (!updatedTransaction) { throw new NotFoundError('Transaction not found') }
+
+            const _transaction = updatedTransaction.dataValues as Partial<Transaction>
+            delete _transaction.meter
+            delete _transaction.powerUnit
+            delete _transaction.events
+
             const tokenHasBeenSentFromVendorConsumer = vendorTokenConsumer.getTokenSentState()
             if (!tokenHasBeenSentFromVendorConsumer) {
-                res.status(200).json({
-                    status: "success",
-                    message: "Token purchase initiated successfully",
-                    data: {
-                        transaction: await TransactionService.viewSingleTransaction(transactionId),
-                    },
-                });
+                const responseData = { status: 'success', message: 'Token purchase initiated successfully', data: { transaction: _transaction } }
+                res.status(200).json(responseData);
 
+                logger.info('Token purchase initiated successfully', { meta: { transactionId: transaction.id, ...responseData } })
                 return
             }
 

@@ -19,7 +19,7 @@ import {
 import MessageProcessor from "../util/MessageProcessor";
 import { v4 as uuidv4 } from "uuid";
 import EventService from "../../../services/Event.service";
-import VendorService, { ElectricityPurchaseResponse, SuccessResponseForBuyPowerRequery, Vendor } from "../../../services/VendorApi.service";
+import VendorService, { ElectricityPurchaseResponse, ElectricityRequeryResponse, SuccessResponseForBuyPowerRequery, Vendor } from "../../../services/VendorApi.service";
 import { generateRandomToken } from "../../../utils/Helper";
 import ProductService from "../../../services/Product.service";
 import { CustomError } from "../../../utils/Errors";
@@ -222,14 +222,15 @@ export class TokenHandlerUtil {
         })
 
         const _data = {
-            reference: data.transaction.reference,
+            reference: data.transaction.superagent === 'IRECHARGE' ? data.transaction.vendorReferenceId : data.transaction.reference,
             meterNumber: data.meterNumber,
             disco: data.disco,
             vendType: data.vendType,
             amount: data.transaction.amount,
             phone: data.phone,
             email: user.email,
-            accessToken: data.accessToken
+            accessToken: data.transaction.irechargeAccessToken,
+            transactionId: data.transaction.id
         }
 
         if (!_data.accessToken && data.transaction.superagent === 'IRECHARGE') {
@@ -238,7 +239,7 @@ export class TokenHandlerUtil {
             })
 
             logger.info('Validating meter', { transactionId: data.transaction.id })
-            const meterValidationResult = await VendorService.irechargeValidateMeter(_data.disco, _data.meterNumber, data.transaction.reference).catch((error) => {
+            const meterValidationResult = await VendorService.irechargeValidateMeter(_data.disco, _data.meterNumber, data.transaction.vendorReferenceId).catch((error) => {
                 throw new CustomError('Error validating meter', {
                     transactionId: data.transaction.id,
                 })
@@ -250,7 +251,7 @@ export class TokenHandlerUtil {
 
             _data.accessToken = meterValidationResult.access_token
             console.log({ meterValidationResult, info: 'New meter validation result' })
-            await TransactionService.updateSingleTransaction(data.transaction.id, { irecharge_token: meterValidationResult.access_token })
+            await TransactionService.updateSingleTransaction(data.transaction.id, { irechargeAccessToken: meterValidationResult.access_token })
             logger.info('Generated access token for irecharge meter validation', { transactionId: data.transaction.id })
         }
 
@@ -271,11 +272,11 @@ export class TokenHandlerUtil {
     static async requeryTransactionFromVendor(transaction: Transaction) {
         switch (transaction.superagent) {
             case 'BAXI':
-                return await VendorService.baxiRequeryTransaction({ reference: transaction.reference })
+                return await VendorService.baxiRequeryTransaction({ reference: transaction.reference, transactionId: transaction.id })
             case 'BUYPOWERNG':
-                return await VendorService.buyPowerRequeryTransaction({ reference: transaction.reference })
+                return await VendorService.buyPowerRequeryTransaction({ reference: transaction.reference, transactionId: transaction.id })
             case 'IRECHARGE':
-                return await VendorService.irechargeRequeryTransaction({ accessToken: transaction.irecharge_token, serviceType: 'power' })
+                return await VendorService.irechargeRequeryTransaction({ accessToken: transaction.irechargeAccessToken, serviceType: 'power', transactionId: transaction.id })
             default:
                 throw new CustomError('Unsupported superagent', {
                     transactionId: transaction.id
@@ -466,7 +467,7 @@ class TokenHandler extends Registry {
                 disco: disco,
                 vendType: meter.vendType,
                 phone: user.phoneNumber,
-                accessToken: transaction.irecharge_token
+                accessToken: transaction.irechargeAccessToken
             })
 
             logger.info('Token request processed', logMeta);
@@ -482,7 +483,9 @@ class TokenHandler extends Registry {
 
             // Requery transaction from provider and update transaction status
             const vendResult = await TokenHandlerUtil.requeryTransactionFromVendor(updatedTransaction).catch(e => e);
-            const vendResultFromBuypower = vendResult as unknown as ElectricityPurchaseResponse['BUYPOWERNG'] & { source: 'BUYPOWERNG' }
+
+            console.log({ vendResult })
+            const vendResultFromBuypower = vendResult as unknown as ElectricityRequeryResponse['BUYPOWERNG'] & { source: 'BUYPOWERNG' }
             const vendResultFromBaxi = vendResult as {
                 source: 'BAXI',
                 data: BaxiRequeryResultForPurchase['Prepaid']['data'],
@@ -490,7 +493,7 @@ class TokenHandler extends Registry {
                 status: boolean,
                 message: 'Transaction successful'
             }
-            const vendResultFromIrecharge = vendResult as unknown as ElectricityPurchaseResponse['IRECHARGE'] & { source: 'IRECHARGE' }
+            const vendResultFromIrecharge = vendResult as unknown as ElectricityRequeryResponse['IRECHARGE'] & { source: 'IRECHARGE' }
 
             const eventMessage = {
                 meter: {
@@ -567,8 +570,8 @@ class TokenHandler extends Registry {
              * In the case of 1 and 2, we need to requery the transaction at intervals
              */
             const responseFromIrecharge = tokenInfo as Awaited<ReturnType<typeof VendorService.irechargeVendToken>>
-            const transactionTimedOutFromIrecharge = responseFromIrecharge.source === 'IRECHARGE' ? ['15', '43'].includes(responseFromIrecharge.status) : false
-            let transactionTimedOutFromBuypower = vendResultFromBuypower.source === 'BUYPOWERNG' ? vendResultFromBuypower.data.responseCode == 202 : false // TODO: Add check for when transaction timeout from baxi
+            const transactionTimedOutFromIrecharge = vendResultFromIrecharge.source === 'IRECHARGE' ? ['15', '43'].includes(vendResultFromIrecharge.status) : false
+            let transactionTimedOutFromBuypower = vendResultFromBuypower.source === 'BUYPOWERNG' ? vendResultFromBuypower.status === true && vendResultFromBuypower.data.responseCode == 202 : false // TODO: Add check for when transaction timeout from baxi
             const transactionTimedOut = transactionTimedOutFromBuypower || transactionTimedOutFromIrecharge
             let tokenInResponse: string | null = null;
 
@@ -576,15 +579,16 @@ class TokenHandler extends Registry {
 
             if (prepaid) {
                 if (vendResult.source === 'BUYPOWERNG') {
-                    tokenInResponse = vendResultFromBuypower.data.responseCode !== 202 ? vendResultFromBuypower.data.token : null
+                    tokenInResponse = vendResultFromBuypower.status === true && vendResultFromBuypower.data.responseCode !== 202 ? vendResultFromBuypower.data.token : null
                 } else if (tokenInfo.source === 'BAXI') {
                     tokenInResponse = vendResultFromBaxi.data.rawData.standardTokenValue
                 } else if (tokenInfo.source === 'IRECHARGE') {
-                    tokenInResponse = vendResultFromIrecharge.meter_token
+                    tokenInResponse = vendResultFromIrecharge.token
                 }
             } else {
                 tokenInResponse = null // There is no token for postpaid meters
             }
+
 
             let requeryTransactionFromVendor = transactionTimedOut
             if (((tokenInResponse && prepaid) || (!tokenInResponse && !prepaid)) && TEST_FAILED) {
@@ -595,6 +599,7 @@ class TokenHandler extends Registry {
                 requeryTransactionFromVendor = !shouldAssumeToBeSuccessful
             }
 
+            console.log({ tokenInResponse, requeryTransactionFromVendor })
             // If Transaction timedout - Requery the transaction at intervals
             if (requeryTransactionFromVendor || (!tokenInResponse && prepaid)) {
                 return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
@@ -703,9 +708,15 @@ class TokenHandler extends Registry {
             const prepaid = data.meter.vendType === 'PREPAID';
             data.meter.token = !prepaid ? '' : data.meter.token
 
-            const discoLogo =
-                DISCO_LOGO[data.meter.disco as keyof typeof DISCO_LOGO] ?? LOGO_URL
+            console.log({ disco: data.meter })
+            const product = await ProductService.viewSingleProduct(transaction.productCodeId)
+            if (!product) throw new CustomError('Product not found')
 
+
+            const discoLogo =
+                DISCO_LOGO[product.productName as keyof typeof DISCO_LOGO] ?? LOGO_URL
+
+            console.log(discoLogo)
             logger.info('Saving token record', logMeta);
             powerUnit = powerUnit
                 ? await PowerUnitService.updateSinglePowerUnit(powerUnit.id, {
@@ -830,6 +841,7 @@ class TokenHandler extends Registry {
             const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' && requeryResultFromIrecharge.vend_status === 'successful' : false
 
             let transactionSuccess = (transactionSuccessFromBuypower || transactionSuccessFromBaxi || transactionSuccessFromIrecharge)
+            console.log({ transactionSuccess })
             if (transactionSuccess && TEST_FAILED) {
                 const totalRetries = (retry.retryCountBeforeSwitchingVendor * transaction.previousVendors.length - 1) + retry.count + 1
 

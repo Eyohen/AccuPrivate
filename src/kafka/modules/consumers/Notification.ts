@@ -90,6 +90,12 @@ class NotificationHandler extends Registry {
                     token: data.meter.token,
                 }),
             })
+
+            const msgTemplate = data.meter.vendType === 'POSTPAID' ? await SmsService.postpaidElectricityTemplate(transaction) : await SmsService.prepaidElectricityTemplate(transaction)
+            await SmsService.sendSms(data.user.phoneNumber, msgTemplate).catch((error: AxiosError) => {
+                console.log(error.response?.data)
+                logger.error('Error sending sms', error)
+            })
             await transactionEventService.addTokenSentToUserEmailEvent()
         }
         return
@@ -157,9 +163,8 @@ class NotificationHandler extends Registry {
                 }),
             })
 
-            await SmsService.sendSms('+2349038563916', `
-                Successful transaction of ${transaction.amount} for ${data.phone.phoneNumber}
-            `).catch((error: AxiosError) => {
+            const msgTemplate = await SmsService.airtimeTemplate(transaction)
+            await SmsService.sendSms(data.phone.phoneNumber, msgTemplate).catch((error: AxiosError) => {
                 console.log(error.response?.data)
                 logger.error('Error sending sms', error)
             })

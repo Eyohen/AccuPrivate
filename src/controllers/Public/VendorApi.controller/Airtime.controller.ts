@@ -25,7 +25,7 @@ import Product from "../../../models/Product.model";
 import { randomUUID } from "crypto";
 import VendorService from "../../../services/Vendor.service";
 import VendorProductService from "../../../services/VendorProduct.service";
-import { generateRandonNumbers } from "../../../utils/Helper";
+import { generateRandomString, generateRandonNumbers } from "../../../utils/Helper";
 import logger from "../../../utils/Logger";
 
 
@@ -100,6 +100,8 @@ export class AirtimeVendController {
             throw new BadRequestError('Invalid product code for airtime')
         }
 
+        const reference = generateRandomString(10)
+        
         const superAgent = await TokenHandlerUtil.getBestVendorForPurchase(existingProductCodeForDisco.id, 1000);
         const transaction: Transaction =
             await TransactionService.addTransactionWithoutValidatingUserRelationship({
@@ -111,9 +113,12 @@ export class AirtimeVendController {
                 paymentType: PaymentType.PAYMENT,
                 transactionTimestamp: new Date(),
                 partnerId: partnerId,
+                reference,
+                vendorReferenceId: superAgent === 'IRECHARGE' ? generateRandonNumbers(10) : reference,
                 transactionType: TransactionType.AIRTIME,
                 productCodeId: existingProductCodeForDisco.id,
                 previousVendors: [superAgent],
+
             });
 
         const transactionEventService = new AirtimeTransactionEventService(transaction, superAgent, partnerId, phoneNumber);

@@ -6,6 +6,7 @@ import { UUID } from "crypto"
 import { RoleEnum } from "../models/Role.model"
 
 export interface IVendToken {
+    transactionId: string   
     reference: string
     meterNumber: string
     disco: string

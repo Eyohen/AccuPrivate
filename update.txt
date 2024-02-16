@@ -539,7 +539,7 @@ export default class VendorController {
             throw new InternalServerError("An error occured while validating meter");
 
 
-        await transaction.update({ userId: user?.id, irecharge_token: (response as any).access_token });
+        await transaction.update({ userId: user?.id, irechargeAccessToken: (response as any).access_token });
         await transactionEventService.addCRMUserConfirmedEvent({ user: userInfo });
         await CRMPublisher.publishEventForConfirmedUser({
             user: userInfo,
