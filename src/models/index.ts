@@ -40,11 +40,11 @@ async function initiateDB(db: Sequelize): Promise<void> {
     }
 }
 
-const loggerDBConnection = mongoose.createConnection(MONGO_URI_LOG)
-const loggerDB = loggerDBConnection.asPromise().then((connection) => {
-    console.log('Connection to loggerDB database successful')
-    return connection
-})
+// const loggerDBConnection = mongoose.createConnection(MONGO_URI_LOG)
+// const loggerDB = loggerDBConnection.asPromise().then((connection) => {
+//     console.log('Connection to loggerDB database successful')
+//     return connection
+// })
 
 const redisClient = new Redis(REDIS_URL)
 console.log(REDIS_URL)
@@ -62,4 +62,4 @@ redisClient.on('connect', () => {
 })
 
 // Export Sequelize, the Database instance, the initiateDB function, and DataTypes for use in other parts of the application
-export { Sequelize, Database, initiateDB, DataTypes, redisClient, loggerDB, loggerDBConnection }
+export { Sequelize, Database, initiateDB, DataTypes, redisClient } //loggerDB, loggerDBConnection }
