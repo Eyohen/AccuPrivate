@@ -431,6 +431,7 @@ class VendorControllerUtil {
         superAgents.unshift(previousSuperAgent)
 
         let selectedVendor = superAgents[0]
+        let returnedResponse: IResponses[keyof IResponses] | Error = new Error('No response') 
         for (const superAgent of superAgents) {
             try {
                 console.log({ superAgent })
@@ -444,7 +445,7 @@ class VendorControllerUtil {
                 await transaction.update({ superagent: superAgent as any, irechargeAccessToken: token })
                 
                 selectedVendor = superAgent
-                return response
+                returnedResponse = response
             } catch (error) {
                 console.log(error)
                 logger.error(`Error validating meter with ${superAgent}`, { meta: { transactionId: transaction.id } })
@@ -461,6 +462,7 @@ class VendorControllerUtil {
 
         // Try validating with IRECHARGE 
         try {
+            logger.info(`Trying to backup validation with IRECHARGE`, { meta: { transactionId: transaction.id } })
             if (selectedVendor != 'IRECHARGE') {
                 logger.info(`Trying to backup validation with IRECHARGE`, { meta: { transactionId: transaction.id } })
                 const response = await validateWithIrecharge()
@@ -471,6 +473,8 @@ class VendorControllerUtil {
         } catch (error) {
             logger.error(`Error validating meter with IRECHARGE`, { meta: { transactionId: transaction.id } })              
         }
+
+        return returnedResponse
     }
 }
 
