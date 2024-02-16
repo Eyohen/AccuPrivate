@@ -410,6 +410,13 @@ class VendorControllerUtil {
                 throw new InternalServerError('Irecharge vendor product not found')
             }
 
+
+            console.log({
+                transactionId: transaction.id,
+                meterNumber,
+                disco: irechargeVendorProduct.schemaData.code,
+                vendType,
+            })
             return VendorService.irechargeValidateMeter(irechargeVendorProduct.schemaData.code, meterNumber, transaction.vendorReferenceId).then((res) => ({ ...res, ...res.customer, }))
         }
 
@@ -446,6 +453,7 @@ class VendorControllerUtil {
                 
                 selectedVendor = superAgent
                 returnedResponse = response
+                break
             } catch (error) {
                 console.log(error)
                 logger.error(`Error validating meter with ${superAgent}`, { meta: { transactionId: transaction.id } })
