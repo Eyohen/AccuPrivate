@@ -11,15 +11,17 @@ import {
     KAFA_LOGS,
     KAFA_REGION
 } from "../../utils/Constants";
-import { generateAuthToken } from 'aws-msk-iam-sasl-signer-js'
+// import { generateAuthToken } from 'aws-msk-iam-sasl-signer-js'
 
-async function oauthBearerTokenProvider(region: string) {
-    // Uses AWS Default Credentials Provider Chain to fetch credentials
-    const authTokenResponse = await generateAuthToken({ region });
-    return {
-        value: authTokenResponse.token
-    }
-}
+// async function oauthBearerTokenProvider(region: string) {
+//     // Uses AWS Default Credentials Provider Chain to fetch credentials
+//     const authTokenResponse = await generateAuthToken({ region });
+//     return {
+//         value: authTokenResponse.token
+//     }
+// }
+require('newrelic');
+
 
 const getKafkaConfig = (configType: string): kafka.KafkaConfig => {
     if(configType === "digitalocean"){
@@ -40,15 +42,11 @@ const getKafkaConfig = (configType: string): kafka.KafkaConfig => {
             logLevel: isNaN(parseInt(KAFA_LOGS)) ? 0 : parseInt(KAFA_LOGS)
         }
     }else if(configType === 'aws'){
+        console.log('connected using aws')
         return {
             clientId: KAFKA_CLIENT_ID,
             brokers: [KAFKA_BROKER],
             connectionTimeout: 450000,
-            ssl: true,
-            sasl: {
-                mechanism: 'oauthbearer',
-                oauthBearerProvider: () => oauthBearerTokenProvider(KAFA_REGION || 'eu-west-2')
-            },
             logLevel: isNaN(parseInt(KAFA_LOGS)) ? 0 : parseInt(KAFA_LOGS),
         }
     }else{
@@ -70,19 +68,19 @@ const getKafkaConfig = (configType: string): kafka.KafkaConfig => {
 const kafkaConfig: kafka.KafkaConfig =
     NODE_ENV === "development"
         ? {
-            // clientId: KAFKA_CLIENT_ID,
-            // brokers: [KAFKA_BROKER],
-            // logLevel: isNaN(parseInt(KAFA_LOGS)) ? 0 : parseInt(KAFA_LOGS),
             clientId: KAFKA_CLIENT_ID,
             brokers: [KAFKA_BROKER],
-            connectionTimeout: 450000,
-            ssl: true,
-            sasl: {
-                mechanism: "plain",
-                username: KAFKA_USERNAME,
-                password: KAFKA_PASSWORD,
-            },
             logLevel: isNaN(parseInt(KAFA_LOGS)) ? 0 : parseInt(KAFA_LOGS),
+            // clientId: KAFKA_CLIENT_ID,
+            // brokers: [KAFKA_BROKER],
+            // connectionTimeout: 450000,
+            // ssl: true,
+            // sasl: {
+            //     mechanism: "plain",
+            //     username: KAFKA_USERNAME,
+            //     password: KAFKA_PASSWORD,
+            // },
+            // logLevel: isNaN(parseInt(KAFA_LOGS)) ? 0 : parseInt(KAFA_LOGS),
         }
         : getKafkaConfig(KAFKA_ENV) ;
 console.log(KAFKA_ENV)

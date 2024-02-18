@@ -21,6 +21,9 @@ class EmailTemplate {
     receipt = async ({ transaction, meterNumber, token }: IReceiptEmailTemplateProps) => {
         return container(await ejs.renderFile(__dirname + '/receipt.ejs', { transaction, meterNumber, token }))
     }
+    postpaid_receipt = async ({ transaction, meterNumber, token }: IReceiptEmailTemplateProps) => {
+        return container(await ejs.renderFile(__dirname + '/postpaid_receipt.ejs', { transaction, meterNumber, token }))
+    }
     airTimeReceipt = async ({ transaction, phoneNumber }: {
         transaction: Transaction,
         phoneNumber: string,

@@ -121,6 +121,5 @@ export class BuyPowerApi {
         }
 
         return { ...response.data, source: 'BUYPOWERNG' } as InprogressResponseForBuyPowerRequery | FailedResponseForBuyPowerRequery
-        return response.data
     }
 }

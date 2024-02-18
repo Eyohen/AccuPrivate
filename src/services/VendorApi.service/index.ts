@@ -10,7 +10,11 @@ import Transaction from "../../models/Transaction.model";
 import { generateRandomString, generateRandomToken, generateRandonNumbers } from "../../utils/Helper";
 import { response } from "express";
 import BuypowerApi from "./Buypower";
-import { BuypowerAirtimePurchaseData } from "./Buypower/Airtime.";
+import { BuypowerAirtimePurchaseData } from "./Buypower/Airtime";
+import { IRechargeApi } from "./Irecharge";
+import BaxiApi from "./Baxi";
+import { BaxiRequeryResultForPurchase, BaxiSuccessfulPuchaseResponse } from "./Baxi/Config";
+import { info } from "console";
 
 export interface PurchaseResponse extends BaseResponse {
     source: 'BUYPOWERNG';
@@ -145,7 +149,7 @@ interface IRechargeMeterValidationResponse {
 
 type BuypowerRequeryResponse = _RequeryBuypowerSuccessResponse | InprogressResponseForBuyPowerRequery | FailedResponseForBuyPowerRequery
 
-abstract class Vendor {
+abstract class VendorApi {
     protected static client: AxiosInstance
 
     static getDiscos: () => Promise<any>
@@ -190,7 +194,6 @@ export class IRechargeVendorService {
     }
 
     static async validateMeter({ disco, reference, meterNumber }: { disco: string, meterNumber: string, reference: string }) {
-        reference = NODE_ENV === 'development' ? generateRandonNumbers(12) : reference
         meterNumber = NODE_ENV === 'development' ? '1234567890' : meterNumber
 
         const combinedString = this.VENDOR_CODE + "|" + reference + "|" + meterNumber + "|" + disco + "|" + this.PUBLIC_KEY
@@ -201,14 +204,14 @@ export class IRechargeVendorService {
         return response.data
     };
 
-    static async vend({ disco, reference, meterNumber, accessToken, amount, phone, email }: { disco: string, meterNumber: string, vendType: "PREPAID" | "POSTPAID", reference: string, accessToken: string, phone: string, email: string, amount: number }): Promise<any> {
-        reference = NODE_ENV === 'development' ? generateRandonNumbers(12) : reference
-        amount = NODE_ENV === 'development' ? 500 : amount  // IRecharge has a minimum amount of 500 naira and the wallet balance is limited
+    static async vend({ disco, reference, meterNumber, accessToken, amount, phone, email, transactionId }: { transactionId: string, disco: string, meterNumber: string, vendType: "PREPAID" | "POSTPAID", reference: string, accessToken: string, phone: string, email: string, amount: number }) {
+        amount = NODE_ENV === 'development' ? 900 : amount  // IRecharge has a minimum amount of 500 naira and the wallet balance is limited
         meterNumber = NODE_ENV === 'development' ? '1234567890' : meterNumber
 
         const combinedString = this.VENDOR_CODE + "|" + reference + "|" + meterNumber + "|" + disco + "|" + amount + "|" + accessToken + "|" + this.PUBLIC_KEY
         const hash = this.generateHash(combinedString)
 
+        logger.info('Vending token with irecharge', { meta: { reference, meterNumber, disco, amount, phone, email, transactionId } })
         const response = await this.client.get<IRechargeSuccessfulVendResponse>('/vend_power.php', {
             params: {
                 vendor_code: this.VENDOR_CODE,
@@ -224,92 +227,33 @@ export class IRechargeVendorService {
             }
         })
 
+        logger.info('Vend response from irecharge', { meta: { responseData: response.data, transactionId } })
+
         const responseData = { ...response.data, source: 'IRECHARGE' }
-        if (NODE_ENV === 'development') {
-            responseData.meter_token = generateRandomToken() // IRecharge uses the same token for all transactions on dev mode this swill cause a validateon error for postgresql
-        }
         return responseData
     };
 
-    static async requery({ accessToken, serviceType }: { accessToken: string, serviceType: string }) {
+    static async requery({ accessToken, serviceType, transactionId }: { transactionId: string, accessToken: string, serviceType: string }) {
         const combinedString = this.VENDOR_CODE + "|" + accessToken + "|" + this.PUBLIC_KEY
         const hash = this.generateHash(combinedString)
+        logger.info('Requerying transaction with irecharge', { meta: { accessToken, serviceType, transactionId } })
 
-        const response = await this.client.get<IRechargeRequeryResponse>('/vend_status.php', {
-            params: {
-                vendor_code: this.VENDOR_CODE,
-                access_token: accessToken,
-                type: serviceType,
-                response_format: 'json',
-                hash
-            }
-        })
+        const params = {
+            vendor_code: this.VENDOR_CODE,
+            access_token: accessToken,
+            type: serviceType,
+            response_format: 'json',
+            hash
+        }
 
+        console.log({ params })
+
+        const response = await this.client.get<IRechargeRequeryResponse>('/vend_status.php', { params })
+
+        logger.info('Requery response from irecharge', { meta: { responseData: response.data, transactionId } })
         return { ...response.data, source: 'IRECHARGE' }
 
     };
-}
-
-class BaxipaySeed {
-    static generateDataForSuccessfulVend(reference: string, amount: string) {
-        const statuses = ['success', 'failure', 'pending'];
-        const transactionStatuses = ['completed', 'pending', 'failed'];
-        const statusCode = Math.floor(Math.random() * 1000).toString();
-        const tokenAmount = Math.random() > 0.5 ? null : Math.floor(Math.random() * 100);
-        const amountOfPower = amount
-        const feesAmount = Math.floor(Math.random() * 10);
-        const feeder = 'Feeder Name';
-        const dssName = 'DSS Name';
-        const serviceBand = 'Service Band';
-        const message = Math.random() > 0.5 ? 'Transaction successful' : 'Transaction failed';
-        const token = generateRandomToken();
-        const exchangeReference = 'Exchange Ref';
-        const tariff = 'Tariff Type';
-        const power = 'Power Type';
-        const status = 'OK';
-        const providerMessage = 'Provider Message';
-        const baxiReference = Math.floor(Math.random() * 100000);
-
-        return {
-            source: 'BAXI' as const,
-            status: statuses[Math.floor(Math.random() * statuses.length)],
-            statusCode: statusCode,
-            message: message,
-            data: {
-                transactionStatus: transactionStatuses[Math.floor(Math.random() * transactionStatuses.length)],
-                transactionReference: reference,
-                statusCode: statusCode,
-                transactionMessage: message,
-                tokenCode: 'Token Code',
-                tokenAmount: tokenAmount,
-                amountOfPower: amountOfPower,
-                rawOutput: {
-                    fees: [
-                        {
-                            amount: feesAmount,
-                            kind: 'Kind of Fee',
-                            description: 'Fee Description',
-                            taxAmount: Math.floor(Math.random() * 5)
-                        }
-                    ],
-                    feeder: feeder,
-                    dssName: dssName,
-                    serviceBand: serviceBand,
-                    message: message,
-                    token: token,
-                    rate: 'Exchange Rate',
-                    exchangeReference: exchangeReference,
-                    tariff: tariff,
-                    power: power,
-                    status: status,
-                    statusCode: statusCode
-                },
-                provider_message: providerMessage,
-                baxiReference: baxiReference
-            },
-            responseCode: 200
-        }
-    }
 }
 
 export class VendorAirtimeService {
@@ -317,19 +261,6 @@ export class VendorAirtimeService {
 }
 // Define the VendorService class for handling provider-related operations
 export default class VendorService {
-    private static generateToken(): string {
-        // format 1234-1234-1234-1234-1234
-        let token = ''
-        for (let i = 0; i < 5; i++) {
-            for (let j = 0; j < 4; j++) {
-                token += Math.floor(Math.random() * 10).toString()
-            }
-            token += '-'
-        }
-
-        return token
-    }
-
     // Static method for obtaining a Baxi vending token
     static async baxiVendToken(body: IVendToken) {
         const {
@@ -341,36 +272,44 @@ export default class VendorService {
         } = body
 
         try {
-            const response = await this.baxiAxios().post<IBaxiPurchaseResponse>('/electricity/request', {
+            logger.info('Vending token with baxi', { meta: { reference, meterNumber, disco, amount, phone, transactionId: body.transactionId } })
+            const response = await this.baxiAxios().post<BaxiSuccessfulPuchaseResponse['Postpaid' | 'Prepaid']>('/electricity/request', {
                 amount,
                 phone,
                 account_number: meterNumber,
-                service_type: disco.toLowerCase() + '_electric' + '_prepaid',
+                service_type: disco,
                 agentId: 'baxi',
                 agentReference: reference
             })
 
-            response.data.data.rawOutput.token = NODE_ENV === 'development'
-                ? generateRandomToken()
-                : response.data.data.rawOutput.token
+            console.log({
+                info: 'Vend response from baxi',
+                data: response.data
+            })
 
+            logger.info('Vend response from baxi', { meta: { responseData: response.data, transactionId: body.transactionId } })
             return { ...response.data, source: 'BAXI' as const }
         } catch (error: any) {
-            if (NODE_ENV === 'development') {
-                // This is because baxi API currently has been failing on dev mode
-                const res = BaxipaySeed.generateDataForSuccessfulVend(reference, amount)
-                return res
-            }
-
+            console.log({
+                message: error.message,
+                response: error.response?.data.errors
+            })
             throw new Error(error.message)
         }
     }
 
-    static async baxiRequeryTransaction({ reference }: { reference: string }) {
+    static async baxiRequeryTransaction<T extends keyof BaxiRequeryResultForPurchase>({ reference, transactionId }: { transactionId: string, reference: string }) {
         try {
-            const response = await this.baxiAxios().get<IBaxiPurchaseResponse>(`/superagent/transaction/requery?agentReference=${reference}`)
+            logger.info('Requerying transaction with baxi', { meta: { reference, transactionId } })
+            const response = await this.baxiAxios().get<BaxiRequeryResultForPurchase[T]>(`/superagent/transaction/requery?agentReference=${reference}`)
 
             const responseData = response.data
+
+            console.log({
+                info: 'Requery response from baxi',
+                data: responseData
+            })
+            logger.info('Requery response from baxi', { meta: { responseData, transactionId } })
             if (responseData.status === 'success') {
                 return {
                     source: 'BAXI' as const,
@@ -381,30 +320,38 @@ export default class VendorService {
                 }
             }
 
-            return NODE_ENV === 'development'
-                ? BaxipaySeed.generateDataForSuccessfulVend(reference, '10000')
-                : {
-                    source: 'BAXI' as const,
-                    status: false,
-                    message: responseData.message,
-                    responseCode: 202
-                }
+            return {
+                source: 'BAXI' as const,
+                status: false,
+                message: responseData.message,
+                data: responseData.data,
+                responseCode: 202
+            }
         } catch (error) {
             throw error
         }
     }
 
     // Static method for validating a meter with Baxi
-    static async baxiValidateMeter(disco: string, meterNumber: string, vendType: 'PREPAID' | 'POSTPAID') {
-        const serviceType = disco.toLowerCase() + '_electric' + `_${vendType.toLowerCase()}`  // e.g. aedc_electric_prepaid
+    static async baxiValidateMeter(disco: string, meterNumber: string, vendType: 'PREPAID' | 'POSTPAID', transactionId: string) {
+        const serviceType = disco.toLowerCase()
         const postData = {
-            service_type: serviceType,
+            service_type: disco,
             account_number: NODE_ENV === 'development' ? '6528651914' : meterNumber // Baxi has a test meter number
         }
 
+        logger.info('Validating meter with baxi', { meta: { disco, meterNumber, vendType, transactionId } })
         try {
             const response = await this.baxiAxios().post<IBaxiValidateMeterResponse>('/electricity/verify', postData)
-            return response.data.data
+            const responseData = response.data
+
+            logger.info('Meter validation response from baxi', { meta: { responseData, transactionId } })
+            console.log({ responseData, info: 'Meter validation request', input: { disco, meterNumber } })
+            if ((responseData as any).status == 'pending') {
+                throw new Error('Transaction timeout')
+            }
+
+            return responseData
         } catch (error: any) {
             console.log(error.response)
             throw new Error(error.message)
@@ -498,8 +445,15 @@ export default class VendorService {
         }
 
         try {
+            logger.info('Vending token with buypower', { meta: { postData } })
             // Make a POST request using the BuyPower Axios instance
             const response = await this.buyPowerAxios().post<PurchaseResponse | TimedOutResponse>(`/vend?strict=0`, postData);
+            console.log({
+                requestData: postData,
+                info: 'Vend response from buypower',
+                data: response.data
+            })
+            logger.info('Vend response from buypower', { meta: { responseData: response.data, transactionId: body.transactionId } })
             return { ...response.data, source: 'BUYPOWERNG' };
         } catch (error: any) {
             if (error instanceof AxiosError) {
@@ -516,46 +470,19 @@ export default class VendorService {
         // TODO: Use event emitter to requery transaction after 10s
     }
 
-    static async buyPowerRequeryTransaction({ reference }: { reference: string }) {
+    static async buyPowerRequeryTransaction({ reference, transactionId }: { reference: string, transactionId: string }) {
         try {
-            // Buypower requery has been returning 500 error on dev mode
-            if (NODE_ENV === 'development') {
-                return {
-                    'source': 'BUYPOWERNG',
-                    "status": true,
-                    "message": "Transaction succesful",
-                    'responseCode': 200,
-                    "data": {
-                        "id": 80142232,
-                        "amountGenerated": "16600.00",
-                        "tariff": null,
-                        "disco": "DSTV",
-                        "debtAmount": "0.00",
-                        "debtRemaining": "0.00",
-                        "orderId": reference,
-                        "receiptNo": "342544321342",
-                        "tax": "0.00",
-                        "vendTime": new Date(),
-                        "token": this.generateToken(),
-                        "totalAmountPaid": 16600,
-                        "units": "1",
-                        "vendAmount": "16600",
-                        "vendRef": "sfasdfa2432323",
-                        "responseCode": 100,
-                        "responseMessage": "Request successful",
-                        "address": "12342112345",
-                        "name": "23456564345",
-                        "phoneNo": null,
-                        "charges": "0.00",
-                        "tariffIndex": null,
-                        "parcels": [],
-                    }
-                } as SuccessResponseForBuyPowerRequery
-            }
-
+            logger.info('Requerying transaction with buypower', { meta: { reference, transactionId } })
             const response = await this.buyPowerAxios().get<BuypowerRequeryResponse>(`/transaction/${reference}`)
 
+            logger.info('Requery response from buypower', { meta: { responseData: response.data, transactionId } })
             const successResponse = response.data as _RequeryBuypowerSuccessResponse
+            console.log({
+                requestData: { reference },
+                info: 'Requery response from buypower',
+                data: successResponse
+            })
+
             if (successResponse.result.status === true) {
                 return {
                     source: 'BUYPOWERNG',
@@ -584,8 +511,12 @@ export default class VendorService {
         const params: string = querystring.stringify(paramsObject);
 
         try {
+            logger.info('Validating meter with buypower', { meta: { params, transactionId: body.transactionId } })
             // Make a GET request using the BuyPower Axios instance
             const response = await this.buyPowerAxios().get<IBuyPowerValidateMeterResponse>(`/check/meter?${params}`);
+
+            logger.info('Meter validation response from buypower', { meta: { responseData: response.data, transactionId: body.transactionId } })
+            console.log({ responseData: response.data, info: 'Meter validation request', input: body })
             return response.data;
         } catch (error: any) {
             console.error(error)
@@ -649,7 +580,6 @@ export default class VendorService {
                     name: provider.code.split('_').join(' ').toUpperCase(),
                     serviceType: serviceType as 'PREPAID' | 'POSTPAID'
                 })
-
             }
 
             return providers
@@ -662,6 +592,7 @@ export default class VendorService {
 
     static async irechargeValidateMeter(disco: string, meterNumber: string, reference: string) {
         const response = await IRechargeVendorService.validateMeter({ disco, meterNumber, reference })
+        console.log({ responseData: response, info: 'Meter validation request', input: { disco, meterNumber, reference } })
         return response
     }
 
@@ -677,22 +608,123 @@ export default class VendorService {
             email
         } = body
 
-        const response = await IRechargeVendorService.vend({ disco, reference, meterNumber, accessToken, amount: parseInt(amount, 10), phone, email, vendType })
+        console.log({
+            requestData: body,
+            info: 'Vending token with IRecharge',
+            data: {
+                reference,
+                meterNumber,
+                disco,
+                amount,
+                phone,
+                vendType,
+                accessToken,
+                email
+            }
+        })
+        logger.info('Vending token with IRecharge', { meta: { requestData: body, transactionId: body.transactionId } })
+        const response = await IRechargeVendorService.vend({ disco, reference, meterNumber, accessToken, transactionId: body.transactionId, amount: parseInt(amount, 10), phone, email, vendType })
+        console.log({
+            info: 'Vend response',
+            data: response
+        })
+        logger.info('Vend response from IRecharge', { meta: { responseData: response, transactionId: body.transactionId } })
+        return { ...response, source: 'IRECHARGE' }
+    }
+
+    static async irechargeRequeryTransaction({ serviceType, accessToken, transactionId }: { transactionId: string; accessToken: string, serviceType: 'power' | 'airtime' | 'data' | 'tv' }) {
+        const response = await IRechargeVendorService.requery({ serviceType, accessToken, transactionId })
+        console.log({
+            requestData: { serviceType, accessToken },
+            info: 'Requery response from irecharge',
+            data: response
+        })
         return response
     }
 
-    static async irechargeRequeryTransaction({ serviceType, accessToken }: { accessToken: string, serviceType: 'power' | 'airtime' | 'data' | 'tv' }) {
-        const response = await IRechargeVendorService.requery({ serviceType, accessToken })
-
-        return response
+    static async purchaseAirtime<T extends Vendor>({ data, vendor }: { data: BuypowerAirtimePurchaseData, vendor: T }): Promise<AirtimePurchaseResponse[T]> {
+        if (vendor === 'BUYPOWERNG') {
+            return await BuypowerApi.Airtime.purchase(data) as AirtimePurchaseResponse[T]
+        } else if (vendor === 'IRECHARGE') {
+            return await IRechargeApi.Airtime.purchase(data) as AirtimePurchaseResponse[T]
+        } else if (vendor === 'BAXI') {
+            return await BaxiApi.Airtime.purchase(data) as AirtimePurchaseResponse[T]
+        } else {
+            throw new Error('UNAVAILABLE_VENDOR')
+        }
     }
 
-    static async purchaseAirtime({ data, vendor }: { data: BuypowerAirtimePurchaseData, vendor: Transaction['superagent'] }) {
-        switch (vendor) {
-            case 'BUYPOWERNG':
-                return await BuypowerApi.Airtime.purchase(data);
-            default:
-                throw new Error('UNAVAILABLE_VENDOR')
+    static async purchaseData<T extends Vendor>({ data, vendor }: {
+        data: {
+            amount: number,
+            dataCode: string,
+            serviceType: 'MTN' | 'GLO' | 'AIRTEL' | '9MOBILE',
+            phoneNumber: string,
+            reference: string,
+            email: string,
+        },
+        vendor: T
+    }): Promise<DataPurchaseResponse[T]> {
+        if (vendor === 'BUYPOWERNG') {
+            return await BuypowerApi.Data.purchase(data) as DataPurchaseResponse[T]
+        } else if (vendor === 'IRECHARGE') {
+            return await IRechargeApi.Data.purchase(data) as DataPurchaseResponse[T]
+        } else if (vendor === 'BAXI') {
+            return await BaxiApi.Data.purchase(data) as DataPurchaseResponse[T]
+        } else {
+            throw new Error('UNAVAILABLE_VENDOR')
+        }
+    }
+
+    static async purchaseElectricity<T extends Vendor>({ data, vendor }: {
+        data: {
+            reference: string,
+            meterNumber: string,
+            disco: string,
+            amount: string,
+            vendType: 'PREPAID' | 'POSTPAID',
+            phone: string,
+            email: string,
+            accessToken: string,
+            transactionId: string,
+        }, vendor: T
+    }): Promise<ElectricityPurchaseResponse[T]> {
+        if (vendor === 'BUYPOWERNG') {
+            return await this.buyPowerVendToken(data) as ElectricityPurchaseResponse[T]
+        } else if (vendor === 'IRECHARGE') {
+            return await this.irechargeVendToken(data) as ElectricityPurchaseResponse[T]
+        } else if (vendor === 'BAXI') {
+            return await this.baxiVendToken(data) as ElectricityPurchaseResponse[T]
+        } else {
+            throw new Error('UNAVAILABLE_VENDOR')
         }
     }
 }
+
+interface AirtimePurchaseResponse {
+    BUYPOWERNG: Awaited<ReturnType<typeof BuypowerApi.Airtime.purchase>>,
+    IRECHARGE: Awaited<ReturnType<typeof IRechargeApi.Airtime.purchase>>,
+    BAXI: Awaited<ReturnType<typeof BaxiApi.Airtime.purchase>>,
+}
+
+export interface DataPurchaseResponse {
+    BUYPOWERNG: Awaited<ReturnType<typeof BuypowerApi.Data.purchase>>,
+    IRECHARGE: Awaited<ReturnType<typeof IRechargeApi.Data.purchase>>,
+    BAXI: Awaited<ReturnType<typeof BaxiApi.Data.purchase>>,
+}
+
+export interface ElectricityPurchaseResponse {
+    BUYPOWERNG: PurchaseResponse | TimedOutResponse,
+    IRECHARGE: IRechargeSuccessfulVendResponse,
+    BAXI: Awaited<ReturnType<typeof VendorService.baxiVendToken>>,
+}
+
+export interface ElectricityRequeryResponse {
+    BUYPOWERNG: Awaited<ReturnType<typeof VendorService.buyPowerRequeryTransaction>>,
+    IRECHARGE: Awaited<ReturnType<typeof VendorService.irechargeRequeryTransaction>>,
+    BAXI: Awaited<ReturnType<typeof VendorService.baxiRequeryTransaction>>,
+}
+
+export type Prettify<T extends {}> = { [K in keyof T]: T[K] }
+
+export type Vendor = 'BUYPOWERNG' | 'IRECHARGE' | 'BAXI'

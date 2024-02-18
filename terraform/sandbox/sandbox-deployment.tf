@@ -413,12 +413,49 @@ resource "aws_instance" "sandbox_db_instance" {
       CREATE DATABASE "$DB_NAME"
       WITH OWNER = "$DB_USERNAME";
   EOSQL
-
+  
 
   # # Restart PostgreSQL for changes to take effect
 
+  #Create Backup
+  #download backup automation file that saves to s3 bucket
+  aws s3 cp s3://accuvend-sand-box-db-backups/backup-db.sh ./backup-db.sh
+  chmod u+x backup-db.sh
+
+  # create a cronjob for backups 
+  echo "0 2 * * * ~/backup-db.sh &>> ~/backup-db.log" | crontab -
+  # echo "0 2 * * * ~/backup-db.sh" | crontab -
+
+
   echo "Installation and configuration completed successfully."
 
+  #Creating a new-relic user in the sandbox postgres
+
+  NEWRELIC_DB_PASSWORD=$(grep NEWRELIC_DB_PASSWORD ~/default.env | cut -d '=' -f2) 
+  NEWRELIC_DB_USERNAME=$(grep NEWRELIC_DB_USER_NAME ~/default.env | cut -d '=' -f2)
+
+  psql -c "CREATE USER $NEWRELIC_DB_USERNAME WITH PASSWORD '$NEWRELIC_DB_PASSWORD';"
+  psql -v ON_ERROR_STOP=1  <<-EOSQL 
+    Granting the user SELECT privileges 
+    GRANT SELECT ON pg_stat_database, pg_stat_database_conflicts, pg_stat_bgwriter TO $NEWRELIC_DB_USERNAME;
+  EOSQL
+
+  # Install new_relic postgresql 
+  sudo apt-get install nri-postgresql -y
+
+  cd 
+
+  #pull new relic install from s3 
+  # completed 
+  cd /etc/newrelic-infra/integrations.d
+
+  sudo aws s3 cp  s3://accuvend-bucket-configuration/new_relic_sandbox_db_config/postgresql-config.yml ./postgresql-config.yml
+
+  sudo /usr/bin/newrelic-infra -dry_run -integration_config_path /etc/newrelic-infra/integrations.d/postgresql-config.yml | grep -wo "Integration health check finished with success"
+
+  # setting up logs
+  cd /etc/newrelic-infra/logging.d/
+  sudo aws s3 cp  s3://accuvend-bucket-configuration/new_relic_sandbox_db_config/postgresql-log.yml ./postgresql-log.yml
 
   EOF
 
@@ -450,6 +487,7 @@ resource "aws_lb" "sandbox_load_balancer" {
   security_groups    = [aws_security_group.sandbox_loadbalancer_security_group.id]
   subnets            = [aws_subnet.sandbox_public_subnet_1.id, aws_subnet.sandbox_public_subnet_2.id]
 
+  idle_timeout = 3600
   # enable_deletion_protection = true
 
   # access_logs {
@@ -474,6 +512,19 @@ resource "aws_lb_listener" "sandbox_application_load_balancer_listner_http" {
   load_balancer_arn = aws_lb.sandbox_load_balancer.arn
   port              = "80"
   protocol          = "HTTP"  
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.sandbox_target_group_http.arn
+  }
+}
+
+# Set up HTTPS Listener
+
+resource "aws_lb_listener" "sandbox_application_load_balancer_listner_https" {
+  load_balancer_arn = aws_lb.sandbox_load_balancer.arn
+  port              = "443"
+  protocol          = "HTTPS"  
 
   default_action {
     type             = "forward"
@@ -515,9 +566,9 @@ resource "aws_instance" "sandbox_core_engine_instance" {
   sudo systemctl start nginx
 
   #install node and pm2
-  sudo apt-get -y install nodejs
+  curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - &&\
+  sudo apt-get install -y nodejs
   sudo apt-get -y install build-essential
-  sudo apt-get -y install npm
   sudo npm install -g pm2
 
   #Install Kafka
@@ -545,8 +596,29 @@ resource "aws_instance" "sandbox_core_engine_instance" {
   # Get ENV file
   aws s3 cp s3://accuvend-bucket-configuration/.env ./.env
 
+  #GET 
+  DB_USERNAME=$(grep DB_USER_NAME ./.env | cut -d '=' -f2) &&\
+  DB_PASSWORD=$(grep DB_PASSWORD ./.env | cut -d '=' -f2) &&\
+  DB_NAME=$(grep DB_DB_NAME ./.env | cut -d '=' -f2) &&\
+  DB_HOST=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=Sand Box DB Instance" --query "Reservations[].Instances[].[PublicIpAddress]" --output text)
+
+  echo "DB_URL=postgres://$DB_USERNAME:$DB_PASSWORD@$DB_HOST:5432/$DB_NAME" >> .env
+
+  #install depencendies in dist folder
+  npm install
+
+  #Set up pm2 on server restart
+  sudo env PATH=$PATH:/usr/bin /usr/local/lib/node_modules/pm2/bin/pm2 startup systemd -u ubuntu --hp /home/ubuntu
+  pm2 start server.js --time
+
+  # have to update sudo nano /etc/nginx/sites-available/default
+  sudo systemctl restart nginx
+
+  # NEW RELIC INTEGRATION
+  
   EOF
 
+  
 
   tags = {
     "Name" : "Sand Box Core Instance"
@@ -566,7 +638,8 @@ resource "aws_iam_policy" "sandbox_iam_S3_policy" {
         Effect: "Allow",
         Action: [
           "s3:GetObject",
-          "s3:ListBucket"
+          "s3:ListBucket",
+          "s3:*Object"
         ],
         Resource: [
           "arn:aws:s3:::*/*",

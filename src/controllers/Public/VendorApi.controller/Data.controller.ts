@@ -8,7 +8,7 @@ import Transaction, {
 import { v4 as uuidv4 } from "uuid";
 import UserService from "../../../services/User.service";
 import {
-    DEFAULT_AIRTIME_PROVIDER,
+    DEFAULT_DATA_PROVIDER,
     DEFAULT_ELECTRICITY_PROVIDER,
 } from "../../../utils/Constants";
 import {
@@ -18,11 +18,17 @@ import {
 } from "../../../utils/Errors";
 import { VendorPublisher } from "../../../kafka/modules/publishers/Vendor";
 import { CRMPublisher } from "../../../kafka/modules/publishers/Crm";
-import { AirtimeTransactionEventService } from "../../../services/TransactionEvent.service";
+import { DataTransactionEventService } from "../../../services/TransactionEvent.service";
 import { Database } from "../../../models";
+import ProductService from "../../../services/Product.service";
+import VendorProduct from "../../../models/VendorProduct.model";
+import VendorProductService from "../../../services/VendorProduct.service";
+import { TokenHandlerUtil } from "../../../kafka/modules/consumers/Token";
+import { generateRandomString, generateRandonNumbers } from "../../../utils/Helper";
+require('newrelic');
 
 
-class AirtimeValidator {
+class DataValidator {
     static validatePhoneNumber(phoneNumber: string) {
         if (phoneNumber.length !== 11) {
             throw new BadRequestError("Invalid phone number");
@@ -38,8 +44,8 @@ class AirtimeValidator {
         }
     }
 
-    static validateAirtimeRequest({ phoneNumber, amount, disco }: { phoneNumber: string, amount: string, disco: string }) {
-        AirtimeValidator.validatePhoneNumber(phoneNumber);
+    static async validateDataRequest({ phoneNumber, amount, disco }: { phoneNumber: string, amount: string, disco: string }) {
+        DataValidator.validatePhoneNumber(phoneNumber);
         // Check if amount is a number
         if (isNaN(Number(amount))) {
             throw new BadRequestError("Invalid amount");
@@ -49,23 +55,63 @@ class AirtimeValidator {
             throw new BadRequestError("Amount must be greater than 50");
         }
 
-        if (['9MOBILE', 'AIRTEL', 'GLO', 'MTN', 'ETISALAT'].indexOf(disco.toUpperCase()) === -1) {
-            throw new BadRequestError("Invalid disco");
+        const productCode = await ProductService.viewSingleProductByMasterProductCode(disco)
+        if (!productCode) {
+            throw new InternalServerError('Product code not found')
         }
     }
+
+    static async requestData({ transactionId, bankRefId, bankComment }: { transactionId: string, bankRefId: string, bankComment: string }) {
+        if (!transactionId || !bankRefId || !bankComment) {
+            throw new BadRequestError("Transaction ID, bank reference ID, and bank comment are required");
+        }
+
+        const transactionRecord = await TransactionService.viewSingleTransaction(transactionId);
+        if (!transactionRecord) {
+            throw new NotFoundError("Transaction not found");
+        }
+    }
+
+
 }
 
-export class AirtimeVendController {
-    static async validateAirtimeRequest(
+export class DataVendController {
+    static async validateDataRequest(
         req: Request,
         res: Response,
         next: NextFunction
     ) {
-        const { phoneNumber, amount, email, disco } = req.body;
-        const superAgent = DEFAULT_AIRTIME_PROVIDER;
+        const { phoneNumber, email, vendorProductId } = req.body;
         // TODO: Add request type for request authenticated by API keys
         const partnerId = (req as any).key
 
+        let disco = req.body.networkProvider
+        // TODO: I'm using this for now to allow the schema validation since product code hasn't been created for airtime
+        const existingProductCodeForDisco = await ProductService.viewSingleProductByNameAndCategory(disco, 'DATA')
+        if (!existingProductCodeForDisco) {
+            throw new NotFoundError('Product code not found for disco')
+        }
+
+        disco = existingProductCodeForDisco.masterProductCode
+
+        if (existingProductCodeForDisco.category !== 'DATA') {
+            throw new BadRequestError('Invalid product code for data')
+        }
+
+        const vendorProduct = await VendorProductService.viewSingleVendorProduct(vendorProductId)
+        if (!vendorProduct) {
+            throw new NotFoundError('Vendor product not found')
+        }
+
+        const vendor = await vendorProduct.$get('vendor')
+        if (!vendor) {
+            throw new InternalServerError('Vendor not found for vendor product')
+        }
+
+        const superAgent = vendor.name as 'IRECHARGE' | 'BUYPOWERNG' | 'BAXI'
+
+        const reference = generateRandomString(10);
+        const amount = vendorProduct.bundleAmount.toString()
         const transaction: Transaction =
             await TransactionService.addTransactionWithoutValidatingUserRelationship({
                 id: uuidv4(),
@@ -76,13 +122,17 @@ export class AirtimeVendController {
                 paymentType: PaymentType.PAYMENT,
                 transactionTimestamp: new Date(),
                 partnerId: partnerId,
-                transactionType: TransactionType.ELECTRICITY
+                transactionType: TransactionType.DATA,
+                productCodeId: existingProductCodeForDisco.id,
+                previousVendors: [vendor.name],
+                reference,
+                vendorReferenceId: superAgent === 'IRECHARGE' ? generateRandonNumbers(12) : reference
             });
 
-        const transactionEventService = new AirtimeTransactionEventService(transaction, superAgent, partnerId, phoneNumber);
+        const transactionEventService = new DataTransactionEventService(transaction, superAgent, partnerId, phoneNumber);
         await transactionEventService.addPhoneNumberValidationRequestedEvent()
 
-        AirtimeValidator.validateAirtimeRequest({ phoneNumber, amount, disco });
+        await DataValidator.validateDataRequest({ phoneNumber, amount, disco });
         await transactionEventService.addPhoneNumberValidationRequestedEvent()
 
         const userInfo = {
@@ -120,7 +170,7 @@ export class AirtimeVendController {
         })
     }
 
-    static async requestAirtime(
+    static async requestData(
         req: Request,
         res: Response,
         next: NextFunction
@@ -154,8 +204,8 @@ export class AirtimeVendController {
             throw new BadRequestError("Duplicate reference");
         }
 
-        const transactionEventService = new AirtimeTransactionEventService(transaction, transaction.superagent, transaction.partnerId, user.phoneNumber);
-        await transactionEventService.addAirtimePurchaseInitiatedEvent({ amount: transaction.amount })
+        const transactionEventService = new DataTransactionEventService(transaction, transaction.superagent, transaction.partnerId, user.phoneNumber);
+        await transactionEventService.addDataPurchaseInitiatedEvent({ amount: transaction.amount })
 
         await TransactionService.updateSingleTransaction(transactionId, {
             status: Status.PENDING,
@@ -163,7 +213,7 @@ export class AirtimeVendController {
             bankComment: bankComment,
         });
 
-        await VendorPublisher.publshEventForAirtimePurchaseInitiate({
+        await VendorPublisher.publshEventForDataPurchaseInitiate({
             transactionId: transactionId,
             phone: {
                 phoneNumber: user.phoneNumber,
@@ -175,7 +225,7 @@ export class AirtimeVendController {
         })
 
         res.status(200).json({
-            message: "Airtime request sent successfully",
+            message: "Data request sent successfully",
             data: {
                 transaction,
             },
@@ -205,8 +255,8 @@ export class AirtimeVendController {
             throw new InternalServerError('Partner record not found for already validated request')
         }
 
-        const transactionEventService = new AirtimeTransactionEventService(transaction, transaction.superagent, transaction.partnerId, user.phoneNumber);
-        await transactionEventService.addAirtimePurchaseConfirmedEvent()
+        const transactionEventService = new DataTransactionEventService(transaction, transaction.superagent, transaction.partnerId, user.phoneNumber);
+        await transactionEventService.addDataPurchaseConfirmedEvent()
 
         await TransactionService.updateSingleTransaction(transactionId, {
             status: Status.COMPLETE,
@@ -214,7 +264,7 @@ export class AirtimeVendController {
             bankComment: bankComment,
         });
 
-        await VendorPublisher.publishEventForAirtimePurchaseComplete({
+        await VendorPublisher.publishEventForDataPurchaseComplete({
             transactionId: transactionId,
             phone: {
                 phoneNumber: user.phoneNumber,
@@ -226,7 +276,7 @@ export class AirtimeVendController {
         })
 
         res.status(200).json({
-            message: "Airtime payment confirmed successfully",
+            message: "Data payment confirmed successfully",
             data: {
                 transaction: {
                     transactionId: transaction.id,

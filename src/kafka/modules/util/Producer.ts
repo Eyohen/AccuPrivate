@@ -3,6 +3,7 @@ import Kafka from '../../config'
 import logger from '../../../utils/Logger'
 import { TOPICS } from '../../Constants'
 import { PublisherParamsUnion } from './Interface'
+require('newrelic');
 
 interface CustomMessageFormat { a: string }
 
