@@ -487,6 +487,7 @@ resource "aws_lb" "sandbox_load_balancer" {
   security_groups    = [aws_security_group.sandbox_loadbalancer_security_group.id]
   subnets            = [aws_subnet.sandbox_public_subnet_1.id, aws_subnet.sandbox_public_subnet_2.id]
 
+  idle_timeout = 3600
   # enable_deletion_protection = true
 
   # access_logs {
@@ -608,7 +609,7 @@ resource "aws_instance" "sandbox_core_engine_instance" {
 
   #Set up pm2 on server restart
   sudo env PATH=$PATH:/usr/bin /usr/local/lib/node_modules/pm2/bin/pm2 startup systemd -u ubuntu --hp /home/ubuntu
-  pm2 start server.js
+  pm2 start server.js --time
 
   # have to update sudo nano /etc/nginx/sites-available/default
   sudo systemctl restart nginx
