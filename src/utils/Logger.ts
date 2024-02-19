@@ -67,6 +67,36 @@ const fileTransports = [
             enumerateErrorFormat(),
         ),
     }),
+    new winston.transports.File({
+        filename: 'debug.log',
+        level: 'debug',
+        format: combine(
+            timestamp(),
+            logFormat,
+            enumerateErrorFormat(),
+        ),
+    }),
+    new winston.transports
+        .File({
+            filename: 'warn.log',
+            level: 'warn',
+            format: combine(
+                timestamp(),
+                logFormat,
+                enumerateErrorFormat(),
+            ),
+        }),
+    // info
+    new winston.transports
+        .File({
+            filename: 'info.log',
+            level: 'info',
+            format: combine(
+                timestamp(),
+                logFormat,
+                enumerateErrorFormat(),
+            ),
+        }),
 ];
 
 const transports = NODE_ENV === 'development'
