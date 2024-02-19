@@ -278,11 +278,11 @@ jobs:
             cd /home/ubuntu/
             pm2 stop server #stop the server 
             # GET THE LATEST_SUCCESSFUL_RUN_ID 
-            if aws s3 cp s3://accuvend-bucket-configuration/last_run.txt ./last_run.txt | grep "does not exist" 
+            if aws s3 cp s3://accuvend-bucket-configuration/staging_last_run.txt ./staging_last_run.txt | grep "does not exist" 
             then
                 LAST_SUCCESSFUL_RUN_NUMBER=0               
             else
-                LAST_SUCCESSFUL_RUN_NUMBER=$(grep LAST_SUCCESSFUL_RUN_ID ./last_run.txt | cut -d "=" -f2)            
+                LAST_SUCCESSFUL_RUN_NUMBER=$(grep LAST_SUCCESSFUL_RUN_ID ./staging_last_run.txt | cut -d "=" -f2)            
             fi
             #rename the old folder 
             echo "${LAST_SUCCESSFUL_RUN_NUMBER}"
@@ -355,11 +355,11 @@ jobs:
   #           cd /home/ubuntu/
   #           pm2 stop server #stop the server 
   #           # GET THE LATEST_SUCCESSFUL_RUN_ID 
-  #           if aws s3 cp s3://accuvend-bucket-configuration/last_run.txt ./last_run.txt | grep "does not exist" 
+  #           if aws s3 cp s3://accuvend-bucket-configuration/staging_last_run.txt ./staging_last_run.txt | grep "does not exist" 
   #           then
   #               LAST_SUCCESSFUL_RUN_NUMBER=0               
   #           else
-  #               LAST_SUCCESSFUL_RUN_NUMBER=$(grep LAST_SUCCESSFUL_RUN_ID ./last_run.txt | cut -d "=" -f2)            
+  #               LAST_SUCCESSFUL_RUN_NUMBER=$(grep LAST_SUCCESSFUL_RUN_ID ./staging_last_run.txt | cut -d "=" -f2)            
   #           fi
   #           #rename the old folder 
   #           echo "${LAST_SUCCESSFUL_RUN_NUMBER}"
@@ -397,6 +397,7 @@ jobs:
   save-latest-successful_run:
     name: save-latest-successful-run
     if : github.ref == 'refs/heads/sandbox'
+    needs: [smoke-test]
     runs-on: ubuntu-latest
     steps: 
       - name: Configure AWS Credentials
@@ -411,8 +412,8 @@ jobs:
           GITHUB_RUN_NUMBER: ${{ secrets.GITHUB_RUN_NUMBER }}
           EC2_HOST_IP: ${{steps.get_ip_address_ec2.outputs.EC2_HOST_IP}}
         run: |
-          echo "LAST_SUCCESSFUL_RUN_ID=$GITHUB_RUN_NUMBER" > last_run.txt
-          aws s3 cp ./last_run.txt s3://accuvend-bucket-configuration/last_run.txt 
+          echo "LAST_SUCCESSFUL_RUN_ID=$GITHUB_RUN_NUMBER" > staging_last_run.txt
+          aws s3 cp ./staging_last_run.txt s3://accuvend-bucket-configuration/staging_last_run.txt 
           
         
   # create-update-environment:
