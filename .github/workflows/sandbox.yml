@@ -274,7 +274,7 @@ jobs:
         run: |
           echo "$EC2_HOST_IP"
           echo "$PRIVATE_KEY" > private_key.pem && chmod 400 private_key.pem 
-          ssh -o StrictHostKeyChecking=no -i 'private_key.pem' ubuntu@${EC2_HOST_IP}
+          ssh -o StrictHostKeyChecking=no -i 'private_key.pem' ubuntu@${EC2_HOST_IP} '
             cd /home/ubuntu/
             pm2 stop server #stop the server 
             #rename the old folder 
@@ -292,9 +292,9 @@ jobs:
             cd dist
             
             #GET DATABASE CREDENTINALS
-            DB_USERNAME=$(grep DB_USER_NAME ./.env | cut -d '=' -f2) &&\
-            DB_PASSWORD=$(grep DB_PASSWORD ./.env | cut -d '=' -f2) &&\
-            DB_NAME=$(grep DB_DB_NAME ./.env | cut -d '=' -f2) &&\
+            DB_USERNAME=$(grep DB_USER_NAME ./.env | cut -d \'=\' -f2) &&\
+            DB_PASSWORD=$(grep DB_PASSWORD ./.env | cut -d \'=\' -f2) &&\
+            DB_NAME=$(grep DB_DB_NAME ./.env | cut -d \'=\' -f2) &&\
             DB_HOST=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=Sand Box DB Instance" --query "Reservations[].Instances[].[PublicIpAddress]" --output text)
           
             echo "DB_URL=postgres://$DB_USERNAME:$DB_PASSWORD@$DB_HOST:5432/$DB_NAME" >> .env
@@ -303,7 +303,7 @@ jobs:
             npm install
             
             #Set up restart server 
-            pm2 start server.js --time
+            pm2 start server.js --time '
         
   # create-update-environment:
   #   name: create-environment
