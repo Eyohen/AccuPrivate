@@ -101,7 +101,7 @@ export class AirtimeVendController {
         }
 
         const reference = generateRandomString(10)
-        
+
         const superAgent = await TokenHandlerUtil.getBestVendorForPurchase(existingProductCodeForDisco.id, 1000);
         const transaction: Transaction =
             await TransactionService.addTransactionWithoutValidatingUserRelationship({
@@ -259,7 +259,7 @@ export class AirtimeVendController {
     ) {
         console.log('Start seeding data to the database...');
 
-        const vendors = ['IRECHARGE'] as const;
+        const vendors = ['IRECHARGE', 'BAXI', 'BUYPOWERNG'] as const;
         const productTypes = ['MTN', 'AIRTEL', '9MOBILE', 'GLO'] as const;
 
         const vendorDoc = {} as {
@@ -288,7 +288,7 @@ export class AirtimeVendController {
                 console.log(`Creating products for type: ${productType}`);
                 const productCodeData = SEED_DATA[vendorName][productType];
 
-                const productCode =  productType;
+                const productCode = productType;
                 console.log(`Creating product: ${productCode}`);
                 const productInfo = productCodeData
 
@@ -311,22 +311,22 @@ export class AirtimeVendController {
 
                 const commissions = {
                     IRECHARGE: {
-                        MTN: 0.02,
-                        AIRTEL: 0.02,
-                        '9MOBILE': 0.02,
-                        GLO: 0.02,
+                        MTN: 0.025,
+                        AIRTEL: 0.03,
+                        '9MOBILE': 0.035,
+                        GLO: 0.04,
                     },
                     BUYPOWERNG: {
-                        MTN: 0.02,
-                        AIRTEL: 0.02,
-                        '9MOBILE': 0.02,
-                        GLO: 0.02,
+                        MTN: 0.00,
+                        AIRTEL: 0.00,
+                        '9MOBILE': 0.00,
+                        GLO: 0.00,
                     },
                     BAXI: {
                         MTN: 0.02,
                         AIRTEL: 0.02,
-                        '9MOBILE': 0.02,
-                        GLO: 0.02,
+                        '9MOBILE': 0.03,
+                        GLO: 0.035,
                     },
                 }
 
