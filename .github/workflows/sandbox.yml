@@ -285,10 +285,10 @@ jobs:
                 LAST_SUCCESSFUL_RUN_NUMBER=$(grep LAST_SUCCESSFUL_RUN_ID ./staging_last_run.txt | cut -d "=" -f2)            
             fi
             #rename the old folder 
-            echo "${LAST_SUCCESSFUL_RUN_NUMBER}"
+            echo "$LAST_SUCCESSFUL_RUN_NUMBER"
             if [ -d "dist" ]; then
-                mv "dist" "dist"_"${LAST_SUCCESSFUL_RUN_NUMBER}"
-                echo "Folder renamed to dist"_"${LAST_SUCCESSFUL_RUN_NUMBER}"
+                mv "dist" "dist"_"$LAST_SUCCESSFUL_RUN_NUMBER"
+                echo "Folder renamed to dist"_"$LAST_SUCCESSFUL_RUN_NUMBER"
             else
                 echo "Folder does not exist."
             fi
@@ -323,6 +323,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: [deploy-build]
     steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_ACCESS_SECRET_KEY }}
+        aws-region: eu-west-2
     - name: check if server is up and running 
       id: check_server_status
       run : |
