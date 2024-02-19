@@ -210,12 +210,7 @@ jobs:
       - name: Back-end build
         run: |
           ls
-          rm -rf dist
-          npm install
-          npm run build
-          cp .env dist/.env
-          cp package.json dist/package.json
-          ls ./src/utils/Email/templates && cp -r src/utils/Email/templates/ dist/utils/Email/templates  && rm -f ./dist/utils/Email/templates/index.ts  && ls ./dist/utils/Email/templates
+          ./build.sh
       - name: cache dist 
         uses: actions/checkout@v2
         with:
@@ -224,32 +219,86 @@ jobs:
       - run: |
           tsc --version
          
+  push-build:
+    name: push-build
+    needs: [build-backend]
+    if : github.ref == 'refs/heads/sandbox'
+    runs-on: ubuntu-latest
+    steps:
+      - name: chechkout
+        uses: actions/checkout@v2
+      - name: restore dist 
+        uses: actions/checkout@v2
+        with:
+          path: dist
+          key: dist-folder
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_ACCESS_SECRET_KEY }}
+          aws-region: eu-west-2
+      - name: push to state to s3
+        run: |
+          aws s3 cp ./dist.zip s3://staging-bucket-deployment/ 
+
+  deploy-build:
+    name: deploy-build
+    needs: [push-build]
+    if : github.ref == 'refs/heads/sandbox'
+    runs-on: ubuntu-latest
+    steps:
+      - name: chechkout
+        uses: actions/checkout@v2
+      - name: restore dist 
+        uses: actions/checkout@v2
+        with:
+          path: dist
+          key: dist-folder
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_ACCESS_SECRET_KEY }}
+          aws-region: eu-west-2
+      - name: get ip address for staging ec2
+        env: 
+          PRIVATE_KEY: ${{ secrets.SAND_BOX_SSH_KEY }}
+          GITHUB_RUN_NUMBER: ${{ secrets.GITHUB_RUN_NUMBER }}
+        run: |
+          EC2_HOST_IP = $(aws ec2 describe-instances --filters "Name=tag:Name,Values=Sand Box Core Instance" --query "Reservations[].Instances[].[PublicIpAddress]" --output text)
+          echo "$PRIVATE_KEY" > private_key.pem && chmod 400 private_key.pem 
+          ssh -o StrictHostKeyChecking=no -i 'private_key.pem' ubuntu@${EC2_HOST_IP}
+            cd /home/ubuntu/
+            pm2 stop server #stop the server 
+            #rename the old folder 
+            if [ -d "dist" ]; then
+                mv "dist" "dist"_"$GITHUB_RUN_NUMBER"
+                echo "Folder renamed to dist"_"$GITHUB_RUN_NUMBER"
+            else
+                echo "Folder $folder_name does not exist."
+            fi
+            # download build latest
+            aws s3 cp s3://staging-bucket-deployment/dist.zip dist.zip
+            #unzip latest build
+            unzip dist.zip
+            # cd 
+            cd dist
+            
+            #GET DATABASE CREDENTINALS
+            DB_USERNAME=$(grep DB_USER_NAME ./.env | cut -d '=' -f2) &&\
+            DB_PASSWORD=$(grep DB_PASSWORD ./.env | cut -d '=' -f2) &&\
+            DB_NAME=$(grep DB_DB_NAME ./.env | cut -d '=' -f2) &&\
+            DB_HOST=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=Sand Box DB Instance" --query "Reservations[].Instances[].[PublicIpAddress]" --output text)
+          
+            echo "DB_URL=postgres://$DB_USERNAME:$DB_PASSWORD@$DB_HOST:5432/$DB_NAME" >> .env
+            
+            #install depencendies in dist folder
+            npm install
+            
+            #Set up restart server 
+            pm2 start server.js --time
         
-  # push-build:
-  #   name: push-build
-  #   needs: [build-backend]
-  #   if : github.ref == 'refs/heads/sandbox'
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: chechkout
-  #       uses: actions/checkout@v2
-  #     - name: restore dist 
-  #       uses: actions/checkout@v2
-  #       with:
-  #         path: dist
-  #         key: dist-folder
-  #     - name: Configure AWS Credentials
-  #       uses: aws-actions/configure-aws-credentials@v4
-  #       with:
-  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  #         aws-secret-access-key: ${{ secrets.AWS_ACCESS_SECRET_KEY }}
-  #         aws-region: eu-west-2
-  #     - name: push to state to s3
-  #       run: |
-  #         zip -r dist.zip dist
-  #         aws s3 cp ./dist.zip s3://staging-bucket-deployment/ 
-        
-      
   # create-update-environment:
   #   name: create-environment
   #   needs: [push-build]
