@@ -49,6 +49,26 @@ const enumerateErrorFormat = format((info) => {
     return info;
 });
 
+const fileTransports = [
+    new winston.transports.File({
+        filename: 'error.log',
+        level: 'error',
+        format: combine(
+            timestamp(),
+            logFormat,
+            enumerateErrorFormat(),
+        ),
+    }),
+    new winston.transports.File({
+        filename: 'combined.log',
+        format: combine(
+            timestamp(),
+            logFormat,
+            enumerateErrorFormat(),
+        ),
+    }),
+];
+
 const transports = NODE_ENV === 'development'
     ? [
         new winston.transports.Console({
@@ -62,6 +82,7 @@ const transports = NODE_ENV === 'development'
                 enumerateErrorFormat(),
             ),
         }),
+        ...fileTransports,
         new YourCustomPostgresTransport(), // Replace this with your custom transport
     ]
     : [new winston.transports.Console({
