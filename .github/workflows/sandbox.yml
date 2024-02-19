@@ -266,7 +266,7 @@ jobs:
           PRIVATE_KEY: ${{ secrets.SAND_BOX_SSH_KEY }}
           GITHUB_RUN_NUMBER: ${{ secrets.GITHUB_RUN_NUMBER }}
         run: |
-          EC2_HOST_IP = $(aws ec2 describe-instances --filters "Name=tag:Name,Values=Sand Box Core Instance" --query "Reservations[].Instances[].[PublicIpAddress]" --output text)
+          EC2_HOST_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=Sand Box Core Instance" --query "Reservations[].Instances[].[PublicIpAddress]" --output text)
           echo "$PRIVATE_KEY" > private_key.pem && chmod 400 private_key.pem 
           ssh -o StrictHostKeyChecking=no -i 'private_key.pem' ubuntu@${EC2_HOST_IP}
             cd /home/ubuntu/
