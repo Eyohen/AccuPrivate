@@ -25,7 +25,7 @@ jobs:
     name: generate-env-file
     # needs: [push-build]
     runs-on: ubuntu-latest
-    if : github.ref == 'refs/heads/sandbox'
+    if : github.ref == 'refs/heads/main'
     steps:
     - name: chechkout
       uses: actions/checkout@v2
@@ -166,7 +166,7 @@ jobs:
   scan-backend: 
     name: scan-backend
     runs-on: ubuntu-latest
-    if : github.ref == 'refs/heads/sandbox'
+    if : github.ref == 'refs/heads/main'
     # needs: [test-backend]
     needs: [generate-env-file]
     steps: 
@@ -189,7 +189,7 @@ jobs:
   build-backend:
     name: build-backend
     needs: [scan-backend]
-    if : github.ref == 'refs/heads/sandbox'
+    if : github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -222,7 +222,7 @@ jobs:
   push-build:
     name: push-build
     needs: [build-backend]
-    if : github.ref == 'refs/heads/sandbox'
+    if : github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: chechkout
@@ -244,7 +244,7 @@ jobs:
 
   deploy-build:
     name: deploy-build
-    needs: [push-build]
+    # needs: [push-build]
     if : github.ref == 'refs/heads/sandbox'
     runs-on: ubuntu-latest
     steps:
@@ -271,6 +271,7 @@ jobs:
           PRIVATE_KEY: ${{ secrets.SAND_BOX_SSH_KEY }}
           GITHUB_RUN_NUMBER: ${{ secrets.GITHUB_RUN_NUMBER }}
         run: |
+          echo "$steps.get_ip_address_ec2.outputs.EC2_HOST_IP"
           echo "$PRIVATE_KEY" > private_key.pem && chmod 400 private_key.pem 
           ssh -o StrictHostKeyChecking=no -i 'private_key.pem' ubuntu@${steps.get_ip_address_ec2.outputs.EC2_HOST_IP}
             cd /home/ubuntu/
