@@ -270,10 +270,11 @@ jobs:
         env: 
           PRIVATE_KEY: ${{ secrets.SAND_BOX_SSH_KEY }}
           GITHUB_RUN_NUMBER: ${{ secrets.GITHUB_RUN_NUMBER }}
+          EC2_HOST_IP: ${{steps.get_ip_address_ec2.outputs.EC2_HOST_IP}}
         run: |
-          echo "$steps.get_ip_address_ec2.outputs.EC2_HOST_IP"
+          echo "$EC2_HOST_IP"
           echo "$PRIVATE_KEY" > private_key.pem && chmod 400 private_key.pem 
-          ssh -o StrictHostKeyChecking=no -i 'private_key.pem' ubuntu@${steps.get_ip_address_ec2.outputs.EC2_HOST_IP}
+          ssh -o StrictHostKeyChecking=no -i 'private_key.pem' ubuntu@${EC2_HOST_IP}
             cd /home/ubuntu/
             pm2 stop server #stop the server 
             #rename the old folder 
