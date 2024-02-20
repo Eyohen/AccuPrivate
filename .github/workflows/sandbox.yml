@@ -25,7 +25,7 @@ jobs:
     name: generate-env-file
     # needs: [push-build]
     runs-on: ubuntu-latest
-    if : github.ref == 'refs/heads/main'
+    if : github.ref == 'refs/heads/sandbox'
     steps:
     - name: chechkout
       uses: actions/checkout@v2
@@ -166,7 +166,7 @@ jobs:
   scan-backend: 
     name: scan-backend
     runs-on: ubuntu-latest
-    if : github.ref == 'refs/heads/main'
+    if : github.ref == 'refs/heads/sandbox'
     # needs: [test-backend]
     needs: [generate-env-file]
     steps: 
@@ -189,7 +189,7 @@ jobs:
   build-backend:
     name: build-backend
     needs: [scan-backend]
-    if : github.ref == 'refs/heads/main'
+    if : github.ref == 'refs/heads/sandbox'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -222,7 +222,7 @@ jobs:
   push-build:
     name: push-build
     needs: [build-backend]
-    if : github.ref == 'refs/heads/main'
+    if : github.ref == 'refs/heads/sandbox'
     runs-on: ubuntu-latest
     steps:
       - name: chechkout
@@ -245,7 +245,7 @@ jobs:
   deploy-build:
     name: deploy-build
     needs: [push-build]
-    if : github.ref == 'refs/heads/main'
+    if : github.ref == 'refs/heads/sandbox'
     runs-on: ubuntu-latest
     steps:
       - name: chechkout
@@ -323,7 +323,7 @@ jobs:
     name: smoke-test
     if : github.ref == 'refs/heads/sandbox'
     runs-on: ubuntu-latest
-    # needs: [deploy-build]
+    needs: [deploy-build]
     outputs:
       smoke_test_result: ${{ steps.check_server_status.outputs.smoke_test_result }}
     steps:
@@ -364,11 +364,46 @@ jobs:
         run: |
           EC2_HOST_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=Sand Box Core Instance" --query "Reservations[].Instances[].[PublicIpAddress]" --output text)
           echo "${{needs.smoke-test.outputs.smoke_test_result}}"
+          if [[ "${{needs.smoke-test.outputs.smoke_test_result}}" == "1" ]];
+          then 
+            echo " No rollback"
+          else
+            echo "Rolling back...."
+            ssh -o StrictHostKeyChecking=no -i 'private_key.pem' ubuntu@${EC2_HOST_IP} '
+              cd /home/ubuntu/
+              pm2 stop server #stop the server 
+              # GET THE LATEST_SUCCESSFUL_RUN_ID 
+              if aws s3 cp s3://accuvend-bucket-configuration/staging_last_run.txt ./staging_last_run.txt | grep "does not exist" 
+              then
+                  echo 'FILE DOES NOT EXIST'
+                  LAST_SUCCESSFUL_RUN_NUMBER=0               
+              else
+                  echo 'FILE EXIST'
+                  LAST_SUCCESSFUL_RUN_NUMBER=$(grep LAST_SUCCESSFUL_RUN_ID ./staging_last_run.txt | cut -d "=" -f2)            
+              fi
+              #rename the old folder 
+              echo "$LAST_SUCCESSFUL_RUN_NUMBER"
+              if [ -d "dist" ] && [ -d "dist"_"$LAST_SUCCESSFUL_RUN_NUMBER" ]; then
+                  rm -rf dist
+                  mv "dist"_"$LAST_SUCCESSFUL_RUN_NUMBER" "dist"
+                  echo "Folder renamed from dist"_"$LAST_SUCCESSFUL_RUN_NUMBER"
+              else
+                  echo "Folder does not exist."
+              fi
+              # cd 
+              cd dist
+              
+              #Set up restart server 
+              pm2 start server.js --time '
+            
+          fi 
+
+          
           
   save-latest-successful_run:
     name: save-latest-successful-run
-    if : github.ref == 'refs/heads/main'
-    needs: [roll-back]
+    if : github.ref == 'refs/heads/sandbox' && needs.smoke-test.outputs.smoke_test_result == '1'
+    needs: [roll-back, smoke-test ]
     runs-on: ubuntu-latest
     steps: 
       - name: Configure AWS Credentials
@@ -389,7 +424,7 @@ jobs:
   # create-update-environment:
   #   name: create-environment
   #   needs: [push-build]
-  #   if : github.ref == 'refs/heads/main'
+  #   if : github.ref == 'refs/heads/sandbox'
   #   runs-on: ubuntu-latest
   #   steps:
   #   - name: Checkout
