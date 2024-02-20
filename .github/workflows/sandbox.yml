@@ -321,7 +321,7 @@ jobs:
             
   smoke-test:
     name: smoke-test
-     if : github.ref == 'refs/heads/sandbox'
+    if : github.ref == 'refs/heads/sandbox'
     runs-on: ubuntu-latest
     # needs: [deploy-build]
     steps:
