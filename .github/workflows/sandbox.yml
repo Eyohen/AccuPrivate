@@ -353,8 +353,6 @@ jobs:
     needs: smoke-test
     if : github.ref == 'refs/heads/sandbox'
     runs-on: ubuntu-latest
-    env:
-      smoke_test_result: ${{needs.smoke_test.outputs.smoke_test_result}}
     steps: 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -365,9 +363,8 @@ jobs:
       - name: roll back_server_if_failure 
         run: |
           EC2_HOST_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=Sand Box Core Instance" --query "Reservations[].Instances[].[PublicIpAddress]" --output text)
-          echo "${{needs.smoke_test.outputs.smoke_test_result}}"
-          echo '$smoke_test_result'
-              
+          echo "${{needs.smoke-test.outputs.smoke_test_result}}"
+          
   save-latest-successful_run:
     name: save-latest-successful-run
     if : github.ref == 'refs/heads/main'
