@@ -325,7 +325,7 @@ jobs:
     runs-on: ubuntu-latest
     # needs: [deploy-build]
     outputs:
-      smoke_test_result: ${{steps.check_server_status.outputs.SMOKE_TEST_RESULT}}
+      smoke_test_result: ${{ steps.check_server_status.outputs.smoke_test_result }}
     steps:
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -340,10 +340,10 @@ jobs:
         if curl "http://${EC2_HOST_IP}/healthcheck" | grep "Server is working"
         then
             echo "SMOKE_TEST_RESULT PASSED"
-            echo "SMOKE_TEST_RESULT=1" >> $GITHUB_OUTPUT
+            echo "smoke_test_result=1" >> "$GITHUB_OUTPUT"
         else
             echo "SMOKE_TEST_RESULT FAILED"
-            echo "SMOKE_TEST_RESULT=0" >> $GITHUB_OUTPUT
+            echo "smoke_test_result=0" >> "$GITHUB_OUTPUT"
         fi
    
 
@@ -383,7 +383,6 @@ jobs:
         env: 
           PRIVATE_KEY: ${{ secrets.SAND_BOX_SSH_KEY }}
           GITHUB_RUN_NUMBER: ${{ secrets.GITHUB_RUN_NUMBER }}
-          EC2_HOST_IP: ${{steps.get_ip_address_ec2.outputs.EC2_HOST_IP}}
         run: |
           echo "LAST_SUCCESSFUL_RUN_ID=$GITHUB_RUN_NUMBER" > staging_last_run.txt
           aws s3 cp ./staging_last_run.txt s3://accuvend-bucket-configuration/staging_last_run.txt 
