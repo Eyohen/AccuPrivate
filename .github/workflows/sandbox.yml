@@ -345,7 +345,8 @@ jobs:
             echo "SMOKE_TEST_RESULT FAILED"
             echo "smoke_test_result=0" >> "$GITHUB_OUTPUT"
         fi
-   
+    - name: check if smoke test result is saved  
+      run : echo "${{steps.check_server_status.outputs.smoke_test_result}}"
 
   roll-back:
     name: roll-back
@@ -364,7 +365,7 @@ jobs:
       - name: roll back_server_if_failure 
         run: |
           EC2_HOST_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=Sand Box Core Instance" --query "Reservations[].Instances[].[PublicIpAddress]" --output text)
-          echo '${{needs.smoke_test.outputs.smoke_test_result}}'
+          echo "${{needs.smoke_test.outputs.smoke_test_result}}"
           echo '$smoke_test_result'
               
   save-latest-successful_run:
