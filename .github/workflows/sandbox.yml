@@ -25,7 +25,7 @@ jobs:
     name: generate-env-file
     # needs: [push-build]
     runs-on: ubuntu-latest
-    if : github.ref == 'refs/heads/sandbox'
+    if : github.ref == 'refs/heads/main'
     steps:
     - name: chechkout
       uses: actions/checkout@v2
@@ -166,7 +166,7 @@ jobs:
   scan-backend: 
     name: scan-backend
     runs-on: ubuntu-latest
-    if : github.ref == 'refs/heads/sandbox'
+    if : github.ref == 'refs/heads/main'
     # needs: [test-backend]
     needs: [generate-env-file]
     steps: 
@@ -189,7 +189,7 @@ jobs:
   build-backend:
     name: build-backend
     needs: [scan-backend]
-    if : github.ref == 'refs/heads/sandbox'
+    if : github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -222,7 +222,7 @@ jobs:
   push-build:
     name: push-build
     needs: [build-backend]
-    if : github.ref == 'refs/heads/sandbox'
+    if : github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: chechkout
@@ -245,7 +245,7 @@ jobs:
   deploy-build:
     name: deploy-build
     needs: [push-build]
-    if : github.ref == 'refs/heads/sandbox'
+    if : github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: chechkout
@@ -321,9 +321,9 @@ jobs:
             
   smoke-test:
     name: smoke-test
-    if : github.ref == 'refs/heads/sandbox'
+     if : github.ref == 'refs/heads/sandbox'
     runs-on: ubuntu-latest
-    needs: [deploy-build]
+    # needs: [deploy-build]
     steps:
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -337,16 +337,18 @@ jobs:
         EC2_HOST_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=Sand Box Core Instance" --query "Reservations[].Instances[].[PublicIpAddress]" --output text)
         if curl "http://${EC2_HOST_IP}/healthcheck" | grep "Server is working"
         then
-            echo "SMOKE_TEST_RESULT=0" >> $GITHUB_OUTPUT
-        else
+            echo "SMOKE_TEST_RESULT PASSED"
             echo "SMOKE_TEST_RESULT=1" >> $GITHUB_OUTPUT
+        else
+            echo "SMOKE_TEST_RESULT FAILED"
+            echo "SMOKE_TEST_RESULT=0" >> $GITHUB_OUTPUT
         fi
     outputs:
       smoke_test_result: ${{steps.check_server_status.outputs.SMOKE_TEST_RESULT}}
 
   roll-back:
     name: roll-back
-    needs: smoke-test
+    needs: [smoke-test]
     if : github.ref == 'refs/heads/sandbox'
     runs-on: ubuntu-latest
     steps: 
@@ -363,7 +365,7 @@ jobs:
               
   save-latest-successful_run:
     name: save-latest-successful-run
-    if : github.ref == 'refs/heads/sandbox'
+    if : github.ref == 'refs/heads/main'
     needs: [roll-back]
     runs-on: ubuntu-latest
     steps: 
@@ -386,7 +388,7 @@ jobs:
   # create-update-environment:
   #   name: create-environment
   #   needs: [push-build]
-  #   if : github.ref == 'refs/heads/sandbox'
+  #   if : github.ref == 'refs/heads/main'
   #   runs-on: ubuntu-latest
   #   steps:
   #   - name: Checkout
