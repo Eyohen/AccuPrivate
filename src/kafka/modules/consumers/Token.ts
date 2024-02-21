@@ -188,7 +188,11 @@ export class TokenHandlerUtil {
             vendorRetryRecord: VendorRetryRecord
         }
     ) {
-        logger.warn('Retrying transaction with new vendor', { meta: { transactionId: transaction.id } })
+        logger.warn('Reinitiating transaction with new vendor', { meta: { transactionId: transaction.id } })
+        logger.warn('Reinitiating transaction with new vendor', { meta: { transactionId: transaction.id } })
+        logger.warn('Reinitiating transaction with new vendor', { meta: { transactionId: transaction.id } })
+        logger.warn('Reinitiating transaction with new vendor', { meta: { transactionId: transaction.id } })
+        logger.warn('Reinitiating transaction with new vendor', { meta: { transactionId: transaction.id } })
         const meta = {
             transactionId: transaction.id,
         }
