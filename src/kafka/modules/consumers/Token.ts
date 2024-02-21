@@ -217,13 +217,6 @@ export class TokenHandlerUtil {
 
             // Check for the reference used in the last retry record
             retryRecord[retryRecord.length - 1].reference.push(currentVendor.vendor === 'IRECHARGE' ? generateRandonNumbers(12) : generateRandomString(12))
-
-            // If vendor is IRECHARGE get new IrechargeAccessToken 
-            const meter = await transaction.$get('meter')
-            if (currentVendor.vendor === 'IRECHARGE') {
-
-            }
-            const accessToken = await IRechargeVendorService.validateMeter()
         }
 
         const newVendor = useCurrentVendor ? currentVendor.vendor : await TokenHandlerUtil.getNextBestVendorForVendRePurchase(transaction.productCodeId, transaction.superagent, transaction.previousVendors, parseFloat(transaction.amount))
@@ -241,39 +234,20 @@ export class TokenHandlerUtil {
         let accesToken = transaction.irechargeAccessToken
 
         if (newVendor === 'IRECHARGE') {
-            const irechargeVendor = await VendorDocService.viewSingleVendorByName('IRECHARGE')
+            const irechargeVendor = await VendorModelService.viewSingleVendorByName('IRECHARGE')
             if (!irechargeVendor) {
-                throw new InternalServerError('Irecharge vendor not found')
+                throw new CustomError('Irecharge vendor not found')
             }
 
             const irechargeVendorProduct = await VendorProductService.viewSingleVendorProductByVendorIdAndProductId(irechargeVendor.id, transaction.productCodeId)
             if (!irechargeVendorProduct) {
-                throw new InternalServerError('Irecharge vendor product not found')
+                throw new CustomError('Irecharge vendor product not found')
             }
 
-
-            console.log({
-                transactionId: transaction.id,
-                meterNumber,
-                disco: irechargeVendorProduct.schemaData.code,
-                vendType,
-            })
-            return VendorService.irechargeValidateMeter(irechargeVendorProduct.schemaData.code, meterNumber, transaction.vendorReferenceId).then((res) => ({ ...res, ...res.customer, }))
-            const meterValidationResult = await VendorService.irechargeValidateMeter(_data.disco, _data.meterNumber, data.transaction.vendorReferenceId).catch((error) => {
-                throw new CustomError('Error validating meter', {
-                    transactionId: transaction.id,
-                })
-            })
-
-            if (!meterValidationResult) throw new CustomError('Error validating meter', {
-                transactionId: data.transaction.id,
-            })
-
-            _data.accessToken = meterValidationResult.access_token
+            const meterValidationResult = await VendorService.irechargeValidateMeter(irechargeVendorProduct.schemaData.code, meter.meterNumber, transaction.vendorReferenceId).then((res) => ({ ...res, ...res.customer, }))
             console.log({ meterValidationResult, info: 'New meter validation result' })
-            await TransactionService.updateSingleTransaction(data.transaction.id, { irechargeAccessToken: meterValidationResult.access_token })
+            accesToken = meterValidationResult.access_token
         }
-
 
         await transaction.update({ previousVendors: [...transaction.previousVendors, newVendor], vendorReferenceId: newTransactionReference, reference: newTransactionReference })
         return await VendorPublisher.publishEventForRetryPowerPurchaseWithNewVendor({
