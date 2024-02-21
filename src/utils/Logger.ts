@@ -41,9 +41,7 @@ const logFormat = printf((info) => {
     }
 
     return info.meta
-        ? `${info.timestamp} [${info.level}]: ${message} 
-            meta_data: ${info.meta}
-            `
+        ? `${info.timestamp} [${info.level}]: ${message}`
         : `${info.timestamp} [${info.level}]: ${message}`;
 });
 
@@ -85,33 +83,33 @@ const fileTransports = [
 const transports =
     NODE_ENV === "development"
         ? [
-              new winston.transports.Console({
-                  level: "info",
-                  format: combine(
-                      timestamp(),
-                      colorize({
-                          colors: { info: "cyan", error: "red" },
-                      }),
-                      logFormat,
-                      enumerateErrorFormat(),
-                  ),
-              }),
-              ...fileTransports,
-              new YourCustomPostgresTransport(), // Replace this with your custom transport
-          ]
+            new winston.transports.Console({
+                level: "info",
+                format: combine(
+                    timestamp(),
+                    colorize({
+                        colors: { info: "cyan", error: "red" },
+                    }),
+                    logFormat,
+                    enumerateErrorFormat(),
+                ),
+            }),
+            ...fileTransports,
+            new YourCustomPostgresTransport(), // Replace this with your custom transport
+        ]
         : [
-              new winston.transports.Console({
-                  level: "info",
-                  format: combine(
-                      timestamp(),
-                      colorize({
-                          colors: { info: "cyan", error: "red" },
-                      }),
-                      logFormat,
-                      enumerateErrorFormat(),
-                  ),
-              }),
-          ];
+            new winston.transports.Console({
+                level: "info",
+                format: combine(
+                    timestamp(),
+                    colorize({
+                        colors: { info: "cyan", error: "red" },
+                    }),
+                    logFormat,
+                    enumerateErrorFormat(),
+                ),
+            }),
+        ];
 
 const productionLogger = winston.createLogger({
     level: "info",

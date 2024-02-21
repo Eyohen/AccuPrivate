@@ -620,7 +620,7 @@ export default class VendorController {
         const retryRecord = {
             retryCount: 0,
             attempt: 0,
-            reference: transactionReference,
+            reference: [transactionReference],
             vendor: superagent,
         } as ITransaction['retryRecord'][number]
 

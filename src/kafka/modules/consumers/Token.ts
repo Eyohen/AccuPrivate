@@ -20,8 +20,8 @@ import {
 import MessageProcessor from "../util/MessageProcessor";
 import { v4 as uuidv4 } from "uuid";
 import EventService from "../../../services/Event.service";
-import VendorService, { ElectricityPurchaseResponse, ElectricityRequeryResponse, SuccessResponseForBuyPowerRequery, Vendor } from "../../../services/VendorApi.service";
-import { generateRandomToken } from "../../../utils/Helper";
+import VendorService, { ElectricityPurchaseResponse, ElectricityRequeryResponse, IRechargeVendorService, SuccessResponseForBuyPowerRequery, Vendor } from "../../../services/VendorApi.service";
+import { generateRandomString, generateRandomToken, generateRandonNumbers } from "../../../utils/Helper";
 import ProductService from "../../../services/Product.service";
 import { CustomError } from "../../../utils/Errors";
 import VendorProductService from "../../../services/VendorProduct.service";
@@ -214,7 +214,18 @@ export class TokenHandlerUtil {
                 useCurrentVendor = true
                 logger.info('Using current vendor', meta)
             }
+
+            // Check for the reference used in the last retry record
+            retryRecord[retryRecord.length - 1].reference.push(currentVendor.vendor === 'IRECHARGE' ? generateRandonNumbers(12) : generateRandomString(12))
+
+            // If vendor is IRECHARGE get new IrechargeAccessToken 
+            const meter = await transaction.$get('meter')
+            if (currentVendor.vendor === 'IRECHARGE') {
+
+            }
+            const accessToken = await IRechargeVendorService.validateMeter()
         }
+
         const newVendor = useCurrentVendor ? currentVendor.vendor : await TokenHandlerUtil.getNextBestVendorForVendRePurchase(transaction.productCodeId, transaction.superagent, transaction.previousVendors, parseFloat(transaction.amount))
         await transactionEventService.addPowerPurchaseRetryWithNewVendor({ bankRefId: transaction.bankRefId, currentVendor: transaction.superagent, newVendor })
 
@@ -225,7 +236,46 @@ export class TokenHandlerUtil {
         if (!partner) throw new CustomError('Partner not found for transaction', meta)
 
         retry.count = 0
-        await transaction.update({ previousVendors: [...transaction.previousVendors, newVendor] })
+
+        const newTransactionReference = retryRecord[retryRecord.length - 1].reference[retryRecord[retryRecord.length - 1].reference.length - 1]
+        let accesToken = transaction.irechargeAccessToken
+
+        if (newVendor === 'IRECHARGE') {
+            const irechargeVendor = await VendorDocService.viewSingleVendorByName('IRECHARGE')
+            if (!irechargeVendor) {
+                throw new InternalServerError('Irecharge vendor not found')
+            }
+
+            const irechargeVendorProduct = await VendorProductService.viewSingleVendorProductByVendorIdAndProductId(irechargeVendor.id, transaction.productCodeId)
+            if (!irechargeVendorProduct) {
+                throw new InternalServerError('Irecharge vendor product not found')
+            }
+
+
+            console.log({
+                transactionId: transaction.id,
+                meterNumber,
+                disco: irechargeVendorProduct.schemaData.code,
+                vendType,
+            })
+            return VendorService.irechargeValidateMeter(irechargeVendorProduct.schemaData.code, meterNumber, transaction.vendorReferenceId).then((res) => ({ ...res, ...res.customer, }))
+            const meterValidationResult = await VendorService.irechargeValidateMeter(_data.disco, _data.meterNumber, data.transaction.vendorReferenceId).catch((error) => {
+                throw new CustomError('Error validating meter', {
+                    transactionId: transaction.id,
+                })
+            })
+
+            if (!meterValidationResult) throw new CustomError('Error validating meter', {
+                transactionId: data.transaction.id,
+            })
+
+            _data.accessToken = meterValidationResult.access_token
+            console.log({ meterValidationResult, info: 'New meter validation result' })
+            await TransactionService.updateSingleTransaction(data.transaction.id, { irechargeAccessToken: meterValidationResult.access_token })
+        }
+
+
+        await transaction.update({ previousVendors: [...transaction.previousVendors, newVendor], vendorReferenceId: newTransactionReference, reference: newTransactionReference })
         return await VendorPublisher.publishEventForRetryPowerPurchaseWithNewVendor({
             meter: meter,
             partner: partner,

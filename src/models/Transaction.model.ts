@@ -76,7 +76,7 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     @Column({ type: DataType.JSONB, allowNull: true })
     retryRecord: {
         vendor: ITransaction['superagent'],
-        reference: string,
+        reference: string[],
         data?: Record<string, any>,
         retryCount: number,
         attempt: number,
@@ -217,7 +217,7 @@ export interface ITransaction {
     previousVendors: string[];
     retryRecord: {
         vendor: ITransaction['superagent'],
-        reference: string,
+        reference: string[],
         data?: Record<string, any>,
         retryCount: number,
         attempt: number,
