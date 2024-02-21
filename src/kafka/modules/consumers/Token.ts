@@ -73,8 +73,9 @@ interface ProcessVendRequestReturnData extends Record<Transaction['superagent'],
 const retry = {
     count: 0,
     limit: 2,
-    limitToStopRetryingWhenTransactionIsSuccessful: 5,
+    limitToStopRetryingWhenTransactionIsSuccessful: 2,
     retryCountBeforeSwitchingVendor: 2,
+    testForSwitchingVendor: true,
 }
 
 const TEST_FAILED = NODE_ENV === 'production' ? false : true // TOGGLE - Will simulate failed transaction
@@ -187,7 +188,7 @@ export class TokenHandlerUtil {
             vendorRetryRecord: VendorRetryRecord
         }
     ) {
-        logger.info('Retrying transaction with new vendor', { meta: { transactionId: transaction.id } })
+        logger.warn('Retrying transaction with new vendor', { meta: { transactionId: transaction.id } })
         const meta = {
             transactionId: transaction.id,
         }
@@ -472,6 +473,8 @@ class TokenHandler extends Registry {
                 return;
             }
 
+            console.log({ vendorRecord: data.vendorRetryRecord, transaction: transaction.retryRecord })
+
             const { user, meter, partner } = transaction;
 
             const vendor = await VendorModelService.viewSingleVendorByName(data.superAgent)
@@ -617,18 +620,23 @@ class TokenHandler extends Registry {
                 tokenInResponse = null // There is no token for postpaid meters
             }
 
-
             let requeryTransactionFromVendor = transactionTimedOut
-            if (((tokenInResponse && prepaid) || (!tokenInResponse && !prepaid)) && TEST_FAILED) {
-                const totalRetries = (retry.retryCountBeforeSwitchingVendor * transaction.previousVendors.length - 1) + retry.count + 1
+            let requeryFromNewVendor = false
+            if (TEST_FAILED) {
+                if (((tokenInResponse && prepaid) || (!tokenInResponse && !prepaid)) && TEST_FAILED) {
+                    const totalRetries = (retry.retryCountBeforeSwitchingVendor * transaction.previousVendors.length - 1) + retry.count + 1
 
-                // If we are in test mode, and the transaction is successful, after a number of retries, we should assume the transaction is successful
-                const shouldAssumeToBeSuccessful = (totalRetries > retry.limitToStopRetryingWhenTransactionIsSuccessful) && TEST_FAILED
-                requeryTransactionFromVendor = !shouldAssumeToBeSuccessful
+                    // If we are in test mode, and the transaction is successful, after a number of retries, we should assume the transaction is successful
+                    const shouldAssumeToBeSuccessful = (totalRetries > retry.limitToStopRetryingWhenTransactionIsSuccessful) && TEST_FAILED
+                    requeryTransactionFromVendor = !shouldAssumeToBeSuccessful
+                }
             }
 
             console.log({ tokenInResponse, requeryTransactionFromVendor })
             // If Transaction timedout - Requery the transaction at intervals
+            if (requeryFromNewVendor) {
+                return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter: data.meter, transaction: transaction as TransactionWithProductId, transactionEventService, vendorRetryRecord: data.vendorRetryRecord })
+            }
             if (requeryTransactionFromVendor || (!tokenInResponse && prepaid)) {
                 return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
                     {
@@ -785,9 +793,9 @@ class TokenHandler extends Registry {
         data: PublisherEventAndParameters[TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY],
     ) {
         try {
-
             console.warn(" Retrying transaction from vendor")
             retry.count = data.retryCount;
+            console.log({ data: data.vendorRetryRecord, retyrCount: data.retryCount })
 
             // Check if token has been found
             const transaction = await TransactionService.viewSingleTransaction(data.transactionId);
@@ -833,6 +841,20 @@ class TokenHandler extends Registry {
             const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction).catch(e => e);
 
             if (requeryResult instanceof Error) {
+                let requeryFromNewVendor = false
+                if (TEST_FAILED) {
+                    requeryFromNewVendor = retry.testForSwitchingVendor && (data.retryCount >= retry.retryCountBeforeSwitchingVendor)
+                }
+
+                console.log({
+                    retryCount: data.retryCount, retryCountBeforeSwitchingVendor: retry.retryCountBeforeSwitchingVendor, retry, test: TEST_FAILED, eval:
+                        retry.testForSwitchingVendor && (data.retryCount >= retry.retryCountBeforeSwitchingVendor)
+                })
+                console.log([requeryFromNewVendor])
+
+                if (requeryFromNewVendor) {
+                    return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter, transaction, transactionEventService, vendorRetryRecord: data.vendorRetryRecord })
+                }
                 if (requeryResult instanceof AxiosError) {
                     const requeryWasTriggeredTooEarly = requeryResult.response?.status === 429 && transaction.superagent === 'BUYPOWERNG'
                     if (requeryWasTriggeredTooEarly) {
@@ -923,6 +945,13 @@ class TokenHandler extends Registry {
                     }
                 }
 
+                if (TEST_FAILED) {
+                    requeryFromNewVendor = requeryFromNewVendor ?? (retry.testForSwitchingVendor && (data.retryCount >= retry.retryCountBeforeSwitchingVendor))
+                }
+
+                console.log({ retryCount: data.retryCount, retryCountBeforeSwitchingVendor: retry.retryCountBeforeSwitchingVendor, retry, test: TEST_FAILED })
+                console.log([requeryFromNewVendor])
+
                 if (requeryFromNewVendor) {
                     return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter, transaction, transactionEventService, vendorRetryRecord: data.vendorRetryRecord })
                 }
@@ -963,6 +992,17 @@ class TokenHandler extends Registry {
             if (!vendorProduct) throw new CustomError('Vendor product not found')
 
             const disco = vendorProduct.schemaData.code
+
+            if (TEST_FAILED) {
+                const requeryFromNewVendor = (retry.testForSwitchingVendor && (data.retryCount >= retry.retryCountBeforeSwitchingVendor))
+                console.log({ retryCount: data.retryCount, retryCountBeforeSwitchingVendor: retry.retryCountBeforeSwitchingVendor, retry, test: TEST_FAILED })
+                console.log([requeryFromNewVendor])
+                if (requeryFromNewVendor) {
+                    return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter, transaction, transactionEventService, vendorRetryRecord: data.vendorRetryRecord })
+                }
+            }
+
+
 
             const prepaid = data.meter.vendType === 'PREPAID';
             if (!token && prepaid) {

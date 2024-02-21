@@ -203,7 +203,7 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
         superAgent: Transaction['superagent'],
         newVendor: Transaction['superagent'],
     };
-   
+
     // Data
     [TOPICS.DATA_PURCHASE_INITIATED_BY_CUSTOMER]: {
         phone: {

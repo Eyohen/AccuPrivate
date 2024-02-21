@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import TransactionService from "../../../services/Transaction.service";
 import Transaction, {
+    ITransaction,
     PaymentType,
     Status,
     TransactionType,
@@ -616,6 +617,17 @@ export default class VendorController {
             meter: { meterNumber, disco, vendType },
         })
 
+        const retryRecord = {
+            retryCount: 0,
+            attempt: 0,
+            reference: transactionReference,
+            vendor: superagent,
+        } as ITransaction['retryRecord'][number]
+
+        await transaction.update({
+            retryRecord: [retryRecord]
+        })
+
         // // TODO: Publish event for disco up to kafka
         const meter: Meter = await MeterService.addMeter({
             id: uuidv4(),
@@ -724,7 +736,7 @@ export default class VendorController {
                 meter: meterInfo,
                 superAgent: transaction.superagent,
                 vendorRetryRecord: {
-                    retryCount: 1,
+                    retryCount: 0,
                 }
             })
 
