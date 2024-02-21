@@ -243,6 +243,7 @@ class VendorControllerUtil {
             transaction, meterInfo, transaction.superagent, transaction.partner.email
         )
 
+        const vendorRetryRecord = transaction.retryRecord[transaction.retryRecord.length - 1]
         const eventPayload = JSON.parse(previousRetryEvent.payload) as TokenRetryEventPayload
         await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
             {
@@ -263,7 +264,8 @@ class VendorControllerUtil {
                 tokenInResponse: null,
                 transactionTimedOutFromBuypower: false,
                 superAgent: transaction.superagent,
-                retryCount: eventPayload.retryCount + 1
+                retryCount: eventPayload.retryCount + 1,
+                vendorRetryRecord
             }
         )
     }
@@ -438,7 +440,7 @@ class VendorControllerUtil {
         superAgents.unshift(previousSuperAgent)
 
         let selectedVendor = superAgents[0]
-        let returnedResponse: IResponses[keyof IResponses] | Error = new Error('No response') 
+        let returnedResponse: IResponses[keyof IResponses] | Error = new Error('No response')
         for (const superAgent of superAgents) {
             try {
                 console.log({ superAgent })
@@ -450,7 +452,7 @@ class VendorControllerUtil {
                 console.log({ superAgent })
                 const token = superAgent === 'IRECHARGE' ? (response as IResponses['IRECHARGE']).access_token : undefined
                 await transaction.update({ superagent: superAgent as any, irechargeAccessToken: token })
-                
+
                 selectedVendor = superAgent
                 returnedResponse = response
                 break
@@ -475,11 +477,11 @@ class VendorControllerUtil {
                 logger.info(`Trying to backup validation with IRECHARGE`, { meta: { transactionId: transaction.id } })
                 const response = await validateWithIrecharge()
                 const token = response.access_token
-            
-                await transaction.update({  irechargeAccessToken: token })
+
+                await transaction.update({ irechargeAccessToken: token })
             }
         } catch (error) {
-            logger.error(`Error validating meter with IRECHARGE`, { meta: { transactionId: transaction.id } })              
+            logger.error(`Error validating meter with IRECHARGE`, { meta: { transactionId: transaction.id } })
         }
 
         return returnedResponse
@@ -527,6 +529,7 @@ export default class VendorController {
                 reference: transactionReference,
                 transactionType: TransactionType.ELECTRICITY,
                 productCodeId: existingProductCodeForDisco.id,
+                retryRecord: [],
                 previousVendors: [superagent],
                 vendorReferenceId: generateRandonNumbers(12)
             });
@@ -720,6 +723,9 @@ export default class VendorController {
                 },
                 meter: meterInfo,
                 superAgent: transaction.superagent,
+                vendorRetryRecord: {
+                    retryCount: 1,
+                }
             })
 
             if (response instanceof Error) {

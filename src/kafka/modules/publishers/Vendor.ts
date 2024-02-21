@@ -148,7 +148,8 @@ export class VendorPublisher extends ProducerFactory {
                     email: data.partner.email,
                 },
                 transactionId: data.transactionId,
-                superAgent: data.superAgent
+                superAgent: data.superAgent,
+                vendorRetryRecord: data.vendorRetryRecord
             },
         }).catch((e) => {
             logger.error(
@@ -292,7 +293,8 @@ export class VendorPublisher extends ProducerFactory {
                 timeStamp: data.timeStamp,
                 retryCount: data.retryCount,
                 superAgent: data.superAgent,
-                waitTime: data.waitTime
+                waitTime: data.waitTime,
+                vendorRetryRecord: data.vendorRetryRecord
             },
         }).catch((e) => {
             logger.error(

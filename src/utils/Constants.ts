@@ -273,7 +273,7 @@ export const SEED = {
             vendors: {
                 BAXI: { discoCode: 'jos_electric_prepaid', commission: 1.0, bonus: 0 },
                 BUYPOWERNG: { discoCode: 'JOS', commission: 1.80, bonus: 0 },
-                IRECHARGE: { discoCode: 'Jos_Disco_Prepaid', commission: 1.50, bonus: 60 },
+                IRECHARGE: { discoCode: 'Jos_Disco', commission: 1.50, bonus: 60 },
             }
         },
         'ECKDEPS': {

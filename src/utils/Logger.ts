@@ -21,25 +21,30 @@ class YourCustomPostgresTransport extends winston.Transport {
             message,
             meta,
             transactionId: meta?.transactionId,
-            createdAt: new Date()
-        }).then(() => {
-            callback();
-        }).catch((error: Error) => {
-            callback(error);
-        });
+            createdAt: new Date(),
+        })
+            .then(() => {
+                callback();
+            })
+            .catch((error: Error) => {
+                callback(error);
+            });
     }
 }
-
 
 const { combine, timestamp, printf, colorize } = format;
 const logFormat = printf((info) => {
     let message = info.message;
 
-    if (typeof message === 'object') {
+    if (typeof message === "object") {
         message = util.inspect(message, { depth: null });
     }
 
-    return `${info.timestamp} [${info.level}]: ${message}`;
+    return info.meta
+        ? `${info.timestamp} [${info.level}]: ${message} 
+            meta_data: ${info.meta}
+            `
+        : `${info.timestamp} [${info.level}]: ${message}`;
 });
 
 const enumerateErrorFormat = format((info) => {
@@ -51,90 +56,71 @@ const enumerateErrorFormat = format((info) => {
 
 const fileTransports = [
     new winston.transports.File({
-        filename: 'error.log',
-        level: 'error',
-        format: combine(
-            timestamp(),
-            logFormat,
-            enumerateErrorFormat(),
-        ),
+        filename: "error.log",
+        level: "error",
+        format: combine(timestamp(), logFormat, enumerateErrorFormat()),
     }),
     new winston.transports.File({
-        filename: 'combined.log',
-        format: combine(
-            timestamp(),
-            logFormat,
-            enumerateErrorFormat(),
-        ),
+        filename: "combined.log",
+        format: combine(timestamp(), logFormat, enumerateErrorFormat()),
     }),
     new winston.transports.File({
-        filename: 'debug.log',
-        level: 'debug',
-        format: combine(
-            timestamp(),
-            logFormat,
-            enumerateErrorFormat(),
-        ),
+        filename: "debug.log",
+        level: "debug",
+        format: combine(timestamp(), logFormat, enumerateErrorFormat()),
     }),
-    new winston.transports
-        .File({
-            filename: 'warn.log',
-            level: 'warn',
-            format: combine(
-                timestamp(),
-                logFormat,
-                enumerateErrorFormat(),
-            ),
-        }),
+    new winston.transports.File({
+        filename: "warn.log",
+        level: "warn",
+        format: combine(timestamp(), logFormat, enumerateErrorFormat()),
+    }),
     // info
-    new winston.transports
-        .File({
-            filename: 'info.log',
-            level: 'info',
-            format: combine(
-                timestamp(),
-                logFormat,
-                enumerateErrorFormat(),
-            ),
-        }),
+    new winston.transports.File({
+        filename: "info.log",
+        level: "info",
+        format: combine(timestamp(), logFormat, enumerateErrorFormat()),
+    }),
 ];
 
-const transports = NODE_ENV === 'development'
-    ? [
-        new winston.transports.Console({
-            level: 'info',
-            format: combine(
-                timestamp(),
-                colorize({
-                    colors: { info: 'cyan', error: 'red' }
-                }),
-                logFormat,
-                enumerateErrorFormat(),
-            ),
-        }),
-        ...fileTransports,
-        new YourCustomPostgresTransport(), // Replace this with your custom transport
-    ]
-    : [new winston.transports.Console({
-        level: 'info',
-        format: combine(
-            timestamp(),
-            colorize({
-                colors: { info: 'cyan', error: 'red' }
-            }),
-            logFormat,
-            enumerateErrorFormat(),
-        ),
-    })];
+const transports =
+    NODE_ENV === "development"
+        ? [
+              new winston.transports.Console({
+                  level: "info",
+                  format: combine(
+                      timestamp(),
+                      colorize({
+                          colors: { info: "cyan", error: "red" },
+                      }),
+                      logFormat,
+                      enumerateErrorFormat(),
+                  ),
+              }),
+              ...fileTransports,
+              new YourCustomPostgresTransport(), // Replace this with your custom transport
+          ]
+        : [
+              new winston.transports.Console({
+                  level: "info",
+                  format: combine(
+                      timestamp(),
+                      colorize({
+                          colors: { info: "cyan", error: "red" },
+                      }),
+                      logFormat,
+                      enumerateErrorFormat(),
+                  ),
+              }),
+          ];
 
 const productionLogger = winston.createLogger({
-    level: 'info',
+    level: "info",
     format: combine(
         timestamp(),
         winston.format.simple(),
         enumerateErrorFormat(),
     ),
-    transports: transports as any
+    transports: transports as any,
 });
 
 const logger = productionLogger;

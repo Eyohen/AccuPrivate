@@ -118,7 +118,7 @@ export class AirtimeVendController {
                 transactionType: TransactionType.AIRTIME,
                 productCodeId: existingProductCodeForDisco.id,
                 previousVendors: [superAgent],
-
+                retryRecord: []
             });
 
         const transactionEventService = new AirtimeTransactionEventService(transaction, superAgent, partnerId, phoneNumber);
@@ -184,7 +184,8 @@ export class AirtimeVendController {
         for (let i = 0; i < vendors.length; i++) {
             const vendorName = vendors[i] as typeof vendors[number];
             console.log(`Creating vendor: ${vendorName}`);
-            const vendor = await VendorService.addVendor({
+            const existingVendor = await VendorService.viewSingleVendorByName(vendorName);
+            const vendor = existingVendor ?? await VendorService.addVendor({
                 name: vendorName,
                 id: randomUUID(),
                 schemaData: SCHEMADATA[vendorName],
@@ -310,14 +311,14 @@ export class AirtimeVendController {
                         GLO: 'GLO',
                     }
                     const productData = {
-                        masterProductCode: `VT${map[productCode]}DT`,
+                        masterProductCode: `TC${map[productCode]}VD`,
                         category: 'DATA',
                         productName: productType,
                         id: randomUUID(),
                     } as any
 
                     // Create product
-                    const product = await ProductService.viewProductCodeByProductName(productType) ?? await ProductService.addProduct(productData);
+                    const product = await ProductService.viewSingleProductByMasterProductCode(productData.masterProductCode) ?? await ProductService.addProduct(productData);
                     console.log(`Product ${productCode} created with ID ${product.id}`);
 
                     const commissions = {

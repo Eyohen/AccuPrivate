@@ -15,6 +15,7 @@ import {
     PublisherEventAndParameters,
     Registry,
     TransactionErrorCause,
+    VendorRetryRecord,
 } from "../util/Interface";
 import MessageProcessor from "../util/MessageProcessor";
 import { v4 as uuidv4 } from "uuid";
@@ -51,6 +52,7 @@ interface TriggerRequeryTransactionTokenProps {
     transactionTimedOutFromBuypower: boolean;
     superAgent: Transaction['superagent'];
     retryCount: number;
+    vendorRetryRecord: VendorRetryRecord
 }
 
 interface TokenPurchaseData {
@@ -75,7 +77,7 @@ const retry = {
     retryCountBeforeSwitchingVendor: 2,
 }
 
-const TEST_FAILED = NODE_ENV === 'production' ? false : false // TOGGLE - Will simulate failed transaction
+const TEST_FAILED = NODE_ENV === 'production' ? false : true // TOGGLE - Will simulate failed transaction
 
 const TransactionErrorCodeAndCause = {
     501: TransactionErrorCause.MAINTENANCE_ACCOUNT_ACTIVATION_REQUIRED,
@@ -98,6 +100,7 @@ export class TokenHandlerUtil {
         transactionTimedOutFromBuypower,
         tokenInResponse,
         retryCount,
+        vendorRetryRecord,
         superAgent
     }: TriggerRequeryTransactionTokenProps) {
         // Check if the transaction has hit the requery limit
@@ -146,6 +149,7 @@ export class TokenHandlerUtil {
             timeStamp: new Date(),
             retryCount,
             superAgent,
+            vendorRetryRecord,
             waitTime: getCurrentWaitTimeForRequeryEvent(retryCount)
         };
 
@@ -175,11 +179,12 @@ export class TokenHandlerUtil {
 
     static async triggerEventToRetryTransactionWithNewVendor(
         {
-            transaction, transactionEventService, meter,
+            transaction, transactionEventService, meter, vendorRetryRecord
         }: {
             transaction: TransactionWithProductId,
             transactionEventService: TransactionEventService,
             meter: MeterInfo & { id: string },
+            vendorRetryRecord: VendorRetryRecord
         }
     ) {
         logger.info('Retrying transaction with new vendor', { meta: { transactionId: transaction.id } })
@@ -189,7 +194,27 @@ export class TokenHandlerUtil {
         // Attempt purchase from new vendor
         if (!transaction.bankRefId) throw new CustomError('BankRefId not found', meta)
 
-        const newVendor = await TokenHandlerUtil.getNextBestVendorForVendRePurchase(transaction.productCodeId, transaction.superagent, transaction.previousVendors, parseFloat(transaction.amount))
+        const retryRecord = transaction.retryRecord
+
+        // Make sure to use the same vendor thrice before switching to another vendor
+        const currentVendor = retryRecord[retryRecord.length - 1]
+        console.log({ currentVendor, retryRecord })
+        let useCurrentVendor = false
+        if (currentVendor.vendor === transaction.superagent) {
+            if (currentVendor.retryCount <= 3) {
+                // Update the retry record in the transaction
+                // Get the last record where this vendor was used
+                const lastRecord = retryRecord[retryRecord.length - 1]
+                lastRecord.retryCount = lastRecord.retryCount + 1
+
+                // Update the transaction
+                await TransactionService.updateSingleTransaction(transaction.id, { retryRecord })
+
+                useCurrentVendor = true
+                logger.info('Using current vendor', meta)
+            }
+        }
+        const newVendor = useCurrentVendor ? currentVendor.vendor : await TokenHandlerUtil.getNextBestVendorForVendRePurchase(transaction.productCodeId, transaction.superagent, transaction.previousVendors, parseFloat(transaction.amount))
         await transactionEventService.addPowerPurchaseRetryWithNewVendor({ bankRefId: transaction.bankRefId, currentVendor: transaction.superagent, newVendor })
 
         const user = await transaction.$get('user')
@@ -421,6 +446,7 @@ class TokenHandler extends Registry {
             partner: data.partner,
             transactionId: transaction.id,
             superAgent: data.newVendor,
+            vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1]
         })
     }
 
@@ -545,6 +571,7 @@ class TokenHandler extends Registry {
                                 superAgent: data.superAgent,
                                 tokenInResponse: null,
                                 transactionTimedOutFromBuypower: false,
+                                vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1]
                             },
                         );
                     }
@@ -557,7 +584,7 @@ class TokenHandler extends Registry {
                 /* Commmented out because no transaction should be allowed to fail, any failed transaction should be retried with a different vendor
                 await transactionEventService.addTokenRequestFailedNotificationToPartnerEvent();
                 return await VendorPublisher.publishEventForFailedTokenRequest(eventMessage); */
-                return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter: data.meter, transaction: transaction as TransactionWithProductId, transactionEventService })
+                return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter: data.meter, transaction: transaction as TransactionWithProductId, transactionEventService, vendorRetryRecord: data.vendorRetryRecord })
             }
 
             /**
@@ -611,6 +638,7 @@ class TokenHandler extends Registry {
                         tokenInResponse,
                         superAgent: transaction.superagent,
                         retryCount: 1,
+                        vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1]
                     },
                 );
             }
@@ -820,6 +848,7 @@ class TokenHandler extends Registry {
                                 superAgent: data.superAgent,
                                 tokenInResponse: null,
                                 transactionTimedOutFromBuypower: false,
+                                vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1]
                             },
                         );
                     }
@@ -895,7 +924,7 @@ class TokenHandler extends Registry {
                 }
 
                 if (requeryFromNewVendor) {
-                    return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter, transaction, transactionEventService })
+                    return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter, transaction, transactionEventService, vendorRetryRecord: data.vendorRetryRecord })
                 }
 
                 if (requeryFromSameVendor) {
@@ -911,6 +940,7 @@ class TokenHandler extends Registry {
                             superAgent: data.superAgent,
                             tokenInResponse: null,
                             transactionTimedOutFromBuypower: false,
+                            vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1]
                         },
                     );
                 }
@@ -955,6 +985,7 @@ class TokenHandler extends Registry {
                         retryCount: data.retryCount + 1,
                         superAgent: data.superAgent,
                         tokenInResponse: null,
+                        vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1],
                         transactionTimedOutFromBuypower: false,
                     },
                 );

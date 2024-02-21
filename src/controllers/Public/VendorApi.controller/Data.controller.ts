@@ -126,7 +126,8 @@ export class DataVendController {
                 productCodeId: existingProductCodeForDisco.id,
                 previousVendors: [vendor.name],
                 reference,
-                vendorReferenceId: superAgent === 'IRECHARGE' ? generateRandonNumbers(12) : reference
+                vendorReferenceId: superAgent === 'IRECHARGE' ? generateRandonNumbers(12) : reference,
+                retryRecord: []
             });
 
         const transactionEventService = new DataTransactionEventService(transaction, superAgent, partnerId, phoneNumber);
