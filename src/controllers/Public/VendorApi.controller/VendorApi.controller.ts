@@ -618,7 +618,7 @@ export default class VendorController {
         })
 
         const retryRecord = {
-            retryCount: 0,
+            retryCount: 1,
             attempt: 0,
             reference: [transactionReference],
             vendor: superagent,

@@ -89,13 +89,7 @@ const TransactionErrorCodeAndCause = {
 
 export function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
     // Use geometric progression  calculate wait time, where R = 2
-    const waitTimes = {
-        "1": 5,
-        "2": 10,
-        "3": 20,
-    }
-    const waitTime = 2 ** (retryCount - 1)
-    return waitTime < 5 ? waitTimes[retryCount.toString() as keyof typeof waitTimes] : waitTime
+    return 5 * (2 ** (retryCount - 1))
 }
 
 type TransactionWithProductId = Exclude<Transaction, 'productCodeId'> & { productCodeId: NonNullable<Transaction['productCodeId']> }
