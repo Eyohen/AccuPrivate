@@ -667,7 +667,7 @@ export class VendorPublisher extends ProducerFactory {
     static async publishEventForDataReceivedFromVendor(
         data: PublisherEventAndParameters[TOPICS.DATA_RECEIVED_FROM_VENDOR],
     ) {
-        Logger.kafkaPublisher.kafkaPublisher.info(`Sending message to topic: ${TOPICS.DATA_RECEIVED_FROM_VENDOR} `, {
+        Logger.kafkaPublisher.info(`Sending message to topic: ${TOPICS.DATA_RECEIVED_FROM_VENDOR} `, {
             meta: {
                 transactionId: data.transactionId,
             }
