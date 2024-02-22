@@ -439,9 +439,7 @@ export class AirtimeVendController {
 
         res.status(200).json({
             message: "Airtime request sent successfully",
-            data: {
-                transaction,
-            },
+            data: { transaction: { ...transaction.dataValues, disco: undefined } },
         })
     }
 

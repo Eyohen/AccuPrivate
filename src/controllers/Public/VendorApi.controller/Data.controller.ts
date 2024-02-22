@@ -125,6 +125,7 @@ export class DataVendController {
                 transactionType: TransactionType.DATA,
                 productCodeId: existingProductCodeForDisco.id,
                 previousVendors: [vendor.name],
+                networkProvider: existingProductCodeForDisco.productName,
                 reference,
                 productType: 'DATA',
                 vendorReferenceId: superAgent === 'IRECHARGE' ? generateRandonNumbers(12) : reference,
