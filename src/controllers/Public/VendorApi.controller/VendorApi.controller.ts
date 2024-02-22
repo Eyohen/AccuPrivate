@@ -473,7 +473,7 @@ class VendorControllerUtil {
 
         // Try validating with IRECHARGE 
         try {
-            Logger.apiRequest.info(`Trying to backup validation with IRECHARGE`, { meta: { transactionId: transaction.id } })
+            Logger.apiRequest.info(`Backup validation with IRECHARGE`, { meta: { transactionId: transaction.id } })
             if (selectedVendor != 'IRECHARGE') {
                 Logger.apiRequest.info(`Trying to backup validation with IRECHARGE`, { meta: { transactionId: transaction.id } })
                 const response = await validateWithIrecharge()

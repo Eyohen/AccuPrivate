@@ -92,6 +92,7 @@ export async function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
     // Use geometric progression  calculate wait time, where R = 2
     const defaultValues = [10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 20480, 40960, 81920, 163840, 327680, 655360, 1310720, 2621440, 5242880]
     const timesToRetry = await WaitTimeService.getWaitTime() ?? defaultValues
+    timesToRetry.unshift(1)
 
     if (retryCount >= timesToRetry.length) {
         return timesToRetry[timesToRetry.length - 1]
