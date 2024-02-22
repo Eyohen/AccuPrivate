@@ -102,6 +102,7 @@ export async function getCurrentWaitTimeForRequeryEvent(retryCount: number, type
         waitTime = initialValue.startTimeForSwitchingToNewVendor ?? defaultValues.startTimeForSwitchingToNewVendor
     }
 
+    console.log({ waitTime, initialValue})
     return waitTime * (2 ** (retryCount - 1))
 }
 
