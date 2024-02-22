@@ -1,6 +1,6 @@
 import { Message, ProducerBatch, TopicMessages } from 'kafkajs'
 import Kafka from '../../config'
-import logger from '../../../utils/Logger'
+import logger, { Logger } from '../../../utils/Logger'
 import { TOPICS } from '../../Constants'
 import { PublisherParamsUnion } from './Interface'
 require('newrelic');
@@ -24,7 +24,7 @@ export default class ProducerFactory {
 
 
     static async sendMessage({ topic, message }: PublisherParamsUnion) {
-        logger.info('Sending message to topic: ' + topic)
+        Logger.kafkaPublisher.info('Sending message to topic: ' + topic, )
         try {
 
             await this.producer.send({
