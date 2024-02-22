@@ -88,12 +88,21 @@ const TransactionErrorCodeAndCause = {
 }
 
 
-export async function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
+export async function getCurrentWaitTimeForRequeryEvent(retryCount: number, type: 'switch' | 'requery' = 'requery') {
     // Use geometric progression  calculate wait time, where R = 2
     const defaultValues = { startTimeToRequeryTransaction: 5, startTimeForSwitchingToNewVendor: 5 }
     let initialValue = await WaitTimeService.getWaitTime()
     initialValue = initialValue || defaultValues
-    return initialValue.startTimeToRequeryTransaction ?? defaultValues.startTimeToRequeryTransaction * (2 ** (retryCount - 1))
+
+    let waitTime = 0
+
+    if (type === 'requery') {
+        waitTime = initialValue.startTimeToRequeryTransaction ?? defaultValues.startTimeToRequeryTransaction
+    } else {
+        waitTime = initialValue.startTimeForSwitchingToNewVendor ?? defaultValues.startTimeForSwitchingToNewVendor
+    }
+
+    return waitTime * (2 ** (retryCount - 1))
 }
 
 type TransactionWithProductId = Exclude<Transaction, 'productCodeId'> & { productCodeId: NonNullable<Transaction['productCodeId']> }
@@ -191,10 +200,9 @@ export class TokenHandlerUtil {
             vendorRetryRecord: VendorRetryRecord
         }
     ) {
-        logger.warn('Reinitiating transaction with new vendor', { meta: { transactionId: transaction.id } })
-        logger.warn('Reinitiating transaction with new vendor', { meta: { transactionId: transaction.id } })
-        logger.warn('Reinitiating transaction with new vendor', { meta: { transactionId: transaction.id } })
-        logger.warn('Reinitiating transaction with new vendor', { meta: { transactionId: transaction.id } })
+
+        const waitTime = await getCurrentWaitTimeForRequeryEvent(vendorRetryRecord.retryCount, 'switch')
+
         logger.warn('Reinitiating transaction with new vendor', { meta: { transactionId: transaction.id } })
         const meta = {
             transactionId: transaction.id,
@@ -258,20 +266,39 @@ export class TokenHandlerUtil {
             accesToken = meterValidationResult.access_token
         }
 
+        // Start timer to requery transaction at intervals
+        async function countDownTimer(time: number) {
+            for (let i = time; i > 0; i--) {
+                setTimeout(() => {
+                    logger.warn(`Reinitating transaction with vendor in ${i} seconds`, {
+                        meta: { transactionId: transaction.id }
+                    })
+                }, (time - 1) * 1000)
+            }
+        }
+        countDownTimer(waitTime);
+
         await transaction.update({ previousVendors: [...transaction.previousVendors, newVendor], vendorReferenceId: newTransactionReference, reference: newTransactionReference })
-        return await VendorPublisher.publishEventForRetryPowerPurchaseWithNewVendor({
-            meter: meter,
-            partner: partner,
-            transactionId: transaction.id,
-            superAgent: newVendor,
-            user: {
-                name: user.name as string,
-                email: user.email,
-                address: user.address,
-                phoneNumber: user.phoneNumber,
-            },
-            newVendor,
-        })
+
+        setTimeout(async () => {
+            logger.info('Reinitiating transaction with new vendor', {
+                meta: { transactionId: transaction.id }
+            })
+
+            await VendorPublisher.publishEventForRetryPowerPurchaseWithNewVendor({
+                meter: meter,
+                partner: partner,
+                transactionId: transaction.id,
+                superAgent: newVendor,
+                user: {
+                    name: user.name as string,
+                    email: user.email,
+                    address: user.address,
+                    phoneNumber: user.phoneNumber,
+                },
+                newVendor,
+            })
+        }, waitTime * 1000);
     }
 
     static async processVendRequest<T extends Vendor>(data: TokenPurchaseData) {
