@@ -516,6 +516,12 @@ export default class VendorController {
 
         const superagent = await TokenHandlerUtil.getBestVendorForPurchase(existingProductCodeForDisco.id, 1000);
 
+        const transactionTypes = {
+            'ELECTRICITY': TransactionType.ELECTRICITY,
+            'AIRTIME': TransactionType.AIRTIME,
+            'DATA': TransactionType.DATA,
+            'CABLE': TransactionType.CABLE,
+        }
         const transactionReference = generateRandomString(10)
         const transaction: Transaction =
             await TransactionService.addTransactionWithoutValidatingUserRelationship({
@@ -528,11 +534,12 @@ export default class VendorController {
                 disco: disco,
                 partnerId: partnerId,
                 reference: transactionReference,
-                transactionType: TransactionType.ELECTRICITY,
+                transactionType: transactionTypes[existingProductCodeForDisco.category],
                 productCodeId: existingProductCodeForDisco.id,
                 retryRecord: [],
                 previousVendors: [superagent],
-                vendorReferenceId: generateRandonNumbers(12)
+                vendorReferenceId: generateRandonNumbers(12),
+                productType: transactionTypes[existingProductCodeForDisco.category],
             });
 
         logger.info("Validate meter requested", { meta: { transactionId: transaction.id, ...req.body } })
@@ -619,7 +626,7 @@ export default class VendorController {
 
         const retryRecord = {
             retryCount: 1,
-            attempt: 0,
+            attempt: 1,
             reference: [transactionReference],
             vendor: superagent,
         } as ITransaction['retryRecord'][number]
@@ -736,7 +743,7 @@ export default class VendorController {
                 meter: meterInfo,
                 superAgent: transaction.superagent,
                 vendorRetryRecord: {
-                    retryCount: 0,
+                    retryCount: 1,
                 }
             })
 

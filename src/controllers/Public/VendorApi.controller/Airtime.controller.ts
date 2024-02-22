@@ -114,6 +114,8 @@ export class AirtimeVendController {
                 transactionTimestamp: new Date(),
                 partnerId: partnerId,
                 reference,
+                networkProvider: networkProvider,
+                productType: existingProductCodeForDisco.category,
                 vendorReferenceId: superAgent === 'IRECHARGE' ? generateRandonNumbers(10) : reference,
                 transactionType: TransactionType.AIRTIME,
                 productCodeId: existingProductCodeForDisco.id,

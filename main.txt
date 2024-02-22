@@ -1,3 +1,4 @@
+
 import { AxiosError } from "axios";
 import { Status } from "../../../models/Transaction.model";
 import Meter from "../../../models/Meter.model";
@@ -29,7 +30,6 @@ import VendorModelService from "../../../services/Vendor.service"
 import { BaxiRequeryResultForPurchase, BaxiSuccessfulPuchaseResponse } from "../../../services/VendorApi.service/Baxi/Config";
 import { error } from "console";
 import test from "node:test";
-import WaitTimeService from "../../../services/Waittime.service";
 
 interface EventMessage {
     meter: {
@@ -88,12 +88,15 @@ const TransactionErrorCodeAndCause = {
 }
 
 
-export async function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
+export function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
     // Use geometric progression  calculate wait time, where R = 2
-    const defaultValues = { startTimeToRequeryTransaction: 5, startTimeForSwitchingToNewVendor: 5 }
-    let initialValue = await WaitTimeService.getWaitTime()
-    initialValue = initialValue || defaultValues
-    return initialValue.startTimeToRequeryTransaction ?? defaultValues.startTimeToRequeryTransaction * (2 ** (retryCount - 1))
+    const waitTimes = {
+        "1": 5,
+        "2": 10,
+        "3": 20,
+    }
+    const waitTime = 2 ** (retryCount - 1)
+    return waitTime < 5 ? waitTimes[retryCount.toString() as keyof typeof waitTimes] : waitTime
 }
 
 type TransactionWithProductId = Exclude<Transaction, 'productCodeId'> & { productCodeId: NonNullable<Transaction['productCodeId']> }
@@ -154,7 +157,7 @@ export class TokenHandlerUtil {
             retryCount,
             superAgent,
             vendorRetryRecord,
-            waitTime: await getCurrentWaitTimeForRequeryEvent(retryCount)
+            waitTime: getCurrentWaitTimeForRequeryEvent(retryCount)
         };
 
         // Start timer to requery transaction at intervals
@@ -209,7 +212,7 @@ export class TokenHandlerUtil {
         console.log({ currentVendor, retryRecord })
         let useCurrentVendor = false
         if (currentVendor.vendor === transaction.superagent) {
-            if (currentVendor.retryCount < 3) {
+            if (currentVendor.retryCount <= 3) {
                 // Update the retry record in the transaction
                 // Get the last record where this vendor was used
                 const lastRecord = retryRecord[retryRecord.length - 1]
@@ -489,7 +492,7 @@ class TokenHandler extends Registry {
     ) {
         try {
 
-            console.log({ log: 'New token request', currentVendor: data.superAgent, retry: data.vendorRetryRecord })
+            console.log({ log: 'New token request', currentVendor: data.superAgent })
 
             const transaction = await TransactionService.viewSingleTransaction(
                 data.transactionId,

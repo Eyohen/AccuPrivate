@@ -126,6 +126,7 @@ export class DataVendController {
                 productCodeId: existingProductCodeForDisco.id,
                 previousVendors: [vendor.name],
                 reference,
+                productType: 'DATA',
                 vendorReferenceId: superAgent === 'IRECHARGE' ? generateRandonNumbers(12) : reference,
                 retryRecord: []
             });

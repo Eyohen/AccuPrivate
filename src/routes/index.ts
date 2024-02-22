@@ -17,6 +17,7 @@ import complainRoute from './complaint.routes'
 import productCodeRoute from './ProductCode.routes'
 import masterRoute from './MasterProduct.routes'
 import sysLogRoute from './Syslog.routes'
+import waitTimeRoute from './WaitTime.routes'
 
 const router = Router()
 
@@ -39,6 +40,7 @@ router
     .use('/productcode', productCodeRoute)
     .use('/master', masterRoute)
     .use('/syslog', sysLogRoute)
+    .use('/waittime', waitTimeRoute)
 
 export default router
 
