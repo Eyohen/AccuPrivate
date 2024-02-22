@@ -1,5 +1,5 @@
 import winston, { format } from "winston";
-import SysLog from "../models/SysLog.model"; // Import your Sequelize model for logging
+import SysLog, { LogType } from "../models/SysLog.model"; // Import your Sequelize model for logging
 import { NODE_ENV } from "./Constants";
 import util from "util";
 import { randomUUID } from "crypto";
@@ -20,6 +20,7 @@ class YourCustomPostgresTransport extends winston.Transport {
             level,
             message,
             meta,
+            logType: meta.logType,
             transactionId: meta?.transactionId,
             createdAt: new Date(),
         })
@@ -122,5 +123,38 @@ const productionLogger = winston.createLogger({
 });
 
 const logger = productionLogger;
+
+class CustomLogger {
+    logType: LogType;
+
+    constructor(logType: LogType) {
+        this.logType = logType;
+    }
+
+    info(message: string, meta: any) {
+        logger.info(message, { ...meta, logType: this.logType });
+    }
+
+    error(message: string, meta: any) {
+        logger.error(message, { ...meta, logType: this.logType });
+    }
+
+    debug(message: string, meta: any) {
+        logger.debug(message, { ...meta, logType: this.logType });
+    }
+
+    warn(message: string, meta: any) {
+        logger.warn(message, { ...meta, logType: this.logType });
+    }
+}
+
+export class Logger {
+    static apiResponse = new CustomLogger("apiResponse");
+    static apiRequest = new CustomLogger("apiRequest");
+    static kafkaPublisher = new CustomLogger("kafkaPublisher");
+    static kafkaFailure = new CustomLogger("kafkaFailure");
+    static kafkaMessageProcessing = new CustomLogger("kafkaMessageProcessing");
+    static retries = new CustomLogger("retries");
+}
 
 export default logger;

@@ -33,7 +33,7 @@ import { PublisherEventAndParameters, Registry, TransactionErrorCause } from "..
 import { randomUUID } from "crypto";
 import ConsumerFactory from "../../../kafka/modules/util/Consumer";
 import MessageProcessorFactory from "../../../kafka/modules/util/MessageProcessor";
-import logger from "../../../utils/Logger";
+import logger, { Logger } from "../../../utils/Logger";
 import { error } from "console";
 import TransactionEventService from "../../../services/TransactionEvent.service";
 import WebhookService from "../../../services/Webhook.service";
@@ -101,7 +101,7 @@ class VendorTokenHandler implements Registry {
 
             this.tokenSent = true
         } catch (error) {
-            logger.info('Already sent token to user', { meta: { transactionId: this.transaction.id } })
+            Logger.kafkaFailure.info('Already sent token to user', { meta: { transactionId: this.transaction.id } })
         }
     }
 
@@ -366,7 +366,7 @@ class VendorControllerUtil {
         meterNumber: string, disco: string, vendType: 'PREPAID' | 'POSTPAID', transaction: Transaction
     }) {
         async function validateWithBuypower() {
-            logger.info('Validating meter with buypower', { meta: { transactionId: transaction.id } })
+            Logger.apiRequest.info('Validating meter with buypower', { meta: { transactionId: transaction.id } })
             const buypowerVendor = await VendorDocService.viewSingleVendorByName('BUYPOWERNG')
             if (!buypowerVendor) {
                 throw new InternalServerError('Buypower vendor not found')
@@ -386,7 +386,7 @@ class VendorControllerUtil {
         }
 
         async function validateWithBaxi() {
-            logger.info('Validating meter with baxi', { meta: { transactionId: transaction.id } })
+            Logger.apiRequest.info('Validating meter with baxi', { meta: { transactionId: transaction.id } })
             const baxiVendor = await VendorDocService.viewSingleVendorByName('BAXI')
             if (!baxiVendor) {
                 throw new InternalServerError('Baxi vendor not found')
@@ -402,7 +402,7 @@ class VendorControllerUtil {
         }
 
         async function validateWithIrecharge() {
-            logger.info('Validating meter with irecharge', { meta: { transactionId: transaction.id } })
+            Logger.apiRequest.info('Validating meter with irecharge', { meta: { transactionId: transaction.id } })
             const irechargeVendor = await VendorDocService.viewSingleVendorByName('IRECHARGE')
             if (!irechargeVendor) {
                 throw new InternalServerError('Irecharge vendor not found')
@@ -466,16 +466,16 @@ class VendorControllerUtil {
                 if (isLastSuperAgent) {
                     throw error
                 } else {
-                    logger.info(`Trying to validate meter with next super agent - ${superAgents[superAgents.indexOf(superAgent) + 1]}`, { meta: { transactionId: transaction.id } })
+                    Logger.apiRequest.info(`Trying to validate meter with next super agent - ${superAgents[superAgents.indexOf(superAgent) + 1]}`, { meta: { transactionId: transaction.id } })
                 }
             }
         }
 
         // Try validating with IRECHARGE 
         try {
-            logger.info(`Trying to backup validation with IRECHARGE`, { meta: { transactionId: transaction.id } })
+            Logger.apiRequest.info(`Trying to backup validation with IRECHARGE`, { meta: { transactionId: transaction.id } })
             if (selectedVendor != 'IRECHARGE') {
-                logger.info(`Trying to backup validation with IRECHARGE`, { meta: { transactionId: transaction.id } })
+                Logger.apiRequest.info(`Trying to backup validation with IRECHARGE`, { meta: { transactionId: transaction.id } })
                 const response = await validateWithIrecharge()
                 const token = response.access_token
 
@@ -542,7 +542,7 @@ export default class VendorController {
                 productType: transactionTypes[existingProductCodeForDisco.category],
             });
 
-        logger.info("Validate meter requested", { meta: { transactionId: transaction.id, ...req.body } })
+        Logger.apiRequest.info("Validate meter requested", { meta: { transactionId: transaction.id, ...req.body } })
         const transactionEventService = new EventService.transactionEventService(
             transaction, { meterNumber, disco, vendType }, superagent, transaction.partner.email
         );
@@ -657,7 +657,7 @@ export default class VendorController {
         const responseData = { status: 'success', message: 'Meter validated successfully', data: { transaction: transaction, meter: meter } }
         res.status(200).json(responseData);
 
-        logger.info("Meter validated successfully", { meta: { transactionId: transaction.id, ...responseData } })
+        Logger.apiRequest.info("Meter validated successfully", { meta: { transactionId: transaction.id, ...responseData } })
         await transactionEventService.addMeterValidationSentEvent(meter.id);
         await VendorPublisher.publishEventForMeterValidationSentToPartner({
             transactionId: transaction.id,
@@ -682,7 +682,7 @@ export default class VendorController {
             throw new NotFoundError("Transaction not found", errorMeta);
         }
 
-        logger.info('Requesting token for transaction', { meta: { transactionId: transaction.id, ...req.query } })
+        Logger.apiRequest.info('Requesting token for transaction', { meta: { transactionId: transaction.id, ...req.query } })
 
         const meter = await transaction.$get("meter");
         if (!meter) {
@@ -764,7 +764,7 @@ export default class VendorController {
                 const responseData = { status: 'success', message: 'Token purchase initiated successfully', data: { transaction: _transaction } }
                 res.status(200).json(responseData);
 
-                logger.info('Token purchase initiated successfully', { meta: { transactionId: transaction.id, ...responseData } })
+                Logger.apiRequest.info('Token purchase initiated successfully', { meta: { transactionId: transaction.id, ...responseData } })
                 return
             }
 
