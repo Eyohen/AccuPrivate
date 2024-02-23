@@ -3,6 +3,7 @@ import logger from "../Logger";
 import {
     EMAIL_HOST,
     EMAIL_HOST_ADDRESS,
+    EMAIL_PASSWORD,
     EMAIL_PORT,
     OAUTH_ACCESS_TOKEN,
     OAUTH_CLIENT_ID,
