@@ -20,6 +20,7 @@ export const KAFKA_CA_CERT = process.env.KAFKA_CA_CERT as string
 export const KAFA_LOGS = process.env.KAFA_LOGS as string
 export const KAFA_REGION = process.env.KAFA_LOGS as string
 export const EMAIL_HOST = process.env.EMAIL_HOST as string
+export const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD as string
 export const EMAIL_PORT = parseInt(process.env.EMAIL_PORT as string, 10)
 export const EMAIL_HOST_ADDRESS = process.env.EMAIL_HOST_ADDRESS as string
 export const OAUTH_CLIENT_ID = process.env.OAUTH_CLIENT_ID as string
