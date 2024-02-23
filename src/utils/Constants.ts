@@ -20,7 +20,7 @@ export const KAFKA_CA_CERT = process.env.KAFKA_CA_CERT as string
 export const KAFA_LOGS = process.env.KAFA_LOGS as string
 export const KAFA_REGION = process.env.KAFA_LOGS as string
 export const EMAIL_HOST = process.env.EMAIL_HOST as string
-export const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD as string  
+export const EMAIL_PASSWORD = process.env.EMAIL_PASSWORD as string
 export const EMAIL_PORT = parseInt(process.env.EMAIL_PORT as string, 10)
 export const EMAIL_HOST_ADDRESS = process.env.EMAIL_HOST_ADDRESS as string
 export const OAUTH_CLIENT_ID = process.env.OAUTH_CLIENT_ID as string
@@ -51,6 +51,22 @@ export const MAX_REQUERY_PER_VENDOR = parseInt(process.env.MAX_REQUERY_PER_VENDO
 export const AFRICASTALKING_API_KEY = process.env.AFRICASTALKING_API_KEY as string;
 export const AFRICASTALKING_USERNAME = process.env.AFRICASTALKING_USERNAME as string;
 export const AFRICASTALKING_SENDER = process.env.AFRICASTALKING_SENDER as string;
+
+export const VENDOR_URL = {
+    IRECHARGE: {
+        DEV: process.env.IRECHARGE_DEV_URL as string,
+        PROD: process.env.IRECHARGE_PROD_URL as string,
+    },
+    BAXI: {
+        DEV: process.env.BAXI_DEV_URL as string,
+        PROD: process.env.BAXI_PROD_URL as string,
+    },
+    BUYPOWERNG: {
+        DEV: process.env.BUYPOWERNG_DEV_URL as string,
+        PROD: process.env.BUYPOWERNG_PROD_URL as string,
+    },
+}
+
 
 export const DISCO_LOGO = {
     abuja: "https://res.cloudinary.com/richiepersonaldev/image/upload/v1699947957/dpijlhj08ard76zao2uk.jpg",

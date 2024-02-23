@@ -20,6 +20,7 @@ import {
     IRECHARGE_PRIVATE_KEY,
     IRECHARGE_VENDOR_CODE,
     NODE_ENV,
+    VENDOR_URL,
 } from "../../utils/Constants";
 import logger from "../../utils/Logger";
 import { v4 as UUIDV4 } from "uuid";
@@ -213,14 +214,15 @@ declare namespace IRechargeVendorService {
         bundles: IRechargeVendorService.Disco[];
     }
 }
+
 export class IRechargeVendorService {
     protected static PRIVATE_KEY = IRECHARGE_PRIVATE_KEY;
     protected static PUBLIC_KEY = IRECHARGE_PUBLIC_KEY;
     protected static client = axios.create({
         baseURL:
             NODE_ENV === "production"
-                ? "https://irecharge.com.ng/pwr_api_live/v2"
-                : "https://irecharge.com.ng/pwr_api_sandbox/v2",
+                ? VENDOR_URL.IRECHARGE.PROD
+                : VENDOR_URL.IRECHARGE.DEV,
     });
     protected static VENDOR_CODE = IRECHARGE_VENDOR_CODE;
 
@@ -385,7 +387,7 @@ export class IRechargeVendorService {
     }
 }
 
-export class VendorAirtimeService {}
+export class VendorAirtimeService { }
 // Define the VendorService class for handling provider-related operations
 export default class VendorService {
     // Static method for obtaining a Baxi vending token
@@ -647,7 +649,7 @@ export default class VendorService {
             if (error instanceof AxiosError) {
                 const requery =
                     error.response?.data?.message ===
-                        "An unexpected error occurred. Please requery." ||
+                    "An unexpected error occurred. Please requery." ||
                     error.response?.data?.responseCode === 500;
                 if (requery) {
                     logger.error(error.message, {
@@ -1047,8 +1049,3 @@ export interface ElectricityRequeryResponse {
 export type Prettify<T extends {}> = { [K in keyof T]: T[K] };
 
 export type Vendor = "BUYPOWERNG" | "IRECHARGE" | "BAXI";
-
-IRechargeVendorService.getDiscos().then((res) =>
-    console.log({ res: res.bundles }),
-);
-
