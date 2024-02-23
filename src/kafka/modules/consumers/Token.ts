@@ -101,6 +101,19 @@ export async function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
     return timesToRetry[retryCount]
 }
 
+
+export async function getCurrentWaitTimeForSwitchEvent(retryCount: number) {
+    // Use geometric progression  calculate wait time, where R = 2
+    const defaultValues = [10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 20480, 40960, 81920, 163840, 327680, 655360, 1310720, 2621440, 5242880]
+    const timesToRetry = await WaitTimeService.getWaitTime() ?? defaultValues
+
+    if (retryCount >= timesToRetry.length) {
+        return timesToRetry[timesToRetry.length - 1]
+    }
+
+    return timesToRetry[retryCount]
+}
+
 type TransactionWithProductId = Exclude<Transaction, 'productCodeId'> & { productCodeId: NonNullable<Transaction['productCodeId']> }
 export class TokenHandlerUtil {
     static async triggerEventToRequeryTransactionTokenFromVendor({
@@ -197,7 +210,7 @@ export class TokenHandlerUtil {
         }
     ) {
 
-        let waitTime = await getCurrentWaitTimeForRequeryEvent(vendorRetryRecord.retryCount)
+        let waitTime = await getCurrentWaitTimeForSwitchEvent(vendorRetryRecord.retryCount)
 
         logger.warn('Reinitiating transaction with new vendor', { meta: { transactionId: transaction.id } })
         const meta = {
@@ -243,7 +256,7 @@ export class TokenHandlerUtil {
                 attempt: 1
             }
             retryRecord.push(currentVendor)
-            waitTime = await getCurrentWaitTimeForRequeryEvent(currentVendor.retryCount)
+            waitTime = await getCurrentWaitTimeForSwitchEvent(currentVendor.retryCount)
         }
 
         await transactionEventService.addPowerPurchaseRetryWithNewVendor({ bankRefId: transaction.bankRefId, currentVendor: transaction.superagent, newVendor })
@@ -408,6 +421,7 @@ export class TokenHandlerUtil {
         const vendorRates = sortedVendorProductsAccordingToCommissionRate.map(vendorProduct => {
             const vendor = vendorProduct.vendor
             if (!vendor) throw new CustomError('Vendor not found')
+
             return {
                 vendorName: vendor.name,
                 commission: vendorProduct.commission,
@@ -418,7 +432,11 @@ export class TokenHandlerUtil {
         const sortedOtherVendors = vendorRates.filter(vendorRate => vendorRate.vendorName !== currentVendor)
 
         nextBestVendor: for (const vendorRate of sortedOtherVendors) {
-            if (!previousVendors.includes(vendorRate.vendorName)) return vendorRate.vendorName as Transaction['superagent']
+            if (!previousVendors.includes(vendorRate.vendorName)) {
+                console.log({ currentVendor, newVendor: vendorRate.vendorName })
+
+                return vendorRate.vendorName as Transaction['superagent']
+            }
         }
 
         if (previousVendors.length === vendors.length) {
@@ -427,6 +445,9 @@ export class TokenHandlerUtil {
         }
 
         // If the current vendor is the vendor with the highest commission rate, then switch to the vendor with the next highest commission rate
+
+        console.log({ currentVendor, newVendor: sortedOtherVendors[0].vendorName })
+
         return sortedOtherVendors[0].vendorName as Transaction['superagent']
     }
 

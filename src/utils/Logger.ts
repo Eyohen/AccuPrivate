@@ -13,6 +13,7 @@ declare module "winston" {
 // Define a custom transport to write logs to PostgreSQL using Sequelize
 class YourCustomPostgresTransport extends winston.Transport {
     log(info: any, callback: Function) {
+        console.log({ meta: info.meta });
         const { timestamp, level, message, meta } = info;
         SysLog.create({
             id: randomUUID(),
@@ -42,7 +43,9 @@ const logFormat = printf((info) => {
     }
 
     return info.meta
-        ? `${info.timestamp} [${info.level}]: ${message}`
+        ? `${info.timestamp} [${
+              info.level
+          }]: ${message} | meta: ${JSON.stringify(info.meta)}`
         : `${info.timestamp} [${info.level}]: ${message}`;
 });
 
@@ -84,33 +87,33 @@ const fileTransports = [
 const transports =
     NODE_ENV === "development"
         ? [
-            new winston.transports.Console({
-                level: "info",
-                format: combine(
-                    timestamp(),
-                    colorize({
-                        colors: { info: "cyan", error: "red" },
-                    }),
-                    logFormat,
-                    enumerateErrorFormat(),
-                ),
-            }),
-            ...fileTransports,
-            new YourCustomPostgresTransport(), // Replace this with your custom transport
-        ]
+              new winston.transports.Console({
+                  level: "info",
+                  format: combine(
+                      timestamp(),
+                      colorize({
+                          colors: { info: "cyan", error: "red" },
+                      }),
+                      logFormat,
+                      enumerateErrorFormat(),
+                  ),
+              }),
+              ...fileTransports,
+              new YourCustomPostgresTransport(), // Replace this with your custom transport
+          ]
         : [
-            new winston.transports.Console({
-                level: "info",
-                format: combine(
-                    timestamp(),
-                    colorize({
-                        colors: { info: "cyan", error: "red" },
-                    }),
-                    logFormat,
-                    enumerateErrorFormat(),
-                ),
-            }),
-        ];
+              new winston.transports.Console({
+                  level: "info",
+                  format: combine(
+                      timestamp(),
+                      colorize({
+                          colors: { info: "cyan", error: "red" },
+                      }),
+                      logFormat,
+                      enumerateErrorFormat(),
+                  ),
+              }),
+          ];
 
 const productionLogger = winston.createLogger({
     level: "info",
@@ -132,19 +135,28 @@ class CustomLogger {
     }
 
     info(message: string, meta?: any) {
-        logger.info(message, { meta: { ...(meta ?? {}), logType: this.logType } });
+        console.log({ inside: true, meta, message });
+        logger.info(message, {
+            meta: { ...(meta ?? {}), logType: this.logType },
+        });
     }
 
     error(message: string, meta?: any) {
-        logger.error(message, { meta: { ...(meta ?? {}), logType: this.logType } })
+        logger.error(message, {
+            meta: { ...(meta ?? {}), logType: this.logType },
+        });
     }
 
     debug(message: string, meta?: any) {
-        logger.debug(message, { meta: { ...(meta ?? {}), logType: this.logType } })
+        logger.debug(message, {
+            meta: { ...(meta ?? {}), logType: this.logType },
+        });
     }
 
     warn(message: string, meta?: any) {
-        logger.warn(message, { meta: { ...(meta ?? {}), logType: this.logType } })
+        logger.warn(message, {
+            meta: { ...(meta ?? {}), logType: this.logType },
+        });
     }
 }
 
