@@ -81,7 +81,8 @@ export const DISCO_LOGO = {
 
 export const IRECHARGE_PRIVATE_KEY = process.env.IRECHARGE_PRIVATE_KEY as string,
     IRECHARGE_PUBLIC_KEY = process.env.IRECHARGE_PUBLIC_KEY as string,
-    IRECHARGE_VENDOR_CODE = process.env.IRECHARGE_VENDOR_CODE as string;
+    IRECHARGE_VENDOR_CODE = process.env.IRECHARGE_VENDOR_CODE as string , 
+    IRECHARGE_URL = process.env.IRECHARGE_URL as string;
 
 export const DB_CONFIG = {
     NAME: process.env.DB_NAME as string,
@@ -170,7 +171,7 @@ export const discoProductMapping = {
         vendors: {
             BAXI: { discoCode: 'jos_electric_prepaid', commission: 1.80 },
             BUYPOWERNG: { discoCode: 'JOS', commission: 1.50 },
-            IRECHARGE: { discoCode: 'Jos_Disco', commission: 1.50 }
+            IRECHARGE: { discoCode: 'Jos_Disco_Prepaid', commission: 1.50 }
         }
     },
     'ECJSEPS': {

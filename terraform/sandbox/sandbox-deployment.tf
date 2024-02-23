@@ -596,7 +596,7 @@ resource "aws_instance" "sandbox_core_engine_instance" {
   # Get ENV file
   aws s3 cp s3://accuvend-bucket-configuration/.env ./.env
 
-  #GET 
+  #GET DATABASE CREDENTINALS
   DB_USERNAME=$(grep DB_USER_NAME ./.env | cut -d '=' -f2) &&\
   DB_PASSWORD=$(grep DB_PASSWORD ./.env | cut -d '=' -f2) &&\
   DB_NAME=$(grep DB_DB_NAME ./.env | cut -d '=' -f2) &&\

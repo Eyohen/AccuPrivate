@@ -2,7 +2,7 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
 import { BaseResponse, IBaxiGetProviderResponse, IBaxiPurchaseResponse, IBaxiValidateMeterResponse, IBuyPowerGetProvidersResponse, IBuyPowerValidateMeterResponse, IValidateMeter, IVendToken } from "../../utils/Interface";
 import querystring from "querystring";
-import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL, IRECHARGE_PUBLIC_KEY, IRECHARGE_PRIVATE_KEY, IRECHARGE_VENDOR_CODE, NODE_ENV } from "../../utils/Constants";
+import { BAXI_TOKEN, BAXI_URL, BUYPOWER_TOKEN, BUYPOWER_URL, IRECHARGE_PUBLIC_KEY, IRECHARGE_PRIVATE_KEY, IRECHARGE_VENDOR_CODE, NODE_ENV, IRECHARGE_URL } from "../../utils/Constants";
 import logger from "../../utils/Logger";
 import { v4 as UUIDV4 } from 'uuid'
 import crypto from 'crypto'
@@ -179,7 +179,8 @@ export class IRechargeVendorService {
     protected static PRIVATE_KEY = IRECHARGE_PRIVATE_KEY
     protected static PUBLIC_KEY = IRECHARGE_PUBLIC_KEY
     protected static client = axios.create({
-        baseURL: NODE_ENV === 'production' ? "https://irecharge.com.ng/pwr_api_live/v2" : "https://irecharge.com.ng/pwr_api_sandbox/v2"
+        // baseURL: NODE_ENV === 'production' ? "https://irecharge.com.ng/pwr_api_live/v2" : "https://irecharge.com.ng/pwr_api_sandbox/v2"
+        baseURL: IRECHARGE_URL
     })
     protected static VENDOR_CODE = IRECHARGE_VENDOR_CODE
 
