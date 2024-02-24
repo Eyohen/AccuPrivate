@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import TransactionService from "../../../services/Transaction.service";
 import Transaction, {
+    ITransaction,
     PaymentType,
     Status,
     TransactionType,
@@ -32,7 +33,7 @@ import { PublisherEventAndParameters, Registry, TransactionErrorCause } from "..
 import { randomUUID } from "crypto";
 import ConsumerFactory from "../../../kafka/modules/util/Consumer";
 import MessageProcessorFactory from "../../../kafka/modules/util/MessageProcessor";
-import logger from "../../../utils/Logger";
+import logger, { Logger } from "../../../utils/Logger";
 import { error } from "console";
 import TransactionEventService from "../../../services/TransactionEvent.service";
 import WebhookService from "../../../services/Webhook.service";
@@ -100,7 +101,7 @@ class VendorTokenHandler implements Registry {
 
             this.tokenSent = true
         } catch (error) {
-            logger.info('Already sent token to user', { meta: { transactionId: this.transaction.id } })
+            Logger.kafkaFailure.info('Already sent token to user', { meta: { transactionId: this.transaction.id } })
         }
     }
 
@@ -243,6 +244,7 @@ class VendorControllerUtil {
             transaction, meterInfo, transaction.superagent, transaction.partner.email
         )
 
+        const vendorRetryRecord = transaction.retryRecord[transaction.retryRecord.length - 1]
         const eventPayload = JSON.parse(previousRetryEvent.payload) as TokenRetryEventPayload
         await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
             {
@@ -263,7 +265,8 @@ class VendorControllerUtil {
                 tokenInResponse: null,
                 transactionTimedOutFromBuypower: false,
                 superAgent: transaction.superagent,
-                retryCount: eventPayload.retryCount + 1
+                retryCount: eventPayload.retryCount + 1,
+                vendorRetryRecord
             }
         )
     }
@@ -363,7 +366,7 @@ class VendorControllerUtil {
         meterNumber: string, disco: string, vendType: 'PREPAID' | 'POSTPAID', transaction: Transaction
     }) {
         async function validateWithBuypower() {
-            logger.info('Validating meter with buypower', { meta: { transactionId: transaction.id } })
+            Logger.apiRequest.info('Validating meter with buypower', { meta: { transactionId: transaction.id } })
             const buypowerVendor = await VendorDocService.viewSingleVendorByName('BUYPOWERNG')
             if (!buypowerVendor) {
                 throw new InternalServerError('Buypower vendor not found')
@@ -383,7 +386,7 @@ class VendorControllerUtil {
         }
 
         async function validateWithBaxi() {
-            logger.info('Validating meter with baxi', { meta: { transactionId: transaction.id } })
+            Logger.apiRequest.info('Validating meter with baxi', { meta: { transactionId: transaction.id } })
             const baxiVendor = await VendorDocService.viewSingleVendorByName('BAXI')
             if (!baxiVendor) {
                 throw new InternalServerError('Baxi vendor not found')
@@ -399,7 +402,7 @@ class VendorControllerUtil {
         }
 
         async function validateWithIrecharge() {
-            logger.info('Validating meter with irecharge', { meta: { transactionId: transaction.id } })
+            Logger.apiRequest.info('Validating meter with irecharge', { meta: { transactionId: transaction.id } })
             const irechargeVendor = await VendorDocService.viewSingleVendorByName('IRECHARGE')
             if (!irechargeVendor) {
                 throw new InternalServerError('Irecharge vendor not found')
@@ -410,6 +413,13 @@ class VendorControllerUtil {
                 throw new InternalServerError('Irecharge vendor product not found')
             }
 
+
+            console.log({
+                transactionId: transaction.id,
+                meterNumber,
+                disco: irechargeVendorProduct.schemaData.code,
+                vendType,
+            })
             return VendorService.irechargeValidateMeter(irechargeVendorProduct.schemaData.code, meterNumber, transaction.vendorReferenceId).then((res) => ({ ...res, ...res.customer, }))
         }
 
@@ -430,6 +440,8 @@ class VendorControllerUtil {
         superAgents.splice(superAgents.indexOf(previousSuperAgent), 1)
         superAgents.unshift(previousSuperAgent)
 
+        let selectedVendor = superAgents[0]
+        let returnedResponse: IResponses[keyof IResponses] | Error = new Error('No response')
         for (const superAgent of superAgents) {
             try {
                 console.log({ superAgent })
@@ -441,7 +453,10 @@ class VendorControllerUtil {
                 console.log({ superAgent })
                 const token = superAgent === 'IRECHARGE' ? (response as IResponses['IRECHARGE']).access_token : undefined
                 await transaction.update({ superagent: superAgent as any, irechargeAccessToken: token })
-                return response
+
+                selectedVendor = superAgent
+                returnedResponse = response
+                break
             } catch (error) {
                 console.log(error)
                 logger.error(`Error validating meter with ${superAgent}`, { meta: { transactionId: transaction.id } })
@@ -451,10 +466,26 @@ class VendorControllerUtil {
                 if (isLastSuperAgent) {
                     throw error
                 } else {
-                    logger.info(`Trying to validate meter with next super agent - ${superAgents[superAgents.indexOf(superAgent) + 1]}`, { meta: { transactionId: transaction.id } })
+                    Logger.apiRequest.info(`Trying to validate meter with next super agent - ${superAgents[superAgents.indexOf(superAgent) + 1]}`, { meta: { transactionId: transaction.id } })
                 }
             }
         }
+
+        // Try validating with IRECHARGE 
+        try {
+            Logger.apiRequest.info(`Backup validation with IRECHARGE`, { meta: { transactionId: transaction.id } })
+            if (selectedVendor != 'IRECHARGE') {
+                Logger.apiRequest.info(`Trying to backup validation with IRECHARGE`, { meta: { transactionId: transaction.id } })
+                const response = await validateWithIrecharge()
+                const token = response.access_token
+
+                await transaction.update({ irechargeAccessToken: token })
+            }
+        } catch (error) {
+            logger.error(`Error validating meter with IRECHARGE`, { meta: { transactionId: transaction.id } })
+        }
+
+        return returnedResponse
     }
 }
 
@@ -517,6 +548,12 @@ export default class VendorController {
 
         const superagent = await TokenHandlerUtil.getBestVendorForPurchase(existingProductCodeForDisco.id, 1000);
 
+        const transactionTypes = {
+            'ELECTRICITY': TransactionType.ELECTRICITY,
+            'AIRTIME': TransactionType.AIRTIME,
+            'DATA': TransactionType.DATA,
+            'CABLE': TransactionType.CABLE,
+        }
         const transactionReference = generateRandomString(10)
         const transaction: Transaction =
             await TransactionService.addTransactionWithoutValidatingUserRelationship({
@@ -529,13 +566,15 @@ export default class VendorController {
                 disco: disco,
                 partnerId: partnerId,
                 reference: transactionReference,
-                transactionType: TransactionType.ELECTRICITY,
+                transactionType: transactionTypes[existingProductCodeForDisco.category],
                 productCodeId: existingProductCodeForDisco.id,
+                retryRecord: [],
                 previousVendors: [superagent],
-                vendorReferenceId: generateRandonNumbers(12)
+                vendorReferenceId: generateRandonNumbers(12),
+                productType: transactionTypes[existingProductCodeForDisco.category],
             });
 
-        logger.info("Validate meter requested", { meta: { transactionId: transaction.id, ...req.body } })
+        Logger.apiRequest.info("Validate meter requested", { meta: { transactionId: transaction.id, ...req.body } })
         const transactionEventService = new EventService.transactionEventService(
             transaction, { meterNumber, disco, vendType }, superagent, transaction.partner.email
         );
@@ -617,6 +656,17 @@ export default class VendorController {
             meter: { meterNumber, disco, vendType },
         })
 
+        const retryRecord = {
+            retryCount: 1,
+            attempt: 1,
+            reference: [transactionReference],
+            vendor: superagent,
+        } as ITransaction['retryRecord'][number]
+
+        await transaction.update({
+            retryRecord: [retryRecord]
+        })
+
         // // TODO: Publish event for disco up to kafka
         const meter: Meter = await MeterService.addMeter({
             id: uuidv4(),
@@ -639,7 +689,7 @@ export default class VendorController {
         const responseData = { status: 'success', message: 'Meter validated successfully', data: { transaction: transaction, meter: meter } }
         res.status(200).json(responseData);
 
-        logger.info("Meter validated successfully", { meta: { transactionId: transaction.id, ...responseData } })
+        Logger.apiRequest.info("Meter validated successfully", { meta: { transactionId: transaction.id, ...responseData } })
         await transactionEventService.addMeterValidationSentEvent(meter.id);
         await VendorPublisher.publishEventForMeterValidationSentToPartner({
             transactionId: transaction.id,
@@ -664,7 +714,7 @@ export default class VendorController {
             throw new NotFoundError("Transaction not found", errorMeta);
         }
 
-        logger.info('Requesting token for transaction', { meta: { transactionId: transaction.id, ...req.query } })
+        Logger.apiRequest.info('Requesting token for transaction', { meta: { transactionId: transaction.id, ...req.query } })
 
         const meter = await transaction.$get("meter");
         if (!meter) {
@@ -724,6 +774,9 @@ export default class VendorController {
                 },
                 meter: meterInfo,
                 superAgent: transaction.superagent,
+                vendorRetryRecord: {
+                    retryCount: 1,
+                }
             })
 
             if (response instanceof Error) {
@@ -743,7 +796,7 @@ export default class VendorController {
                 const responseData = { status: 'success', message: 'Token purchase initiated successfully', data: { transaction: _transaction } }
                 res.status(200).json(responseData);
 
-                logger.info('Token purchase initiated successfully', { meta: { transactionId: transaction.id, ...responseData } })
+                Logger.apiRequest.info('Token purchase initiated successfully', { meta: { transactionId: transaction.id, ...responseData } })
                 return
             }
 

@@ -18,6 +18,7 @@ import productCodeRoute from './ProductCode.routes'
 import masterRoute from './MasterProduct.routes'
 import sysLogRoute from './Syslog.routes'
 import MockEndpointRoute from './MockEndPoint.route'
+import waitTimeRoute from './WaitTime.routes'
 
 const router = Router()
 
@@ -41,6 +42,7 @@ router
     .use('/master', masterRoute)
     .use('/syslog', sysLogRoute)
     .use('/mock',MockEndpointRoute )
+    .use('/waittime', waitTimeRoute)
 
 export default router
 

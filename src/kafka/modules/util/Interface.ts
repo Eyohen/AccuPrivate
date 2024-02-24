@@ -45,6 +45,10 @@ export enum TransactionErrorCause {
     NO_TOKEN_IN_RESPONSE = "NO_TOKEN_IN_RESPONSE",
 }
 
+export interface VendorRetryRecord {
+    retryCount: number;
+}
+
 export interface PublisherEventAndParameters extends Record<TOPICS, any> {
     [TOPICS.METER_VALIDATION_REQUEST_SENT_TO_VENDOR]: {
         meter: MeterInfo;
@@ -57,7 +61,8 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
         user: User;
         partner: Partner;
         transactionId: string;
-        superAgent: Transaction['superagent']
+        superAgent: Transaction['superagent'],
+        vendorRetryRecord: VendorRetryRecord
     };
     [TOPICS.RETRY_PURCHASE_FROM_NEW_VENDOR]: {
         meter: MeterInfo & { id: string };
@@ -89,6 +94,7 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
         retryCount: number;
         superAgent: Transaction['superagent'],
         waitTime: number,
+        vendorRetryRecord: VendorRetryRecord
     };
     [TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_INITIATED]: {
         meter: MeterInfo & { id: string };
@@ -197,7 +203,7 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
         superAgent: Transaction['superagent'],
         newVendor: Transaction['superagent'],
     };
-   
+
     // Data
     [TOPICS.DATA_PURCHASE_INITIATED_BY_CUSTOMER]: {
         phone: {

@@ -5,7 +5,7 @@ const deployed = process.env.DEPLOYED;
 const path = deployed ? `/etc/secrets/.env` : `${__dirname}/../.env`;
 dotenv.config({ path });
 
-export const MONGO_URI_LOG  = process.env.MONGO_URI_LOG as string;
+export const MONGO_URI_LOG = process.env.MONGO_URI_LOG as string;
 export const BAXI_URL: string | undefined = process.env.BAXI_URL
 export const BAXI_TOKEN: string | undefined = process.env.BAXI_TOKEN
 export const BAXI_AGENT_ID: string | undefined = process.env.BAXI_AGENT_ID
@@ -52,6 +52,22 @@ export const AFRICASTALKING_API_KEY = process.env.AFRICASTALKING_API_KEY as stri
 export const AFRICASTALKING_USERNAME = process.env.AFRICASTALKING_USERNAME as string;
 export const AFRICASTALKING_SENDER = process.env.AFRICASTALKING_SENDER as string;
 
+export const VENDOR_URL = {
+    IRECHARGE: {
+        DEV: process.env.IRECHARGE_DEV_URL as string,
+        PROD: process.env.IRECHARGE_PROD_URL as string,
+    },
+    BAXI: {
+        DEV: process.env.BAXI_DEV_URL as string,
+        PROD: process.env.BAXI_PROD_URL as string,
+    },
+    BUYPOWERNG: {
+        DEV: process.env.BUYPOWERNG_DEV_URL as string,
+        PROD: process.env.BUYPOWERNG_PROD_URL as string,
+    },
+}
+
+
 export const DISCO_LOGO = {
     abuja: "https://res.cloudinary.com/richiepersonaldev/image/upload/v1699947957/dpijlhj08ard76zao2uk.jpg",
     benin: "https://res.cloudinary.com/richiepersonaldev/image/upload/v1699948367/WhatsApp_Image_2023-11-14_at_08.50.33_zh84o3.jpg",
@@ -96,7 +112,6 @@ export const DB_CONFIG = {
 };
 
 export const PRIMARY_ROLES = ["Admin", "Partner", "TeamMember", "SuperAdmin"];
-
 export const SU_HOST_EMAIL_1 = process.env.SU_HOST_EMAIL_1 as string,
     SU_HOST_EMAIL_2 = process.env.SU_HOST_EMAIL_2 as string,
     SU_HOST_EMAIL_3 = process.env.SU_HOST_EMAIL_3 as string;
@@ -275,7 +290,7 @@ export const SEED = {
             vendors: {
                 BAXI: { discoCode: 'jos_electric_prepaid', commission: 1.0, bonus: 0 },
                 BUYPOWERNG: { discoCode: 'JOS', commission: 1.80, bonus: 0 },
-                IRECHARGE: { discoCode: 'Jos_Disco_Prepaid', commission: 1.50, bonus: 60 },
+                IRECHARGE: { discoCode: 'Jos_Disco', commission: 1.50, bonus: 60 },
             }
         },
         'ECKDEPS': {
@@ -305,7 +320,7 @@ export const SEED = {
                 IRECHARGE: { discoCode: 'Kaduna_Electricity_Disco', commission: 2.00, bonus: 70 },
             }
         },
-     
+
         'ECPHEPE': {
             productName: 'PORTHARCOURT',
             type: 'PREPAID',
@@ -531,7 +546,7 @@ export const SCHEMADATA = {
 } as const
 
 export const SEED_DATA = {
-    IRECHARGE:{
+    IRECHARGE: {
         MTN: [
             {
                 "code": "1",
@@ -858,7 +873,7 @@ export const SEED_DATA = {
                 "validity": "35GB SME Monthly Plan"
             }
         ],
-        GLO:[
+        GLO: [
             {
                 "code": "111",
                 "title": "Glo D-MFIN-6-DATA400 for Day Plan 1 days",
@@ -1532,7 +1547,1289 @@ export const SEED_DATA = {
         ]
     },
     BUYPOWERNG: {
-        
+        MTN: [
+            { code: 'DATA-01', title: '100MB ', price: 100, validity: ' 1day' },
+            {
+                code: 'DATA-02',
+                title: '200MB ',
+                price: 200,
+                validity: ' 3days'
+            },
+            {
+                code: 'DATA-03',
+                title: '350MB ',
+                price: 300,
+                validity: ' 7days'
+            },
+            {
+                code: 'DATA-04',
+                title: '750MB ',
+                price: 500,
+                validity: ' 14days'
+            },
+            {
+                code: 'DATA-05',
+                title: '2GB ',
+                price: 1200,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-06',
+                title: '1.5GB ',
+                price: 1000,
+                validity: ' 30days'
+            },
+            { code: 'DATA-07', title: '1GB ', price: 300, validity: ' 1day' },
+            {
+                code: 'DATA-08',
+                title: '3GB ',
+                price: 1500,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-10',
+                title: '1500GB ',
+                price: 450000,
+                validity: ' 360days'
+            },
+            {
+                code: 'DATA-11',
+                title: '2.5GB ',
+                price: 500,
+                validity: ' 2days'
+            },
+            {
+                code: 'DATA-12',
+                title: '400GB ',
+                price: 120000,
+                validity: ' 360days'
+            },
+            {
+                code: 'DATA-13',
+                title: '75GB ',
+                price: 20000,
+                validity: ' 60days'
+            },
+            {
+                code: 'DATA-14',
+                title: '120GB ',
+                price: 30000,
+                validity: ' 60days'
+            },
+            {
+                code: 'DATA-15',
+                title: '150GB ',
+                price: 50000,
+                validity: ' 90days'
+            },
+            {
+                code: 'DATA-16',
+                title: '250GB ',
+                price: 75000,
+                validity: ' 90days'
+            },
+            {
+                code: 'DATA-17',
+                title: '25GB ',
+                price: 6000,
+                validity: ' 30days'
+            },
+            { code: 'DATA-18', title: '1GB ', price: 500, validity: ' 7days' },
+            { code: 'DATA-19', title: '6GB ', price: 1500, validity: ' 7days' },
+            {
+                code: 'DATA-20',
+                title: '6GB ',
+                price: 2500,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-21',
+                title: '10GB ',
+                price: 3000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-22',
+                title: '110GB ',
+                price: 20000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-23',
+                title: '25GB ',
+                price: 10000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-24',
+                title: '165GB ',
+                price: 50000,
+                validity: ' 60days'
+            },
+            {
+                code: 'DATA-25',
+                title: '360GB ',
+                price: 100000,
+                validity: ' 90days'
+            },
+            {
+                code: 'DATA-26',
+                title: '1TB ',
+                price: 250000,
+                validity: ' 90days'
+            },
+            {
+                code: 'DATA-27',
+                title: '4.5GB ',
+                price: 2000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-28',
+                title: '12GB ',
+                price: 3500,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-29',
+                title: '20GB ',
+                price: 5000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-30',
+                title: '40GB ',
+                price: 10000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-31',
+                title: '75GB ',
+                price: 15000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-32',
+                title: 'Xtratalk 200 ',
+                price: 200,
+                validity: ' 3days'
+            },
+            {
+                code: 'DATA-33',
+                title: 'Xtratalk 300 ',
+                price: 300,
+                validity: ' 7days'
+            },
+            {
+                code: 'DATA-34',
+                title: 'Xtratalk 500 ',
+                price: 500,
+                validity: ' 7days'
+            },
+            {
+                code: 'DATA-35',
+                title: 'Xtratalk 1000 ',
+                price: 1000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-36',
+                title: 'Xtratalk 2000 ',
+                price: 2000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-37',
+                title: 'Xtratalk 5000 ',
+                price: 5000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-38',
+                title: 'Xtratalk 10000 ',
+                price: 10000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-39',
+                title: 'Xtratalk 15000 ',
+                price: 15000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-40',
+                title: 'Xtratalk 20000 ',
+                price: 20000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-41',
+                title: 'Xtradata 200 ',
+                price: 200,
+                validity: ' 3days'
+            },
+            {
+                code: 'DATA-42',
+                title: 'Xtradata 300 ',
+                price: 300,
+                validity: ' 7days'
+            },
+            {
+                code: 'DATA-43',
+                title: 'Xtradata 500 ',
+                price: 500,
+                validity: ' 7days'
+            },
+            {
+                code: 'DATA-44',
+                title: 'Xtradata 1000 ',
+                price: 1000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-45',
+                title: 'Xtradata 2000 ',
+                price: 2000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-46',
+                title: 'Xtradata 5000 ',
+                price: 5000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-47',
+                title: 'Xtradata 10000 ',
+                price: 10000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-48',
+                title: 'Xtradata 15000 ',
+                price: 15000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-49',
+                title: 'Xtradata 20000 ',
+                price: 20000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-50',
+                title: '11GB ',
+                price: 3000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-51',
+                title: '13GB ',
+                price: 3500,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-52',
+                title: '22GB ',
+                price: 5000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-53',
+                title: '27GB ',
+                price: 6000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-54',
+                title: '1TB ',
+                price: 100000,
+                validity: ' 360days'
+            },
+            {
+                code: 'DATA-55',
+                title: '2.5TB ',
+                price: 250000,
+                validity: ' 360days'
+            }
+        ],
+        GLO: [
+            { code: 'DATA-18', title: '50MB ', price: 50, validity: ' 1day' },
+            { code: 'DATA-21', title: '150MB ', price: 100, validity: ' 1day' },
+            {
+                code: 'DATA-28',
+                title: '350MB ',
+                price: 200,
+                validity: ' 2days'
+            },
+            {
+                code: 'DATA-27',
+                title: '1.35GB ',
+                price: 500,
+                validity: ' 14days'
+            },
+            {
+                code: 'DATA-2',
+                title: '2.9GB ',
+                price: 1000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-16',
+                title: '4.1GB ',
+                price: 1500,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-25',
+                title: '5.8GB ',
+                price: 2000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-19',
+                title: '7.7GB ',
+                price: 2500,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-23',
+                title: '10GB ',
+                price: 3000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-12',
+                title: '13.25GB ',
+                price: 4000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-5',
+                title: '18.25GB ',
+                price: 5000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-4',
+                title: '29.5GB ',
+                price: 8000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-10',
+                title: '50GB ',
+                price: 10000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-11',
+                title: '93GB ',
+                price: 15000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-20',
+                title: '119GB ',
+                price: 18000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-33',
+                title: '138GB ',
+                price: 20000,
+                validity: ' 30days'
+            },
+            {
+                code: 'DATA-15',
+                title: '250MB ',
+                price: 25,
+                validity: ' Night_1day'
+            },
+            {
+                code: 'DATA-30',
+                title: '500MB ',
+                price: 50,
+                validity: ' Night_1day'
+            },
+            {
+                code: 'DATA-31',
+                title: '1GB ',
+                price: 100,
+                validity: ' Night_5days'
+            },
+            {
+                code: 'DATA-24',
+                title: '7GB ',
+                price: 1500,
+                validity: ' Special_7days'
+            },
+            {
+                code: 'DATA-37',
+                title: '1.25GB ',
+                price: 200,
+                validity: ' Sunday_1day'
+            }
+        ],
+        AIRTEL: [{
+            code: 'DATA-49.99',
+            title: '40MB ',
+            price: 50,
+            validity: ' 1day'
+        },
+        { code: 'DATA-99', title: '100MB ', price: 100, validity: ' 1day' },
+        {
+            code: 'DATA-199.03',
+            title: '200MB ',
+            price: 200,
+            validity: ' 3days'
+        },
+        {
+            code: 'DATA-299.02',
+            title: '350MB ',
+            price: 300,
+            validity: ' 7days'
+        },
+        {
+            code: 'DATA-499',
+            title: '750MB ',
+            price: 500,
+            validity: ' 14days'
+        },
+        {
+            code: 'DATA-299.03',
+            title: '1GB ',
+            price: 300,
+            validity: ' 1day'
+        },
+        {
+            code: 'DATA-499.03',
+            title: '2GB ',
+            price: 500,
+            validity: ' 1day'
+        },
+        {
+            code: 'DATA-1499.03',
+            title: '6GB ',
+            price: 1500,
+            validity: ' 7days'
+        },
+        {
+            code: 'DATA-999',
+            title: '1.5GB ',
+            price: 1000,
+            validity: ' 30days'
+        },
+        {
+            code: 'DATA-1199',
+            title: '2GB ',
+            price: 1200,
+            validity: ' 30days'
+        },
+        {
+            code: 'DATA-1499.01',
+            title: '3GB ',
+            price: 1500,
+            validity: ' 30days'
+        },
+        {
+            code: 'DATA-1999',
+            title: '4.5GB ',
+            price: 2000,
+            validity: ' 30days'
+        },
+        {
+            code: 'DATA-2499.01',
+            title: '6GB ',
+            price: 2500,
+            validity: ' 30days'
+        },
+        {
+            code: 'DATA-2999.02',
+            title: '10GB ',
+            price: 3000,
+            validity: ' 30days'
+        },
+        {
+            code: 'DATA-3999.01',
+            title: '11GB ',
+            price: 4000,
+            validity: ' 30days'
+        },
+        {
+            code: 'DATA-4999',
+            title: '20GB ',
+            price: 5000,
+            validity: ' 30days'
+        },
+        {
+            code: 'DATA-7999.02',
+            title: '30GB ',
+            price: 8000,
+            validity: ' 30days'
+        },
+        {
+            code: 'DATA-9999',
+            title: '40GB ',
+            price: 10000,
+            validity: ' 30days'
+        },
+        {
+            code: 'DATA-14999',
+            title: '75GB ',
+            price: 15000,
+            validity: ' 30days'
+        },
+        {
+            code: 'DATA-19999.02',
+            title: '120GB ',
+            price: 20000,
+            validity: ' 30days'
+        },
+        {
+            code: 'DATA-29999.02',
+            title: '240GB ',
+            price: 30000,
+            validity: ' 30days'
+        },
+        {
+            code: 'DATA-35999.02',
+            title: '280GB ',
+            price: 36000,
+            validity: ' 30days'
+        },
+        {
+            code: 'DATA-49999.02',
+            title: '400GB ',
+            price: 50000,
+            validity: ' 90days'
+        },
+        {
+            code: 'DATA-59999.02',
+            title: '500GB ',
+            price: 60000,
+            validity: ' 120days'
+        },
+        {
+            code: 'DATA-99999.02',
+            title: '1TB ',
+            price: 100000,
+            validity: ' 365days'
+        }
+        ],
+        '9MOBILE': [{
+            code: '9MO-25MB-15',
+            title: '50MB ',
+            price: 50,
+            validity: ' 1day'
+        },
+        {
+            code: '9MO-100MB-1',
+            title: '100MB+100MB ',
+            price: 100,
+            validity: ' 1day'
+        },
+        {
+            code: '9MO-300MB-17',
+            title: '300MB ',
+            price: 150,
+            validity: ' 1day'
+        },
+        {
+            code: '9MO-650MB-2',
+            title: '650MB ',
+            price: 200,
+            validity: ' 1day'
+        },
+        {
+            code: '9MO-1GB-19',
+            title: '1GB+100MB S ',
+            price: 300,
+            validity: ' 1day'
+        },
+        {
+            code: '9MO-2GB-20',
+            title: '2GB+100MB S ',
+            price: 500,
+            validity: ' 3days'
+        },
+        {
+            code: '9MO-1.5GB-3',
+            title: '1.5GB ',
+            price: 1000,
+            validity: ' 30days'
+        },
+        {
+            code: '9MO-2GB-4',
+            title: '2GB ',
+            price: 1200,
+            validity: ' 30days'
+        },
+        {
+            code: '9MO-7GB-16',
+            title: '7GB+100MB S ',
+            price: 1500,
+            validity: ' 7days'
+        },
+        {
+            code: '9MO-4.5GB-5',
+            title: '4.5GB ',
+            price: 2000,
+            validity: ' 30days'
+        },
+        {
+            code: '9MO-12GB-23',
+            title: '12GB ',
+            price: 3000,
+            validity: ' 30days'
+        },
+        {
+            code: '9MO-11GB-7',
+            title: '11GB ',
+            price: 4000,
+            validity: ' 30days'
+        },
+        {
+            code: '9MO-15GB-6',
+            title: '15GB ',
+            price: 5000,
+            validity: ' 30days'
+        },
+        {
+            code: '9MO-40GB-9',
+            title: '40GB ',
+            price: 10000,
+            validity: ' 30days'
+        },
+        {
+            code: '9MO-75GB-10',
+            title: '75GB ',
+            price: 15000,
+            validity: ' 30days'
+        },
+        {
+            code: '9MO-125GB-24',
+            title: '125GB ',
+            price: 20000,
+            validity: ' 30days'
+        },
+        {
+            code: '9MO-165GB-12',
+            title: '165GB ',
+            price: 50000,
+            validity: ' 180days'
+        },
+        {
+            code: '9MO-100GB-13',
+            title: '100GB ',
+            price: 84992,
+            validity: ' 100days'
+        }
+        ]
+    },
+    BAXI: {
+        MTN: [
+            {
+                code: 100,
+                title: '100MB Daily for Daily',
+                price: 100,
+                validity: '100MB Daily'
+            },
+            {
+                code: 220,
+                title: '200MB 3-Day Plan for Daily',
+                price: 220,
+                validity: '200MB 3-Day Plan'
+            },
+            {
+                code: 300,
+                title: '350MB for Weekly',
+                price: 300,
+                validity: '350MB'
+            },
+            {
+                code: 550,
+                title: '750MB 2-Week Plan for Weekly',
+                price: 550,
+                validity: '750MB 2-Week Plan'
+            },
+            {
+                code: 1100,
+                title: '1.5GB 1-Month Mobile for Monthly',
+                price: 1100,
+                validity: '1.5GB 1-Month Mobile'
+            },
+            {
+                code: 1200,
+                title: '2GB for Monthly',
+                price: 1200,
+                validity: '2GB'
+            },
+            {
+                code: 1500,
+                title: '6GB for Weekly',
+                price: 1500,
+                validity: '6GB'
+            },
+            {
+                code: 2200,
+                title: '4.5GB 1-Month All Day plan for Monthly',
+                price: 2200,
+                validity: '4.5GB 1-Month All Day plan'
+            },
+            {
+                code: 2500,
+                title: '6GB for Monthly',
+                price: 2500,
+                validity: '6GB'
+            },
+            {
+                code: 3300,
+                title: '10GB for Monthly',
+                price: 3300,
+                validity: '10GB'
+            },
+            {
+                code: 3500,
+                title: '12GB for Monthly',
+                price: 3500,
+                validity: '12GB'
+            },
+            {
+                code: 5500,
+                title: '20GB for Monthly',
+                price: 5500,
+                validity: '20GB'
+            },
+            {
+                code: 15000,
+                title: '75GB for Monthly',
+                price: 15000,
+                validity: '75GB'
+            },
+            {
+                code: 20000,
+                title: '75GB for 60Days',
+                price: 20000,
+                validity: '75GB'
+            },
+            {
+                code: 30000,
+                title: '120GB for 60Days',
+                price: 30000,
+                validity: '120GB'
+            },
+            {
+                code: 50000,
+                title: '150GB for 90Days',
+                price: 50000,
+                validity: '150GB'
+            },
+            {
+                code: 75000,
+                title: '250GB for 90Days',
+                price: 75000,
+                validity: '250GB'
+            },
+            {
+                code: 100000,
+                title: '325GB for 6-Months',
+                price: 100000,
+                validity: '325GB'
+            },
+            {
+                code: 120000,
+                title: '400GB for 1-Year',
+                price: 120000,
+                validity: '400GB'
+            },
+            {
+                code: 300000,
+                title: '1000GB for 1-Year',
+                price: 300000,
+                validity: '1000GB'
+            },
+            {
+                code: 450000,
+                title: '1500GB for 1-Year',
+                price: 450000,
+                validity: '1500GB'
+            }
+        ],
+        GLO: [
+            {
+                code: 'DATA-32',
+                title: '10MB for 1 day',
+                price: 25,
+                validity: '10MB'
+            },
+            {
+                code: 'DATA-15',
+                title: '250MB for 1 day',
+                price: 25,
+                validity: '250MB'
+            },
+            {
+                code: 'DATA-18',
+                title: '15MB for 1 day',
+                price: 50,
+                validity: '15MB'
+            },
+            {
+                code: 'DATA-30',
+                title: '500MB for 1 day',
+                price: 50,
+                validity: '500MB'
+            },
+            {
+                code: 'DATA-21',
+                title: '35MB for 1 day',
+                price: 100,
+                validity: '35MB'
+            },
+            {
+                code: 'DATA-31',
+                title: '1GB for 5 days',
+                price: 100,
+                validity: '1GB'
+            },
+            {
+                code: 'DATA-28',
+                title: '350MB for 5 days',
+                price: 200,
+                validity: '350MB'
+            },
+            {
+                code: 'DATA-37',
+                title: '1.25GB for 1 day',
+                price: 200,
+                validity: '1.25GB'
+            },
+            {
+                code: 'DATA-27',
+                title: '800MB for 7 days',
+                price: 500,
+                validity: '800MB'
+            },
+            {
+                code: 'DATA-2',
+                title: '1.6GB for 30 days',
+                price: 1000,
+                validity: '1.6GB'
+            },
+            {
+                code: 'DATA-24',
+                title: '7GB for 7 days',
+                price: 1500,
+                validity: '7GB'
+            },
+            {
+                code: 'DATA-25',
+                title: '5.8GB for 30 days',
+                price: 2000,
+                validity: '5.8GB'
+            },
+            {
+                code: 'DATA-19',
+                title: '7.7GB for 30 days',
+                price: 2500,
+                validity: '7.7GB'
+            },
+            {
+                code: 'DATA-23',
+                title: '10GB for 30 days',
+                price: 3000,
+                validity: '10GB'
+            },
+            {
+                code: 'DATA-12',
+                title: '13.25GB for 30 days',
+                price: 4000,
+                validity: '13.25GB'
+            },
+            {
+                code: 'DATA-5',
+                title: '18.25GB for 30 days',
+                price: 5000,
+                validity: '18.25GB'
+            },
+            {
+                code: 'DATA-4',
+                title: '29.5GB for 30 days',
+                price: 8000,
+                validity: '29.5GB'
+            },
+            {
+                code: 'DATA-10',
+                title: '50GB for 30 days',
+                price: 10000,
+                validity: '50GB'
+            },
+            {
+                code: 'DATA-11',
+                title: '93GB for 30 days',
+                price: 15000,
+                validity: '93GB'
+            },
+            {
+                code: 'DATA-20',
+                title: '119GB for 30 days',
+                price: 18000,
+                validity: '119GB'
+            },
+            {
+                code: 'DATA-33',
+                title: '138GB for 30 days',
+                price: 20000,
+                validity: '138GB'
+            },
+            {
+                code: 'DATA-64',
+                title: '225GB for 30 days',
+                price: 30000,
+                validity: '225GB'
+            },
+            {
+                code: 'DATA-434',
+                title: '225GB for 30 days',
+                price: 30000,
+                validity: '225GB'
+            },
+            {
+                code: 'DATA-65',
+                title: '300GB for 30 days',
+                price: 36000,
+                validity: '300GB'
+            },
+            {
+                code: 'DATA-435',
+                title: '300GB for 30 days',
+                price: 36000,
+                validity: '300GB'
+            },
+            {
+                code: 'DATA-66',
+                title: '425GB for 90 days',
+                price: 50000,
+                validity: '425GB'
+            },
+            {
+                code: 'DATA-436',
+                title: '425GB for 90 days',
+                price: 50000,
+                validity: '425GB'
+            },
+            {
+                code: 'DATA-67',
+                title: '525GB for 120 days',
+                price: 60000,
+                validity: '525GB'
+            },
+            {
+                code: 'DATA-437',
+                title: '525GB for 120 days',
+                price: 60000,
+                validity: '525GB'
+            },
+            {
+                code: 'DATA-68',
+                title: '675GB for 120 days',
+                price: 75000,
+                validity: '675GB'
+            },
+            {
+                code: 'DATA-438',
+                title: '675GB for 120 days',
+                price: 75000,
+                validity: '675GB'
+            },
+            {
+                code: 'DATA-69',
+                title: '1TB for 365 days',
+                price: 100000,
+                validity: '1TB'
+            },
+            {
+                code: 'DATA-439',
+                title: '1TB for 365 days',
+                price: 100000,
+                validity: '1TB'
+            }
+        ],
+        AIRTEL: [
+            {
+                code: 49.99,
+                title: '40MB for 1 Day',
+                price: 50,
+                validity: '40MB'
+            },
+            {
+                code: 99,
+                title: '100MB for 1 Day',
+                price: 100,
+                validity: '100MB'
+            },
+            {
+                code: 199.03,
+                title: '200MB for 3 Days',
+                price: 200,
+                validity: '200MB'
+            },
+            {
+                code: 349.02,
+                title: '350MB for 7 Days',
+                price: 350,
+                validity: '350MB'
+            },
+            {
+                code: 349.03,
+                title: '1GB for 1 Day',
+                price: 350,
+                validity: '1GB'
+            },
+            {
+                code: 399,
+                title: '1.5GB for 1 Day',
+                price: 400,
+                validity: '1.5GB'
+            },
+            {
+                code: 499,
+                title: '750MB for 7 Days',
+                price: 500,
+                validity: '750MB'
+            },
+            {
+                code: 499.03,
+                title: '2GB for 1 Day',
+                price: 500,
+                validity: '2GB'
+            },
+            {
+                code: 599,
+                title: '1GB for 14 Days',
+                price: 600,
+                validity: '1GB'
+            },
+            {
+                code: 799,
+                title: '3.5GB for 2 Days',
+                price: 800,
+                validity: '3.5GB'
+            },
+            {
+                code: 999,
+                title: '1.2GB for 30 Days',
+                price: 1000,
+                validity: '1.2GB'
+            },
+            {
+                code: 999.01,
+                title: '1.5GB for 7 Days',
+                price: 1000,
+                validity: '1.5GB'
+            },
+            {
+                code: 1199,
+                title: '1.5GB for 30 Days',
+                price: 1200,
+                validity: '1.5GB'
+            },
+            {
+                code: 1499.03,
+                title: '5GB for 7 Days',
+                price: 1500,
+                validity: '5GB'
+            },
+            {
+                code: 1499.01,
+                title: '3GB for 30 Days',
+                price: 1500,
+                validity: '3GB'
+            },
+            {
+                code: 1999,
+                title: '4.5GB for 30 Days',
+                price: 2000,
+                validity: '4.5GB'
+            },
+            {
+                code: 1999.02,
+                title: '7GB for 7 Days',
+                price: 2000,
+                validity: '7GB'
+            },
+            {
+                code: 2499.01,
+                title: '6GB for 30 Days',
+                price: 2500,
+                validity: '6GB'
+            },
+            {
+                code: 2999.02,
+                title: '10GB for 30 Days',
+                price: 3000,
+                validity: '10GB'
+            },
+            {
+                code: 3999.01,
+                title: '15GB for 30 Days',
+                price: 4000,
+                validity: '15GB'
+            },
+            {
+                code: 4999,
+                title: '18GB for 30 Days',
+                price: 5000,
+                validity: '18GB'
+            },
+            {
+                code: 4999.01,
+                title: '25GB for 7 Days',
+                price: 5000,
+                validity: '25GB'
+            },
+            {
+                code: 5999,
+                title: '23GB for 30 Days',
+                price: 6000,
+                validity: '23GB'
+            },
+            {
+                code: 7999.02,
+                title: '30GB for 30 Days',
+                price: 8000,
+                validity: '30GB'
+            },
+            {
+                code: 9999,
+                title: '40GB for 30 Days',
+                price: 10000,
+                validity: '40GB'
+            },
+            {
+                code: 14999,
+                title: '75GB for 30 Days',
+                price: 15000,
+                validity: '75GB'
+            },
+            {
+                code: 19999.02,
+                title: '120GB for 30 Days',
+                price: 20000,
+                validity: '120GB'
+            },
+            {
+                code: 29999.02,
+                title: '240GB for 30 Days',
+                price: 30000,
+                validity: '240GB'
+            },
+            {
+                code: 35999.02,
+                title: '280GB for 30 Days',
+                price: 36000,
+                validity: '280GB'
+            },
+            {
+                code: 49999.02,
+                title: '400GB for 90 Days',
+                price: 50000,
+                validity: '400GB'
+            },
+            {
+                code: 59999.02,
+                title: '500GB for 120 Days',
+                price: 60000,
+                validity: '500GB'
+            },
+            {
+                code: 99999.02,
+                title: '1TB for 365 Days',
+                price: 100000,
+                validity: '1TB'
+            }
+        ],
+        '9MOBILE': [
+            {
+                code: 200,
+                title: '200MB for 7 days',
+                price: 200,
+                validity: '200MB'
+            },
+            {
+                code: 1000,
+                title: '1GB for 30 days',
+                price: 1000,
+                validity: '1GB'
+            },
+            {
+                code: 1200,
+                title: '1.5GB for 30 days',
+                price: 1200,
+                validity: '1.5GB'
+            },
+            {
+                code: 2000,
+                title: '2.5GB for 30 days',
+                price: 2000,
+                validity: '2.5GB'
+            },
+            {
+                code: 2500,
+                title: '3.5GB for 30 days',
+                price: 2500,
+                validity: '3.5GB'
+            },
+            {
+                code: 3500,
+                title: '5GB for 30 days',
+                price: 3500,
+                validity: '5GB'
+            },
+            {
+                code: 8000,
+                title: '11.5GB for 30 days',
+                price: 8000,
+                validity: '11.5GB'
+            },
+            {
+                code: 10000,
+                title: '15GB for 30 days',
+                price: 10000,
+                validity: '15GB'
+            },
+            {
+                code: 18000,
+                title: '27.5GB for 30 days',
+                price: 18000,
+                validity: '27.5GB'
+            },
+            {
+                code: 27500,
+                title: '30GB for 90 days',
+                price: 27500,
+                validity: '30GB'
+            },
+            {
+                code: 55000,
+                title: '60GB for 180 days',
+                price: 55000,
+                validity: '60GB'
+            },
+            {
+                code: 84992,
+                title: '100GB for 100 days',
+                price: 84992,
+                validity: '100GB'
+            },
+            {
+                code: 110000,
+                title: '120GB for 365 days',
+                price: 110000,
+                validity: '120GB'
+            }
+        ]
     }
 } as const
 
