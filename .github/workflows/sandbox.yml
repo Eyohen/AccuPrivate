@@ -60,6 +60,7 @@ jobs:
         EMAIL_HOST=${{ secrets.EMAIL_HOST}}
         EMAIL_HOST_ADDRESS=${{ secrets.EMAIL_HOST_ADDRESS}}
         EMAIL_PORT=${{ secrets.EMAIL_PORT}}
+        EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD}}
         IRECHARGE_PRIVATE_KEY=${{ secrets.IRECHARGE_PRIVATE_KEY}}
         IRECHARGE_PUBLIC_KEY=${{ secrets.IRECHARGE_PUBLIC_KEY}}
         IRECHARGE_VENDOR_CODE=${{ secrets.IRECHARGE_VENDOR_CODE}}
@@ -95,6 +96,25 @@ jobs:
         KAFKA_USERNAME=${{ secrets.KAFKA_USERNAME}}
         KAFKA_ENV=${{ secrets.KAFKA_ENV}}
 
+        IRECHARGE_DEV_URL=${{ secrets.IRECHARGE_DEV_URL}}
+        IRECHARGE_PROD_URL=${{ secrets.IRECHARGE_PROD_URL}}
+        
+        BAXI_DEV_URL=${{ secrets.BAXI_DEV_URL}}
+        BAXI_PROD_URL=${{ secrets.BAXI_PROD_URL}}
+        
+        BUYPOWERNG_DEV_URL=${{ secrets.BUYPOWERNG_DEV_URL}}
+        BUYPOWERNG_PROD_URL=${{ secrets.BUYPOWERNG_PROD_URL}}
+        
+
+        echo "IRECHARGE_DEV_URL=$IRECHARGE_DEV_URL" >> .env
+        echo "IRECHARGE_PROD_URL=$IRECHARGE_PROD_URL" >> .env
+        
+        echo "BAXI_DEV_URL=$BAXI_DEV_URL" >> .env
+        echo "BAXI_PROD_URL=$BAXI_PROD_URL" >> .env
+        
+        echo "BUYPOWERNG_DEV_URL=$BUYPOWERNG_DEV_URL" >> .env
+        echo "BUYPOWERNG_PROD_URL=$BUYPOWERNG_PROD_URL" >> .env
+
         echo "KAFKA_ENV=$KAFKA_ENV" >> .env
         echo "KAFKA_LOGS=$KAFKA_LOGS" >> .env
         echo "KAFKA_REGION=$KAFKA_REGION" >> .env
@@ -128,6 +148,7 @@ jobs:
         echo "EMAIL_HOST=$EMAIL_HOST" >> .env
         echo "EMAIL_HOST_ADDRESS=$EMAIL_HOST_ADDRESS" >> .env
         echo "EMAIL_PORT=$EMAIL_PORT" >> .env
+        echo "EMAIL_PASSWORD=$EMAIL_PASSWORD" >> .env
         echo "IRECHARGE_PRIVATE_KEY=$IRECHARGE_PRIVATE_KEY" >> .env
         echo "IRECHARGE_PUBLIC_KEY=$IRECHARGE_PUBLIC_KEY" >> .env
         echo "IRECHARGE_VENDOR_CODE=$IRECHARGE_VENDOR_CODE" >> .env
