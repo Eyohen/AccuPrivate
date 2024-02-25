@@ -243,6 +243,16 @@ jobs:
           ./build.sh
           ls ./dist/models
           ls | grep -q dist.zip && echo "dist.zip exists in the directory" || echo "dist.zip does not exist in the directory"
+          if [ -d "./dist.zip" ]; then
+            echo "It's a directory"
+          else
+            echo "It's not a directory"
+          fi
+          if [ -f "./dist.zip" ]; then
+              echo "It's a file"
+          else
+              echo "It's not a file"
+          fi
       - name: cache dist.zip
         uses: actions/checkout@v2
         with:
@@ -259,7 +269,7 @@ jobs:
     steps:
       - name: chechkout
         uses: actions/checkout@v2
-      - name: restore dist 
+      - name: restore dist.zip
         uses: actions/checkout@v2
         with:
           path: ./dist.zip
@@ -273,6 +283,16 @@ jobs:
       - name: push to state to s3
         run: |
           ls | grep -q dist.zip && echo "dist.zip exists in the directory" || echo "dist.zip does not exist in the directory"
+          if [ -d "./dist.zip" ]; then
+            echo "It's a directory"
+          else
+            echo "It's not a directory"
+          fi
+          if [ -f "./dist.zip" ]; then
+              echo "It's a file"
+          else
+              echo "It's not a file"
+          fi
           aws s3 cp ./dist.zip s3://staging-bucket-deployment/ 
 
   deploy-build:
