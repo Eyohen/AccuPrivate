@@ -73,6 +73,18 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     @Column({ type: DataType.STRING, allowNull: true, defaultValue: () => generateRandomString(10) })
     reference: string;
 
+    @Column({ type: DataType.JSONB, allowNull: true })
+    retryRecord: {
+        vendor: ITransaction['superagent'],
+        reference: string[],
+        data?: Record<string, any>,
+        retryCount: number,
+        attempt: number,
+    }[]
+
+    @Column({ type: DataType.STRING, allowNull: true })
+    productType: string;
+
     @ForeignKey(() => ProductCode)
     @IsUUID(4)
     @Column({ type: DataType.STRING, allowNull: true })
@@ -83,6 +95,9 @@ export default class Transaction extends Model<ITransaction | Transaction> {
 
     @Column({ type: DataType.STRING, allowNull: true })
     vendorReferenceId: string
+
+    @Column({ type: DataType.STRING, allowNull: true })
+    networkProvider: string
 
     @Column({ type: DataType.ARRAY(DataType.STRING), allowNull: true })
     previousVendors: string[]
@@ -205,7 +220,16 @@ export interface ITransaction {
     productCodeId: string;
     irechargeAccessToken?: string;
     vendorReferenceId: string;
-    previousVendors: string[]
+    previousVendors: string[];
+    retryRecord: {
+        vendor: ITransaction['superagent'],
+        reference: string[],
+        data?: Record<string, any>,
+        retryCount: number,
+        attempt: number,
+    }[],
+    productType: string;
+    networkProvider?: string;
 }
 
 // Define an interface representing the creation of a transaction (ICreateTransaction).

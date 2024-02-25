@@ -26,6 +26,9 @@ export default class SysLog extends Model<SysLog | ISysLog> {
     @Column({ type: DataType.STRING, allowNull: true, })
     transactionId?: string;
 
+    @Column({ type: DataType.STRING, allowNull: true, })
+    logType: LogType
+
     // Additional metadata associated with the log
     @Column(DataType.JSONB)
     meta: Record<string, any>;
@@ -36,6 +39,7 @@ export default class SysLog extends Model<SysLog | ISysLog> {
     createdAt: Date;
 }
 
+export type LogType = "apiRequest" | "apiResponse" | "kafkaPublisher" | "kafkaFailure" | "kafkaMessageProcessing" | "retries";
 
 interface ISysLog {
     id: string;
