@@ -1,4 +1,4 @@
-import logger from "../../../utils/Logger";
+import { Logger } from "../../../utils/Logger";
 import { TOPICS } from "../../Constants";
 import { PublisherEventAndParameters } from "../util/Interface";
 import ProducerFactory from "../util/Producer";
@@ -7,6 +7,12 @@ export class VendorPublisher extends ProducerFactory {
     static async publishEventForMeterValidationRequested(
         data: PublisherEventAndParameters[TOPICS.METER_VALIDATION_REQUEST_SENT_TO_VENDOR],
     ) {
+
+        Logger.kafkaPublisher.info('Sending message to topic: ' + TOPICS.METER_VALIDATION_REQUEST_SENT_TO_VENDOR, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
         return ProducerFactory.sendMessage({
             topic: TOPICS.METER_VALIDATION_REQUEST_SENT_TO_VENDOR,
             message: {
@@ -19,7 +25,7 @@ export class VendorPublisher extends ProducerFactory {
                 superAgent: data.superAgent
             },
         }).catch((e) => {
-            logger.error(
+            Logger.kafkaPublisher.error(
                 `An error occured while publishing ${TOPICS.METER_VALIDATION_REQUEST_SENT_TO_VENDOR} event for transaction` +
                 data.transactionId,
             );
@@ -30,6 +36,11 @@ export class VendorPublisher extends ProducerFactory {
     static async publishEventForMeterValidationReceived(
         data: PublisherEventAndParameters[TOPICS.METER_VALIDATION_RECIEVED_FROM_VENDOR],
     ) {
+        Logger.kafkaPublisher.info('Sending message to topic: ' + TOPICS.METER_VALIDATION_RECIEVED_FROM_VENDOR, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
         return ProducerFactory.sendMessage({
             topic: TOPICS.METER_VALIDATION_RECIEVED_FROM_VENDOR,
             message: {
@@ -47,7 +58,7 @@ export class VendorPublisher extends ProducerFactory {
                 transactionId: data.transactionId,
             },
         }).catch((e) => {
-            logger.error(
+            Logger.kafkaPublisher.error(
                 `An error occured while publishing ${TOPICS.METER_VALIDATION_RECIEVED_FROM_VENDOR} event for transaction` +
                 data.transactionId,
             );
@@ -58,6 +69,11 @@ export class VendorPublisher extends ProducerFactory {
     static async publishEventForMeterValidationSentToPartner(
         data: PublisherEventAndParameters[TOPICS.METER_VALIDATION_SENT_PARTNER],
     ) {
+        Logger.kafkaPublisher.info('Sending message to topic: ' + TOPICS.METER_VALIDATION_SENT_PARTNER, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
         return ProducerFactory.sendMessage({
             topic: TOPICS.METER_VALIDATION_SENT_PARTNER,
             message: {
@@ -70,7 +86,7 @@ export class VendorPublisher extends ProducerFactory {
                 transactionId: data.transactionId,
             },
         }).catch((e) => {
-            logger.error(
+            Logger.kafkaPublisher.error(
                 `An error occured while publishing ${TOPICS.METER_VALIDATION_SENT_PARTNER} event for transaction` +
                 data.transactionId,
             );
@@ -81,6 +97,11 @@ export class VendorPublisher extends ProducerFactory {
     static async publishEventForDiscoUpCheckConfirmedFromVendor(
         data: PublisherEventAndParameters[TOPICS.CHECK_DISCO_UP_CONFIRMED_FROM_VENDOR],
     ) {
+        Logger.kafkaPublisher.info('Sending message to topic: ' + TOPICS.CHECK_DISCO_UP_CONFIRMED_FROM_VENDOR, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
         return ProducerFactory.sendMessage({
             topic: TOPICS.CHECK_DISCO_UP_CONFIRMED_FROM_VENDOR,
             message: {
@@ -92,7 +113,7 @@ export class VendorPublisher extends ProducerFactory {
                 transactionId: data.transactionId,
             },
         }).catch((e) => {
-            logger.error(
+            Logger.kafkaPublisher.error(
                 `An error occured while publishing ${TOPICS.CHECK_DISCO_UP_CONFIRMED_FROM_VENDOR} event for transaction` +
                 data.transactionId,
             );
@@ -103,6 +124,11 @@ export class VendorPublisher extends ProducerFactory {
     static async publishEventForInitiatedPowerPurchase(
         data: PublisherEventAndParameters[TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER],
     ) {
+        Logger.kafkaPublisher.info('Sending message to topic: ' + TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
         return ProducerFactory.sendMessage({
             topic: TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER,
             message: {
@@ -122,10 +148,11 @@ export class VendorPublisher extends ProducerFactory {
                     email: data.partner.email,
                 },
                 transactionId: data.transactionId,
-                superAgent: data.superAgent
+                superAgent: data.superAgent,
+                vendorRetryRecord: data.vendorRetryRecord
             },
         }).catch((e) => {
-            logger.error(
+            Logger.kafkaPublisher.error(
                 `An error occured while publishing ${TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER} event for transaction` +
                 data.transactionId,
             );
@@ -136,6 +163,11 @@ export class VendorPublisher extends ProducerFactory {
     static async publishEventForRetryPowerPurchaseWithNewVendor(
         data: PublisherEventAndParameters[TOPICS.RETRY_PURCHASE_FROM_NEW_VENDOR],
     ) {
+        Logger.kafkaPublisher.info('Sending message to topic: ' + TOPICS.RETRY_PURCHASE_FROM_NEW_VENDOR, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
         return ProducerFactory.sendMessage({
             topic: TOPICS.RETRY_PURCHASE_FROM_NEW_VENDOR,
             message: {
@@ -159,7 +191,7 @@ export class VendorPublisher extends ProducerFactory {
                 newVendor: data.newVendor
             },
         }).catch((e) => {
-            logger.error(
+            Logger.kafkaPublisher.error(
                 `An error occured while publishing ${TOPICS.RETRY_PURCHASE_FROM_NEW_VENDOR} event for transaction` +
                 data.transactionId,
             );
@@ -170,6 +202,11 @@ export class VendorPublisher extends ProducerFactory {
     static async publishEventForTokenReceivedFromVendor(
         data: PublisherEventAndParameters[TOPICS.TOKEN_RECIEVED_FROM_VENDOR],
     ) {
+        Logger.kafkaPublisher.info('Sending message to topic: ' + TOPICS.TOKEN_RECIEVED_FROM_VENDOR, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
         return ProducerFactory.sendMessage({
             topic: TOPICS.TOKEN_RECIEVED_FROM_VENDOR,
             message: {
@@ -192,7 +229,7 @@ export class VendorPublisher extends ProducerFactory {
                 transactionId: data.transactionId,
             },
         }).catch((e) => {
-            logger.error(
+            Logger.kafkaPublisher.error(
                 `An error occured while publishing ${TOPICS.TOKEN_RECIEVED_FROM_VENDOR} event for transaction` +
                 data.transactionId,
             );
@@ -203,6 +240,11 @@ export class VendorPublisher extends ProducerFactory {
     static async publishEventForWebhookNotificationToPartnerRetry(
         data: PublisherEventAndParameters[TOPICS.WEBHOOK_NOTIFICATION_TO_PARTNER_RETRY],
     ) {
+        Logger.kafkaPublisher.info(`Sending message to topic: ${TOPICS.WEBHOOK_NOTIFICATION_TO_PARTNER_RETRY}`, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
         return ProducerFactory.sendMessage({
             topic: TOPICS.WEBHOOK_NOTIFICATION_TO_PARTNER_RETRY,
             message: {
@@ -232,6 +274,11 @@ export class VendorPublisher extends ProducerFactory {
     static async publishEventForGetTransactionTokenRequestedFromVendorRetry(
         data: PublisherEventAndParameters[TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY],
     ) {
+        Logger.kafkaPublisher.info(`Sending message to topic: ${TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY}`, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
         return ProducerFactory.sendMessage({
             topic: TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY,
             message: {
@@ -246,10 +293,11 @@ export class VendorPublisher extends ProducerFactory {
                 timeStamp: data.timeStamp,
                 retryCount: data.retryCount,
                 superAgent: data.superAgent,
-                waitTime: data.waitTime
+                waitTime: data.waitTime,
+                vendorRetryRecord: data.vendorRetryRecord
             },
         }).catch((e) => {
-            logger.error(
+            Logger.kafkaPublisher.error(
                 `An error occured while publishing ${TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR} event for transaction` +
                 data.transactionId,
             );
@@ -260,6 +308,11 @@ export class VendorPublisher extends ProducerFactory {
     static async publishEventForGetTransactionTokenFromVendorInitiated(
         data: PublisherEventAndParameters[TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_INITIATED],
     ) {
+        Logger.kafkaPublisher.info(`Sending message to topic: ${TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_INITIATED}`, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
         return ProducerFactory.sendMessage({
             topic: TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_INITIATED,
             message: {
@@ -269,7 +322,7 @@ export class VendorPublisher extends ProducerFactory {
                 superAgent: data.superAgent
             },
         }).catch((e) => {
-            logger.error(
+            Logger.kafkaPublisher.error(
                 `An error occured while publishing ${TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_INITIATED} event for transaction` +
                 data.transactionId,
             );
@@ -280,6 +333,11 @@ export class VendorPublisher extends ProducerFactory {
     static async publishEventForTransactionRequery(
         data: PublisherEventAndParameters[TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER_REQUERY],
     ) {
+        Logger.kafkaPublisher.info(`Sending message to topic: ${TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER_REQUERY}`, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
         return ProducerFactory.sendMessage({
             topic: TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER_REQUERY,
             message: {
@@ -291,7 +349,7 @@ export class VendorPublisher extends ProducerFactory {
                 transactionId: data.transactionId,
             },
         }).catch((e) => {
-            logger.error(
+            Logger.kafkaPublisher.error(
                 `An error occured while publishing ${TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER_REQUERY} event for transaction` +
                 data.transactionId,
             );
@@ -302,6 +360,11 @@ export class VendorPublisher extends ProducerFactory {
     static async publishEventForSuccessfulTokenRequestWithNoToken(
         data: PublisherEventAndParameters[TOPICS.TOKEN_REQUEST_SUCCESS_WITH_NO_TOKEN],
     ) {
+        Logger.kafkaPublisher.info(`Sending message to topic: ${TOPICS.TOKEN_REQUEST_SUCCESS_WITH_NO_TOKEN}`, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
         return ProducerFactory.sendMessage({
             topic: TOPICS.TOKEN_REQUEST_SUCCESS_WITH_NO_TOKEN,
             message: {
@@ -313,7 +376,7 @@ export class VendorPublisher extends ProducerFactory {
                 transactionId: data.transactionId,
             },
         }).catch((e) => {
-            logger.error(
+            Logger.kafkaPublisher.error(
                 `An error occured while publishing ${TOPICS.TOKEN_REQUEST_SUCCESS_WITH_NO_TOKEN} event for transaction` +
                 data.transactionId,
             );
@@ -324,6 +387,11 @@ export class VendorPublisher extends ProducerFactory {
     static async publishEventForTokenSentToPartnerRetry(
         data: PublisherEventAndParameters[TOPICS.TOKEN_SENT_TO_PARTNER_RETRY],
     ) {
+        Logger.kafkaPublisher.info(`Sending message to topic: ${TOPICS.TOKEN_SENT_TO_PARTNER_RETRY}`, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
         return ProducerFactory.sendMessage({
             topic: TOPICS.TOKEN_SENT_TO_PARTNER_RETRY,
             message: {
@@ -346,7 +414,7 @@ export class VendorPublisher extends ProducerFactory {
                 transactionId: data.transactionId,
             },
         }).catch((e) => {
-            logger.error(
+            Logger.kafkaPublisher.error(
                 `An error occured while publishing ${TOPICS.TOKEN_REQUEST_FAILED} event for transaction` +
                 data.transactionId,
             );
@@ -357,6 +425,11 @@ export class VendorPublisher extends ProducerFactory {
     static async publishEventForFailedTokenRequest(
         data: PublisherEventAndParameters[TOPICS.TOKEN_REQUEST_FAILED],
     ) {
+        Logger.kafkaPublisher.info(`Sending message to topic: ${TOPICS.TOKEN_REQUEST_FAILED}`, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
         return ProducerFactory.sendMessage({
             topic: TOPICS.TOKEN_REQUEST_FAILED,
             message: {
@@ -368,7 +441,7 @@ export class VendorPublisher extends ProducerFactory {
                 transactionId: data.transactionId,
             },
         }).catch((e) => {
-            logger.error(
+            Logger.kafkaPublisher.error(
                 `An error occured while publishing ${TOPICS.TOKEN_REQUEST_FAILED} event for transaction` +
                 data.transactionId,
             );
@@ -379,6 +452,11 @@ export class VendorPublisher extends ProducerFactory {
     static async publishEventForCompletedPowerPurchase(
         data: PublisherEventAndParameters[TOPICS.PARTNER_TRANSACTION_COMPLETE],
     ) {
+        Logger.kafkaPublisher.info(`Sending message to topic: ${TOPICS.PARTNER_TRANSACTION_COMPLETE}`, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
         return ProducerFactory.sendMessage({
             topic: TOPICS.PARTNER_TRANSACTION_COMPLETE,
             message: {
@@ -393,7 +471,7 @@ export class VendorPublisher extends ProducerFactory {
                 transactionId: data.transactionId,
             },
         }).catch((e) => {
-            logger.error(
+            Logger.kafkaPublisher.error(
                 `An error occured while publishing  ${TOPICS.PARTNER_TRANSACTION_COMPLETE} event for transaction` +
                 data.transactionId,
             );
@@ -405,6 +483,11 @@ export class VendorPublisher extends ProducerFactory {
     static async publshEventForAirtimePurchaseInitiate(
         data: PublisherEventAndParameters[TOPICS.AIRTIME_PURCHASE_INITIATED_BY_CUSTOMER],
     ) {
+        Logger.kafkaPublisher.info(`Sending message to topic: ${TOPICS.AIRTIME_PURCHASE_INITIATED_BY_CUSTOMER}`, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
         return ProducerFactory.sendMessage({
             topic: TOPICS.AIRTIME_PURCHASE_INITIATED_BY_CUSTOMER,
             message: {
@@ -415,7 +498,7 @@ export class VendorPublisher extends ProducerFactory {
                 superAgent: data.superAgent
             },
         }).catch((e) => {
-            logger.error(
+            Logger.kafkaPublisher.error(
                 `An error occured while publishing  ${TOPICS.AIRTIME_PURCHASE_INITIATED_BY_CUSTOMER} event for transaction` +
                 data.transactionId,
             );
@@ -426,6 +509,11 @@ export class VendorPublisher extends ProducerFactory {
     static async publishEventForAirtimeReceivedFromVendor(
         data: PublisherEventAndParameters[TOPICS.AIRTIME_RECEIVED_FROM_VENDOR],
     ) {
+        Logger.kafkaPublisher.info(`Sending message to topic: ${TOPICS.AIRTIME_RECEIVED_FROM_VENDOR}`, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
         return ProducerFactory.sendMessage({
             topic: TOPICS.AIRTIME_RECEIVED_FROM_VENDOR,
             message: {
@@ -435,7 +523,7 @@ export class VendorPublisher extends ProducerFactory {
                 user: data.user,
             },
         }).catch((e) => {
-            logger.error(
+            Logger.kafkaPublisher.error(
                 `An error occured while publishing  ${TOPICS.AIRTIME_RECEIVED_FROM_VENDOR} event for transaction` +
                 data.transactionId,
             );
@@ -446,6 +534,11 @@ export class VendorPublisher extends ProducerFactory {
     static async publishEventForAirtimeWebhookNotificationSentToPartner(
         data: PublisherEventAndParameters[TOPICS.AIRTIME_WEBHOOK_NOTIFICATION_SENT_TO_PARTNER],
     ) {
+        Logger.kafkaPublisher.info(`Sending message to topic: ${TOPICS.AIRTIME_WEBHOOK_NOTIFICATION_SENT_TO_PARTNER}`, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
         return ProducerFactory.sendMessage({
             topic: TOPICS.AIRTIME_WEBHOOK_NOTIFICATION_SENT_TO_PARTNER,
             message: {
@@ -453,7 +546,7 @@ export class VendorPublisher extends ProducerFactory {
                 transactionId: data.transactionId,
             },
         }).catch((e) => {
-            logger.error(
+            Logger.kafkaPublisher.error(
                 `An error occured while publishing  ${TOPICS.AIRTIME_WEBHOOK_NOTIFICATION_SENT_TO_PARTNER} event for transaction` +
                 data.transactionId,
             );
@@ -464,6 +557,11 @@ export class VendorPublisher extends ProducerFactory {
     static async publishEventForAirtimePurchaseComplete(
         data: PublisherEventAndParameters[TOPICS.AIRTIME_TRANSACTION_COMPLETE],
     ) {
+        Logger.kafkaPublisher.info(`Sending message to topic: ${TOPICS.AIRTIME_TRANSACTION_COMPLETE}`, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
         return ProducerFactory.sendMessage({
             topic: TOPICS.AIRTIME_TRANSACTION_COMPLETE,
             message: {
@@ -474,7 +572,7 @@ export class VendorPublisher extends ProducerFactory {
                 superAgent: data.superAgent
             },
         }).catch((e) => {
-            logger.error(
+            Logger.kafkaPublisher.error(
                 `An error occured while publishing  ${TOPICS.AIRTIME_TRANSACTION_COMPLETE} event for transaction` +
                 data.transactionId,
             );
@@ -485,6 +583,11 @@ export class VendorPublisher extends ProducerFactory {
     static async publishEventForGetAirtimeFromVendorRetry(
         data: PublisherEventAndParameters[TOPICS.GET_AIRTIME_FROM_VENDOR_RETRY],
     ) {
+        Logger.kafkaPublisher.info(`Sending message to topic: ${TOPICS.GET_AIRTIME_FROM_VENDOR_RETRY}`, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
         return ProducerFactory.sendMessage({
             topic: TOPICS.GET_AIRTIME_FROM_VENDOR_RETRY,
             message: {
@@ -497,7 +600,7 @@ export class VendorPublisher extends ProducerFactory {
                 waitTime: data.waitTime
             },
         }).catch((e) => {
-            logger.error(
+            Logger.kafkaPublisher.error(
                 `An error occured while publishing ${TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR} event for transaction` +
                 data.transactionId,
             );
@@ -508,6 +611,11 @@ export class VendorPublisher extends ProducerFactory {
     static async publishEventForAirtimePurchaseRetryFromVendorWithNewVendor(
         data: PublisherEventAndParameters[TOPICS.AIRTIME_PURCHASE_RETRY_FROM_NEW_VENDOR]
     ) {
+        Logger.kafkaPublisher.info(`Sending message to topic: ${TOPICS.AIRTIME_PURCHASE_RETRY_FROM_NEW_VENDOR, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        }}`)
         return ProducerFactory.sendMessage({
             topic: TOPICS.AIRTIME_PURCHASE_RETRY_FROM_NEW_VENDOR,
             message: {
@@ -519,7 +627,7 @@ export class VendorPublisher extends ProducerFactory {
                 user: data.user
             }
         }).catch((e) => {
-            logger.error(
+            Logger.kafkaPublisher.error(
                 `An error occured while publishing ${TOPICS.AIRTIME_PURCHASE_RETRY_FROM_NEW_VENDOR} event for transaction` +
                 data.transactionId,
             );
@@ -527,6 +635,163 @@ export class VendorPublisher extends ProducerFactory {
         })
     }
 
+
+    // DATA PUBLISHERS
+    // AIRTIME SPECIFIC PUBLISHERS
+    static async publshEventForDataPurchaseInitiate(
+        data: PublisherEventAndParameters[TOPICS.DATA_PURCHASE_INITIATED_BY_CUSTOMER],
+    ) {
+        Logger.kafkaPublisher.info(`Sending message to topic: ${TOPICS.DATA_PURCHASE_INITIATED_BY_CUSTOMER} `, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.DATA_PURCHASE_INITIATED_BY_CUSTOMER,
+            message: {
+                phone: data.phone,
+                partner: data.partner,
+                user: data.user,
+                transactionId: data.transactionId,
+                superAgent: data.superAgent
+            },
+        }).catch((e) => {
+            Logger.kafkaPublisher.error(
+                `An error occured while publishing  ${TOPICS.DATA_PURCHASE_INITIATED_BY_CUSTOMER} event for transaction` +
+                data.transactionId,
+            );
+            return e;
+        });
+    }
+
+    static async publishEventForDataReceivedFromVendor(
+        data: PublisherEventAndParameters[TOPICS.DATA_RECEIVED_FROM_VENDOR],
+    ) {
+        Logger.kafkaPublisher.info(`Sending message to topic: ${TOPICS.DATA_RECEIVED_FROM_VENDOR} `, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.DATA_RECEIVED_FROM_VENDOR,
+            message: {
+                phone: data.phone,
+                transactionId: data.transactionId,
+                partner: data.partner,
+                user: data.user,
+            },
+        }).catch((e) => {
+            Logger.kafkaPublisher.error(
+                `An error occured while publishing  ${TOPICS.DATA_RECEIVED_FROM_VENDOR} event for transaction` +
+                data.transactionId,
+            );
+            return e;
+        });
+    }
+
+    static async publishEventForDataWebhookNotificationSentToPartner(
+        data: PublisherEventAndParameters[TOPICS.DATA_WEBHOOK_NOTIFICATION_SENT_TO_PARTNER],
+    ) {
+        Logger.kafkaPublisher.info(`Sending message to topic: ${TOPICS.DATA_WEBHOOK_NOTIFICATION_SENT_TO_PARTNER} `, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.DATA_WEBHOOK_NOTIFICATION_SENT_TO_PARTNER,
+            message: {
+                phone: data.phone,
+                transactionId: data.transactionId,
+            },
+        }).catch((e) => {
+            Logger.kafkaPublisher.error(
+                `An error occured while publishing  ${TOPICS.DATA_WEBHOOK_NOTIFICATION_SENT_TO_PARTNER} event for transaction` +
+                data.transactionId,
+            );
+            return e;
+        });
+    }
+
+    static async publishEventForDataPurchaseComplete(
+        data: PublisherEventAndParameters[TOPICS.DATA_TRANSACTION_COMPLETE],
+    ) {
+        Logger.kafkaPublisher.info(`Sending message to topic: ${TOPICS.DATA_TRANSACTION_COMPLETE} `, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.DATA_TRANSACTION_COMPLETE,
+            message: {
+                phone: data.phone,
+                transactionId: data.transactionId,
+                partner: data.partner,
+                user: data.user,
+                superAgent: data.superAgent
+            },
+        }).catch((e) => {
+            Logger.kafkaPublisher.error(
+                `An error occured while publishing  ${TOPICS.DATA_TRANSACTION_COMPLETE} event for transaction` +
+                data.transactionId,
+            );
+            return e;
+        });
+    }
+
+    static async publishEventForGetDataFromVendorRetry(
+        data: PublisherEventAndParameters[TOPICS.GET_DATA_FROM_VENDOR_RETRY],
+    ) {
+        Logger.kafkaPublisher.info(`Sending message to topic: ${TOPICS.GET_DATA_FROM_VENDOR_RETRY} `, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        })
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.GET_DATA_FROM_VENDOR_RETRY,
+            message: {
+                phone: data.phone,
+                error: data.error,
+                transactionId: data.transactionId,
+                timeStamp: data.timeStamp,
+                retryCount: data.retryCount,
+                superAgent: data.superAgent,
+                waitTime: data.waitTime
+            },
+        }).catch((e) => {
+            Logger.kafkaPublisher.error(
+                `An error occured while publishing ${TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR} event for transaction` +
+                data.transactionId,
+            );
+            return e;
+        });
+    }
+
+    static async publishEventForDataPurchaseRetryFromVendorWithNewVendor(
+        data: PublisherEventAndParameters[TOPICS.DATA_PURCHASE_RETRY_FROM_NEW_VENDOR]
+    ) {
+        Logger.kafkaPublisher.info(`Sending message to topic: ${TOPICS.DATA_PURCHASE_RETRY_FROM_NEW_VENDOR, {
+            meta: {
+                transactionId: data.transactionId,
+            }
+        }} `)
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.DATA_PURCHASE_RETRY_FROM_NEW_VENDOR,
+            message: {
+                phone: data.phone,
+                transactionId: data.transactionId,
+                superAgent: data.superAgent,
+                newVendor: data.newVendor,
+                partner: data.partner,
+                user: data.user
+            }
+        }).catch((e) => {
+            Logger.kafkaPublisher.error(
+                `An error occured while publishing ${TOPICS.DATA_PURCHASE_RETRY_FROM_NEW_VENDOR} event for transaction` +
+                data.transactionId,
+            );
+            return e;
+        })
+    }
 
 }
 

@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import transactionRoute from './Transaction.routes'
-import vendorRoute from './Vendor.routes'
+import vendorRoute from './VendorApi.routes'
 import meterRoute from './Meter.routes'
 import powerUnitRoute from './PowerUnit.routes'
 import userRoute from './User.routes'
@@ -15,6 +15,10 @@ import webhookRoute from './Webhook.routes'
 import partnerRoute from './Partner.routes'
 import complainRoute from './complaint.routes'
 import productCodeRoute from './ProductCode.routes'
+import masterRoute from './MasterProduct.routes'
+import sysLogRoute from './Syslog.routes'
+import MockEndpointRoute from './MockEndPoint.route'
+import waitTimeRoute from './WaitTime.routes'
 
 const router = Router()
 
@@ -35,6 +39,10 @@ router
     .use('/partner', partnerRoute)
     .use('/complaints', complainRoute)
     .use('/productcode', productCodeRoute)
+    .use('/master', masterRoute)
+    .use('/syslog', sysLogRoute)
+    .use('/mock',MockEndpointRoute )
+    .use('/waittime', waitTimeRoute)
 
 export default router
 

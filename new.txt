@@ -1,0 +1,52 @@
+
+    static prepaidElectricityTemplate = async (transaction: Transaction) => {
+        const powerUnit = await transaction.$get('powerUnit')
+
+        return `
+            Payment successful for ${transaction.transactionType}
+
+            Transaction amount: ${transaction.amount}
+
+            Token: ${powerUnit?.token}
+
+            Date: ${transaction.transactionTimestamp}
+        `
+    }
+
+    static postpaidElectricityTemplate = async (transaction: Transaction) => {
+        return `
+            Payment successful for ${transaction.transactionType}
+
+            Transaction amount: ${transaction.amount}
+
+            Date: ${transaction.transactionTimestamp}
+        `
+    }
+
+    static airtimeTemplate = async (transaction: Transaction) => {
+        return `
+            Payment successful for ${transaction.transactionType}
+
+            Transaction amount: ${transaction.amount}
+
+            Date: ${transaction.transactionTimestamp}
+        `
+    }
+
+
+
+    =====
+    handle rec airtimeTemplate
+     const msgTemplate = await SmsService.airtimeTemplate(transaction)
+            await SmsService.sendSms(data.phone.phoneNumber, msgTemplate).catch((error: AxiosError) => {
+                console.log(error.response?.data)
+                logger.error('Error sending sms', error)
+            })
+
+
+    =====
+     const msgTemplate = data.meter.vendType === 'POSTPAID' ? await SmsService.postpaidElectricityTemplate(transaction) : await SmsService.prepaidElectricityTemplate(transaction)
+            await SmsService.sendSms(data.user.phoneNumber, msgTemplate).catch((error: AxiosError) => {
+                console.log(error.response?.data)
+                logger.error('Error sending sms', error)
+            })

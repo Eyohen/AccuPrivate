@@ -17,6 +17,7 @@ import { PartnerProfile } from "../../models/Entity/Profiles";
 import ResponseTrimmer from "../../utils/ResponseTrimmer";
 import { IPartnerProfile, IPartnerStatsProfile } from "../../models/Entity/Profiles/PartnerProfile.model";
 import TransactionService from "../../services/Transaction.service";
+require('newrelic');
 
 export default class PartnerProfileController {
     static async invitePartner(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -196,12 +197,7 @@ export default class PartnerProfileController {
             })
             success_Transactions = _complete_Transaction.length
 
-            // element.stats = {
-            //     success_Transactions,
-            //     failed_Transactions,
-            //     pending_Transactions
-
-            // }
+            
             _stats.push({
                 id: element.id,
                 success_Transactions,

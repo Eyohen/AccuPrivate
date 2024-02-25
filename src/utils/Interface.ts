@@ -6,6 +6,7 @@ import { UUID } from "crypto"
 import { RoleEnum } from "../models/Role.model"
 
 export interface IVendToken {
+    transactionId: string   
     reference: string
     meterNumber: string
     disco: string
@@ -82,7 +83,7 @@ export interface IBaxiPurchaseResponse extends BaseResponse {
 }
 
 export interface IBaxiValidateMeterResponse {
-    status: 'success',
+    status: 'success' |  'pending',
     message: 'Successful',
     code: 200,
     data: {
