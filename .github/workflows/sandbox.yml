@@ -29,7 +29,7 @@ jobs:
           echo "Fetching list of cache key"
           echo "$REPO"
           echo "$BRANCH"
-          cacheKeysForPR=$(gh actions-cache list -R $REPO -B $BRANCH -L 100 | cut -f 1 )
+          cacheKeysForPR=$(gh actions-cache list -R $REPO -L 100 | cut -f 1 )
 
           ## Setting this to not fail the workflow while deleting cache keys.
           set +e
@@ -37,7 +37,7 @@ jobs:
           for cacheKey in $cacheKeysForPR
           do
               echo "$cacheKey"
-              gh actions-cache delete $cacheKey -R $REPO -B $BRANCH --confirm
+              gh actions-cache delete $cacheKey -R $REPO --confirm
           done
           echo "Done deleting cache"
       # - run: npm ci
