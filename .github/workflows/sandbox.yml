@@ -296,6 +296,8 @@ jobs:
           else
               echo "It's not a file"
           fi
+          unzip dist.zip 
+          ls -R dist
           aws s3 cp ./dist.zip s3://staging-bucket-deployment/ 
 
   # Depolys the backend to sandbox
@@ -446,6 +448,7 @@ jobs:
               #rename the old folder 
               echo "$LAST_SUCCESSFUL_RUN_NUMBER"
               if [ -d "dist" ] && [ -d "dist"_"$LAST_SUCCESSFUL_RUN_NUMBER" ]; then
+                  cp -r dist dist_failed
                   rm -rf dist
                   mv "dist"_"$LAST_SUCCESSFUL_RUN_NUMBER" "dist"
                   echo "Folder renamed from dist"_"$LAST_SUCCESSFUL_RUN_NUMBER"
