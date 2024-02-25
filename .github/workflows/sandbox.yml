@@ -238,8 +238,10 @@ jobs:
           node-version: 20
       - name: Back-end build
         run: |
-          ls
+          ls 
+          ls ./src/models
           ./build.sh
+          ls ./dist/models
       - name: cache dist 
         uses: actions/checkout@v2
         with:
