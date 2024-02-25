@@ -447,6 +447,7 @@ jobs:
           else
             echo "Rollback occured no need to update LAST_SUCCESSFUL_RUN"  
             exit 1
+          fi
           
   save-latest-successful_run:
     name: save-latest-successful-run
