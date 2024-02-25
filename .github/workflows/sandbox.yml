@@ -242,6 +242,7 @@ jobs:
           ls ./src/models
           ./build.sh
           ls ./dist/models
+          ls | grep -q dist.zip && echo "dist.zip exists in the directory" || echo "dist.zip does not exist in the directory"
       - name: cache dist.zip
         uses: actions/checkout@v2
         with:
@@ -261,7 +262,7 @@ jobs:
       - name: restore dist 
         uses: actions/checkout@v2
         with:
-          path: dist
+          path: ./dist.zip
           key: dist-folder
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -271,6 +272,7 @@ jobs:
           aws-region: eu-west-2
       - name: push to state to s3
         run: |
+          ls | grep -q dist.zip && echo "dist.zip exists in the directory" || echo "dist.zip does not exist in the directory"
           aws s3 cp ./dist.zip s3://staging-bucket-deployment/ 
 
   deploy-build:
