@@ -9,24 +9,46 @@ on:
       - sandbox
 
 jobs:
-  # test-backend: 
-  #   name: test-backend
-  #   runs-on: ubuntu-latest
-  #   steps: 
-  #     - name: Checkout
-  #       uses: actions/checkout@v2
-  #     - uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 18
-  #     - run: npm ci
-  #     - run: npm test
+  test-backend: 
+    name: test-backend
+    runs-on: ubuntu-latest
+    steps: 
+      - name: Checkout
+        uses: actions/checkout@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Delete cache
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          BRANCH: refs/pull/${{ github.event.pull_request.number }}/merge
+        run: |
+          gh extension install actions/gh-actions-cache
+          
+          echo "Fetching list of cache key"
+          echo "$REPO"
+          echo "$BRANCH"
+          cacheKeysForPR=$(gh actions-cache list -R $REPO -B $BRANCH -L 100 | cut -f 1 )
+
+          ## Setting this to not fail the workflow while deleting cache keys.
+          set +e
+          echo "Deleting caches..."
+          for cacheKey in $cacheKeysForPR
+          do
+              echo "$cacheKey"
+              gh actions-cache delete $cacheKey -R $REPO -B $BRANCH --confirm
+          done
+          echo "Done deleting cache"
+      # - run: npm ci
+      # - run: npm test
 
   # Generates the Env file and pushes to s3 bucket 
   generate-env-file:
     name: generate-env-file
     # needs: [push-build]
     runs-on: ubuntu-latest
-    if : github.ref == 'refs/heads/sandbox'
+    if : github.ref == 'refs/heads/main'
     steps:
     - name: chechkout
       uses: actions/checkout@v2
@@ -197,7 +219,7 @@ jobs:
   scan-backend: 
     name: scan-backend
     runs-on: ubuntu-latest
-    if : github.ref == 'refs/heads/sandbox'
+    if : github.ref == 'refs/heads/main'
     # needs: [test-backend]
     needs: [generate-env-file]
     steps: 
@@ -220,7 +242,7 @@ jobs:
   build-backend:
     name: build-backend
     needs: [scan-backend]
-    if : github.ref == 'refs/heads/sandbox'
+    if : github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -272,7 +294,7 @@ jobs:
   push-build:
     name: push-build
     needs: [build-backend]
-    if : github.ref == 'refs/heads/sandbox'
+    if : github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: chechkout
@@ -309,7 +331,7 @@ jobs:
   deploy-build:
     name: deploy-build
     needs: [push-build]
-    if : github.ref == 'refs/heads/sandbox'
+    if : github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: chechkout
@@ -385,7 +407,7 @@ jobs:
   # Smoke Test to check if server is up and running 
   smoke-test:
     name: smoke-test
-    if : github.ref == 'refs/heads/sandbox'
+    if : github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     needs: [deploy-build]
     outputs:
@@ -416,7 +438,7 @@ jobs:
   roll-back:
     name: roll-back
     needs: smoke-test
-    if : github.ref == 'refs/heads/sandbox'
+    if : github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps: 
       - name: Configure AWS Credentials
@@ -469,7 +491,7 @@ jobs:
   # Fail stage initiate on successful roll back 
   fail-stage-on-rollback: 
     name:  fail-stage-on-rollback
-    if : github.ref == 'refs/heads/sandbox'
+    if : github.ref == 'refs/heads/main'
     needs: [roll-back, smoke-test ]
     runs-on: ubuntu-latest
     steps: 
@@ -489,7 +511,7 @@ jobs:
   clean-up:
     name: clean-up
     needs: [roll-back, smoke-test ]
-    if : github.ref == 'refs/heads/sandbox'
+    if : github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps: 
       - name: Configure AWS Credentials
@@ -562,8 +584,8 @@ jobs:
   # Add RUN_id has last successful run
   save-latest-successful_run:
     name: save-latest-successful-run
-    # if : github.ref == 'refs/heads/sandbox' && needs.smoke-test.outputs.smoke_test_result == '1'
-    if : github.ref == 'refs/heads/sandbox'
+    # if : github.ref == 'refs/heads/main' && needs.smoke-test.outputs.smoke_test_result == '1'
+    if : github.ref == 'refs/heads/main'
     needs: [fail-stage-on-rollback , clean-up]
     # needs: [roll-back, smoke-test]
     runs-on: ubuntu-latest
@@ -585,7 +607,7 @@ jobs:
   # create-update-environment:
   #   name: create-environment
   #   needs: [push-build]
-  #   if : github.ref == 'refs/heads/sandbox'
+  #   if : github.ref == 'refs/heads/main'
   #   runs-on: ubuntu-latest
   #   steps:
   #   - name: Checkout
