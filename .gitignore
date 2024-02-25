@@ -203,3 +203,4 @@ create_cluster.sh
 dist-old
 dist-old-2
 dist-*
+compare.env.js
