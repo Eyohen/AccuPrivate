@@ -242,10 +242,10 @@ jobs:
           ls ./src/models
           ./build.sh
           ls ./dist/models
-      - name: cache dist 
+      - name: cache dist.zip
         uses: actions/checkout@v2
         with:
-          path: dist
+          path: ./dist.zip
           key: dist-folder
       - run: |
           tsc --version
@@ -284,7 +284,7 @@ jobs:
       - name: restore dist 
         uses: actions/checkout@v2
         with:
-          path: dist
+          path: ./dist.zip
           key: dist-folder
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -450,12 +450,63 @@ jobs:
             echo "Rollback occured no need to update LAST_SUCCESSFUL_RUN"  
             exit 1
           fi
-          
+  
+  clean-up:
+    name: clean-up
+    needs: [roll-back, smoke-test ]
+    if : github.ref == 'refs/heads/sandbox'
+    runs-on: ubuntu-latest
+    steps: 
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_ACCESS_SECRET_KEY }}
+          aws-region: eu-west-2
+      - name: cleanup_if_successful
+        env: 
+          PRIVATE_KEY: ${{ secrets.SAND_BOX_SSH_KEY }}
+          GITHUB_RUN_NUMBER: ${{ secrets.GITHUB_RUN_NUMBER }}
+        run: |
+          EC2_HOST_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=Sand Box Core Instance" --query "Reservations[].Instances[].[PublicIpAddress]" --output text)
+          echo "${{needs.smoke-test.outputs.smoke_test_result}}"
+          if [[ "${{needs.smoke-test.outputs.smoke_test_result}}" == "1" ]];
+          then 
+            echo "Clean up "
+            echo "$PRIVATE_KEY" > private_key.pem && chmod 400 private_key.pem
+            ssh -o StrictHostKeyChecking=no -i 'private_key.pem' ubuntu@${EC2_HOST_IP} '
+              cd /home/ubuntu/
+              pm2 stop server #stop the server 
+              # GET THE LATEST_SUCCESSFUL_RUN_ID 
+              if aws s3 cp s3://accuvend-bucket-configuration/staging_last_run.txt ./staging_last_run.txt | grep "does not exist" 
+              then
+                  echo 'FILE DOES NOT EXIST'
+                  LAST_SUCCESSFUL_RUN_NUMBER=0               
+              else
+                  echo 'FILE EXIST'
+                  LAST_SUCCESSFUL_RUN_NUMBER=$(grep LAST_SUCCESSFUL_RUN_ID ./staging_last_run.txt | cut -d "=" -f2)            
+              fi
+              #delete the old folder 
+              echo "$LAST_SUCCESSFUL_RUN_NUMBER"
+              if [ -d "dist" ] && [ -d "dist"_"$LAST_SUCCESSFUL_RUN_NUMBER" ]; then
+                  rm -rf "dist"_"$LAST_SUCCESSFUL_RUN_NUMBER"
+                  echo "Folder removed: dist"_"$LAST_SUCCESSFUL_RUN_NUMBER"
+              else
+                  echo "Folder does not exist."
+              fi
+              # cd 
+              cd dist
+              
+              #Set up restart server 
+              pm2 start server.js --time '
+          else
+            echo "Rolled back No Cleanup"
+          fi         
   save-latest-successful_run:
     name: save-latest-successful-run
     # if : github.ref == 'refs/heads/sandbox' && needs.smoke-test.outputs.smoke_test_result == '1'
     if : github.ref == 'refs/heads/sandbox'
-    needs: [fail-stage-on-rollback]
+    needs: [fail-stage-on-rollback , clean-up]
     # needs: [roll-back, smoke-test]
     runs-on: ubuntu-latest
     steps: 
@@ -471,8 +522,7 @@ jobs:
           GITHUB_RUN_NUMBER: ${{ secrets.GITHUB_RUN_NUMBER }}
         run: |
           echo "LAST_SUCCESSFUL_RUN_ID=$GITHUB_RUN_NUMBER" > staging_last_run.txt
-          aws s3 cp ./staging_last_run.txt s3://accuvend-bucket-configuration/staging_last_run.txt 
-          
+          aws s3 cp ./staging_last_run.txt s3://accuvend-bucket-configuration/staging_last_run.txt
         
   # create-update-environment:
   #   name: create-environment
