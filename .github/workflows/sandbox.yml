@@ -529,6 +529,7 @@ jobs:
               pm2 start server.js --time '
           else
             echo "Rolled back No Cleanup"
+            exit 1
           fi   
   # Add RUN_id has last successful run
   save-latest-successful_run:
