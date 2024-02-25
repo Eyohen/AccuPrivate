@@ -21,6 +21,7 @@ jobs:
   #     - run: npm ci
   #     - run: npm test
 
+  # Generates the Env file and pushes to s3 bucket 
   generate-env-file:
     name: generate-env-file
     # needs: [push-build]
@@ -191,7 +192,8 @@ jobs:
       with:
         path: ./.env
         key: env-file
-      
+
+   # Scans the backend for an vulenrabilities
   scan-backend: 
     name: scan-backend
     runs-on: ubuntu-latest
@@ -214,7 +216,7 @@ jobs:
           path: node_modules
           key: backend-build
 
-        
+  # Creates the artifacts for the build process 
   build-backend:
     name: build-backend
     needs: [scan-backend]
@@ -254,13 +256,14 @@ jobs:
               echo "It's not a file"
           fi
       - name: cache dist.zip
-        uses: actions/checkout@v2
+        uses: actions/cache@v2
         with:
           path: ./dist.zip
-          key: dist-folder
+          key: dist-zip
       - run: |
           tsc --version
-         
+
+  # Pushes the build zip to s3 bucket
   push-build:
     name: push-build
     needs: [build-backend]
@@ -270,10 +273,10 @@ jobs:
       - name: chechkout
         uses: actions/checkout@v2
       - name: restore dist.zip
-        uses: actions/checkout@v2
+        uses: actions/cache@v2
         with:
           path: ./dist.zip
-          key: dist-folder
+          key: dist-zip
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -295,6 +298,7 @@ jobs:
           fi
           aws s3 cp ./dist.zip s3://staging-bucket-deployment/ 
 
+  # Depolys the backend to sandbox
   deploy-build:
     name: deploy-build
     needs: [push-build]
@@ -304,10 +308,10 @@ jobs:
       - name: chechkout
         uses: actions/checkout@v2
       - name: restore dist 
-        uses: actions/checkout@v2
+        uses: actions/cache@v2
         with:
           path: ./dist.zip
-          key: dist-folder
+          key: dist-zip
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -371,7 +375,7 @@ jobs:
             #Set up restart server 
             pm2 start server.js --time '
           
-            
+  # Smoke Test to check if server is up and running 
   smoke-test:
     name: smoke-test
     if : github.ref == 'refs/heads/sandbox'
@@ -401,6 +405,7 @@ jobs:
     - name: check if smoke test result is saved  
       run : echo "${{steps.check_server_status.outputs.smoke_test_result}}"
 
+  # Roll back when smoke test fails
   roll-back:
     name: roll-back
     needs: smoke-test
@@ -454,7 +459,7 @@ jobs:
               pm2 start server.js --time '
             
           fi 
-
+  # Fail stage initiate on successful roll back 
   fail-stage-on-rollback: 
     name:  fail-stage-on-rollback
     if : github.ref == 'refs/heads/sandbox'
@@ -472,7 +477,8 @@ jobs:
             echo "Rollback occured no need to update LAST_SUCCESSFUL_RUN"  
             exit 1
           fi
-  
+
+  # Clean up of old artificats on successful deployment 
   clean-up:
     name: clean-up
     needs: [roll-back, smoke-test ]
@@ -523,7 +529,8 @@ jobs:
               pm2 start server.js --time '
           else
             echo "Rolled back No Cleanup"
-          fi         
+          fi   
+  # Add RUN_id has last successful run
   save-latest-successful_run:
     name: save-latest-successful-run
     # if : github.ref == 'refs/heads/sandbox' && needs.smoke-test.outputs.smoke_test_result == '1'
