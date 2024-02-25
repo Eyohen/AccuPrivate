@@ -390,6 +390,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_ACCESS_SECRET_KEY }}
           aws-region: eu-west-2
       - name: roll back_server_if_failure 
+        env: 
+          PRIVATE_KEY: ${{ secrets.SAND_BOX_SSH_KEY }}
+          GITHUB_RUN_NUMBER: ${{ secrets.GITHUB_RUN_NUMBER }}
         run: |
           EC2_HOST_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=Sand Box Core Instance" --query "Reservations[].Instances[].[PublicIpAddress]" --output text)
           echo "${{needs.smoke-test.outputs.smoke_test_result}}"
@@ -398,6 +401,7 @@ jobs:
             echo " No rollback"
           else
             echo "Rolling back...."
+            echo "$PRIVATE_KEY" > private_key.pem && chmod 400 private_key.pem
             ssh -o StrictHostKeyChecking=no -i 'private_key.pem' ubuntu@${EC2_HOST_IP} '
               cd /home/ubuntu/
               pm2 stop server #stop the server 
@@ -427,12 +431,29 @@ jobs:
             
           fi 
 
-          
+  fail-stage-on-rollback: 
+    name:  fail-stage-on-rollback
+    if : github.ref == 'refs/heads/sandbox'
+    needs: [roll-back, smoke-test ]
+    runs-on: ubuntu-latest
+    steps: 
+      - name: fail stage if roll back 
+        run: |
+          echo "${{needs.smoke-test.outputs.smoke_test_result}}"
+          if [[ "${{needs.smoke-test.outputs.smoke_test_result}}" == "1" ]];
+          then 
+            echo "No rollback"
+            exit 0
+          else
+            echo "Rollback occured no need to update LAST_SUCCESSFUL_RUN"  
+            exit 1
           
   save-latest-successful_run:
     name: save-latest-successful-run
-    if : github.ref == 'refs/heads/sandbox' && needs.smoke-test.outputs.smoke_test_result == '1'
-    needs: [roll-back, smoke-test ]
+    # if : github.ref == 'refs/heads/sandbox' && needs.smoke-test.outputs.smoke_test_result == '1'
+    if : github.ref == 'refs/heads/sandbox'
+    needs: [fail-stage-on-rollback]
+    # needs: [roll-back, smoke-test]
     runs-on: ubuntu-latest
     steps: 
       - name: Configure AWS Credentials
