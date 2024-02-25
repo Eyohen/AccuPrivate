@@ -309,7 +309,7 @@ jobs:
   deploy-build:
     name: deploy-build
     needs: [push-build]
-    if : github.ref == 'refs/heads/main' 
+    if : github.ref == 'refs/heads/sandbox'
     runs-on: ubuntu-latest
     steps:
       - name: chechkout
@@ -385,7 +385,7 @@ jobs:
   # Smoke Test to check if server is up and running 
   smoke-test:
     name: smoke-test
-    if : github.ref == 'refs/heads/main' 
+    if : github.ref == 'refs/heads/sandbox'
     runs-on: ubuntu-latest
     needs: [deploy-build]
     outputs:
@@ -416,7 +416,7 @@ jobs:
   roll-back:
     name: roll-back
     needs: smoke-test
-    if : github.ref == 'refs/heads/main' 
+    if : github.ref == 'refs/heads/sandbox'
     runs-on: ubuntu-latest
     steps: 
       - name: Configure AWS Credentials
