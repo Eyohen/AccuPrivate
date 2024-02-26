@@ -44,7 +44,7 @@ const logFormat = printf((info) => {
     return info.meta
         ? `${info.timestamp} [${
               info.level
-          }]: ${message} | meta: ${JSON.stringify(info.meta)}`
+          }][${info.meta?.logType ?? "default"}]: ${message} | meta: ${JSON.stringify(info.meta)}`
         : `${info.timestamp} [${info.level}]: ${message}`;
 });
 

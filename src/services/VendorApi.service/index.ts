@@ -312,6 +312,22 @@ export class IRechargeVendorService {
             this.PUBLIC_KEY;
         const hash = this.generateHash(combinedString);
 
+        const mainMeta = {
+            url : this.client.defaults.baseURL + "/vend_power.php",
+            method: "GET",
+            params: {
+                vendor_code: this.VENDOR_CODE,
+                reference_id: reference,
+                meter: meterNumber,
+                disco,
+                amount,
+                email,
+                phone,
+                access_token: accessToken,
+                response_format: "json",
+                hash,
+            },
+        }
         logger.info("Vending token with irecharge", {
             meta: {
                 reference,
@@ -321,6 +337,7 @@ export class IRechargeVendorService {
                 phone,
                 email,
                 transactionId,
+                ...mainMeta,
             },
         });
         const response = await this.client.get<IRechargeSuccessfulVendResponse>(
@@ -342,7 +359,7 @@ export class IRechargeVendorService {
         );
 
         logger.info("Vend response from irecharge", {
-            meta: { responseData: response.data, transactionId },
+            meta: { responseData: response.data, transactionId , ...mainMeta },
         });
 
         const responseData = { ...response.data, source: "IRECHARGE" };
@@ -361,8 +378,20 @@ export class IRechargeVendorService {
         const combinedString =
             this.VENDOR_CODE + "|" + accessToken + "|" + this.PUBLIC_KEY;
         const hash = this.generateHash(combinedString);
+
+        const mainMeta = {
+            url: this.client.defaults.baseURL + "/vend_status.php",
+            method: "GET",
+            params: {
+                vendor_code: this.VENDOR_CODE,
+                access_token: accessToken,
+                type: serviceType,
+                response_format: "json",
+                hash,
+            },
+        }
         logger.info("Requerying transaction with irecharge", {
-            meta: { accessToken, serviceType, transactionId },
+            meta: { accessToken, serviceType, transactionId, ...mainMeta },
         });
 
         const params = {
@@ -381,13 +410,13 @@ export class IRechargeVendorService {
         );
 
         logger.info("Requery response from irecharge", {
-            meta: { responseData: response.data, transactionId },
+            meta: { responseData: response.data, transactionId, ...mainMeta },
         });
         return { ...response.data, source: "IRECHARGE" };
     }
 }
 
-export class VendorAirtimeService { }
+export class VendorAirtimeService {}
 // Define the VendorService class for handling provider-related operations
 export default class VendorService {
     // Static method for obtaining a Baxi vending token
@@ -395,13 +424,21 @@ export default class VendorService {
         const { reference, meterNumber, disco, amount, phone } = body;
 
         try {
-            logger.info("Vending token with baxi", {
-                meta: {
-                    reference,
-                    meterNumber,
-                    disco,
+            const mainMeta = {
+                url: this.baxiAxios().defaults.baseURL + "/electricity/request",
+                method: "POST",
+                data: {
                     amount,
                     phone,
+                    account_number: meterNumber,
+                    service_type: disco,
+                    agentId: "baxi",
+                    agentReference: reference,
+                },
+            };
+            logger.info("Vending token with baxi", {
+                meta: {
+                    ...mainMeta,
                     transactionId: body.transactionId,
                 },
             });
@@ -423,6 +460,7 @@ export default class VendorService {
 
             logger.info("Vend response from baxi", {
                 meta: {
+                    ...mainMeta,
                     responseData: response.data,
                     transactionId: body.transactionId,
                 },
@@ -447,6 +485,13 @@ export default class VendorService {
         reference: string;
     }) {
         try {
+            const mainMeta = {
+                url:
+                    this.baxiAxios().defaults.baseURL +
+                    "/superagent/transaction/requery",
+                method: "GET",
+                params: { agentReference: reference },
+            };
             logger.info("Requerying transaction with baxi", {
                 meta: { reference, transactionId },
             });
@@ -461,7 +506,7 @@ export default class VendorService {
                 data: responseData,
             });
             logger.info("Requery response from baxi", {
-                meta: { responseData, transactionId },
+                meta: { responseData, transactionId, ...mainMeta },
             });
             if (responseData.status === "success") {
                 return {
@@ -499,8 +544,14 @@ export default class VendorService {
                 NODE_ENV === "development" ? "6528651914" : meterNumber, // Baxi has a test meter number
         };
 
+        const mainMeta = {
+            url: this.baxiAxios().defaults.baseURL + "/electricity/verify",
+            method: "POST",
+            data: postData,
+        };
+
         logger.info("Validating meter with baxi", {
-            meta: { disco, meterNumber, vendType, transactionId },
+            meta: { disco, meterNumber, vendType, transactionId, ...mainMeta },
         });
         try {
             const response =
@@ -511,7 +562,7 @@ export default class VendorService {
             const responseData = response.data;
 
             logger.info("Meter validation response from baxi", {
-                meta: { responseData, transactionId },
+                meta: { responseData, transactionId, ...mainMeta },
             });
             console.log({
                 responseData,
@@ -531,6 +582,13 @@ export default class VendorService {
 
     static async baxiFetchAvailableDiscos() {
         try {
+            const mainMeta = {
+                url: this.baxiAxios().defaults.baseURL + "/electricity/billers",
+                method: "GET",
+            };
+            logger.info("Fetching available discos from baxi", {
+                meta: mainMeta,
+            });
             const response =
                 await this.baxiAxios().get<IBaxiGetProviderResponse>(
                     "/electricity/billers",
@@ -622,13 +680,21 @@ export default class VendorService {
             phone: body.phone,
         };
 
+        const mainMeta = {
+            url: this.buyPowerAxios().defaults.baseURL + "/vend?strict=0",
+            method: "POST",
+            data: postData,
+        };
+
         if (NODE_ENV === "development") {
             postData.phone = "08034210294";
             postData.meter = "12345678910";
         }
 
         try {
-            logger.info("Vending token with buypower", { meta: { postData } });
+            logger.info("Vending token with buypower", {
+                meta: { postData, ...mainMeta },
+            });
             // Make a POST request using the BuyPower Axios instance
             const response = await this.buyPowerAxios().post<
                 PurchaseResponse | TimedOutResponse
@@ -642,6 +708,7 @@ export default class VendorService {
                 meta: {
                     responseData: response.data,
                     transactionId: body.transactionId,
+                    ...mainMeta,
                 },
             });
             return { ...response.data, source: "BUYPOWERNG" };
@@ -649,13 +716,14 @@ export default class VendorService {
             if (error instanceof AxiosError) {
                 const requery =
                     error.response?.data?.message ===
-                    "An unexpected error occurred. Please requery." ||
+                        "An unexpected error occurred. Please requery." ||
                     error.response?.data?.responseCode === 500;
                 if (requery) {
                     logger.error(error.message, {
                         meta: {
                             stack: error.stack,
                             responseData: error.response?.data,
+                            ...mainMeta,
                         },
                     });
                     throw new Error("Transaction timeout");
@@ -724,10 +792,25 @@ export default class VendorService {
             vertical: "ELECTRICITY",
         };
         const params: string = querystring.stringify(paramsObject);
+        const mainMeta = {
+            url:
+                this.buyPowerAxios().defaults.baseURL +
+                `/check/meter?${params}`,
+            method: "GET",
+            data: {
+                meter: body.meterNumber,
+                disco: body.disco,
+                vendType: body.vendType.toUpperCase(),
+            },
+        };
 
         try {
             logger.info("Validating meter with buypower", {
-                meta: { params, transactionId: body.transactionId },
+                meta: {
+                    params,
+                    transactionId: body.transactionId,
+                    ...mainMeta,
+                },
             });
             // Make a GET request using the BuyPower Axios instance
             const response =
@@ -739,6 +822,7 @@ export default class VendorService {
                 meta: {
                     responseData: response.data,
                     transactionId: body.transactionId,
+                    ...mainMeta,
                 },
             });
             console.log({
@@ -882,7 +966,7 @@ export default class VendorService {
                 email,
             },
         });
-        logger.info("Vending token with IRecharge", {
+               logger.info("Vending token with IRecharge", {
             meta: { requestData: body, transactionId: body.transactionId },
         });
         const response = await IRechargeVendorService.vend({
