@@ -31,12 +31,14 @@ export default class TransactionService {
         } as Transaction);
 
         await transactionData.save({ validate: false });
-        const _transaction = await TransactionService.viewSingleTransaction(transactionData.id)
+        const _transaction = await TransactionService.viewSingleTransaction(
+            transactionData.id,
+        );
         if (!_transaction) {
             throw new Error("Error fetching transaction");
         }
 
-        return _transaction
+        return _transaction;
     }
 
     // Static method for adding a new transaction
@@ -60,6 +62,7 @@ export default class TransactionService {
         const transactions: Transaction[] = await Transaction.findAll({
             where: {},
             include: [PowerUnit, Event, Partner, User, Meter],
+            order: [["transactionTimestamp", "DESC"]],
         });
         return transactions;
     }
@@ -73,6 +76,7 @@ export default class TransactionService {
             await Transaction.findAll({
                 ...query,
                 include: [PowerUnit, Event, Partner, User, Meter],
+                order: [["transactionTimestamp", "DESC"]],
             })
         ).sort((a, b) => {
             return (
@@ -88,11 +92,9 @@ export default class TransactionService {
     ): Promise<number> {
         // Retrieve all transactions from the database
         // Sort from latest
-        const transactionCount: number = (
-            await Transaction.count({
-                ...query,
-            })
-        )
+        const transactionCount: number = await Transaction.count({
+            ...query,
+        });
         return transactionCount;
     }
 
@@ -101,19 +103,22 @@ export default class TransactionService {
     ): Promise<number> {
         // Retrieve all transactions from the database
         // Sort from latest
-        const transactionCount: any = (
-            await Transaction.findAll({
-                ...query,
-                
-                attributes : [
-                    [Sequelize.fn('sum', Sequelize.cast(Sequelize.col('amount'),'DECIMAL') ), 'total_amount'],
-                ]
-                
-            })
-        )
+        const transactionCount: any = await Transaction.findAll({
+            ...query,
+
+            attributes: [
+                [
+                    Sequelize.fn(
+                        "sum",
+                        Sequelize.cast(Sequelize.col("amount"), "DECIMAL"),
+                    ),
+                    "total_amount",
+                ],
+            ],
+            order: [["transactionTimestamp", "DESC"]],
+        });
         return transactionCount;
     }
-
 
     // Static method for viewing a single transaction by UUID
     static async viewSingleTransaction(
@@ -133,7 +138,10 @@ export default class TransactionService {
         bankRefId: string,
     ): Promise<Transaction | null> {
         // Retrieve a single transaction by its UUID
-        const transaction: Transaction | null = await Transaction.findOne({ where: { bankRefId: bankRefId }, include: [PowerUnit, Event, Partner, User, Meter] },);
+        const transaction: Transaction | null = await Transaction.findOne({
+            where: { bankRefId: bankRefId },
+            include: [PowerUnit, Event, Partner, User, Meter],
+        });
         return transaction;
     }
 
@@ -172,9 +180,12 @@ export default class TransactionService {
         return transactions;
     }
 
-    static async viewTransactionsForYesterdayByStatus(partnerId: string, status: 'COMPLETED' | 'PENDING' | 'FAILED'): Promise<Transaction[]> {
-        const yesterdayDate = new Date()
-        yesterdayDate.setDate(yesterdayDate.getDate() - 1)
+    static async viewTransactionsForYesterdayByStatus(
+        partnerId: string,
+        status: "COMPLETED" | "PENDING" | "FAILED",
+    ): Promise<Transaction[]> {
+        const yesterdayDate = new Date();
+        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
 
         const transactions: Transaction[] = await Transaction.findAll({
             where: {

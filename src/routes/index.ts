@@ -19,8 +19,8 @@ import masterRoute from './MasterProduct.routes'
 import sysLogRoute from './Syslog.routes'
 import MockEndpointRoute from './MockEndPoint.route'
 import waitTimeRoute from './WaitTime.routes'
-
-const router = Router()
+import discoStatusRoute from "./DiscoStatus.routes";
+const router = Router();
 
 router
     .use('/transaction', transactionRoute)
@@ -43,7 +43,9 @@ router
     .use('/syslog', sysLogRoute)
     .use('/mock',MockEndpointRoute )
     .use('/waittime', waitTimeRoute)
+    .use("/discostatus", discoStatusRoute)
 
-export default router
 
 
+
+export default router;
