@@ -133,7 +133,7 @@ export default class TransactionController {
         };
 
         const response = {
-            transactions: transactions.map((transaction) => ({ ...transaction.dataValues, disco: transaction.productType == 'AIRTIME' ? undefined : transaction.disco })),
+            transactions: transactions.map((transaction) => (ResponseTrimmer.trimTransactionResponse({ ...transaction.dataValues, disco: transaction.productType == 'AIRTIME' ? undefined : transaction.disco }))),
             totalAmount,
         } as any;
 
@@ -364,7 +364,7 @@ export default class TransactionController {
         res.status(200).json({
             status: "success",
             message: "Transactions retrieved successfully",
-            data: { transactions, totalAmount },
+            data: { transactions: transactions.map(transaction => ResponseTrimmer.trimTransactionResponse(transaction)), totalAmount },
         });
     }
 }
