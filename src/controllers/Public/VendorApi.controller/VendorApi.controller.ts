@@ -46,6 +46,7 @@ require('newrelic');
 import VendorProductService from "../../../services/VendorProduct.service";
 import VendorDocService from '../../../services/Vendor.service'
 import { generateRandomString, generateRandonNumbers } from "../../../utils/Helper";
+import ResponseTrimmer from "../../../utils/ResponseTrimmer";
 interface valideMeterRequestBody {
     meterNumber: string;
     superagent: "BUYPOWERNG" | "BAXI";
@@ -793,7 +794,7 @@ export default class VendorController {
 
             const tokenHasBeenSentFromVendorConsumer = vendorTokenConsumer.getTokenSentState()
             if (!tokenHasBeenSentFromVendorConsumer) {
-                const responseData = { status: 'success', message: 'Token purchase initiated successfully', data: { transaction: _transaction } }
+                const responseData = { status: 'success', message: 'Token purchase initiated successfully', data: { transaction: ResponseTrimmer.trimTransactionResponse(_transaction)}}
                 res.status(200).json(responseData);
 
                 Logger.apiRequest.info('Token purchase initiated successfully', { meta: { transactionId: transaction.id, ...responseData } })
