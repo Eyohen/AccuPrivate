@@ -13,7 +13,6 @@ declare module "winston" {
 // Define a custom transport to write logs to PostgreSQL using Sequelize
 class YourCustomPostgresTransport extends winston.Transport {
     log(info: any, callback: Function) {
-        console.log({ meta: info.meta });
         const { timestamp, level, message, meta } = info;
         SysLog.create({
             id: randomUUID(),
@@ -135,7 +134,6 @@ class CustomLogger {
     }
 
     info(message: string, meta?: any) {
-        console.log({ inside: true, meta, message });
         logger.info(message, {
             meta: { ...(meta ?? {}), logType: this.logType },
         });
@@ -167,6 +165,7 @@ export class Logger {
     static kafkaFailure = new CustomLogger("kafkaFailure");
     static kafkaMessageProcessing = new CustomLogger("kafkaMessageProcessing");
     static retries = new CustomLogger("retries");
+    static cronJob = new CustomLogger("cronJob");
 }
 
 export default logger;

@@ -39,7 +39,7 @@ export default class SysLog extends Model<SysLog | ISysLog> {
     createdAt: Date;
 }
 
-export type LogType = "apiRequest" | "apiResponse" | "kafkaPublisher" | "kafkaFailure" | "kafkaMessageProcessing" | "retries";
+export type LogType = "apiRequest" | "apiResponse" | "kafkaPublisher" | "kafkaFailure" | "kafkaMessageProcessing" | "retries" | 'cronJob';
 
 interface ISysLog {
     id: string;

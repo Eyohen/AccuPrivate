@@ -2832,6 +2832,8 @@ export const SEED_DATA = {
     }
 } as const
 
+export const DISCOS =['ABUJA', 'EKO', 'IKEJA', 'JOS', 'KADUNA', 'PORTHARCOURT', 'ENUGU', 'IBADAN', 'KANO']
+
 export const HTTP_URL = {
     BUYPOWERNG: {
         AIRTIME: BUYPOWER_URL!,
