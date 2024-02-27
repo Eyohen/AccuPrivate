@@ -13,7 +13,7 @@ import PowerUnit from "../models/PowerUnit.model";
 import Partner from "../models/Entity/Profiles/PartnerProfile.model";
 import User from "../models/User.model";
 import Meter from "../models/Meter.model";
-import { Op } from "sequelize";
+import { Op, literal } from "sequelize";
 import { generateRandomString } from "../utils/Helper";
 import { Sequelize } from "sequelize-typescript";
 
@@ -72,10 +72,20 @@ export default class TransactionService {
     ): Promise<Transaction[]> {
         // Retrieve all transactions from the database
         // Sort from latest
+
+        // Getting the list of columns 
+        const ListofColumns = await Transaction.describe()
+        //convert the list of columns to array 
+        const attributesMap: Array<string> = Object.keys(ListofColumns)
         const transactions: Transaction[] = (
             await Transaction.findAll({
                 ...query,
                 include: [PowerUnit, Event, Partner, User, Meter],
+                //add th transform disco to biller so it can be used in the frontend and for the partner 
+                attributes:[
+                    ['disco', 'biller'],
+                    ...attributesMap
+                ],
                 order: [["transactionTimestamp", "DESC"]],
             })
         ).sort((a, b) => {
@@ -85,6 +95,23 @@ export default class TransactionService {
             );
         });
         return transactions;
+
+        /**PREVIOUS UTILIZIED CODE */
+        //  // Retrieve all transactions from the database
+        // // Sort from latest
+        // const transactions: Transaction[] = (
+        //     await Transaction.findAll({
+        //         ...query,
+        //         include: [PowerUnit, Event, Partner, User, Meter],
+        //         order: [["transactionTimestamp", "DESC"]],
+        //     })
+        // ).sort((a, b) => {
+        //     return (
+        //         b.transactionTimestamp.getTime() -
+        //         a.transactionTimestamp.getTime()
+        //     );
+        // });
+        // return transactions;
     }
 
     static async viewTransactionsCountWithCustomQuery(
