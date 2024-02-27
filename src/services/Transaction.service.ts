@@ -81,7 +81,7 @@ export default class TransactionService {
             await Transaction.findAll({
                 ...query,
                 include: [PowerUnit, Event, Partner, User, Meter],
-                //add th transform disco to biller so it can be used in the frontend and for the partner 
+                //add the transform disco to biller so it can be used in the frontend and for the partner 
                 attributes:[
                     ['disco', 'biller'],
                     ...attributesMap
@@ -128,6 +128,7 @@ export default class TransactionService {
         query: Record<string, any>,
     ): Promise<number> {
         // Summing the total amount of transactions from the database
+
         const transactionCount: any = await Transaction.findAll({
             ...query,
 
@@ -149,13 +150,30 @@ export default class TransactionService {
         uuid: string,
     ): Promise<Transaction | null> {
         // Retrieve a single transaction by its UUID
+         // Getting the list of columns 
+         const ListofColumns = await Transaction.describe()
+         //convert the list of columns to array 
+         const attributesMap: Array<string> = Object.keys(ListofColumns)
         const transaction: Transaction | null = await Transaction.findByPk(
             uuid,
             {
+                //add the transform disco to biller so it can be used in the frontend and for the partner 
+                attributes:[
+                    ['disco', 'biller'],
+                    ...attributesMap
+                ],
                 include: [PowerUnit, Event, Partner, User, Meter],
             },
         );
         return transaction;
+         /**PREVIOUS UTILIZIED CODE */
+        // const transaction: Transaction | null = await Transaction.findByPk(
+        //     uuid,
+        //     {
+        //         include: [PowerUnit, Event, Partner, User, Meter],
+        //     },
+        // );
+        // return transaction;
     }
 
     static async viewSingleTransactionByBankRefID(
