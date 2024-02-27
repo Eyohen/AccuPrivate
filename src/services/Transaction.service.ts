@@ -90,8 +90,7 @@ export default class TransactionService {
     static async viewTransactionsCountWithCustomQuery(
         query: Record<string, any>,
     ): Promise<number> {
-        // Retrieve all transactions from the database
-        // Sort from latest
+        // Counting transactions from the database
         const transactionCount: number = await Transaction.count({
             ...query,
         });
@@ -101,8 +100,7 @@ export default class TransactionService {
     static async viewTransactionsAmountWithCustomQuery(
         query: Record<string, any>,
     ): Promise<number> {
-        // Retrieve all transactions from the database
-        // Sort from latest
+        // Summing the total amount of transactions from the database
         const transactionCount: any = await Transaction.findAll({
             ...query,
 
@@ -115,7 +113,6 @@ export default class TransactionService {
                     "total_amount",
                 ],
             ],
-            order: [["transactionTimestamp", "DESC"]],
         });
         return transactionCount;
     }
