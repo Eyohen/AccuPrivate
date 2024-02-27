@@ -164,7 +164,7 @@ export default class PartnerProfileController {
 
 
         const _stats: any = []
-        //adding partner Statics here        
+        //adding partner Statistics  here        
         for (let index = 0; index < partners.length; index++) {
             let failed_Transactions: number = 0
             let pending_Transactions: number = 0
