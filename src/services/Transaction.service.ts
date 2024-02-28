@@ -73,10 +73,11 @@ export default class TransactionService {
         // Retrieve all transactions from the database
         // Sort from latest
 
+        //Removed Because of Performance issues 
         // Getting the list of columns 
-        const ListofColumns = await Transaction.describe()
+        // const ListofColumns = await Transaction.describe()
         //convert the list of columns to array 
-        const attributesMap: Array<string> = Object.keys(ListofColumns)
+        // const attributesMap: Array<string> = Object.keys(ListofColumns)
         const transactions: Transaction[] = (
             await Transaction.findAll({
                 ...query,
@@ -84,7 +85,30 @@ export default class TransactionService {
                 //add the transform disco to biller so it can be used in the frontend and for the partner 
                 attributes:[
                     ['disco', 'biller'],
-                    ...attributesMap
+                    'id',
+                    'amount',
+                    'status',
+                    'paymentType',
+                    'transactionTimestamp',
+                    'disco',
+                    'bankRefId',
+                    'bankComment',
+                    'superagent',
+                    'reference',
+                    'productType',
+                    'productCodeId',
+                    'irechargeAccessToken',
+                    'vendorReferenceId',
+                    'networkProvider',
+                    'previousVendors',
+                    'userId',
+                    'transactionType',
+                    'partnerId',
+                    'powerUnitId',
+                    'meterId',
+                    'createdAt',
+                    'updatedAt',
+                    //...attributesMap
                 ],
                 order: [["transactionTimestamp", "DESC"]],
             })
@@ -150,17 +174,43 @@ export default class TransactionService {
         uuid: string,
     ): Promise<Transaction | null> {
         // Retrieve a single transaction by its UUID
-         // Getting the list of columns 
-         const ListofColumns = await Transaction.describe()
-         //convert the list of columns to array 
-         const attributesMap: Array<string> = Object.keys(ListofColumns)
+
+         //Removed Because of Performance issues 
+        // Getting the list of columns 
+        // const ListofColumns = await Transaction.describe()
+        //convert the list of columns to array 
+        // const attributesMap: Array<string> = Object.keys(ListofColumns)
+        
         const transaction: Transaction | null = await Transaction.findByPk(
             uuid,
             {
                 //add the transform disco to biller so it can be used in the frontend and for the partner 
                 attributes:[
                     ['disco', 'biller'],
-                    ...attributesMap
+                    'id',
+                    'amount',
+                    'status',
+                    'paymentType',
+                    'transactionTimestamp',
+                    'disco',
+                    'bankRefId',
+                    'bankComment',
+                    'superagent',
+                    'reference',
+                    'productType',
+                    'productCodeId',
+                    'irechargeAccessToken',
+                    'vendorReferenceId',
+                    'networkProvider',
+                    'previousVendors',
+                    'userId',
+                    'transactionType',
+                    'partnerId',
+                    'powerUnitId',
+                    'meterId',
+                    'createdAt',
+                    'updatedAt',
+                    //...attributesMap
                 ],
                 include: [PowerUnit, Event, Partner, User, Meter],
             },
