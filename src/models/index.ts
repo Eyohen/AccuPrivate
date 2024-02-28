@@ -11,10 +11,10 @@ console.log(DB_CONFIG.URL)
 const Database = new Sequelize(DB_CONFIG.URL, {
     logging: false,
     pool: {
-        max: 20,
+        max: 5000,
         min: 0,
         idle: 1000,
-        acquire: 30000,
+        acquire: 60000,
         evict: 10000,
     }
 });
