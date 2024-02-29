@@ -293,7 +293,16 @@ export class DataVendController {
         res.status(200).json({
             message: "Data request sent successfully",
             data: {
-                transaction,
+                // transaction,
+                // removed to allow proper mapping
+                transaction: {
+                    "amount": transaction.dataValues?.amount,
+                    "transactionId" : transaction.dataValues?.id,
+                    "id" : transaction.dataValues?.id,
+                    "productType": transaction.dataValues?.productType,
+                    "transactionTimestamp": transaction.dataValues?.transactionTimestamp,
+                    "networkProvider": transaction.dataValues?.networkProvider
+                }
             },
         });
     }
