@@ -380,7 +380,7 @@ jobs:
             npm install
             
             #Set up restart server 
-            pm2 start server.js --time '
+            pm2 start server.js --time -i max '
           
   # Smoke Test to check if server is up and running 
   smoke-test:
@@ -464,7 +464,7 @@ jobs:
               cd dist
               
               #Set up server 
-              pm2 start server.js --time '
+              pm2 start server.js --time -i max'
             
           fi 
   # Fail stage initiate on successful roll back 
@@ -558,7 +558,7 @@ jobs:
               cd dist
               
               #Set up restart server 
-              pm2 start server.js --time '
+              pm2 start server.js --time -i max'
           else
             echo "Rolled back No Cleanup"
             exit 1
