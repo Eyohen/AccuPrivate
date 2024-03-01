@@ -687,7 +687,22 @@ export default class VendorController {
         if (!successful)
             throw new InternalServerError("An error occured while validating meter", errorMeta);
 
-        const responseData = { status: 'success', message: 'Meter validated successfully', data: { transaction: transaction, meter: meter } }
+        // const responseData = { status: 'success', message: 'Meter validated successfully', data: { transaction: transaction, meter: meter } }
+        // updated to allow proper mapping
+        const responseData = { 
+            status: 'success', 
+            message: 'Meter validated successfully', 
+            data: { 
+                transaction: {
+                    "id": transaction?.id
+                }, 
+                meter: {
+                    "address": meter?.address,
+                    "meterNumber": meter?.meterNumber,
+                    "vendType": meter?.vendType,
+                }
+            } 
+        }
         res.status(200).json(responseData);
 
         Logger.apiRequest.info("Meter validated successfully", { meta: { transactionId: transaction.id, ...responseData } })
@@ -793,13 +808,31 @@ export default class VendorController {
             delete _transaction.events
 
             const tokenHasBeenSentFromVendorConsumer = vendorTokenConsumer.getTokenSentState()
-            if (!tokenHasBeenSentFromVendorConsumer) {
-                const responseData = { status: 'success', message: 'Token purchase initiated successfully', data: { transaction: ResponseTrimmer.trimTransactionResponse(_transaction)}}
+            if (!tokenHasBeenSentFromVendorConsumer && _transaction) {
+                // removed to update endpoint reponse mapping
+                // const responseData = { status: 'success', message: 'Token purchase initiated successfully', data: { transaction: ResponseTrimmer.trimTransactionResponse(_transaction)}}
+                const _product = await ProductService.viewSingleProduct(_transaction.productCodeId || "")
+                const responseData = { 
+                    status: 'success', 
+                    message: 'Token purchase initiated successfully', 
+                    data: { 
+                        transaction: {
+                             disco: _product?.productName,
+                            "amount": _transaction?.amount,
+                            "transactionId" : _transaction?.id,
+                            "id" : _transaction?.id,
+                            "productType": _transaction?.productType,
+                            "transactionTimestamp": _transaction?.transactionTimestamp,
+                        }
+                    }
+                }
                 res.status(200).json(responseData);
 
                 Logger.apiRequest.info('Token purchase initiated successfully', { meta: { transactionId: transaction.id, ...responseData } })
                 return
             }
+
+            // Add Code to send response if token has been gotten from vendor
 
             await transactionEventService.addTokenSentToPartnerEvent();
 
