@@ -56,4 +56,6 @@ export default class ProductService {
         const products = await Product.findAll({ where: query ?? {} });
         return products;
     }
+
+    
 }

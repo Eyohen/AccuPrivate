@@ -56,6 +56,14 @@ export default class VendorProduct extends Model<IVendorProduct | VendorProduct>
     @Column({ type: DataType.STRING, allowNull: false })
     vendorHttpUrl: string;
 
+    // Vendor Bundle Name
+    @Column({ type: DataType.STRING, allowNull: true })
+    bundleName: string;
+
+    // Vendor Bundle Code
+    @Column({ type: DataType.STRING, allowNull: true})
+    bundleCode: string;
+
     @BelongsTo(() => Vendor)
     vendor: Vendor;
 
@@ -92,4 +100,7 @@ export interface IVendorProduct {
     bundleAmount?: number;
     vendorName: string;
     vendorCode: string;
+    bundleName?: string;
+    bundleCode?: string;
+
 }
