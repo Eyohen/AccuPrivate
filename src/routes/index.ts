@@ -43,7 +43,7 @@ router
     .use("/master", masterRoute)
     .use("/syslog", sysLogRoute)
     .use("/discostatus", discoStatusRoute)
-    .use("/waittime", waitTimeRoute);
+    .use("/waittime", waitTimeRoute)
     .use('/mock', MockEndpointRoute)
 
 export default router;
