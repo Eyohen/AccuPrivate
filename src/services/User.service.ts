@@ -14,20 +14,20 @@ export default class UserService {
         // const transactionWasIncludedInQuery = !!_transaction
         // const transaction = _transaction ?? await Database.transaction()
         // Check if a user with the same email exists
-        const existingUser: User | null = await User.findOne({ where: { email: user.email } })
+        const existingUser: User | null = await User.findOne({ where: { email: user.email, phoneNumber: user.phoneNumber } })
         if (existingUser) {
-
-            if (existingUser.phoneNumber !== user.phoneNumber && !existingUser.otherPhoneNumbers?.includes(user.phoneNumber)) {
-                existingUser.otherPhoneNumbers = existingUser.otherPhoneNumbers ? [...existingUser.otherPhoneNumbers, user.phoneNumber] : [user.phoneNumber]
-                await existingUser.save()
-            }
-
+            console.log({ existingUser })
             return existingUser
         }
 
         const newUser: User = User.build(user)
         try {
             await newUser.save()
+            const exitingEntity = await EntityService.viewSingleEntityByEmail(user.email)
+            if (exitingEntity) {
+                return newUser
+            }
+
             const entity = await EntityService.addEntity({
                 email: user.email,
                 userId: newUser.id,
@@ -41,7 +41,7 @@ export default class UserService {
                 phoneNumber: user.phoneNumber,
             })
 
-            const password = await PasswordService.addPassword({
+            await PasswordService.addPassword({
                 id: randomUUID(),
                 entityId: entity.id,
                 password: randomUUID()
@@ -85,9 +85,4 @@ export default class UserService {
     static async updateSingleUser() {
 
     }
-
-
-
-
-
 }

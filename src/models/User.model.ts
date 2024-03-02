@@ -28,9 +28,6 @@ export default class User extends Model<User | IUser> {
     @Column({ type: DataType.STRING, allowNull: false })
     phoneNumber: string;
 
-    @Column({ type: DataType.ARRAY(DataType.STRING), allowNull: true })
-    otherPhoneNumbers: string[];
-
     // Establish a "HasMany" relationship with the Meter model, indicating that a user can have multiple meters
     @HasMany(() => Meter)
     meters: Meter[];
@@ -48,7 +45,6 @@ export interface IUser {
     email: string;          // The user's email address
     name?: string;           // The user's name
     phoneNumber: string;   // The user's phone number
-    otherPhoneNumbers?: string[]; // Other phone numbers for the user
 }
 
 // Define an interface for creating a new User by extending the IUser interface

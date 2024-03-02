@@ -633,10 +633,8 @@ export default class VendorController {
             phoneNumber: phoneNumber,
         });
 
-
         if (!user)
             throw new InternalServerError("An error occured while validating meter", errorMeta);
-
 
         await TransactionService.updateSingleTransaction(transaction.id, { userId: user?.id, irechargeAccessToken: (response as any).access_token, });
         await transactionEventService.addCRMUserConfirmedEvent({ user: userInfo });
