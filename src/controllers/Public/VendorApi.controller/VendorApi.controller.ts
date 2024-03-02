@@ -762,7 +762,7 @@ export default class VendorController {
 
             const tokenHasBeenSentFromVendorConsumer = vendorTokenConsumer.getTokenSentState()
             if (!tokenHasBeenSentFromVendorConsumer) {
-                const responseData = { status: 'success', message: 'Token purchase initiated successfully', data: { transaction: ResponseTrimmer.trimTransactionResponse(_transaction)}}
+                const responseData = { status: 'success', message: 'Token purchase initiated successfully', data: { transaction: ResponseTrimmer.trimTransactionResponse(_transaction) } }
                 res.status(200).json(responseData);
 
                 Logger.apiRequest.info('Token purchase initiated successfully', { meta: { transactionId: transaction.id, ...responseData } })
