@@ -29,6 +29,7 @@ import {
     generateRandomString,
     generateRandonNumbers,
 } from "../../../utils/Helper";
+import ResponseTrimmer from "../../../utils/ResponseTrimmer";
 require("newrelic");
 
 class DataValidator {
@@ -293,7 +294,7 @@ export class DataVendController {
         res.status(200).json({
             message: "Data request sent successfully",
             data: {
-                transaction,
+                transaction: ResponseTrimmer.trimTransactionResponse(transaction.dataValues),
             },
         });
     }

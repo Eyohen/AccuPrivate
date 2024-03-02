@@ -13,10 +13,18 @@ export default class UserService {
     static async addUserIfNotExists(user: IUser, _transaction: SequelizeTransaction | null = null): Promise<User> {
         // const transactionWasIncludedInQuery = !!_transaction
         // const transaction = _transaction ?? await Database.transaction()
-        const existingUser: User | null = await User.findOne({ where: { phoneNumber: user.phoneNumber } })
+        // Check if a user with the same email exists
+        const existingUser: User | null = await User.findOne({ where: { email: user.email } })
         if (existingUser) {
+
+            if (existingUser.phoneNumber !== user.phoneNumber && !existingUser.otherPhoneNumbers?.includes(user.phoneNumber)) {
+                existingUser.otherPhoneNumbers = existingUser.otherPhoneNumbers ? [...existingUser.otherPhoneNumbers, user.phoneNumber] : [user.phoneNumber]
+                await existingUser.save()
+            }
+
             return existingUser
         }
+
         const newUser: User = User.build(user)
         try {
             await newUser.save()

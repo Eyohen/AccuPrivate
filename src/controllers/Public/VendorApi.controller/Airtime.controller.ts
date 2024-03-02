@@ -27,6 +27,7 @@ import VendorService from "../../../services/Vendor.service";
 import VendorProductService from "../../../services/VendorProduct.service";
 import { generateRandomString, generateRandonNumbers } from "../../../utils/Helper";
 import logger from "../../../utils/Logger";
+import ResponseTrimmer from "../../../utils/ResponseTrimmer";
 
 
 class AirtimeValidator {
@@ -126,7 +127,7 @@ export class AirtimeVendController {
         const transactionEventService = new AirtimeTransactionEventService(transaction, superAgent, partnerId, phoneNumber);
         await transactionEventService.addPhoneNumberValidationRequestedEvent()
 
-        AirtimeValidator.validateAirtimeRequest({ phoneNumber, amount, disco });
+        await AirtimeValidator.validateAirtimeRequest({ phoneNumber, amount, disco });
         await transactionEventService.addPhoneNumberValidationRequestedEvent()
 
         const userInfo = {
@@ -382,7 +383,6 @@ export class AirtimeVendController {
     }
 
     // Create vendor products
-
     static async requestAirtime(
         req: Request,
         res: Response,
@@ -439,7 +439,7 @@ export class AirtimeVendController {
 
         res.status(200).json({
             message: "Airtime request sent successfully",
-            data: { transaction: { ...transaction.dataValues, disco: undefined } },
+            data: { transaction: { ...ResponseTrimmer.trimTransactionResponse(transaction.dataValues), disco: undefined } },
         })
     }
 
