@@ -18,6 +18,7 @@ import productCodeRoute from "./ProductCode.routes";
 import masterRoute from "./MasterProduct.routes";
 import sysLogRoute from "./Syslog.routes";
 import waitTimeRoute from "./WaitTime.routes";
+import MockEndpointRoute from './MockEndPoint.route'
 import discoStatusRoute from "./DiscoStatus.routes";
 
 const router = Router();
@@ -43,5 +44,6 @@ router
     .use("/syslog", sysLogRoute)
     .use("/discostatus", discoStatusRoute)
     .use("/waittime", waitTimeRoute);
+    .use('/mock', MockEndpointRoute)
 
 export default router;

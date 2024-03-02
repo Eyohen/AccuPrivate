@@ -429,6 +429,33 @@ resource "aws_instance" "sandbox_db_instance" {
 
   echo "Installation and configuration completed successfully."
 
+  #Creating a new-relic user in the sandbox postgres
+
+  NEWRELIC_DB_PASSWORD=$(grep NEWRELIC_DB_PASSWORD ~/default.env | cut -d '=' -f2) 
+  NEWRELIC_DB_USERNAME=$(grep NEWRELIC_DB_USER_NAME ~/default.env | cut -d '=' -f2)
+
+  psql -c "CREATE USER $NEWRELIC_DB_USERNAME WITH PASSWORD '$NEWRELIC_DB_PASSWORD';"
+  psql -v ON_ERROR_STOP=1  <<-EOSQL 
+    Granting the user SELECT privileges 
+    GRANT SELECT ON pg_stat_database, pg_stat_database_conflicts, pg_stat_bgwriter TO $NEWRELIC_DB_USERNAME;
+  EOSQL
+
+  # Install new_relic postgresql 
+  sudo apt-get install nri-postgresql -y
+
+  cd 
+
+  #pull new relic install from s3 
+  # completed 
+  cd /etc/newrelic-infra/integrations.d
+
+  sudo aws s3 cp  s3://accuvend-bucket-configuration/new_relic_sandbox_db_config/postgresql-config.yml ./postgresql-config.yml
+
+  sudo /usr/bin/newrelic-infra -dry_run -integration_config_path /etc/newrelic-infra/integrations.d/postgresql-config.yml | grep -wo "Integration health check finished with success"
+
+  # setting up logs
+  cd /etc/newrelic-infra/logging.d/
+  sudo aws s3 cp  s3://accuvend-bucket-configuration/new_relic_sandbox_db_config/postgresql-log.yml ./postgresql-log.yml
 
   EOF
 
@@ -460,6 +487,7 @@ resource "aws_lb" "sandbox_load_balancer" {
   security_groups    = [aws_security_group.sandbox_loadbalancer_security_group.id]
   subnets            = [aws_subnet.sandbox_public_subnet_1.id, aws_subnet.sandbox_public_subnet_2.id]
 
+  idle_timeout = 3600
   # enable_deletion_protection = true
 
   # access_logs {
@@ -484,6 +512,19 @@ resource "aws_lb_listener" "sandbox_application_load_balancer_listner_http" {
   load_balancer_arn = aws_lb.sandbox_load_balancer.arn
   port              = "80"
   protocol          = "HTTP"  
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.sandbox_target_group_http.arn
+  }
+}
+
+# Set up HTTPS Listener
+
+resource "aws_lb_listener" "sandbox_application_load_balancer_listner_https" {
+  load_balancer_arn = aws_lb.sandbox_load_balancer.arn
+  port              = "443"
+  protocol          = "HTTPS"  
 
   default_action {
     type             = "forward"
@@ -555,7 +596,7 @@ resource "aws_instance" "sandbox_core_engine_instance" {
   # Get ENV file
   aws s3 cp s3://accuvend-bucket-configuration/.env ./.env
 
-  #GET 
+  #GET DATABASE CREDENTINALS
   DB_USERNAME=$(grep DB_USER_NAME ./.env | cut -d '=' -f2) &&\
   DB_PASSWORD=$(grep DB_PASSWORD ./.env | cut -d '=' -f2) &&\
   DB_NAME=$(grep DB_DB_NAME ./.env | cut -d '=' -f2) &&\
@@ -568,14 +609,13 @@ resource "aws_instance" "sandbox_core_engine_instance" {
 
   #Set up pm2 on server restart
   sudo env PATH=$PATH:/usr/bin /usr/local/lib/node_modules/pm2/bin/pm2 startup systemd -u ubuntu --hp /home/ubuntu
-  pm2 start server.js
+  pm2 start server.js --time
 
   # have to update sudo nano /etc/nginx/sites-available/default
   sudo systemctl restart nginx
 
   # NEW RELIC INTEGRATION
-  curl -Ls https://download.newrelic.com/install/newrelic-cli/scripts/install.sh | bash && sudo NEW_RELIC_API_KEY=NRAK-SR2FLMNTNNDE4ONWZ2THTCG1YSC NEW_RELIC_ACCOUNT_ID=4067659 NEW_RELIC_REGION=EU /usr/local/bin/newrelic install -y
-
+  
   EOF
 
   
@@ -739,4 +779,7 @@ resource "aws_iam_instance_profile" "sandbox_ec2_profile" {
 #   }
 
 
+
 # }
+
+
