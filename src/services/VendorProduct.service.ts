@@ -1,5 +1,5 @@
 // Import necessary types and the models
-import { Transaction, col, fn } from "sequelize";
+import { Op, Transaction, col, fn } from "sequelize";
 import VendorProduct, { IVendorProduct } from "../models/VendorProduct.model";
 import Product from "../models/Product.model";
 import Vendor from "../models/Vendor.model";
@@ -82,11 +82,11 @@ export default class VendorProductService {
     /**
      * Retrieves vendor products based on the specified bundle code.
      * @param {string} bundleCode - The bundle code to filter vendor products.
-     * @returns {Promise<Array<VendorProduct> | Error>} A promise that resolves to an array of VendorProduct objects matching the bundle code, or an Error if an exception occurs.
+     * @returns {Promise<Array<VendorProduct> | Error>} A promise that resolves to an array of VendorProduct objects matching the bundle code, or throws Error if an exception occurs.
      */
     static async getVendorProductsforBundleCode(
         bundleCode: string
-    ): Promise<Array<VendorProduct> | Error> {
+    ): Promise<Array<VendorProduct> | void> {
         try {
             // Find all vendor products matching the specified bundle code
             const vendorProducts: Array<VendorProduct> =
@@ -94,18 +94,18 @@ export default class VendorProductService {
             return vendorProducts;
         } catch (error) {
             // Return the error if an exception occurs during database operation
-            return error as Error;
+            throw error as Error;
         }
     }
 
     /**
      * Retrieves distinct vendor products based on the specified network provider.
      * @param {string} networkProvider - The network provider to filter vendor products.
-     * @returns {Promise<Array<VendorProduct> | Error>} A promise that resolves to an array of distinct VendorProduct objects based on the network provider, or an Error if an exception occurs.
+     * @returns {Promise<Array<VendorProduct> | void>} A promise that resolves to an array of distinct VendorProduct objects based on the network provider, or throws an Error if an exception occurs.
      */
     static async getVendorProductsBasedOnProvider(
         networkProvider: string
-    ): Promise<Array<VendorProduct> | Error> {
+    ): Promise<Array<VendorProduct> | void> {
         try {
             // Find distinct vendor products based on the specified network provider
             const vendorProducts: Array<VendorProduct> =
@@ -121,14 +121,22 @@ export default class VendorProductService {
                         },
                     ],
                     attributes: [
-                        "bundleName",
                         [fn("DISTINCT", col("bundle")), "bundleCode"],
+                        "bundleName",
                     ],
+                    where: {
+                        bundleCode: {
+                            [Op.ne] : null
+                        }, 
+                        bundleName : {
+                            [Op.ne]: null
+                        }
+                    }
                 });
             return vendorProducts;
         } catch (error) {
             // Return the error if an exception occurs during database operation
-            return error as Error;
+            throw error as Error;
         }
     }
 }
