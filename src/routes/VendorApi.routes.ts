@@ -21,6 +21,7 @@ router
     .post('/validate/data/phone', validateApiKey, DataVendController.validateDataRequest)
     .get('/data', validateApiKey, DataVendController.requestData)
     .post('/validate/meter/mock',validateApiKey, VendorController.validateMeterMock)
+    .get('/data/bundles',validateApiKey, DataVendController.getDataBundles )
 
     
 
