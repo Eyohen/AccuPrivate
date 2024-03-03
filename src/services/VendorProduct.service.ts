@@ -127,12 +127,12 @@ export default class VendorProductService {
                     ],
                     where: {
                         bundleCode: {
-                            [Op.ne] : null
+                            [Op.not] : null
                         }, 
-                        bundleName : {
-                            [Op.ne]: null
-                        }
                     },
+                    order: [
+                        ["bundleCode", "ASC"]
+                    ]
                     raw: true
                 });
             return vendorProducts;
