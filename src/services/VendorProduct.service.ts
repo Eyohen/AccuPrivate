@@ -1,5 +1,5 @@
 // Import necessary types and the models
-import { Op, Transaction, col, fn } from "sequelize";
+import { Op, Transaction, col, fn, literal } from "sequelize";
 import VendorProduct, { IVendorProduct } from "../models/VendorProduct.model";
 import Product from "../models/Product.model";
 import Vendor from "../models/Vendor.model";
@@ -121,7 +121,8 @@ export default class VendorProductService {
                         },
                     ],
                     attributes: [
-                        [fn("DISTINCT", col("bundle")), "bundleCode"],
+                        // [fn("DISTINCT", col("bundle")), "bundleCode"],
+                        [literal('DISTINCT "bundleCode" '),"bundleCode"],
                         "bundleName",
                     ],
                     where: {
@@ -131,12 +132,15 @@ export default class VendorProductService {
                         bundleName : {
                             [Op.ne]: null
                         }
-                    }
+                    },
+                    raw: true
                 });
             return vendorProducts;
         } catch (error) {
             // Return the error if an exception occurs during database operation
+            console.log(error)
             throw error as Error;
+            
         }
     }
 }
