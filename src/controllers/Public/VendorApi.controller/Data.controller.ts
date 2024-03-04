@@ -104,7 +104,7 @@ export class DataVendController {
         next: NextFunction
     ) {
         console.log({ VENDOR_URL: VENDOR_URL });
-        const { phoneNumber, email, vendorProductId } = req.body;
+        const { phoneNumber, email,  } = req.body;
         // TODO: Add request type for request authenticated by API keys
         const partnerId = (req as any).key;
 
@@ -125,23 +125,13 @@ export class DataVendController {
             throw new BadRequestError("Invalid product code for data");
         }
 
-        const vendorProduct =
-            await VendorProductService.viewSingleVendorProduct(vendorProductId);
-        if (!vendorProduct) {
-            throw new NotFoundError("Vendor product not found");
+        if (!existingProductCodeForDisco.amount) {
+            throw new BadRequestError("Invalid product code for data");
         }
-
-        const vendor = await vendorProduct.$get("vendor");
-        if (!vendor) {
-            throw new InternalServerError(
-                "Vendor not found for vendor product"
-            );
-        }
-
-        const superAgent = vendor.name as "IRECHARGE" | "BUYPOWERNG" | "BAXI";
+        const superAgent = await TokenHandlerUtil.getBestVendorForPurchase(existingProductCodeForDisco.id, existingProductCodeForDisco.amount);
 
         const reference = generateRandomString(10);
-        const amount = vendorProduct.bundleAmount.toString();
+        const amount = existingProductCodeForDisco.amount.toString();
         const transaction: Transaction =
             await TransactionService.addTransactionWithoutValidatingUserRelationship(
                 {
@@ -155,7 +145,7 @@ export class DataVendController {
                     partnerId: partnerId,
                     transactionType: TransactionType.DATA,
                     productCodeId: existingProductCodeForDisco.id,
-                    previousVendors: [vendor.name],
+                    previousVendors: [superAgent],
                     networkProvider: existingProductCodeForDisco.productName,
                     reference,
                     productType: "DATA",
