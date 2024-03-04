@@ -15,40 +15,40 @@ export default class UserService {
     ): Promise<User> {
         // const transactionWasIncludedInQuery = !!_transaction
         // const transaction = _transaction ?? await Database.transaction()
-        const existingUser: User | null = await User.findOne({
-            where: { phoneNumber: user.phoneNumber },
-        });
+        // Check if a user with the same email exists
+        const existingUser: User | null = await User.findOne({ where: { email: user.email, phoneNumber: user.phoneNumber } })
         if (existingUser) {
-            return existingUser;
+            console.log({ existingUser })
+            return existingUser
         }
-        const newUser: User = User.build(user);
-        try {
-            await newUser.save();
-            //checking if the entity exist already
-            const existingEntity: Entity | null = await Entity.findOne({
-                where: { email: user.email },
-            });
-            if (!existingEntity) {
-                const entity = await EntityService.addEntity({
-                    email: user.email,
-                    userId: newUser.id,
-                    id: randomUUID(),
-                    role: RoleEnum.EndUser,
-                    status: {
-                        emailVerified: true,
-                        activated: true,
-                    },
-                    requireOTPOnLogin: true,
-                    phoneNumber: user.phoneNumber,
-                });
 
-                const password = await PasswordService.addPassword({
-                    id: randomUUID(),
-                    entityId: entity.id,
-                    password: randomUUID(),
-                });
+        const newUser: User = User.build(user)
+        try {
+            await newUser.save()
+            const exitingEntity = await EntityService.viewSingleEntityByEmail(user.email)
+            if (exitingEntity) {
+                return newUser
             }
-            // !transactionWasIncludedInQuery && await transaction.commit()
+
+            const entity = await EntityService.addEntity({
+                email: user.email,
+                userId: newUser.id,
+                id: randomUUID(),
+                role: RoleEnum.EndUser,
+                status: {
+                    emailVerified: true,
+                    activated: true,
+                },
+                requireOTPOnLogin: true,
+                phoneNumber: user.phoneNumber,
+            })
+
+            await PasswordService.addPassword({
+                id: randomUUID(),
+                entityId: entity.id,
+                password: randomUUID()
+            })
+
             return newUser;
         } catch (er) {
             // if (!transactionWasIncludedInQuery) await transaction.rollback()
