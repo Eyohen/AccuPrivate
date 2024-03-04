@@ -15,17 +15,21 @@ import {
     PublisherEventAndParameters,
     Registry,
     TransactionErrorCause,
+    VendorRetryRecord,
 } from "../util/Interface";
 import MessageProcessor from "../util/MessageProcessor";
 import { v4 as uuidv4 } from "uuid";
 import EventService from "../../../services/Event.service";
 import VendorService, { DataPurchaseResponse, Prettify, SuccessResponseForBuyPowerRequery, Vendor } from "../../../services/VendorApi.service";
-import { generateRandomToken } from "../../../utils/Helper";
+import { generateRandomString, generateRandomToken, generateRandonNumbers } from "../../../utils/Helper";
 import BuypowerApi from "../../../services/VendorApi.service/Buypower";
 import { IRechargeApi } from "../../../services/VendorApi.service/Irecharge";
 import ProductService from "../../../services/Product.service";
 import { VendorProductSchemaData } from "../../../models/VendorProduct.model";
 import { CustomError } from "../../../utils/Errors";
+import VendorProductService from "../../../services/VendorProduct.service";
+import { getCurrentWaitTimeForSwitchEvent } from "./Token";
+import VendorModelService from "../../../services/Vendor.service";
 
 interface EventMessage {
     phone: {
@@ -46,6 +50,7 @@ interface TriggerRequeryTransactionTokenProps {
     transactionTimedOutFromBuypower: boolean;
     superAgent: Transaction['superagent'];
     retryCount: number;
+    vendorRetryRecord: VendorRetryRecord;
 }
 
 interface TokenPurchaseData<T = Vendor> {
@@ -88,7 +93,8 @@ export class TokenHandlerUtil {
         eventData,
         transactionTimedOutFromBuypower,
         retryCount,
-        superAgent
+        superAgent,
+        vendorRetryRecord
     }: TriggerRequeryTransactionTokenProps) {
         // Check if the transaction has hit the requery limit
         // If yes, flag transaction
@@ -133,6 +139,7 @@ export class TokenHandlerUtil {
             timeStamp: new Date(),
             retryCount,
             superAgent,
+            vendorRetryRecord,
             waitTime: getCurrentWaitTimeForRequeryEvent(retryCount)
         };
 
@@ -159,31 +166,101 @@ export class TokenHandlerUtil {
     static async triggerEventToRetryTransactionWithNewVendor(
         {
             transaction, transactionEventService, phone,
+            vendorRetryRecord
         }: {
             transaction: Transaction,
             transactionEventService: DataTransactionEventService,
             phone: { phoneNumber: string, amount: number },
+            vendorRetryRecord: VendorRetryRecord
         }
     ) {
-        // Attempt purchase from new vendor
-        if (!transaction.bankRefId) throw new CustomError('BankRefId not found')
+        let waitTime = await getCurrentWaitTimeForSwitchEvent(vendorRetryRecord.retryCount)
 
-        const newVendor = await TokenHandlerUtil.getNextBestVendorForVendRePurchase({
-            productCodeId: transaction.productCodeId,
-            currentVendor: transaction.superagent,
-            previousVendors: transaction.previousVendors,
-            amount: parseFloat(transaction.amount),
-        })
+        const meta = {
+            transactionId: transaction.id,
+        }
+
+        // Attempt purchase from new vendor
+        if (!transaction.bankRefId) throw new CustomError('BankRefId not found', meta)
+
+        const retryRecord = transaction.retryRecord
+
+        // Make sure to use the same vendor thrice before switching to another vendor
+        let currentVendor = retryRecord[retryRecord.length - 1]
+        console.log({ currentVendor, retryRecord })
+        let useCurrentVendor = false
+        if (currentVendor.vendor === transaction.superagent) {
+            if (currentVendor.retryCount < 3) {
+                // Update the retry record in the transaction
+                // Get the last record where this vendor was used
+                const lastRecord = retryRecord[retryRecord.length - 1]
+                lastRecord.retryCount = lastRecord.retryCount + 1
+
+                // Update the transaction
+                await TransactionService.updateSingleTransaction(transaction.id, { retryRecord })
+
+                useCurrentVendor = true
+                logger.info('Using current vendor', meta)
+            }
+
+            // Check for the reference used in the last retry record
+            retryRecord[retryRecord.length - 1].reference.push(currentVendor.vendor === 'IRECHARGE' ? generateRandonNumbers(12) : generateRandomString(12))
+        } else {
+            logger.warn('Switching to new vendor', meta)
+            // Add new record to the retry record
+        }
+
+        const newVendor = useCurrentVendor ? currentVendor.vendor : await TokenHandlerUtil.getNextBestVendorForVendRePurchase(transaction.productCodeId, transaction.superagent, transaction.previousVendors, parseFloat(transaction.amount))
+        if (newVendor != currentVendor.vendor || currentVendor.retryCount > 2) {
+            // Add new record to the retry record
+            currentVendor = {
+                vendor: newVendor,
+                retryCount: 1,
+                reference: [currentVendor.reference[currentVendor.reference.length - 1]],
+                attempt: 1
+            }
+            retryRecord.push(currentVendor)
+            waitTime = await getCurrentWaitTimeForSwitchEvent(currentVendor.retryCount)
+        }
+
         await transactionEventService.addDataPurchaseWithNewVendorEvent({ currentVendor: transaction.superagent, newVendor })
 
         const user = await transaction.$get('user')
-        if (!user) throw new CustomError('User not found for transaction')
+        if (!user) throw new CustomError('User not found for transaction', meta)
 
         const partner = await transaction.$get('partner')
-        if (!partner) throw new CustomError('Partner not found for transaction')
+        if (!partner) throw new CustomError('Partner not found for transaction', meta)
 
         retry.count = 0
-        await transaction.update({ previousVendors: [...transaction.previousVendors, newVendor] })
+
+        const newTransactionReference = retryRecord[retryRecord.length - 1].reference[retryRecord[retryRecord.length - 1].reference.length - 1]
+
+        if (newVendor === 'IRECHARGE') {
+            const irechargeVendor = await VendorModelService.viewSingleVendorByName('IRECHARGE')
+            if (!irechargeVendor) {
+                throw new CustomError('Irecharge vendor not found')
+            }
+        }
+
+        async function countDownTimer(time: number) {
+            for (let i = time; i > 0; i--) {
+                setTimeout(() => {
+                    logger.warn(`Reinitating transaction with vendor in ${i} seconds`, {
+                        meta: { transactionId: transaction.id }
+                    })
+                }, (time - i) * 1000)
+            }
+        }
+        countDownTimer(waitTime);
+
+        await TransactionService.updateSingleTransaction(transaction.id, {
+            superagent: newVendor,
+            retryRecord,
+            vendorReferenceId: newTransactionReference,
+            reference: newTransactionReference,
+            previousVendors: [...transaction.previousVendors, newVendor],
+        })
+
 
         return await VendorPublisher.publishEventForDataPurchaseRetryFromVendorWithNewVendor({
             partner: partner,
@@ -234,10 +311,124 @@ export class TokenHandlerUtil {
         }
     }
 
-    static async getNextBestVendorForVendRePurchase({
-        productCodeId, currentVendor, previousVendors = [], amount
-    }: { productCodeId: NonNullable<Transaction['productCodeId']>, currentVendor: Transaction['superagent'], previousVendors: Transaction['previousVendors'], amount: number }): Promise<Transaction['superagent']> {
-        return currentVendor
+    static async getNextBestVendorForVendRePurchase(productCodeId: NonNullable<Transaction['productCodeId']>, currentVendor: Transaction['superagent'], previousVendors: Transaction['previousVendors'] = [], amount: number): Promise<Transaction['superagent']> {
+        const product = await ProductService.viewSingleProduct(productCodeId)
+        if (!product) throw new CustomError('Product code not found')
+
+        const vendorProducts = await product.$get('vendorProducts')
+        // Populate all te vendors
+        const vendors = await Promise.all(vendorProducts.map(async vendorProduct => {
+            const vendor = await vendorProduct.$get('vendor')
+            if (!vendor) throw new CustomError('Vendor not found')
+            vendorProduct.vendor = vendor
+            return vendor
+        }))
+
+        // Check other vendors, sort them according to their commission rates
+        // If the current vendor is the vendor with the highest commission rate, then switch to the vendor with the next highest commission rate
+        // If the next vendor has been used before, switch to the next vendor with the next highest commission rate
+        // If all the vendors have been used before, switch to the vendor with the highest commission rate
+
+        const sortedVendorProductsAccordingToCommissionRate = vendorProducts.sort((a, b) => ((b.commission * amount) + b.bonus) - ((a.commission * amount) + a.bonus))
+        const vendorRates = sortedVendorProductsAccordingToCommissionRate.map(vendorProduct => {
+            const vendor = vendorProduct.vendor
+            if (!vendor) throw new CustomError('Vendor not found')
+
+            return {
+                vendorName: vendor.name,
+                commission: vendorProduct.commission,
+                bonus: vendorProduct.bonus
+            }
+        })
+
+        const sortedOtherVendors = vendorRates.filter(vendorRate => vendorRate.vendorName !== currentVendor)
+
+        nextBestVendor: for (const vendorRate of sortedOtherVendors) {
+            if (!previousVendors.includes(vendorRate.vendorName)) {
+                console.log({ currentVendor, newVendor: vendorRate.vendorName })
+
+                return vendorRate.vendorName as Transaction['superagent']
+            }
+        }
+
+        if (previousVendors.length === vendors.length) {
+            // If all vendors have been used before, switch to the vendor with the highest commission rate
+            return vendorRates.sort((a, b) => ((b.commission * amount) + b.bonus) - ((a.commission * amount) + a.bonus))[0].vendorName as Transaction['superagent']
+        }
+
+        // If the current vendor is the vendor with the highest commission rate, then switch to the vendor with the next highest commission rate
+
+        console.log({ currentVendor, newVendor: sortedOtherVendors[0].vendorName })
+
+        return sortedOtherVendors[0].vendorName as Transaction['superagent']
+    }
+
+    static async getSortedVendorsAccordingToCommissionRate(productCodeId: NonNullable<Transaction['productCodeId']>, amount: number): Promise<Transaction['superagent'][]> {
+        const product = await ProductService.viewSingleProduct(productCodeId)
+        if (!product) throw new CustomError('Product code not found')
+
+        const vendorProducts = await product.$get('vendorProducts')
+        // Populate all te vendors
+        const vendors = await Promise.all(vendorProducts.map(async vendorProduct => {
+            const vendor = await vendorProduct.$get('vendor')
+            if (!vendor) throw new CustomError('Vendor not found')
+            vendorProduct.vendor = vendor
+            return vendor
+        }))
+
+        // Check other vendors, sort them according to their commission rates
+        // If the current vendor is the vendor with the highest commission rate, then switch to the vendor with the next highest commission rate
+        // If the next vendor has been used before, switch to the next vendor with the next highest commission rate
+        // If all the vendors have been used before, switch to the vendor with the highest commission rate
+
+        const sortedVendorProductsAccordingToCommissionRate = vendorProducts.sort((a, b) => ((b.commission * amount) + b.bonus) - ((a.commission * amount) + a.bonus))
+        const vendorRates = sortedVendorProductsAccordingToCommissionRate.map(vendorProduct => {
+            const vendor = vendorProduct.vendor
+            if (!vendor) throw new CustomError('Vendor not found')
+            return {
+                vendorName: vendor.name,
+                commission: vendorProduct.commission,
+                bonus: vendorProduct.bonus
+            }
+        })
+
+        return vendorRates.map(vendorRate => vendorRate.vendorName as Transaction['superagent'])
+    }
+
+    static async getBestVendorForPurchase(productCodeId: NonNullable<Transaction['productCodeId']>, amount: number): Promise<Transaction['superagent']> {
+        const product = await ProductService.viewSingleProduct(productCodeId)
+        if (!product) throw new CustomError('Product code not found')
+
+        const vendorProducts = await product.$get('vendorProducts')
+        // Populate all te vendors
+        const vendors = await Promise.all(vendorProducts.map(async vendorProduct => {
+            const vendor = await vendorProduct.$get('vendor')
+            if (!vendor) throw new CustomError('Vendor not found')
+            vendorProduct.vendor = vendor
+            return vendor
+        }))
+
+        logger.info('Getting best vendor for purchase')
+        // Check other vendors, sort them according to their commission rates
+        // If the current vendor is the vendor with the highest commission rate, then switch to the vendor with the next highest commission rate
+        // If the next vendor has been used before, switch to the next vendor with the next highest commission rate
+        // If all the vendors have been used before, switch to the vendor with the highest commission rate
+
+        const sortedVendorProductsAccordingToCommissionRate = vendorProducts.sort((a, b) => ((b.commission * amount) + b.bonus) - ((a.commission * amount) + a.bonus))
+
+        const vendorRates = sortedVendorProductsAccordingToCommissionRate.map(vendorProduct => {
+            const vendor = vendorProduct.vendor
+            if (!vendor) throw new CustomError('Vendor not found')
+            return {
+                vendorName: vendor.name,
+                commission: vendorProduct.commission,
+                bonus: vendorProduct.bonus,
+                value: (vendorProduct.commission * amount) + vendorProduct.bonus
+            }
+        })
+
+        console.log({ vendorRates })
+        return vendorRates[0].vendorName as Transaction['superagent']
     }
 }
 
