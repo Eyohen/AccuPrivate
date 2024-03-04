@@ -129,10 +129,13 @@ export default class VendorProductService {
                         bundleCode: {
                             [Op.not] : null
                         }, 
+                        bundleName : {
+                            [Op.not]: null
+                        }
                     },
                     order: [
                         ["bundleCode", "ASC"]
-                    ]
+                    ],
                     raw: true
                 });
             return vendorProducts;
