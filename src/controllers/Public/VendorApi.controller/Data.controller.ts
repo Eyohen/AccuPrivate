@@ -85,7 +85,7 @@ class DataValidator {
     }) {
         if (!transactionId || !bankRefId || !bankComment) {
             throw new BadRequestError(
-                "Transaction ID, bank reference ID, and bank comment are required",
+                "Transaction ID, bank reference ID, and bank comment are required"
             );
         }
 
@@ -101,7 +101,7 @@ export class DataVendController {
     static async validateDataRequest(
         req: Request,
         res: Response,
-        next: NextFunction,
+        next: NextFunction
     ) {
         console.log({ VENDOR_URL: VENDOR_URL });
         const { phoneNumber, email, vendorProductId } = req.body;
@@ -113,7 +113,7 @@ export class DataVendController {
         const existingProductCodeForDisco =
             await ProductService.viewSingleProductByNameAndCategory(
                 disco,
-                "DATA",
+                "DATA"
             );
         if (!existingProductCodeForDisco) {
             throw new NotFoundError("Product code not found for disco");
@@ -134,7 +134,7 @@ export class DataVendController {
         const vendor = await vendorProduct.$get("vendor");
         if (!vendor) {
             throw new InternalServerError(
-                "Vendor not found for vendor product",
+                "Vendor not found for vendor product"
             );
         }
 
@@ -164,14 +164,14 @@ export class DataVendController {
                             ? generateRandonNumbers(12)
                             : reference,
                     retryRecord: [],
-                },
+                }
             );
 
         const transactionEventService = new DataTransactionEventService(
             transaction,
             superAgent,
             partnerId,
-            phoneNumber,
+            phoneNumber
         );
         await transactionEventService.addPhoneNumberValidationRequestedEvent();
 
@@ -200,12 +200,12 @@ export class DataVendController {
                     email: email,
                     phoneNumber: phoneNumber,
                 },
-                sequelizeTransaction,
+                sequelizeTransaction
             );
 
             await transaction.update(
                 { userId: user.id },
-                { transaction: sequelizeTransaction },
+                { transaction: sequelizeTransaction }
             );
             await sequelizeTransaction.commit();
         } catch (error) {
@@ -239,14 +239,14 @@ export class DataVendController {
         const user = await transaction.$get("user");
         if (!user) {
             throw new InternalServerError(
-                "User record not found for already validated request",
+                "User record not found for already validated request"
             );
         }
 
         const partner = await transaction.$get("partner");
         if (!partner) {
             throw new InternalServerError(
-                "Partner record not found for already validated request",
+                "Partner record not found for already validated request"
             );
         }
 
@@ -258,7 +258,7 @@ export class DataVendController {
         // Check if reference has been used before
         const existingTransaction: Transaction | null =
             await TransactionService.viewSingleTransactionByBankRefID(
-                bankRefId,
+                bankRefId
             );
         if (existingTransaction) {
             throw new BadRequestError("Duplicate reference");
@@ -268,7 +268,7 @@ export class DataVendController {
             transaction,
             transaction.superagent,
             transaction.partnerId,
-            user.phoneNumber,
+            user.phoneNumber
         );
         await transactionEventService.addDataPurchaseInitiatedEvent({
             amount: transaction.amount,
@@ -294,7 +294,17 @@ export class DataVendController {
         res.status(200).json({
             message: "Data request sent successfully",
             data: {
-                transaction: ResponseTrimmer.trimTransactionResponse(transaction.dataValues),
+                // transaction,
+                // removed to allow proper mapping
+                transaction: {
+                    amount: transaction.dataValues?.amount,
+                    transactionId: transaction.dataValues?.id,
+                    id: transaction.dataValues?.id,
+                    productType: transaction.dataValues?.productType,
+                    transactionTimestamp:
+                        transaction.dataValues?.transactionTimestamp,
+                    networkProvider: transaction.dataValues?.networkProvider,
+                },
             },
         });
     }
@@ -302,7 +312,7 @@ export class DataVendController {
     static async confirmPayment(
         req: Request,
         res: Response,
-        next: NextFunction,
+        next: NextFunction
     ) {
         const { transactionId, bankRefId, bankComment } = req.body;
 
@@ -315,14 +325,14 @@ export class DataVendController {
         const user = await transaction.$get("user");
         if (!user) {
             throw new InternalServerError(
-                "User record not found for already validated request",
+                "User record not found for already validated request"
             );
         }
 
         const partner = await transaction.$get("partner");
         if (!partner) {
             throw new InternalServerError(
-                "Partner record not found for already validated request",
+                "Partner record not found for already validated request"
             );
         }
 
@@ -330,7 +340,7 @@ export class DataVendController {
             transaction,
             transaction.superagent,
             transaction.partnerId,
-            user.phoneNumber,
+            user.phoneNumber
         );
         await transactionEventService.addDataPurchaseConfirmedEvent();
 
@@ -361,5 +371,38 @@ export class DataVendController {
             },
         });
     }
-}
 
+    /**
+     * Retrieves data bundles based on the specified network provider.
+     * @param {Request} req - The request object containing query parameters.
+     * @param {Response} res - The response object used to send HTTP responses.
+     * @param {NextFunction} next - The next function in the middleware chain.
+     * @returns {Promise<void>} A promise that resolves when the data bundles are successfully retrieved and sent as a JSON response. Throws a 500 error if there's a server failure.
+     */
+    static async getDataBundles(
+        req: Request,
+        res: Response,
+        next: NextFunction
+    ): Promise<void> {
+        const { networkProvider } = req.query as Record<string, string>;
+
+        try {
+            // Retrieve data bundles based on the specified network provider
+            const dataBundles =
+                await VendorProductService.getVendorProductsBasedOnProvider(
+                    networkProvider
+                );
+            // Send a successful response with the retrieved data bundles
+            res.status(200).json({
+                status: "success",
+                message: "Data successfully retrieved",
+                data: dataBundles,
+            });
+        } catch (error) {
+            // Send a 500 error response if there's a server failure
+            res.status(500).json({
+                message: "Server Failure",
+            });
+        }
+    }
+}

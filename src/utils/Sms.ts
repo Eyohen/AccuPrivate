@@ -18,7 +18,8 @@ export class SmsService {
             const result = await client.post("", {
                 username: AFRICASTALKING_USERNAME,
                 to: to,
-                message: message
+                message: message,
+                from: "32345"
             })
             console.log(result)
             return result;

@@ -13,7 +13,7 @@ import PowerUnit from "../models/PowerUnit.model";
 import Partner from "../models/Entity/Profiles/PartnerProfile.model";
 import User from "../models/User.model";
 import Meter from "../models/Meter.model";
-import { Op } from "sequelize";
+import { Op, literal } from "sequelize";
 import { generateRandomString } from "../utils/Helper";
 import { Sequelize } from "sequelize-typescript";
 
@@ -72,10 +72,44 @@ export default class TransactionService {
     ): Promise<Transaction[]> {
         // Retrieve all transactions from the database
         // Sort from latest
+
+        //Removed Because of Performance issues 
+        // Getting the list of columns 
+        // const ListofColumns = await Transaction.describe()
+        //convert the list of columns to array 
+        // const attributesMap: Array<string> = Object.keys(ListofColumns)
         const transactions: Transaction[] = (
             await Transaction.findAll({
                 ...query,
                 include: [PowerUnit, Event, Partner, User, Meter],
+                //add the transform disco to biller so it can be used in the frontend and for the partner 
+                attributes:[
+                    ['disco', 'biller'],
+                    'id',
+                    'amount',
+                    'status',
+                    'paymentType',
+                    'transactionTimestamp',
+                    'disco',
+                    'bankRefId',
+                    'bankComment',
+                    'superagent',
+                    'reference',
+                    'productType',
+                    'productCodeId',
+                    'irechargeAccessToken',
+                    'vendorReferenceId',
+                    'networkProvider',
+                    'previousVendors',
+                    'userId',
+                    'transactionType',
+                    'partnerId',
+                    'powerUnitId',
+                    'meterId',
+                    'createdAt',
+                    'updatedAt',
+                    //...attributesMap
+                ],
                 order: [["transactionTimestamp", "DESC"]],
             })
         ).sort((a, b) => {
@@ -85,13 +119,29 @@ export default class TransactionService {
             );
         });
         return transactions;
+
+        /**PREVIOUS UTILIZIED CODE */
+        //  // Retrieve all transactions from the database
+        // // Sort from latest
+        // const transactions: Transaction[] = (
+        //     await Transaction.findAll({
+        //         ...query,
+        //         include: [PowerUnit, Event, Partner, User, Meter],
+        //         order: [["transactionTimestamp", "DESC"]],
+        //     })
+        // ).sort((a, b) => {
+        //     return (
+        //         b.transactionTimestamp.getTime() -
+        //         a.transactionTimestamp.getTime()
+        //     );
+        // });
+        // return transactions;
     }
 
     static async viewTransactionsCountWithCustomQuery(
         query: Record<string, any>,
     ): Promise<number> {
-        // Retrieve all transactions from the database
-        // Sort from latest
+        // Counting transactions from the database
         const transactionCount: number = await Transaction.count({
             ...query,
         });
@@ -101,8 +151,8 @@ export default class TransactionService {
     static async viewTransactionsAmountWithCustomQuery(
         query: Record<string, any>,
     ): Promise<number> {
-        // Retrieve all transactions from the database
-        // Sort from latest
+        // Summing the total amount of transactions from the database
+
         const transactionCount: any = await Transaction.findAll({
             ...query,
 
@@ -115,7 +165,6 @@ export default class TransactionService {
                     "total_amount",
                 ],
             ],
-            order: [["transactionTimestamp", "DESC"]],
         });
         return transactionCount;
     }
@@ -125,13 +174,56 @@ export default class TransactionService {
         uuid: string,
     ): Promise<Transaction | null> {
         // Retrieve a single transaction by its UUID
+
+         //Removed Because of Performance issues 
+        // Getting the list of columns 
+        // const ListofColumns = await Transaction.describe()
+        //convert the list of columns to array 
+        // const attributesMap: Array<string> = Object.keys(ListofColumns)
+        
         const transaction: Transaction | null = await Transaction.findByPk(
             uuid,
             {
+                //add the transform disco to biller so it can be used in the frontend and for the partner 
+                attributes:[
+                    ['disco', 'biller'],
+                    'id',
+                    'amount',
+                    'status',
+                    'paymentType',
+                    'transactionTimestamp',
+                    'disco',
+                    'bankRefId',
+                    'bankComment',
+                    'superagent',
+                    'reference',
+                    'productType',
+                    'productCodeId',
+                    'irechargeAccessToken',
+                    'vendorReferenceId',
+                    'networkProvider',
+                    'previousVendors',
+                    'userId',
+                    'transactionType',
+                    'partnerId',
+                    'powerUnitId',
+                    'meterId',
+                    'createdAt',
+                    'updatedAt',
+                    //...attributesMap
+                ],
                 include: [PowerUnit, Event, Partner, User, Meter],
             },
         );
         return transaction;
+         /**PREVIOUS UTILIZIED CODE */
+        // const transaction: Transaction | null = await Transaction.findByPk(
+        //     uuid,
+        //     {
+        //         include: [PowerUnit, Event, Partner, User, Meter],
+        //     },
+        // );
+        // return transaction;
     }
 
     static async viewSingleTransactionByBankRefID(

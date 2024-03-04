@@ -439,7 +439,19 @@ export class AirtimeVendController {
 
         res.status(200).json({
             message: "Airtime request sent successfully",
-            data: { transaction: { ...ResponseTrimmer.trimTransactionResponse(transaction.dataValues), disco: undefined } },
+            data: {
+                transaction: {
+                    // ...transaction.dataValues, 
+                    // removed to add proper mapping
+                    "amount": transaction.dataValues?.amount,
+                    "transactionId": transaction.dataValues?.id,
+                    "id": transaction.dataValues?.id,
+                    "productType": transaction.dataValues?.productType,
+                    "transactionTimestamp": transaction.dataValues?.transactionTimestamp,
+                    "networkProvider": transaction.dataValues?.networkProvider,
+                    // disco: undefined 
+                }
+            },
         })
     }
 

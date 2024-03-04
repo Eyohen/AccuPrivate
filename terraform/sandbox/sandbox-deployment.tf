@@ -130,6 +130,26 @@ resource "aws_subnet" "sandbox_public_subnet_3" {
   }
 }
 
+resource "aws_subnet" "sandbox_private_subnet_2" {
+  vpc_id            = aws_vpc.sand_box_vpc.id
+  cidr_block        = "10.0.4.0/24"
+  availability_zone = "eu-west-2b"
+
+  tags = {
+    Name = "Sand Box Private Subnet 2"
+  }
+}
+
+resource "aws_subnet" "sandbox_private_subnet_1" {
+  vpc_id            = aws_vpc.sand_box_vpc.id
+  cidr_block        = "10.0.5.0/24"
+  availability_zone = "eu-west-2a"
+
+  tags = {
+    Name = "Sand Box Private Subnet 1"
+  }
+}
+
 resource "aws_internet_gateway" "sandbox_internetgateway" {
   vpc_id = aws_vpc.sand_box_vpc.id
 
@@ -322,6 +342,64 @@ resource "aws_security_group" "sandbox_core_engine_security_group" {
   }
 }
 
+
+# NAT GAte way and private route tables 
+
+resource "aws_eip" "natgateW1_eip" {
+  domain = "vpc"
+  tags ={
+    Name: "Sandbox natgateway elastic ip 1"
+  }
+}
+
+resource "aws_nat_gateway" "sandbox_natgateway1" {
+  allocation_id = aws_eip.natgateW1_eip.allocation_id
+  subnet_id = aws_subnet.sandbox_public_subnet_1.id
+  tags ={
+    Name: "sandbox-Natgateway-1"
+  }
+
+  depends_on = [ aws_internet_gateway.sandbox_internetgateway ]
+}
+
+# Private route tables
+resource "aws_route_table" "sandbox_private_route_table1" {
+  vpc_id = aws_vpc.sand_box_vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+   nat_gateway_id = aws_nat_gateway.sandbox_natgateway1.id
+  }
+
+  # route {
+  #   ipv6_cidr_block = "::/0"
+  #   nat_gateway_id     = aws_nat_gateway.production_natgateway1.id
+  # }
+
+  # route {
+  #   cidr_block = "10.0.0.0/16"
+  #   gateway_id = "local"
+  # }
+
+  # route {
+  #   ipv6_cidr_block = "2001:db8:1234:1a00::/56"
+  #   gateway_id = "local"
+  # }
+
+ 
+
+  tags = {
+    Name = "Sandbox Private Route Table 1"
+  }
+}
+
+# Private route assocation tables 
+
+resource "aws_route_table_association" "production_route_private_route_1_table_assoc" {
+  subnet_id      = aws_subnet.sandbox_private_subnet_1.id
+  route_table_id = aws_route_table.sandbox_private_route_table1.id
+}
+
 # resource "aws_security_group" "sandbox_kafka_security_group" {
 #   name   = "Kafka Sandbox SG"
 #   vpc_id = aws_vpc.sand_box_vpc.id
@@ -364,7 +442,7 @@ resource "aws_instance" "sandbox_db_instance" {
   instance_type = var.instance_type
   key_name      = var.instance_keypair
 
-  subnet_id                   = aws_subnet.sandbox_public_subnet_1.id
+  subnet_id                   = aws_subnet.sandbox_private_subnet_1.id
   vpc_security_group_ids      = [aws_security_group.sandbox_db_security_group.id]
   associate_public_ip_address = true
   iam_instance_profile = aws_iam_instance_profile.sandbox_ec2_profile.name
@@ -388,7 +466,6 @@ resource "aws_instance" "sandbox_db_instance" {
   sudo sh -c "echo \"listen_addresses = '*'\" >> /etc/postgresql/14/main/postgresql.conf"
 
   # 2.2 update pg_hba.conf
-  sudo sh -c 'echo "host all all 0.0.0.0/0 trust" >> /etc/postgresql/14/main/pg_hba.conf'
   sudo sh -c 'echo "host    all             all             0.0.0.0/0            md5" >> /etc/postgresql/14/main/pg_hba.conf'
 
 
@@ -409,10 +486,12 @@ resource "aws_instance" "sandbox_db_instance" {
 
   # Create PostgreSQL user and database
   psql -c "CREATE USER $DB_USERNAME WITH PASSWORD '$DB_PASSWORD';"
-  psql -v ON_ERROR_STOP=1  <<-EOSQL
-      CREATE DATABASE "$DB_NAME"
-      WITH OWNER = "$DB_USERNAME";
-  EOSQL
+  psql -c "CREATE DATABASE $DB_NAME WITH OWNER = '$DB_USERNAME'";
+  # psql -v ON_ERROR_STOP=1  
+  # <<-EOSQL
+  #     CREATE DATABASE "$DB_NAME"
+  #     WITH OWNER = "$DB_USERNAME";
+  # EOSQL
   
 
   # # Restart PostgreSQL for changes to take effect
@@ -435,10 +514,11 @@ resource "aws_instance" "sandbox_db_instance" {
   NEWRELIC_DB_USERNAME=$(grep NEWRELIC_DB_USER_NAME ~/default.env | cut -d '=' -f2)
 
   psql -c "CREATE USER $NEWRELIC_DB_USERNAME WITH PASSWORD '$NEWRELIC_DB_PASSWORD';"
-  psql -v ON_ERROR_STOP=1  <<-EOSQL 
-    Granting the user SELECT privileges 
-    GRANT SELECT ON pg_stat_database, pg_stat_database_conflicts, pg_stat_bgwriter TO $NEWRELIC_DB_USERNAME;
-  EOSQL
+  psql -c "Granting the user SELECT privileges GRANT SELECT ON pg_stat_database, pg_stat_database_conflicts, pg_stat_bgwriter TO $NEWRELIC_DB_USERNAME;"
+  # psql -v ON_ERROR_STOP=1  <<-EOSQL 
+  #   Granting the user SELECT privileges 
+  #   GRANT SELECT ON pg_stat_database, pg_stat_database_conflicts, pg_stat_bgwriter TO $NEWRELIC_DB_USERNAME;
+  # EOSQL
 
   # Install new_relic postgresql 
   sudo apt-get install nri-postgresql -y
