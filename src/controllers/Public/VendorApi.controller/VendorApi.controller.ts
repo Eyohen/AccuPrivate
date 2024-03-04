@@ -633,10 +633,8 @@ export default class VendorController {
             phoneNumber: phoneNumber,
         });
 
-
         if (!user)
             throw new InternalServerError("An error occured while validating meter", errorMeta);
-
 
         await TransactionService.updateSingleTransaction(transaction.id, { userId: user?.id, irechargeAccessToken: (response as any).access_token, });
         await transactionEventService.addCRMUserConfirmedEvent({ user: userInfo });
@@ -720,7 +718,6 @@ export default class VendorController {
 
         const errorMeta = { transactionId: transactionId };
         // REMOVED !!!! BECAUSE WE SHOULD NEVER AUTOGENERATE THIS IN THE CODE
-        // const bankRefId = process.env.LOAD_TEST_MODE ? randomUUID() : req.query.bankRefId as string;
         const bankRefId = req.query.bankRefId as string;
         if (parseInt(amount) < 500) {
             throw new BadRequestError("Amount must be greater than 500", errorMeta);

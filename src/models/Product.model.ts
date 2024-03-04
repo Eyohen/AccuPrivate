@@ -26,6 +26,10 @@ export default class Product extends Model<IProduct | Product> {
     @Column({ type: DataType.STRING, allowNull: false })
     productName: string;
 
+
+    @Column({ type: DataType.FLOAT, allowNull: true })
+    amount?: number;
+
     @HasMany(() => VendorProduct)
     vendorProducts: VendorProduct[];
 
@@ -45,12 +49,14 @@ export interface IProduct {
     masterProductCode: string; // Unique identifier for the product code
     type?: 'POSTPAID' | 'PREPAID'; // Type of the product code (POSTPAID or PREPAID)
     category: 'AIRTIME' | 'ELECTRICITY' | 'DATA' | 'CABLE';
-    productName?: string;
+    productName?: string,
+    amount?: number;
 }
 
 
 export interface IUpdateProduct {
     masterProductCode?: string;
     type?: 'POSTPAID' | 'PREPAID';
+    amount?: number;
     productName: string;
 }
