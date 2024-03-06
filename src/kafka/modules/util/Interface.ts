@@ -259,6 +259,7 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
         retryCount: number;
         superAgent: Transaction['superagent'],
         waitTime: number,
+        vendorRetryRecord: VendorRetryRecord
     };
     [TOPICS.DATA_PURCHASE_RETRY_FROM_NEW_VENDOR]: {
         phone: {

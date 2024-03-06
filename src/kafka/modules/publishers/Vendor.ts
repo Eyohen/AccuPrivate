@@ -757,7 +757,8 @@ export class VendorPublisher extends ProducerFactory {
                 timeStamp: data.timeStamp,
                 retryCount: data.retryCount,
                 superAgent: data.superAgent,
-                waitTime: data.waitTime
+                waitTime: data.waitTime,
+                vendorRetryRecord: data.vendorRetryRecord
             },
         }).catch((e) => {
             Logger.kafkaPublisher.error(

@@ -97,7 +97,7 @@ export class DataVendController {
         next: NextFunction
     ) {
         console.log({ VENDOR_URL: VENDOR_URL });
-        const { phoneNumber, email, bundleCode  } = req.body;
+        const { phoneNumber, email, bundleCode } = req.body;
         // TODO: Add request type for request authenticated by API keys
         const partnerId = (req as any).key;
 
@@ -282,6 +282,9 @@ export class DataVendController {
             superAgent: transaction.superagent,
             partner: partner,
             user: user,
+            vendorRetryRecord: {
+                retryCount: 0,
+            },
         });
 
         res.status(200).json({
