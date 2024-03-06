@@ -21,13 +21,15 @@ import Vendor from "../../../models/Vendor.model";
 import VendorProduct, { VendorProductSchemaData } from "../../../models/VendorProduct.model";
 import { TokenHandlerUtil } from "../../../kafka/modules/consumers/Token";
 import { BAXI_AGENT_ID, HTTP_URL, SCHEMADATA, SEED, SEED_DATA } from "../../../utils/Constants";
-import Product from "../../../models/Product.model";
+import Product, { IProduct } from "../../../models/Product.model";
 import { randomUUID } from "crypto";
 import VendorService from "../../../services/Vendor.service";
 import VendorProductService from "../../../services/VendorProduct.service";
 import { generateRandomString, generateRandonNumbers } from "../../../utils/Helper";
 import logger from "../../../utils/Logger";
 import ResponseTrimmer from "../../../utils/ResponseTrimmer";
+import BundleService from "../../../services/Bundle.service";
+import { IBundle } from "../../../models/Bundle.model";
 
 
 class AirtimeValidator {
@@ -263,8 +265,7 @@ export class AirtimeVendController {
     ) {
         console.log('Start seeding data to the database...');
 
-        const vendors = ['IRECHARGE', 'BAXI', 'BUYPOWERNG'] as const;
-        const productTypes = ['MTN', 'AIRTEL', '9MOBILE', 'GLO'] as const;
+        const vendors = ['IRECHARGE', 'BUYPOWERNG', 'BAXI'] as const;
 
         const vendorDoc = {} as {
             BUYPOWERNG: Vendor,
@@ -272,114 +273,201 @@ export class AirtimeVendController {
             BAXI: Vendor,
         };
 
-        // Create vendors
+        // Drop products, bundles, vendor, vendorp  roducts
+
+        const vendorAndRates = {
+            '9MOBILE': {
+                BUYPOWERNG: {
+                    commission: 0.00,
+                    bonus: 10,
+                },
+                IRECHARGE: {
+                    commission: 0.035,
+                    bonus: 10,
+                },
+                BAXI: {
+                    commission: 0.03,
+                    bonus: 10,
+                },
+            },
+            'MTN': {
+                BUYPOWERNG: {
+                    commission: 0.00,
+                    bonus: 10,
+                },
+                IRECHARGE: {
+                    commission: 0.025,
+                    bonus: 10,
+                },
+                BAXI: {
+                    commission: 0.02,
+                    bonus: 10,
+                },
+            },
+            'GLO': {
+                BUYPOWERNG: {
+                    commission: 0.00,
+                    bonus: 10,
+                },
+                IRECHARGE: {
+                    commission: 0.04,
+                    bonus: 10,
+                },
+                BAXI: {
+                    commission: 0.035,
+                    bonus: 10,
+                },
+            },
+            'AIRTEL': {
+                BUYPOWERNG: {
+                    commission: 0.00,
+                    bonus: 10,
+                },
+                IRECHARGE: {
+                    commission: 0.03,
+                    bonus: 10,
+                },
+                BAXI: {
+                    commission: 0.02,
+                    bonus: 10,
+                },
+            },
+        }
+
+        const vendorAndProduct = {
+            '9MOBILE': {
+                productCode: 'TC9MBVD',
+                bundles: [
+                    {
+                        bundleCode: '9MOBILE001',
+                        bundleName: 'Etisalat D-MFIN-2-1.5GB for 30days 4.2 gb',
+                        bundle: '9MOBILE 1000Naira  30 days 4.2GB (2GB+2.2GB Night) ',
+                        amount: 1000,
+                        vendors: ['IRECHARGE', 'BUYPOWERNG', 'BAXI'],
+                    }
+                ]
+            },
+            'AIRTEL': {
+                productCode: 'TCATLVD',
+                bundles: [
+                    {
+                        bundleCode: 'AIRTEL001',
+                        bundleName: 'Etisalat D-MFIN-2-1.5GB for 30days 4.2 gb',
+                        bundle: '9MOBILE 1000Naira  30 days 4.2GB (2GB+2.2GB Night) ',
+                        amount: 1000,
+                        vendors: ['IRECHARGE', 'BUYPOWERNG', 'BAXI'],
+                    }
+                ]
+            },
+            'MTN': {
+                productCode: 'TCMTNVD',
+                bundles: [
+                    {
+                        bundleCode: 'MTN001',
+                        bundleName: 'Etisalat D-MFIN-2-1.5GB for 30days 4.2 gb',
+                        bundle: '9MOBILE 1000Naira  30 days 4.2GB (2GB+2.2GB Night) ',
+                        amount: 1000,
+                        vendors: ['IRECHARGE', 'BUYPOWERNG', 'BAXI'],
+                    }
+                ]
+            },
+            'GLO': {
+                productCode: 'TCGLOVD',
+                bundles: [
+                    {
+                        bundleCode: 'GLO001',
+                        bundleName: 'Etisalat D-MFIN-2-1.5GB for 30days 4.2 gb',
+                        bundle: '9MOBILE 1000Naira  30 days 4.2GB (2GB+2.2GB Night) ',
+                        amount: 1000,
+                        vendors: ['IRECHARGE', 'BUYPOWERNG', 'BAXI'],
+                    }
+                ]
+            },
+        }
+
+        const networkProviders = ['9MOBILE', 'MTN', 'GLO', 'AIRTEL'] as const;
+
+        // Check if the vendors exist
         for (let i = 0; i < vendors.length; i++) {
             const vendorName = vendors[i] as typeof vendors[number];
-            console.log(`Creating vendor: ${vendorName}`);
             const existingVendor = await VendorService.viewSingleVendorByName(vendorName);
-            const vendor = existingVendor ?? await VendorService.addVendor({
-                name: vendorName,
+            if (!existingVendor) {
+                throw new NotFoundError(`Vendor ${vendorName} not found`);
+            }
+            vendorDoc[vendorName] = existingVendor;
+        }
+
+        //  Create products
+        for (let i = 0; i < networkProviders.length; i++) {
+            const networkProvider = networkProviders[i] as typeof networkProviders[number];
+            console.log(`Creating products for network provider: ${networkProvider}`);
+            const networkProviderBundleData = vendorAndProduct[networkProvider];
+            const networkProviderBundles = networkProviderBundleData.bundles;
+
+            const productInfo: IProduct = {
                 id: randomUUID(),
-                schemaData: SCHEMADATA[vendorName],
-            });
-            for (let i = 0; i < vendors.length; i++) {
-                const vendorName = vendors[i] as typeof vendors[number];
-                console.log(`Creating vendor: ${vendorName}`);
-                const existingVendor = await VendorService.viewSingleVendorByName(vendorName);
-                const vendor = existingVendor ?? await VendorService.addVendor({
-                    name: vendorName,
+                masterProductCode: networkProviderBundleData.productCode,
+                category: 'DATA',
+                productName: `Data for ${networkProvider}`,
+            }
+
+            const product = await ProductService.addProduct(productInfo);
+            console.log(`Product ${networkProvider} created with ID ${product.id}`);
+
+            // Create bundles
+            for (let j = 0; j < networkProviderBundles.length; j++) {
+                const bundleInfo = networkProviderBundles[j];
+                const bundleCode = bundleInfo.bundleCode;
+                console.log(`Creating bundle: ${bundleCode}`);
+
+                // Use regex to match days or day or month or months or years or year in the bundle name and get the number
+                const days = bundleInfo.bundle.match(/(\d+)\s*days?/i);
+                const months = bundleInfo.bundle.match(/(\d+)\s*months?/i);
+                const years = bundleInfo.bundle.match(/(\d+)\s*years?/i);
+                const _validity = days ? days[1] : months ? months[1] : years ? years[1] : 0;
+                const validity = `${_validity} ${days ? 'days' : months ? 'months' : years ? 'years' : 'days'}`;
+
+                const bundleData = {
                     id: randomUUID(),
-                    schemaData: SCHEMADATA[vendorName],
-                });
+                    productId: product.id,
+                    bundleCode: bundleCode,
+                    bundleName: bundleInfo.bundleName,
+                    bundleAmount: bundleInfo.amount,
+                    validity
+                } as IBundle
 
-                vendorDoc[vendorName] = vendor;
-                console.log(`Vendor ${vendorName} created with ID ${vendor.id}`);
+                // Create bundle
+                const bundle = await BundleService.addBundle(bundleData);
+                console.log(`Bundle ${bundleCode} created with ID ${bundle.id}`);
 
-                vendorDoc[vendorName] = vendor;
-                console.log(`Vendor ${vendorName} created with ID ${vendor.id}`);
-
-                for (let j = 0; j < productTypes.length; j++) {
-                    const productType = productTypes[j] as typeof productTypes[number];
-                    console.log(`Creating products for type: ${productType}`);
-                    const productCodeData = SEED_DATA[vendorName][productType];
-
-                    const productCode = productType;
-                    console.log(`Creating product: ${productCode}`);
-                    const productInfo = productCodeData
-
-                    const map = {
-                        MTN: 'MTN',
-                        AIRTEL: 'ATL',
-                        '9MOBILE': '9MB',
-                        GLO: 'GLO',
-                    }
-                    const productData = {
-                        masterProductCode: `TC${map[productCode]}VD`,
-                        category: 'DATA',
-                        productName: productType,
+                // Create vendor product
+                for (let k = 0; k < vendors.length; k++) {
+                    const vendorName = vendors[k] as typeof vendors[number];
+                    console.log(`Adding VendorProduct for vendor ${vendorName} and bundle ${bundleCode}`);
+                    await VendorProductService.addVendorProduct({
                         id: randomUUID(),
-                    } as any
-
-                    // Create product
-                    const product = await ProductService.viewSingleProductByMasterProductCode(productData.masterProductCode) ?? await ProductService.addProduct(productData);
-                    console.log(`Product ${productCode} created with ID ${product.id}`);
-
-                    const commissions = {
-                        IRECHARGE: {
-                            MTN: 0.025,
-                            AIRTEL: 0.03,
-                            '9MOBILE': 0.035,
-                            GLO: 0.04,
+                        vendorId: vendorDoc[vendorName].id,
+                        productId: product.id,
+                        commission: vendorAndRates[networkProvider][vendorName].commission, // TODO: Change commission to the actual commission from API    
+                        bonus: vendorAndRates[networkProvider][vendorName].bonus,   // TODO: Change bonus to the actual bonus from API
+                        productCode: product.masterProductCode,
+                        schemaData: {
+                            bundleName: bundleInfo.bundleName,
+                            code: bundleInfo.bundleCode,
                         },
-                        BUYPOWERNG: {
-                            MTN: 0.00,
-                            AIRTEL: 0.00,
-                            '9MOBILE': 0.00,
-                            GLO: 0.00,
-                        },
-                        BAXI: {
-                            MTN: 0.02,
-                            AIRTEL: 0.02,
-                            '9MOBILE': 0.03,
-                            GLO: 0.035,
-                        },
-                    }
+                        bundleCode: bundleInfo.bundleCode,
+                        bundleName: bundleInfo.bundleName,
+                        vendorHttpUrl: HTTP_URL[vendorName]['DATA'],
+                        vendorName: vendorName,
+                        vendorCode: bundleInfo.bundleCode, // TODO: Change vendor code to the actual vendor code from API
+                    });
 
-                    const IRECHARGEDATACODE = {
-                        'MTN': 'MTN',
-                        'AIRTEL': 'Airtel',
-                        'GLO': 'Glo',
-                        '9MOBILE': 'Etisalat'
-                    }
-
-                    for (let m = 0; m < productInfo.length; m++) {
-                        const dataBundle = productInfo[m];
-
-                        // console.log(`Adding VendorProduct for vendor ${vendorName} and product ${productCode}`);
-                        await VendorProductService.addVendorProduct({
-                            id: randomUUID(),
-                            vendorId: vendor.id,
-                            productId: product.id,
-                            commission: commissions[vendorName][productType],
-                            bonus: 0,
-                            bundleAmount: parseFloat(dataBundle.price.toString()),
-                            productCode: product.masterProductCode,
-                            schemaData: {
-                                bundleName: dataBundle.title,
-                                validity: dataBundle.validity,
-                                datacode: dataBundle.code,
-                                code: vendorName === 'IRECHARGE' ? IRECHARGEDATACODE[productType] : productType,
-                            },
-                            vendorHttpUrl: HTTP_URL[vendorName]['DATA'],
-                            vendorName: vendorName,
-                            vendorCode: vendorName === 'IRECHARGE' ? IRECHARGEDATACODE[productType] : productType,
-                        });
-
-                        console.log(`VendorProduct added for vendor ${vendorName} and Code}`);
-                    }
+                    console.log(`VendorProduct added for vendor ${vendorName} and bundle ${bundleCode}`);
                 }
             }
+
         }
+        console.log('Data seeding completed.');
     }
 
     // Create vendor products
