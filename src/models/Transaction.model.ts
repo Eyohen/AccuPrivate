@@ -74,7 +74,7 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     @Column({ type: DataType.STRING, allowNull: true, defaultValue: () => generateRandomString(10) })
     reference: string;
 
-    @Column({ type: DataType.JSONB, allowNull: true })
+    @Column({ type: DataType.JSONB, allowNull: true, defaultValue: [] })
     retryRecord: {
         vendor: ITransaction['superagent'],
         reference: string[],
@@ -99,7 +99,7 @@ export default class Transaction extends Model<ITransaction | Transaction> {
 
     @Column({ type: DataType.STRING, allowNull: true })
     networkProvider: string
-    
+
     @ForeignKey(() => Bundle)
     @Column({ type: DataType.STRING, allowNull: true })
     bundleId?: string

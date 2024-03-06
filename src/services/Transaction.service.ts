@@ -211,7 +211,9 @@ export default class TransactionService {
                     'meterId',
                     'createdAt',
                     'updatedAt',
-                    'bundleId'
+                    'bundleId',
+                    'retryRecord',
+                    'reference',
                     //...attributesMap
                 ],
                 include: [PowerUnit, Event, Partner, User, Meter, Bundle],

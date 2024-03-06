@@ -62,6 +62,8 @@ export default class VendorProduct extends Model<IVendorProduct | VendorProduct>
     @Column({ type: DataType.STRING, allowNull: true })
     bundleId?: string;
 
+    @BelongsTo(() => Bundle)
+    bundle: Bundle;
 
     @Column({ type: DataType.STRING, allowNull: true })
     bundleCode?: string;

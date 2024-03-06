@@ -385,6 +385,34 @@ export class AirtimeVendController {
             },
         }
 
+        // const commissions = {
+        //     IRECHARGE: {
+        //         MTN: 0.025,
+        //         AIRTEL: 0.03,
+        //         '9MOBILE': 0.035,
+        //         GLO: 0.04,
+        //     },
+        //     BUYPOWERNG: {
+        //         MTN: 0.00,
+        //         AIRTEL: 0.00,
+        //         '9MOBILE': 0.00,
+        //         GLO: 0.00,
+        //     },
+        //     BAXI: {
+        //         MTN: 0.02,
+        //         AIRTEL: 0.02,
+        //         '9MOBILE': 0.03,
+        //         GLO: 0.035,
+        //     },
+        // }
+
+        const IRECHARGEDATACODE = {
+            'MTN': 'MTN',
+            'AIRTEL': 'Airtel',
+            'GLO': 'Glo',
+            '9MOBILE': 'Etisalat'
+        }
+
         const networkProviders = ['9MOBILE', 'MTN', 'GLO', 'AIRTEL'] as const;
 
         // Check if the vendors exist
@@ -454,13 +482,13 @@ export class AirtimeVendController {
                         productCode: product.masterProductCode,
                         schemaData: {
                             bundleName: bundleInfo.bundleName,
-                            code: bundleInfo.bundleCode,
-                            dataCode: bundleInfo.bundleCode,
+                            code: vendorName === 'IRECHARGE' ? IRECHARGEDATACODE[networkProvider] : networkProvider,
+                            datacode: bundleInfo.bundleCode,
                         },
                         bundleCode: bundleInfo.bundleCode,
                         bundleName: bundleInfo.bundleName,
                         bundleAmount: bundleInfo.amount,
-                        bundleId: bundle.id,
+                        bundleId: bundleData.id,
                         vendorHttpUrl: HTTP_URL[vendorName]['DATA'],
                         vendorName: vendorName,
                         vendorCode: bundleInfo.bundleCode, // TODO: Change vendor code to the actual vendor code from API

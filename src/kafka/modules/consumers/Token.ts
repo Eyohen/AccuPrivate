@@ -219,7 +219,11 @@ export class TokenHandlerUtil {
         // Attempt purchase from new vendor
         if (!transaction.bankRefId) throw new CustomError('BankRefId not found', meta)
 
-        const retryRecord = transaction.retryRecord
+        let retryRecord = transaction.retryRecord
+
+        retryRecord = retryRecord.length === 0
+            ? [{ vendor: transaction.superagent, retryCount: 1, reference: [transaction.reference], attempt: 1 }]
+            : retryRecord
 
         // Make sure to use the same vendor thrice before switching to another vendor
         let currentVendor = retryRecord[retryRecord.length - 1]
@@ -289,16 +293,21 @@ export class TokenHandlerUtil {
         }
 
         // Start timer to requery transaction at intervals
-        async function countDownTimer(time: number) {
-            for (let i = time; i > 0; i--) {
-                setTimeout(() => {
-                    logger.warn(`Reinitating transaction with vendor in ${i} seconds`, {
-                        meta: { transactionId: transaction.id }
-                    })
-                }, (time - i) * 1000)
-            }
+        async function countDownTimer(time: number): Promise<void> {
+            return new Promise<void>((resolve) => {
+                for (let i = time; i > 0; i--) {
+                    setTimeout(() => {
+                        logger.warn(`Reinitating transaction with vendor in ${i} seconds`, {
+                            meta: { transactionId: transaction.id }
+                        });
+                        if (i === 1) {
+                            resolve(); // Resolve the Promise when countdown is complete
+                        }
+                    }, (time - i) * 1000);
+                }
+            });
         }
-        countDownTimer(waitTime);
+        await countDownTimer(waitTime);
 
         await TransactionService.updateSingleTransaction(transaction.id, {
             superagent: newVendor,
@@ -309,25 +318,19 @@ export class TokenHandlerUtil {
             previousVendors: [...transaction.previousVendors, newVendor],
         })
 
-        setTimeout(async () => {
-            logger.info('Reinitiating transaction with new vendor', {
-                meta: { transactionId: transaction.id }
-            })
-
-            await VendorPublisher.publishEventForRetryPowerPurchaseWithNewVendor({
-                meter: meter,
-                partner: partner,
-                transactionId: transaction.id,
-                superAgent: newVendor,
-                user: {
-                    name: user.name as string,
-                    email: user.email,
-                    address: user.address,
-                    phoneNumber: user.phoneNumber,
-                },
-                newVendor,
-            })
-        }, waitTime * 1000);
+        return await VendorPublisher.publishEventForRetryPowerPurchaseWithNewVendor({
+            meter: meter,
+            partner: partner,
+            transactionId: transaction.id,
+            superAgent: newVendor,
+            user: {
+                name: user.name as string,
+                email: user.email,
+                address: user.address,
+                phoneNumber: user.phoneNumber,
+            },
+            newVendor,
+        })
     }
 
     static async processVendRequest<T extends Vendor>(data: TokenPurchaseData) {

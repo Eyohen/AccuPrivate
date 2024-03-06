@@ -32,6 +32,7 @@ import { getCurrentWaitTimeForSwitchEvent } from "./Token";
 import VendorModelService from "../../../services/Vendor.service";
 import BundleService from "../../../services/Bundle.service";
 import { token } from "morgan";
+import WaitTimeService from "../../../services/Waittime.service";
 
 interface EventMessage {
     phone: {
@@ -85,10 +86,30 @@ const TransactionErrorCodeAndCause = {
     202: TransactionErrorCause.TRANSACTION_TIMEDOUT
 }
 
-export function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
+export async function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
     // Use geometric progression  calculate wait time, where R = 2
-    const waitTime = 2 ** (retryCount - 1)
-    return waitTime
+    const defaultValues = [10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 20480, 40960, 81920, 163840, 327680, 655360, 1310720, 2621440, 5242880]
+    const timesToRetry = await WaitTimeService.getWaitTime() ?? defaultValues
+    timesToRetry.unshift(1)
+
+    if (retryCount >= timesToRetry.length) {
+        return timesToRetry[timesToRetry.length - 1]
+    }
+
+    return timesToRetry[retryCount]
+}
+
+
+export async function getCurrentWaitTimeForSwitchEvent(retryCount: number) {
+    // Use geometric progression  calculate wait time, where R = 2
+    const defaultValues = [10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 20480, 40960, 81920, 163840, 327680, 655360, 1310720, 2621440, 5242880]
+    const timesToRetry = await WaitTimeService.getWaitTime() ?? defaultValues
+
+    if (retryCount >= timesToRetry.length) {
+        return timesToRetry[timesToRetry.length - 1]
+    }
+
+    return timesToRetry[retryCount]
 }
 
 export class TokenHandlerUtil {
@@ -187,10 +208,14 @@ export class TokenHandlerUtil {
         // Attempt purchase from new vendor
         if (!transaction.bankRefId) throw new CustomError('BankRefId not found', meta)
 
-        const retryRecord = transaction.retryRecord
+        let retryRecord = transaction.retryRecord
 
+        retryRecord = retryRecord.length === 0
+            ? [{ vendor: transaction.superagent, retryCount: 1, reference: [transaction.reference], attempt: 1 }]
+            : retryRecord
         // Make sure to use the same vendor thrice before switching to another vendor
         let currentVendor = retryRecord[retryRecord.length - 1]
+
         console.log({ currentVendor, retryRecord })
         let useCurrentVendor = false
         if (currentVendor.vendor === transaction.superagent) {
@@ -246,16 +271,22 @@ export class TokenHandlerUtil {
             }
         }
 
-        async function countDownTimer(time: number) {
-            for (let i = time; i > 0; i--) {
-                setTimeout(() => {
-                    logger.warn(`Reinitating transaction with vendor in ${i} seconds`, {
-                        meta: { transactionId: transaction.id }
-                    })
-                }, (time - i) * 1000)
-            }
+        async function countDownTimer(time: number): Promise<void> {
+            return new Promise<void>((resolve) => {
+                for (let i = time; i > 0; i--) {
+                    setTimeout(() => {
+                        logger.warn(`Reinitating transaction with vendor in ${i} seconds`, {
+                            meta: { transactionId: transaction.id }
+                        });
+                        if (i === 1) {
+                            resolve(); // Resolve the Promise when countdown is complete
+                        }
+                    }, (time - i) * 1000);
+                }
+            });
         }
-        countDownTimer(waitTime);
+
+        await countDownTimer(waitTime);
 
         await TransactionService.updateSingleTransaction(transaction.id, {
             superagent: newVendor,
@@ -434,7 +465,7 @@ export class TokenHandlerUtil {
             }
         })
 
-        console.log({ vendorRates })
+        console.log({ vendorRates, sortedVendorProductsAccordingToCommissionRate, vendorProducts })
         return vendorRates[0].vendorName as Transaction['superagent']
     }
 }
@@ -612,7 +643,7 @@ class TokenHandler extends Registry {
             eventMessage.error.cause = tokenInfo.status === '00' ? TransactionErrorCause.TRANSACTION_TIMEDOUT : TransactionErrorCause.TRANSACTION_FAILED
         }
 
-        console.log({ tokenInfo, transactionSuccessFul, transactionFailed: retry.count > retry.retryCountBeforeSwitchingVendor, requeryFromNewVendor, requeryFromSameVendor })
+        console.log({ tokenInfo: tokenInfo.response?.data, transactionSuccessFul, transactionFailed: retry.count > retry.retryCountBeforeSwitchingVendor, requeryFromNewVendor, requeryFromSameVendor })
         if (!transactionSuccessFul) {
             logger.error('Transaction unsuccessful', logMeta)
             if (requeryFromNewVendor) {
@@ -668,42 +699,42 @@ class TokenHandler extends Registry {
             );
         }
 
-        // Requery transaction from provider and update transaction status
-        const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction);
-        const requeryResultFromBuypower = requeryResult as Awaited<ReturnType<typeof VendorService.buyPowerRequeryTransaction>>
-        const requeryResultFromIrecharge = requeryResult as Awaited<ReturnType<typeof VendorService.irechargeRequeryTransaction>>
-        const requeryResultFromBaxi = requeryResult as Awaited<ReturnType<typeof VendorService.baxiRequeryTransaction>>
+        // // Requery transaction from provider and update transaction status
+        // const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction);
+        // const requeryResultFromBuypower = requeryResult as Awaited<ReturnType<typeof VendorService.buyPowerRequeryTransaction>>
+        // const requeryResultFromIrecharge = requeryResult as Awaited<ReturnType<typeof VendorService.irechargeRequeryTransaction>>
+        // const requeryResultFromBaxi = requeryResult as Awaited<ReturnType<typeof VendorService.baxiRequeryTransaction>>
 
-        const transactionSuccessFromBuypower = requeryResultFromBuypower.source === 'BUYPOWERNG' ? requeryResultFromBuypower.responseCode === 200 : false
-        const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' && requeryResultFromIrecharge.vend_status === 'successful' && requeryResultFromIrecharge.vend_status === 'successful' : false
-        const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false
+        // const transactionSuccessFromBuypower = requeryResultFromBuypower.source === 'BUYPOWERNG' ? requeryResultFromBuypower.responseCode === 200 : false
+        // const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' && requeryResultFromIrecharge.vend_status === 'successful' && requeryResultFromIrecharge.vend_status === 'successful' : false
+        // const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false
 
-        const transactionEventService = new DataTransactionEventService(
-            transaction,
-            transaction.superagent,
-            transaction.partner.email,
-            data.phone.phoneNumber,
-        );
-        const transactionSuccess = transactionSuccessFromBuypower || transactionSuccessFromIrecharge || transactionSuccessFromBaxi
+        // const transactionEventService = new DataTransactionEventService(
+        //     transaction,
+        //     transaction.superagent,
+        //     transaction.partner.email,
+        //     data.phone.phoneNumber,
+        // );
+        // const transactionSuccess = transactionSuccessFromBuypower || transactionSuccessFromIrecharge || transactionSuccessFromBaxi
 
-        if (!transactionSuccess) {
-            await transactionEventService.addDataTransactionRequery()
-            await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor({
-                eventService: transactionEventService,
-                eventData: {
-                    phone: data.phone,
-                    transactionId: data.transactionId,
-                    error: {
-                        code: requeryResultFromBuypower.responseCode,
-                        cause: TransactionErrorCause.TRANSACTION_FAILED
-                    }
-                },
-                retryCount: 1,
-                superAgent: transaction.superagent,
-                transactionTimedOutFromBuypower: false,
-                vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1]
-            })
-        }
+        // if (!transactionSuccess) {
+        //     await transactionEventService.addDataTransactionRequery()
+        //     await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor({
+        //         eventService: transactionEventService,
+        //         eventData: {
+        //             phone: data.phone,
+        //             transactionId: data.transactionId,
+        //             error: {
+        //                 code: requeryResultFromBuypower.responseCode,
+        //                 cause: TransactionErrorCause.TRANSACTION_FAILED
+        //             }
+        //         },
+        //         retryCount: 1,
+        //         superAgent: transaction.superagent,
+        //         transactionTimedOutFromBuypower: false,
+        //         vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1]
+        //     })
+        // }
 
         return await TransactionService.updateSingleTransaction(data.transactionId, {
             status: Status.COMPLETE,
