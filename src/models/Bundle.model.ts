@@ -1,5 +1,5 @@
 // Import necessary modules and dependencies
-import { Table, Column, Model, DataType, IsUUID, PrimaryKey, BelongsTo, ForeignKey, HasMany, BelongsToMany, BeforeConnect, BeforeCreate } from "sequelize-typescript";
+import { Table, Column, Model, DataType, IsUUID, PrimaryKey, BelongsTo, ForeignKey, HasMany, BelongsToMany, BeforeConnect, BeforeCreate, BeforeValidate } from "sequelize-typescript";
 import User from "./User.model";
 import PowerUnit from "./PowerUnit.model";
 import Transaction from "./Transaction.model";
@@ -37,7 +37,7 @@ export default class Bundle extends Model<Bundle | IBundle> {
     vendorProducts: VendorProduct[];
 
     @ForeignKey(() => Vendor)
-    @Column({ type: DataType.ARRAY(DataType.STRING), allowNull: true })
+    @Column({ type: DataType.ARRAY(DataType.STRING), allowNull: false })
     vendorIds: string[];
 
     @HasMany(() => Vendor, 'vendorIds')
@@ -45,6 +45,13 @@ export default class Bundle extends Model<Bundle | IBundle> {
 
     @BelongsTo(() => Product)
     product: Product;
+
+    @BeforeValidate
+    static validateArraySize(instance: Bundle, options: any) {
+        if (instance.vendorIds && instance.vendorIds.length < 1) {
+            throw new Error('Your array must contain at least 1 elements');
+        }
+    }
 }
 
 // Interface to represent a Bundle object with specific properties
@@ -52,6 +59,10 @@ export interface IBundle {
     id: string;          // Unique identifier for the meter
     productId: string;      // Identifier of the associated user
     validity: string;     // address associated with the meter
+    bundleCode: string; // Meter number for identification
+    bundleName: string;      // Disco name for meter
+    bundleAmount: number;
+    vendorIds: string[];
 }
 
 // Interface to represent thep structure of data for creating a new Bundle

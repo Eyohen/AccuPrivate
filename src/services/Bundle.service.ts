@@ -36,6 +36,8 @@ export default class BundleService {
             return bundle;
         } catch (err) {
             logger.info("Error reading Bundle");
+            throw err
+
         }
     }
 
@@ -46,10 +48,38 @@ export default class BundleService {
             // Find and retrieve an bundle by its UUID
             const bundle: Bundle | null = await Bundle.findOne({
                 where: { bundleCode },
+                include: [Product, VendorProduct]
             });
             return bundle;
         } catch (err) {
             logger.info("Error reading Bundle");
+            throw err
+
+        }
+    }
+
+    static async viewAllBundles(): Promise<Bundle[]> {
+        try {
+            // Find and retrieve an bundle by its UUID
+            const bundle: Bundle[] = await Bundle.findAll();
+            return bundle;
+        } catch (err) {
+            logger.info("Error reading Bundle");
+            throw err
+        }
+    }
+
+    static async viewBundlesByProductId(productId: string): Promise<Bundle[]> {
+        try {
+            // Find and retrieve an bundle by its UUID
+            const bundle: Bundle[] = await Bundle.findAll({
+                where: { productId },
+                include: [Product, VendorProduct]
+            });
+            return bundle;
+        } catch (err) {
+            logger.info("Error reading Bundle");
+            throw err
         }
     }
 

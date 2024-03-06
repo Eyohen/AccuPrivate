@@ -5,12 +5,14 @@ import { BadRequestError, NotFoundError } from "../../utils/Errors";
 import { randomUUID } from "crypto";
 import ProductService from "../../services/Product.service";
 import VendorService from "../../services/Vendor.service";
+import BundleService from "../../services/Bundle.service";
 
 export default class VendorProductController {
     static async createVendorProduct(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { vendorId, productId, commission, bonus, schemaData, vendorHttpUrl, amount } = req.body as {
+        const { vendorId, productId, commission, bonus, schemaData, vendorHttpUrl, amount, bundleId } = req.body as {
             vendorId: string,
             productId: string,
+            bundleId: string,
             commission: number,
             bonus: number,
             schemaData: { code: string },
@@ -37,11 +39,18 @@ export default class VendorProductController {
             throw new NotFoundError('Product not found');
         }
 
+        if (bundleId) {
+            const bundle = await BundleService.viewSingleBundleById(bundleId);
+            if (!bundle) {
+                throw new NotFoundError('Bundle not found');
+            }
+        }
+
         if (product.category === 'DATA' && !amount) {
             throw new BadRequestError('Amount is required for Data product');
         }
 
-        const data = { vendorId, vendorName: vendor.name, vendorCode: schemaData.code, productId, commission, bonus, bundleAmount: amount, schemaData, vendorHttpUrl, id: randomUUID(), productCode: product.masterProductCode };
+        const data = { vendorId, vendorName: vendor.name, vendorCode: schemaData.code, productId, commission, bonus, bundleId, bundleAmount: amount, schemaData, vendorHttpUrl, id: randomUUID(), productCode: product.masterProductCode };
         const vendorProduct = await VendorProductService.addVendorProduct(data);
 
         res.status(201).json({

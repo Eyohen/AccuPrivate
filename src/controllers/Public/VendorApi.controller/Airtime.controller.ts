@@ -433,7 +433,8 @@ export class AirtimeVendController {
                     bundleCode: bundleCode,
                     bundleName: bundleInfo.bundleName,
                     bundleAmount: bundleInfo.amount,
-                    validity
+                    validity,
+                    vendorIds: vendors.map(vendor => vendorDoc[vendor].id),
                 } as IBundle
 
                 // Create bundle
