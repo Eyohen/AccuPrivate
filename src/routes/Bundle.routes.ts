@@ -11,5 +11,6 @@ router
     .get('/info', BundleController.getSingleDataBundle)
     .get('/', BundleController.getDataBundles)
     .post('/create', basicAuth('access'), RBACMiddelware.validateRole([RoleEnum.SuperAdmin]), AuthenticatedController(BundleController.addNewBundle))
+    .patch('/', basicAuth('access'), RBACMiddelware.validateRole([RoleEnum.SuperAdmin]), AuthenticatedController(BundleController.addNewBundle))
 
 export default router

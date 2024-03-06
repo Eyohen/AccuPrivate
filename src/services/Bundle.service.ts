@@ -83,4 +83,21 @@ export default class BundleService {
         }
     }
 
+    static async updateBundle(
+        bundleId: string,
+        data: Partial<IBundle>,
+    ): Promise<Bundle> {
+        try {
+            const bundle = await Bundle.findByPk(bundleId);
+            if (!bundle) {
+                throw new Error('Bundle not found');
+            }
+
+            await bundle.update(data);
+            return bundle;
+        } catch (err) {
+            logger.info("Error updating Bundle");
+            throw err
+        }
+    }
 }

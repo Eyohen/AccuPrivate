@@ -76,4 +76,43 @@ export default class ApiController {
             data: { bundle }
         });
     }
+
+    static async updateBundle(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        const { bundleId, bundleCode, bundleName, amount, vendorIds, validity } = req.body as {
+            bundleId: string,
+            bundleCode: string,
+            bundleName: string,
+            amount: number,
+            validity: string,
+            vendorIds: string[],
+        };
+
+        if (!bundleId) {
+            throw new BadRequestError('Bundle ID is required');
+        }
+
+        const bundle = await BundleService.viewSingleBundleById(bundleId);
+        if (!bundle) {
+            throw new InternalServerError('Bundle not found');
+        }
+
+        for (const vendorId of vendorIds) {
+            const vendor = await VendorModelService.viewSingleVendor(vendorId);
+            if (!vendor) {
+                throw new BadRequestError('Vendor not found');
+            }
+        }
+
+        const data = { bundleCode, bundleName, bundleAmount: amount, validity, vendorIds };
+        const updatedBundle = await BundleService.updateBundle(bundleId, data);
+        if (!updatedBundle) {
+            throw new InternalServerError('Bundle not found');
+        }
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Bundle updated successfully',
+            data: { updatedBundle }
+        });
+    }
 }
