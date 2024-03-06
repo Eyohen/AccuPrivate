@@ -106,4 +106,6 @@ export interface IVendorProduct {
     vendorCode: string;
     bundleCode?: string | null;
     bundleName?: string | null;
+    bundleAmount?: number;
+    bundleId?: string | null;
 }

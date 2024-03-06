@@ -43,6 +43,9 @@ export default class Bundle extends Model<Bundle | IBundle> {
     @HasMany(() => Vendor, 'vendorIds')
     vendors: Vendor[];
 
+    @HasMany(() => Transaction)
+    transactions: Transaction[];
+
     @BelongsTo(() => Product)
     product: Product;
 

@@ -455,9 +455,12 @@ export class AirtimeVendController {
                         schemaData: {
                             bundleName: bundleInfo.bundleName,
                             code: bundleInfo.bundleCode,
+                            dataCode: bundleInfo.bundleCode,
                         },
                         bundleCode: bundleInfo.bundleCode,
                         bundleName: bundleInfo.bundleName,
+                        bundleAmount: bundleInfo.amount,
+                        bundleId: bundle.id,
                         vendorHttpUrl: HTTP_URL[vendorName]['DATA'],
                         vendorName: vendorName,
                         vendorCode: bundleInfo.bundleCode, // TODO: Change vendor code to the actual vendor code from API

@@ -126,7 +126,7 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     @Column
     partnerId: string;
 
-    @ForeignKey(() => Partner)
+    @ForeignKey(() => PowerUnit)
     @IsUUID(4)
     @Column
     powerUnitId?: string;
@@ -152,6 +152,9 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     // Has one associated Meter
     @BelongsTo(() => Meter)
     meter: Meter;
+
+    @BelongsTo(() => Bundle)
+    bundle: Bundle;
 
     @Column({
         type: DataType.DATE,

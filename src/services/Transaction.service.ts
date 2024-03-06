@@ -211,6 +211,7 @@ export default class TransactionService {
                     'meterId',
                     'createdAt',
                     'updatedAt',
+                    'bundleId'
                     //...attributesMap
                 ],
                 include: [PowerUnit, Event, Partner, User, Meter, Bundle],

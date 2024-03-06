@@ -24,7 +24,7 @@ import { Database } from "../../../models";
 import ProductService from "../../../services/Product.service";
 import VendorProduct from "../../../models/VendorProduct.model";
 import VendorProductService from "../../../services/VendorProduct.service";
-import { TokenHandlerUtil } from "../../../kafka/modules/consumers/Token";
+import { TokenHandlerUtil } from "../../../kafka/modules/consumers/Data";
 import {
     generateRandomString,
     generateRandonNumbers,
@@ -119,13 +119,10 @@ export class DataVendController {
             throw new BadRequestError("Invalid product code for data");
         }
 
-        if (!existingProductCodeForDisco.amount) {
-            throw new BadRequestError("Invalid product code for data");
-        }
-        const superAgent = await TokenHandlerUtil.getBestVendorForPurchase(existingProductCodeForDisco.id, existingProductCodeForDisco.amount);
+        const amount = dataBundle.bundleAmount.toString();
+        const superAgent = await TokenHandlerUtil.getBestVendorForPurchase(dataBundle.id, dataBundle.bundleAmount);
 
         const reference = generateRandomString(10);
-        const amount = existingProductCodeForDisco.amount.toString();
         const transaction: Transaction =
             await TransactionService.addTransactionWithoutValidatingUserRelationship(
                 {
@@ -151,6 +148,8 @@ export class DataVendController {
                     retryRecord: [],
                 }
             );
+
+        console.log({ transaction: transaction.dataValues, dataBundle: dataBundle.dataValues });
 
         const transactionEventService = new DataTransactionEventService(
             transaction,
@@ -269,6 +268,10 @@ export class DataVendController {
             bankComment: bankComment,
         });
 
+        console.log({
+            transaction: transaction.dataValues,
+            existingTransaction: existingTransaction
+        })
         if (!transaction.bundleId) {
             throw new BadRequestError("Bundle code is required");
         }
