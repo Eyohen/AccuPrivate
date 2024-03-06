@@ -1,7 +1,8 @@
 // Import necessary modules and dependencies
-import { Table, Column, Model, DataType, HasOne, HasMany, IsUUID, PrimaryKey, Unique, BeforeCreate } from "sequelize-typescript";
+import { Table, Column, Model, DataType, HasOne, HasMany, IsUUID, PrimaryKey, Unique, BeforeCreate, BelongsTo, BelongsToMany } from "sequelize-typescript";
 import VendorRates from './VendorRates.model';
 import VendorProduct from "./VendorProduct.model";
+import Bundle from "./Bundle.model";
 
 // Define the Sequelize model for the "Vendor" table
 @Table
@@ -26,6 +27,9 @@ export default class Vendor extends Model<IVendor | Vendor> {
 
     @HasMany(() => VendorProduct)
     vendorProducts: VendorProduct[];
+
+    @BelongsToMany(() => Bundle, () => VendorProduct)
+    bundles: Bundle[];
 
     @BeforeCreate
     static async capitalizeVendorName(instance: Vendor) {
