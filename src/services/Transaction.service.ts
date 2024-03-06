@@ -16,6 +16,7 @@ import Meter from "../models/Meter.model";
 import { Op, literal } from "sequelize";
 import { generateRandomString } from "../utils/Helper";
 import { Sequelize } from "sequelize-typescript";
+import Bundle from "../models/Bundle.model";
 
 // Define the TransactionService class for handling transaction-related operations
 export default class TransactionService {
@@ -61,7 +62,7 @@ export default class TransactionService {
         // Retrieve all transactions from the database
         const transactions: Transaction[] = await Transaction.findAll({
             where: {},
-            include: [PowerUnit, Event, Partner, User, Meter],
+            include: [PowerUnit, Event, Partner, User, Meter, Bundle],
             order: [["transactionTimestamp", "DESC"]],
         });
         return transactions;
@@ -81,9 +82,9 @@ export default class TransactionService {
         const transactions: Transaction[] = (
             await Transaction.findAll({
                 ...query,
-                include: [PowerUnit, Event, Partner, User, Meter],
+                include: [PowerUnit, Event, Partner, User, Meter, Bundle],
                 //add the transform disco to biller so it can be used in the frontend and for the partner 
-                attributes:[
+                attributes: [
                     ['disco', 'biller'],
                     'id',
                     'amount',
@@ -175,17 +176,17 @@ export default class TransactionService {
     ): Promise<Transaction | null> {
         // Retrieve a single transaction by its UUID
 
-         //Removed Because of Performance issues 
+        //Removed Because of Performance issues 
         // Getting the list of columns 
         // const ListofColumns = await Transaction.describe()
         //convert the list of columns to array 
         // const attributesMap: Array<string> = Object.keys(ListofColumns)
-        
+
         const transaction: Transaction | null = await Transaction.findByPk(
             uuid,
             {
                 //add the transform disco to biller so it can be used in the frontend and for the partner 
-                attributes:[
+                attributes: [
                     ['disco', 'biller'],
                     'id',
                     'amount',
@@ -212,11 +213,11 @@ export default class TransactionService {
                     'updatedAt',
                     //...attributesMap
                 ],
-                include: [PowerUnit, Event, Partner, User, Meter],
+                include: [PowerUnit, Event, Partner, User, Meter, Bundle],
             },
         );
         return transaction;
-         /**PREVIOUS UTILIZIED CODE */
+        /**PREVIOUS UTILIZIED CODE */
         // const transaction: Transaction | null = await Transaction.findByPk(
         //     uuid,
         //     {

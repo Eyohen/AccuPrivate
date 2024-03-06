@@ -8,6 +8,7 @@ import Meter from "./Meter.model";
 import { generateRandomString } from "../utils/Helper";
 import { NigerianDate } from "../utils/Date";
 import ProductCode from "./ProductCode.model";
+import Bundle from "./Bundle.model";
 
 // Define enums for status and payment type
 export enum Status {
@@ -98,6 +99,10 @@ export default class Transaction extends Model<ITransaction | Transaction> {
 
     @Column({ type: DataType.STRING, allowNull: true })
     networkProvider: string
+    
+    @ForeignKey(() => Bundle)
+    @Column({ type: DataType.STRING, allowNull: true })
+    bundleId?: string
 
     @Column({ type: DataType.ARRAY(DataType.STRING), allowNull: true })
     previousVendors: string[]
@@ -230,6 +235,7 @@ export interface ITransaction {
     }[],
     productType: string;
     networkProvider?: string;
+    bundleId?: string;
 }
 
 // Define an interface representing the creation of a transaction (ICreateTransaction).

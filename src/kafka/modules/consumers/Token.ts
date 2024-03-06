@@ -594,7 +594,7 @@ class TokenHandler extends Registry {
                 vendType: meter.vendType,
                 phone: user.phoneNumber,
                 accessToken: transaction.irechargeAccessToken
-            })
+            }).catch(e => e);
 
             logger.info('Token request processed', logMeta);
             const updatedTransaction = await TransactionService.viewSingleTransaction(data.transactionId);

@@ -278,57 +278,57 @@ export class AirtimeVendController {
         const vendorAndRates = {
             '9MOBILE': {
                 BUYPOWERNG: {
-                    commission: 0.00,
+                    commission: 0.0,
                     bonus: 10,
                 },
                 IRECHARGE: {
-                    commission: 0.035,
+                    commission: 3.5,
                     bonus: 10,
                 },
                 BAXI: {
-                    commission: 0.03,
+                    commission: 3.0,
                     bonus: 10,
                 },
             },
             'MTN': {
                 BUYPOWERNG: {
-                    commission: 0.00,
+                    commission: 0.0,
                     bonus: 10,
                 },
                 IRECHARGE: {
-                    commission: 0.025,
+                    commission: 2.5,
                     bonus: 10,
                 },
                 BAXI: {
-                    commission: 0.02,
+                    commission: 2.0,
                     bonus: 10,
                 },
             },
             'GLO': {
                 BUYPOWERNG: {
-                    commission: 0.00,
+                    commission: 0.0,
                     bonus: 10,
                 },
                 IRECHARGE: {
-                    commission: 0.04,
+                    commission: 4.0,
                     bonus: 10,
                 },
                 BAXI: {
-                    commission: 0.035,
+                    commission: 3.5,
                     bonus: 10,
                 },
             },
             'AIRTEL': {
                 BUYPOWERNG: {
-                    commission: 0.00,
+                    commission: 0.0,
                     bonus: 10,
                 },
                 IRECHARGE: {
-                    commission: 0.03,
+                    commission: 3.0,
                     bonus: 10,
                 },
                 BAXI: {
-                    commission: 0.02,
+                    commission: 2.0,
                     bonus: 10,
                 },
             },
@@ -408,7 +408,7 @@ export class AirtimeVendController {
                 id: randomUUID(),
                 masterProductCode: networkProviderBundleData.productCode,
                 category: 'DATA',
-                productName: `Data for ${networkProvider}`,
+                productName: networkProvider,
             }
 
             const product = await ProductService.addProduct(productInfo);

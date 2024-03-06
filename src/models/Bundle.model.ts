@@ -1,5 +1,5 @@
 // Import necessary modules and dependencies
-import { Table, Column, Model, DataType, IsUUID, PrimaryKey, BelongsTo, ForeignKey, HasMany, BelongsToMany } from "sequelize-typescript";
+import { Table, Column, Model, DataType, IsUUID, PrimaryKey, BelongsTo, ForeignKey, HasMany, BelongsToMany, BeforeConnect, BeforeCreate } from "sequelize-typescript";
 import User from "./User.model";
 import PowerUnit from "./PowerUnit.model";
 import Transaction from "./Transaction.model";
@@ -42,6 +42,9 @@ export default class Bundle extends Model<Bundle | IBundle> {
 
     @HasMany(() => Vendor, 'vendorIds')
     vendors: Vendor[];
+
+    @BelongsTo(() => Product)
+    product: Product;
 }
 
 // Interface to represent a Bundle object with specific properties

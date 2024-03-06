@@ -729,6 +729,10 @@ export default class VendorController {
             throw new NotFoundError("Transaction not found", errorMeta);
         }
 
+        if (transaction.status === Status.COMPLETE as any) {
+            throw new BadRequestError("Transaction already completed");
+        }
+        
         Logger.apiRequest.info('Requesting token for transaction', { meta: { transactionId: transaction.id, ...req.query } })
 
         const meter = await transaction.$get("meter");

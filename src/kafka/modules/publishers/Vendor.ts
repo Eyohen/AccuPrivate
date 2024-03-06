@@ -1,3 +1,4 @@
+import { trace } from "console";
 import { Logger } from "../../../utils/Logger";
 import { TOPICS } from "../../Constants";
 import { PublisherEventAndParameters } from "../util/Interface";
@@ -653,7 +654,8 @@ export class VendorPublisher extends ProducerFactory {
                 partner: data.partner,
                 user: data.user,
                 transactionId: data.transactionId,
-                superAgent: data.superAgent
+                superAgent: data.superAgent,
+                vendorRetryRecord: data.vendorRetryRecord,
             },
         }).catch((e) => {
             Logger.kafkaPublisher.error(
