@@ -13,13 +13,8 @@
                             <img width="70px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/accuvend-logo.png">
 
                     </div>
-                    <!-- <% if (<%=disco%> === IRECHARGE) {
-                    <div style=" text-decoration:none !important; font-weight:100; text-align: left; margin-bottom: 10px; width: 20%;  color:#000000; font-size:x-small;  display:block; float:left; margin-left: 40px; ">
-                        <span style="text-transform: uppercase;  padding-right: 10px;">Head Office </span><img width="30px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/irecharge-logo.png">
-                      <p style="margin-bottom: 10px; "> Ground floor, 4 Madiana Close, off Dar-Es-Salam Street, off Aminu Kano Crescent, Wuse 2, Abuja 900288, Federal Capital Territory</p> 
                     
-                    </div> -->
-                    <% if(<%=transaction.disco %> === 'ABA'){ %>
+                    <% if(transaction.disco === 'ABA'){  %>
                         <div>
                             <div style=" text-decoration:none !important; font-weight:100; text-align: left; margin-bottom: 10px; width: 20%;  color:#000000; font-size:x-small;  display:block; float:left; margin-left: 40px; ">
                                 <span style="text-transform: uppercase;  padding-right: 10px;">Head Office </span><img width="30px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/ABA.png">
@@ -27,106 +22,97 @@
                             
                             </div>
                         </div>
-                    <%} else if (<%=transaction.disco %> === 'ABUJA'){ %>
+                    <%} else if (transaction.disco === 'ABUJA'){  %>
                         <div>
                             <div style=" text-decoration:none !important; font-weight:100; text-align: left; margin-bottom: 10px; width: 20%;  color:#000000; font-size:x-small;  display:block; float:left; margin-left: 40px; ">
                                 <span style="text-transform: uppercase;  padding-right: 10px;">Head Office </span><img width="30px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/ABUJA.jpeg">
-                              <p style="margin-bottom: 10px; "> Ground floor, 4 Madiana Close, off Dar-Es-Salam Street, off Aminu Kano Crescent, Wuse 2, Abuja 900288, Federal Capital Territory</p> 
+                            <p style="margin-bottom: 10px; "> Ground floor, 4 Madiana Close, off Dar-Es-Salam Street, off Aminu Kano Crescent, Wuse 2, Abuja 900288, Federal Capital Territory</p> 
                             
                             </div>
                         </div>
-                    <% } %>
-                    else if (<%=transaction.disco %> === 'BENIN'){ %>
-                        <div>
-                            <div style=" text-decoration:none !important; font-weight:100; text-align: left; margin-bottom: 10px; width: 20%;  color:#000000; font-size:x-small;  display:block; float:left; margin-left: 40px; ">
-                                <span style="text-transform: uppercase;  padding-right: 10px;">Head Office </span><img width="30px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/BENIN.jpeg">
-                              <p style="margin-bottom: 10px; "> Ground floor, 4 Madiana Close, off Dar-Es-Salam Street, off Aminu Kano Crescent, Wuse 2, Abuja 900288, Federal Capital Territory</p> 
-                            
+                        <% }  else if (transaction.disco === 'BENIN'){  %>
+                            <div>
+                                <div style=" text-decoration:none !important; font-weight:100; text-align: left; margin-bottom: 10px; width: 20%;  color:#000000; font-size:x-small;  display:block; float:left; margin-left: 40px; ">
+                                    <span style="text-transform: uppercase;  padding-right: 10px;">Head Office </span><img width="30px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/BENIN.jpeg">
+                                  <p style="margin-bottom: 10px; "> Ground floor, 4 Madiana Close, off Dar-Es-Salam Street, off Aminu Kano Crescent, Wuse 2, Abuja 900288, Federal Capital Territory</p> 
+                                
+                                </div>
                             </div>
-                        </div>
-                    <% } %>
-                    else if (<%=transaction.disco %> === 'EKO'){ %>
-                        <div>
-                            <div style=" text-decoration:none !important; font-weight:100; text-align: left; margin-bottom: 10px; width: 20%;  color:#000000; font-size:x-small;  display:block; float:left; margin-left: 40px; ">
-                                <span style="text-transform: uppercase;  padding-right: 10px;">Head Office </span><img width="30px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/EKO.jpeg">
-                              <p style="margin-bottom: 10px; "> Ground floor, 4 Madiana Close, off Dar-Es-Salam Street, off Aminu Kano Crescent, Wuse 2, Abuja 900288, Federal Capital Territory</p> 
-                            
+                        <% }  else if (transaction.disco === 'EKO'){  %>
+                            <div>
+                                <div style=" text-decoration:none !important; font-weight:100; text-align: left; margin-bottom: 10px; width: 20%;  color:#000000; font-size:x-small;  display:block; float:left; margin-left: 40px; ">
+                                    <span style="text-transform: uppercase;  padding-right: 10px;">Head Office </span><img width="30px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/EKO.jpeg">
+                                  <p style="margin-bottom: 10px; "> Ground floor, 4 Madiana Close, off Dar-Es-Salam Street, off Aminu Kano Crescent, Wuse 2, Abuja 900288, Federal Capital Territory</p> 
+                                
+                                </div>
                             </div>
-                        </div>
-                    <% } %>
-                    else if (<%=transaction.disco %> === 'ENUGU'){ %>
-                        <div>
-                            <div style=" text-decoration:none !important; font-weight:100; text-align: left; margin-bottom: 10px; width: 20%;  color:#000000; font-size:x-small;  display:block; float:left; margin-left: 40px; ">
-                                <span style="text-transform: uppercase;  padding-right: 10px;">Head Office </span><img width="30px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/ENUGU.jpeg">
-                              <p style="margin-bottom: 10px; "> Ground floor, 4 Madiana Close, off Dar-Es-Salam Street, off Aminu Kano Crescent, Wuse 2, Abuja 900288, Federal Capital Territory</p> 
-                            
+                        <% }  else if (transaction.disco === 'ENUGU'){  %>
+                            <div>
+                                <div style=" text-decoration:none !important; font-weight:100; text-align: left; margin-bottom: 10px; width: 20%;  color:#000000; font-size:x-small;  display:block; float:left; margin-left: 40px; ">
+                                    <span style="text-transform: uppercase;  padding-right: 10px;">Head Office </span><img width="30px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/ENUGU.jpeg">
+                                  <p style="margin-bottom: 10px; "> Ground floor, 4 Madiana Close, off Dar-Es-Salam Street, off Aminu Kano Crescent, Wuse 2, Abuja 900288, Federal Capital Territory</p> 
+                                
+                                </div>
                             </div>
-                        </div>
-                    <% } %>
-                    else if (<%=transaction.disco %> === 'IBADAN'){ %>
-                        <div>
-                            <div style=" text-decoration:none !important; font-weight:100; text-align: left; margin-bottom: 10px; width: 20%;  color:#000000; font-size:x-small;  display:block; float:left; margin-left: 40px; ">
-                                <span style="text-transform: uppercase;  padding-right: 10px;">Head Office </span><img width="30px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/IBADAN.jpeg">
-                              <p style="margin-bottom: 10px; "> Ground floor, 4 Madiana Close, off Dar-Es-Salam Street, off Aminu Kano Crescent, Wuse 2, Abuja 900288, Federal Capital Territory</p> 
-                            
+                        <% }  else if (transaction.disco === 'IBADAN'){  %>
+                            <div>
+                                <div style=" text-decoration:none !important; font-weight:100; text-align: left; margin-bottom: 10px; width: 20%;  color:#000000; font-size:x-small;  display:block; float:left; margin-left: 40px; ">
+                                    <span style="text-transform: uppercase;  padding-right: 10px;">Head Office </span><img width="30px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/IBADAN.jpeg">
+                                  <p style="margin-bottom: 10px; "> Ground floor, 4 Madiana Close, off Dar-Es-Salam Street, off Aminu Kano Crescent, Wuse 2, Abuja 900288, Federal Capital Territory</p> 
+                                
+                                </div>
                             </div>
-                        </div>
-                    <% } %>
-                    else if (<%=transaction.disco %> === 'EKO'){ %>
-                        <div>
-                            <div style=" text-decoration:none !important; font-weight:100; text-align: left; margin-bottom: 10px; width: 20%;  color:#000000; font-size:x-small;  display:block; float:left; margin-left: 40px; ">
-                                <span style="text-transform: uppercase;  padding-right: 10px;">Head Office </span><img width="30px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/IKEJA.jpeg">
-                              <p style="margin-bottom: 10px; "> Ground floor, 4 Madiana Close, off Dar-Es-Salam Street, off Aminu Kano Crescent, Wuse 2, Abuja 900288, Federal Capital Territory</p> 
-                            
+                        <% }  else if (transaction.disco === 'EKO'){  %>
+                            <div>
+                                <div style=" text-decoration:none !important; font-weight:100; text-align: left; margin-bottom: 10px; width: 20%;  color:#000000; font-size:x-small;  display:block; float:left; margin-left: 40px; ">
+                                    <span style="text-transform: uppercase;  padding-right: 10px;">Head Office </span><img width="30px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/IKEJA.jpeg">
+                                  <p style="margin-bottom: 10px; "> Ground floor, 4 Madiana Close, off Dar-Es-Salam Street, off Aminu Kano Crescent, Wuse 2, Abuja 900288, Federal Capital Territory</p> 
+                                
+                                </div>
                             </div>
-                        </div>
-                    <% } %>
-                    else if (<%=transaction.disco %> === 'JOS'){ %>
-                        <div>
-                            <div style=" text-decoration:none !important; font-weight:100; text-align: left; margin-bottom: 10px; width: 20%;  color:#000000; font-size:x-small;  display:block; float:left; margin-left: 40px; ">
-                                <span style="text-transform: uppercase;  padding-right: 10px;">Head Office </span><img width="30px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/JOS.jpeg">
-                              <p style="margin-bottom: 10px; "> Ground floor, 4 Madiana Close, off Dar-Es-Salam Street, off Aminu Kano Crescent, Wuse 2, Abuja 900288, Federal Capital Territory</p> 
-                            
+                        <% } else if (transaction.disco === 'JOS'){  %>
+                            <div>
+                                <div style=" text-decoration:none !important; font-weight:100; text-align: left; margin-bottom: 10px; width: 20%;  color:#000000; font-size:x-small;  display:block; float:left; margin-left: 40px; ">
+                                    <span style="text-transform: uppercase;  padding-right: 10px;">Head Office </span><img width="30px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/JOS.jpeg">
+                                  <p style="margin-bottom: 10px; "> Ground floor, 4 Madiana Close, off Dar-Es-Salam Street, off Aminu Kano Crescent, Wuse 2, Abuja 900288, Federal Capital Territory</p> 
+                                
+                                </div>
                             </div>
-                        </div>
-                    <% } %>
-                    else if (<%=transaction.disco %> === 'KADUNA'){ %>
-                        <div>
-                            <div style=" text-decoration:none !important; font-weight:100; text-align: left; margin-bottom: 10px; width: 20%;  color:#000000; font-size:x-small;  display:block; float:left; margin-left: 40px; ">
-                                <span style="text-transform: uppercase;  padding-right: 10px;">Head Office </span><img width="30px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/KADUNA.jpeg">
-                              <p style="margin-bottom: 10px; "> Ground floor, 4 Madiana Close, off Dar-Es-Salam Street, off Aminu Kano Crescent, Wuse 2, Abuja 900288, Federal Capital Territory</p> 
-                            
+                        <% }  else if (transaction.disco === 'KADUNA'){  %>
+                            <div>
+                                <div style=" text-decoration:none !important; font-weight:100; text-align: left; margin-bottom: 10px; width: 20%;  color:#000000; font-size:x-small;  display:block; float:left; margin-left: 40px; ">
+                                    <span style="text-transform: uppercase;  padding-right: 10px;">Head Office </span><img width="30px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/KADUNA.jpeg">
+                                  <p style="margin-bottom: 10px; "> Ground floor, 4 Madiana Close, off Dar-Es-Salam Street, off Aminu Kano Crescent, Wuse 2, Abuja 900288, Federal Capital Territory</p> 
+                                
+                                </div>
                             </div>
-                        </div>
-                    <% } %>
-                    else if (<%=transaction.disco %> === 'KANO'){ %>
-                        <div>
-                            <div style=" text-decoration:none !important; font-weight:100; text-align: left; margin-bottom: 10px; width: 20%;  color:#000000; font-size:x-small;  display:block; float:left; margin-left: 40px; ">
-                                <span style="text-transform: uppercase;  padding-right: 10px;">Head Office </span><img width="30px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/KANO.jpeg">
-                              <p style="margin-bottom: 10px; "> Ground floor, 4 Madiana Close, off Dar-Es-Salam Street, off Aminu Kano Crescent, Wuse 2, Abuja 900288, Federal Capital Territory</p> 
-                            
+                        <% }  else if (transaction.disco === 'KANO'){  %>
+                            <div>
+                                <div style=" text-decoration:none !important; font-weight:100; text-align: left; margin-bottom: 10px; width: 20%;  color:#000000; font-size:x-small;  display:block; float:left; margin-left: 40px; ">
+                                    <span style="text-transform: uppercase;  padding-right: 10px;">Head Office </span><img width="30px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/KANO.jpeg">
+                                  <p style="margin-bottom: 10px; "> Ground floor, 4 Madiana Close, off Dar-Es-Salam Street, off Aminu Kano Crescent, Wuse 2, Abuja 900288, Federal Capital Territory</p> 
+                                
+                                </div>
                             </div>
-                        </div>
-                    <% } %>
-                    else if (<%=transaction.disco %> === 'PORTHARCOURT'){ %>
-                        <div>
-                            <div style=" text-decoration:none !important; font-weight:100; text-align: left; margin-bottom: 10px; width: 20%;  color:#000000; font-size:x-small;  display:block; float:left; margin-left: 40px; ">
-                                <span style="text-transform: uppercase;  padding-right: 10px;">Head Office </span><img width="30px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/PORTHARCOURT.jpeg">
-                              <p style="margin-bottom: 10px; "> Ground floor, 4 Madiana Close, off Dar-Es-Salam Street, off Aminu Kano Crescent, Wuse 2, Abuja 900288, Federal Capital Territory</p> 
-                            
+                        <% }  else if (transaction.disco === 'PORTHARCOURT'){  %>
+                            <div>
+                                <div style=" text-decoration:none !important; font-weight:100; text-align: left; margin-bottom: 10px; width: 20%;  color:#000000; font-size:x-small;  display:block; float:left; margin-left: 40px; ">
+                                    <span style="text-transform: uppercase;  padding-right: 10px;">Head Office </span><img width="30px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/PORTHARCOURT.jpeg">
+                                  <p style="margin-bottom: 10px; "> Ground floor, 4 Madiana Close, off Dar-Es-Salam Street, off Aminu Kano Crescent, Wuse 2, Abuja 900288, Federal Capital Territory</p> 
+                                
+                                </div>
                             </div>
-                        </div>
-                    <% } %>
-                    else if (<%=transaction.disco %> === 'YOLA'){ %>
-                        <div>
-                            <div style=" text-decoration:none !important; font-weight:100; text-align: left; margin-bottom: 10px; width: 20%;  color:#000000; font-size:x-small;  display:block; float:left; margin-left: 40px; ">
-                                <span style="text-transform: uppercase;  padding-right: 10px;">Head Office </span><img width="30px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/YOLA.jpeg">
-                              <p style="margin-bottom: 10px; "> Ground floor, 4 Madiana Close, off Dar-Es-Salam Street, off Aminu Kano Crescent, Wuse 2, Abuja 900288, Federal Capital Territory</p> 
-                            
+                        <% }  else if (transaction.disco === 'YOLA'){  %>
+                            <div>
+                                <div style=" text-decoration:none !important; font-weight:100; text-align: left; margin-bottom: 10px; width: 20%;  color:#000000; font-size:x-small;  display:block; float:left; margin-left: 40px; ">
+                                    <span style="text-transform: uppercase;  padding-right: 10px;">Head Office </span><img width="30px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/YOLA.jpeg">
+                                  <p style="margin-bottom: 10px; "> Ground floor, 4 Madiana Close, off Dar-Es-Salam Street, off Aminu Kano Crescent, Wuse 2, Abuja 900288, Federal Capital Territory</p> 
+                                
+                                </div>
                             </div>
-                        </div>
+                    <% } else{ %>
+                        <div></div>
                     <% } %>
-                  
                     
 
 
@@ -141,7 +127,7 @@
                             <span style="padding-left:15px; ">Meter Number</span>
                         </div>
                         <div >
-                            <span style="padding-left:15px; font-size: medium; ">meterNumber</span>
+                            <span style="padding-left:15px; font-size: medium; "><%= meterNumber %></span>
                             </div>
                         </div>
                         <p style="padding-left:15px;">Any question about this payment?</p>
@@ -163,7 +149,7 @@
             color:#000000; font-size:x-small;  display:block; border-radius:5px; width:30% ; float: left; margin-left: 40px; margin-bottom: 10px;">
                     <span style="font-size: medium; color: #80d0f2;"> Your Electricity Bill</span>
                
-                <p><%= transaction.transactionTimestamp.toString().split(` (`)[0]) %></p>
+                <p><%=  transaction.transactionTimestamp.toString().split(` (`)[0] %></p>
             </div>
 
             <div  style="background:#f2f4f5;text-decoration:none !important; font-weight:100; text-align: left;  padding-top: 2px; color:#000000; font-size:x-small;  display:block; border-radius:5px; width:30% ; height: 50px; float: right; margin-right: 30px;">
@@ -171,7 +157,7 @@
             <span style="padding-left: 15px; font-size:small;">Date</span>
         </div >
         <div>
-            <span style="padding-left: 15px; font-size: medium;"><%= transaction.transactionTimestamp.toString().split(` (`)[0]) %></span>
+            <span style="padding-left: 15px; font-size: medium;"><%=  transaction.transactionTimestamp.toString().split(` (`)[0]  %></span>
         </div>
             </div>
 
@@ -183,7 +169,7 @@
                     <span style="padding-left: 15px; font-size:small; width: 100%;">Plan Renewal Due</span>
                 </div>
                     <div>
-                        <span style="padding-left: 15px; font-size: medium;"><%= transaction.transactionTimestamp.toString().split(` (`)[0])%></span>
+                        <span style="padding-left: 15px; font-size: medium;"><%=  transaction.transactionTimestamp.toString().split(` (`)[0] %></span>
                     </div>
                     
                     </div>
@@ -205,7 +191,7 @@
 
             <div style=" font-size: x-small;  width:50%; ">
                 <span style="text-align: left; margin-left: 35px; float: left;">Electricity Charges</span>
-                <span style="text-align: left; float: right; ">&#8358;  <%=transaction.amount.toString().replace( /\B(?=(\d{3})+(?!\d))/g, "," )%></span>
+                <span style="text-align: left; float: right; ">&#8358;  <%=  transaction.amount.toString().replace( /\B(?=(\d{3})+(?!\d))/g, "," )  %></span>
                
             </div>
             <hr style="margin-left: 35px; width:45%; border:1px solid #f1ecec ">
@@ -234,7 +220,7 @@
             
             <div style=" font-size: medium; width: 50%;">
                 <span style="text-align: left; margin-left: 35px; float: left;">Total Amount </span>
-                <span style="text-align: left; float:right">&#8358; <%=transaction.amount.toString().replace( /\B(?=(\d{3})+(?!\d))/g, "," )%></span>
+                <span style="text-align: left; float:right">&#8358; <%= transaction.amount.toString().replace( /\B(?=(\d{3})+(?!\d))/g, "," ) %></span>
             </div>
         </div>
         </td>
