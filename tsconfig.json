@@ -105,5 +105,5 @@
     "include": [
         "src/**/*",
         "src/global.d.ts",
-, "src/models/.model.ts"    ]
+        "src/models/.model.ts"    ]
 }
