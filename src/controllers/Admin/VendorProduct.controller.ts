@@ -18,7 +18,7 @@ export default class VendorProductController {
             amount: number,
         };
 
-        if (!vendorId || !productId || (!commission && commission === 0) || ( !bonus && bonus == 0) || !schemaData || !vendorHttpUrl) {
+        if (!vendorId || !productId || (!commission && commission !== 0) || ( !bonus && bonus !== 0) || !schemaData || !vendorHttpUrl) {
             throw new BadRequestError('Vendor ID, Product ID, Commission, Bonus, Schema Data, and Vendor HTTP URL are required');
         }
 
