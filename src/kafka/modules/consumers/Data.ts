@@ -28,7 +28,6 @@ import ProductService from "../../../services/Product.service";
 import { VendorProductSchemaData } from "../../../models/VendorProduct.model";
 import { CustomError } from "../../../utils/Errors";
 import VendorProductService from "../../../services/VendorProduct.service";
-import { getCurrentWaitTimeForSwitchEvent } from "./Token";
 import VendorModelService from "../../../services/Vendor.service";
 import BundleService from "../../../services/Bundle.service";
 import { token } from "morgan";
@@ -74,7 +73,7 @@ const retry = {
     count: 0,
     limit: 5,
     limitToStopRetryingWhenTransactionIsSuccessful: 20,
-    retryCountBeforeSwitchingVendor: 2,
+    retryCountBeforeSwitchingVendor: 3,
     testForSwitchingVendor: true,
 }
 
@@ -90,9 +89,8 @@ export async function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
     // Use geometric progression  calculate wait time, where R = 2
     const defaultValues = [10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 20480, 40960, 81920, 163840, 327680, 655360, 1310720, 2621440, 5242880]
     const timesToRetry = await WaitTimeService.getWaitTime() ?? defaultValues
-    timesToRetry.unshift(1)
 
-    if (retryCount >= timesToRetry.length) {
+    if (retryCount > timesToRetry.length) {
         return timesToRetry[timesToRetry.length - 1]
     }
 
@@ -109,7 +107,7 @@ export async function getCurrentWaitTimeForSwitchEvent(retryCount: number) {
         return timesToRetry[timesToRetry.length - 1]
     }
 
-    return timesToRetry[retryCount]
+    return timesToRetry[retryCount - 1]
 }
 
 export class TokenHandlerUtil {
@@ -165,27 +163,31 @@ export class TokenHandlerUtil {
             retryCount,
             superAgent,
             vendorRetryRecord,
-            waitTime: getCurrentWaitTimeForRequeryEvent(retryCount)
+            waitTime: await getCurrentWaitTimeForRequeryEvent(retryCount)
         };
 
         // Start timer to requery transaction at intervals
-        async function countDownTimer(time: number) {
-            for (let i = time; i > 0; i--) {
-                setTimeout(() => {
-                    logger.info(`Retrying transaction ${i} seconds`)
-                }, (time - i) * 1000)
-            }
+        async function countDownTimer(time: number): Promise<void> {
+            return new Promise<void>((resolve) => {
+                for (let i = time; i > 0; i--) {
+                    setTimeout(() => {
+                        logger.warn(`Reinitating transaction with vendor in ${i} seconds`, {
+                            meta: { transactionId: eventMetaData.transactionId }
+                        });
+                        if (i === 1) {
+                            resolve(); // Resolve the Promise when countdown is complete
+                        }
+                    }, (time - i) * 1000);
+                }
+            });
         }
-        countDownTimer(eventMetaData.waitTime);
+        await countDownTimer(eventMetaData.waitTime);
 
         // Publish event in increasing intervals of seconds i.e 1, 2, 4, 8, 16, 32, 64, 128, 256, 512
         // TODO: Use an external service to schedule this task
-        setTimeout(async () => {
-            logger.info('Retrying transaction from vendor')
-            await VendorPublisher.publishEventForGetDataFromVendorRetry(
-                eventMetaData,
-            );
-        }, eventMetaData.waitTime * 1000);
+        await VendorPublisher.publishEventForGetDataFromVendorRetry(
+            eventMetaData,
+        );
     }
 
     static async triggerEventToRetryTransactionWithNewVendor(
@@ -199,6 +201,7 @@ export class TokenHandlerUtil {
             vendorRetryRecord: VendorRetryRecord
         }
     ) {
+        console.log({ vendorRetryRecord })
         let waitTime = await getCurrentWaitTimeForSwitchEvent(vendorRetryRecord.retryCount)
 
         const meta = {
@@ -219,7 +222,7 @@ export class TokenHandlerUtil {
         console.log({ currentVendor, retryRecord })
         let useCurrentVendor = false
         if (currentVendor.vendor === transaction.superagent) {
-            if (currentVendor.retryCount < 3) {
+            if (currentVendor.retryCount < retry.retryCountBeforeSwitchingVendor) {
                 // Update the retry record in the transaction
                 // Get the last record where this vendor was used
                 const lastRecord = retryRecord[retryRecord.length - 1]
@@ -239,8 +242,12 @@ export class TokenHandlerUtil {
             // Add new record to the retry record
         }
 
-        const newVendor = useCurrentVendor ? currentVendor.vendor : await TokenHandlerUtil.getNextBestVendorForVendRePurchase(transaction.productCodeId, transaction.superagent, transaction.previousVendors, parseFloat(transaction.amount))
-        if (newVendor != currentVendor.vendor || currentVendor.retryCount > 2) {
+        if (!transaction.bundleId) {
+            throw new CustomError('BundleId is required', meta)
+        }
+
+        const newVendor = useCurrentVendor ? currentVendor.vendor : await TokenHandlerUtil.getNextBestVendorForVendRePurchase(transaction.bundleId, transaction.superagent, transaction.previousVendors, parseFloat(transaction.amount))
+        if (newVendor != currentVendor.vendor || currentVendor.retryCount > retry.retryCountBeforeSwitchingVendor) {
             // Add new record to the retry record
             currentVendor = {
                 vendor: newVendor,

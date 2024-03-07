@@ -19,6 +19,7 @@ export class SmsService {
         }
         return phoneNumber
     }
+    
     static sendSms = async (to: string, message: string) => {
         try {
             const result = await client.post("", {

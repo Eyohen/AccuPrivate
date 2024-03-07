@@ -55,6 +55,7 @@ interface valideMeterRequestBody {
     phoneNumber: string;
     partnerName: string;
     email: string;
+    channel: ITransaction['channel']
 }
 
 interface vendTokenRequestBody {
@@ -545,6 +546,7 @@ export default class VendorController {
             phoneNumber,
             email,
             vendType,
+            channel
         }: valideMeterRequestBody = req.body;
         let { disco } = req.body;
         const partnerId = (req as any).key;
@@ -587,6 +589,7 @@ export default class VendorController {
                 previousVendors: [superagent],
                 vendorReferenceId: generateRandonNumbers(12),
                 productType: transactionTypes[existingProductCodeForDisco.category],
+                channel
             });
 
         Logger.apiRequest.info("Validate meter requested", { meta: { transactionId: transaction.id, ...req.body } })

@@ -153,6 +153,9 @@ export default class Transaction extends Model<ITransaction | Transaction> {
     @BelongsTo(() => Meter)
     meter: Meter;
 
+    @Column({ type: DataType.STRING, allowNull: true })
+    channel: 'USSD' | 'WEB' | 'MOBILE' | 'POS' | 'ATM' | 'OTHERS'
+
     @BelongsTo(() => Bundle)
     bundle: Bundle;
 
@@ -239,6 +242,7 @@ export interface ITransaction {
     productType: string;
     networkProvider?: string;
     bundleId?: string;
+    channel: 'USSD' | 'WEB' | 'MOBILE' | 'POS' | 'ATM' | 'OTHERS'
 }
 
 // Define an interface representing the creation of a transaction (ICreateTransaction).

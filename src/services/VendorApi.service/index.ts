@@ -313,8 +313,10 @@ export class IRechargeVendorService {
         const hash = this.generateHash(combinedString);
 
         const mainMeta = {
-            url : this.client.defaults.baseURL + "/vend_power.php",
-            method: "GET",
+            description: {
+                url: this.client.defaults.baseURL + "/vend_power.php",
+                method: "GET",
+            },
             params: {
                 vendor_code: this.VENDOR_CODE,
                 reference_id: reference,
@@ -359,7 +361,7 @@ export class IRechargeVendorService {
         );
 
         logger.info("Vend response from irecharge", {
-            meta: { responseData: response.data, transactionId , ...mainMeta },
+            meta: { responseData: response.data, transactionId, ...mainMeta },
         });
 
         const responseData = { ...response.data, source: "IRECHARGE" };
@@ -380,8 +382,10 @@ export class IRechargeVendorService {
         const hash = this.generateHash(combinedString);
 
         const mainMeta = {
-            url: this.client.defaults.baseURL + "/vend_status.php",
-            method: "GET",
+            description: {
+                url: this.client.defaults.baseURL + "/vend_status.php",
+                method: "GET",
+            },
             params: {
                 vendor_code: this.VENDOR_CODE,
                 access_token: accessToken,
@@ -416,7 +420,7 @@ export class IRechargeVendorService {
     }
 }
 
-export class VendorAirtimeService {}
+export class VendorAirtimeService { }
 // Define the VendorService class for handling provider-related operations
 export default class VendorService {
     // Static method for obtaining a Baxi vending token
@@ -425,8 +429,10 @@ export default class VendorService {
 
         try {
             const mainMeta = {
-                url: this.baxiAxios().defaults.baseURL + "/electricity/request",
-                method: "POST",
+                description: {
+                    url: this.baxiAxios().defaults.baseURL + "/electricity/request",
+                    method: "POST",
+                },
                 data: {
                     amount,
                     phone,
@@ -486,10 +492,12 @@ export default class VendorService {
     }) {
         try {
             const mainMeta = {
-                url:
-                    this.baxiAxios().defaults.baseURL +
-                    "/superagent/transaction/requery",
-                method: "GET",
+                description: {
+                    url:
+                        this.baxiAxios().defaults.baseURL +
+                        "/superagent/transaction/requery",
+                    method: "GET",
+                },
                 params: { agentReference: reference },
             };
             logger.info("Requerying transaction with baxi", {
@@ -545,8 +553,10 @@ export default class VendorService {
         };
 
         const mainMeta = {
-            url: this.baxiAxios().defaults.baseURL + "/electricity/verify",
-            method: "POST",
+            description: {
+                url: this.baxiAxios().defaults.baseURL + "/electricity/verify",
+                method: "POST",
+            },
             data: postData,
         };
 
@@ -583,8 +593,10 @@ export default class VendorService {
     static async baxiFetchAvailableDiscos() {
         try {
             const mainMeta = {
-                url: this.baxiAxios().defaults.baseURL + "/electricity/billers",
-                method: "GET",
+                description: {
+                    url: this.baxiAxios().defaults.baseURL + "/electricity/billers",
+                    method: "GET",
+                }
             };
             logger.info("Fetching available discos from baxi", {
                 meta: mainMeta,
@@ -681,8 +693,10 @@ export default class VendorService {
         };
 
         const mainMeta = {
-            url: this.buyPowerAxios().defaults.baseURL + "/vend?strict=0",
-            method: "POST",
+            description: {
+                url: this.buyPowerAxios().defaults.baseURL + "/vend?strict=0",
+                method: "POST",
+            },
             data: postData,
         };
 
@@ -716,7 +730,7 @@ export default class VendorService {
             if (error instanceof AxiosError) {
                 const requery =
                     error.response?.data?.message ===
-                        "An unexpected error occurred. Please requery." ||
+                    "An unexpected error occurred. Please requery." ||
                     error.response?.data?.responseCode === 500;
                 if (requery) {
                     logger.error(error.message, {
@@ -793,10 +807,12 @@ export default class VendorService {
         };
         const params: string = querystring.stringify(paramsObject);
         const mainMeta = {
-            url:
-                this.buyPowerAxios().defaults.baseURL +
-                `/check/meter?${params}`,
-            method: "GET",
+            description: {
+                url:
+                    this.buyPowerAxios().defaults.baseURL +
+                    `/check/meter?${params}`,
+                method: "GET",
+            },
             data: {
                 meter: body.meterNumber,
                 disco: body.disco,
@@ -966,7 +982,7 @@ export default class VendorService {
                 email,
             },
         });
-               logger.info("Vending token with IRecharge", {
+        logger.info("Vending token with IRecharge", {
             meta: { requestData: body, transactionId: body.transactionId },
         });
         const response = await IRechargeVendorService.vend({

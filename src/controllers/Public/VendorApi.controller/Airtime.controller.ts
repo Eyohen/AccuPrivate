@@ -85,7 +85,7 @@ export class AirtimeVendController {
         res: Response,
         next: NextFunction
     ) {
-        const { phoneNumber, amount, email, networkProvider } = req.body;
+        const { phoneNumber, amount, email, networkProvider, channel } = req.body;
         let disco = networkProvider
 
         const existingProductCodeForDisco = await ProductService.viewProductCodeByProductName(disco)
@@ -123,7 +123,8 @@ export class AirtimeVendController {
                 transactionType: TransactionType.AIRTIME,
                 productCodeId: existingProductCodeForDisco.id,
                 previousVendors: [superAgent],
-                retryRecord: []
+                retryRecord: [],
+                channel
             });
 
         const transactionEventService = new AirtimeTransactionEventService(transaction, superAgent, partnerId, phoneNumber);

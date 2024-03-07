@@ -26,6 +26,7 @@ export default class TransactionService {
     static async addTransactionWithoutValidatingUserRelationship(
         transaction: Omit<ICreateTransaction, "userId">,
     ): Promise<Transaction> {
+        console.log({ transaction })
         const transactionData = Transaction.build({
             ...transaction,
             // reference: generateRandomString(10),
@@ -109,6 +110,7 @@ export default class TransactionService {
                     'meterId',
                     'createdAt',
                     'updatedAt',
+                    'channel'
                     //...attributesMap
                 ],
                 order: [["transactionTimestamp", "DESC"]],

@@ -23,6 +23,7 @@ class YourCustomPostgresTransport extends winston.Transport {
             logType: meta?.logType,
             transactionId: meta?.transactionId,
             createdAt: new Date(),
+            description: meta?.description ?? {}
         })
             .then(() => {
                 callback();

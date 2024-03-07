@@ -97,7 +97,7 @@ export class DataVendController {
         next: NextFunction
     ) {
         console.log({ VENDOR_URL: VENDOR_URL });
-        const { phoneNumber, email, bundleCode } = req.body;
+        const { phoneNumber, email, bundleCode, channel } = req.body;
         // TODO: Add request type for request authenticated by API keys
         const partnerId = (req as any).key;
 
@@ -146,10 +146,9 @@ export class DataVendController {
                             ? generateRandonNumbers(12)
                             : reference,
                     retryRecord: [],
+                    channel
                 }
             );
-
-        console.log({ transaction: transaction.dataValues, dataBundle: dataBundle.dataValues });
 
         const transactionEventService = new DataTransactionEventService(
             transaction,
@@ -286,7 +285,7 @@ export class DataVendController {
             partner: partner,
             user: user,
             vendorRetryRecord: {
-                retryCount: 0,
+                retryCount: 1,
             },
         });
 
