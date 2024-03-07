@@ -562,8 +562,7 @@ export default class VendorController {
             throw new BadRequestError('Invalid product code for electricity', errorMeta)
         }
 
-        // const superagent = await TokenHandlerUtil.getBestVendorForPurchase(existingProductCodeForDisco.id, 1000);
-        const superagent = 'BUYPOWERNG'
+        const superagent = await TokenHandlerUtil.getBestVendorForPurchase(existingProductCodeForDisco.id, 1000);
         const transactionTypes = {
             'ELECTRICITY': TransactionType.ELECTRICITY,
             'AIRTIME': TransactionType.AIRTIME,
