@@ -1,3 +1,22 @@
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accuvend Receipt</title>
+
+<style>
+        @font-face {
+            font-family: 'newfont';
+            src: url('https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/PayPalSansBigRegular.ttf');
+
+        }
+        html {
+            font-family: 'newfont', sans-serif;
+            
+        }
+    </style>
+</head>
 <table width="95%" border="0" align="center" cellpadding="0" cellspacing="0"
     style="max-width:670px;background:#fff; border-radius:3px; text-align:center;-webkit-box-shadow:0 6px 18px 0 rgba(0,0,0,.06);-moz-box-shadow:0 6px 18px 0 rgba(0,0,0,.06);box-shadow:0 6px 18px 0 rgba(0,0,0,.06);">
     <tr>
@@ -157,7 +176,7 @@
             <span style="padding-left: 15px; font-size:small;">Date</span>
         </div >
         <div>
-            <span style="padding-left: 15px; font-size: medium;"><%=  transaction.transactionTimestamp.toString().split(` (`)[0]  %></span>
+            <span style="padding-left: 15px; font-size: small;"><%=  transaction.transactionTimestamp.toString().split(` (`)[0]  %></span>
         </div>
             </div>
 
@@ -166,13 +185,16 @@
             <div>
                 <div  style="background:#CAE526;text-decoration:none !important; margin-top: 5px; font-weight:100; text-align: left;  padding-top: 2px; color:#000000; width: 30%; height: 60px; display:block; border-radius:5px;   float: right; margin-right: 30px;">
                     <div>
-                    <span style="padding-left: 15px; font-size:small; width: 100%;">Plan Renewal Due</span>
+                    <span style="padding-left: 15px; font-size:small; width: 100%;">Token</span>
                 </div>
                     <div>
-                        <span style="padding-left: 15px; font-size: medium;"><%=  transaction.transactionTimestamp.toString().split(` (`)[0] %></span>
+                        <span style="padding-left: 15px; font-size: medium;"><%=  token %></span>
                     </div>
-                    
+                    <div>
+                        <%=transaction.disco %>
                     </div>
+                    </div>
+
 
             <div style="text-align: left; margin-left: 35px; font-size: medium; color:#80d0f2;">
                 <span>Your account</span>
