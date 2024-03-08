@@ -24,12 +24,13 @@ import { Database } from "../../../models";
 import ProductService from "../../../services/Product.service";
 import VendorProduct from "../../../models/VendorProduct.model";
 import VendorProductService from "../../../services/VendorProduct.service";
-import { TokenHandlerUtil } from "../../../kafka/modules/consumers/Token";
+import { TokenHandlerUtil } from "../../../kafka/modules/consumers/Data";
 import {
     generateRandomString,
     generateRandonNumbers,
 } from "../../../utils/Helper";
 import ResponseTrimmer from "../../../utils/ResponseTrimmer";
+import BundleService from "../../../services/Bundle.service";
 require("newrelic");
 
 class DataValidator {
@@ -51,11 +52,9 @@ class DataValidator {
     static async validateDataRequest({
         phoneNumber,
         amount,
-        disco,
     }: {
         phoneNumber: string;
         amount: string;
-        disco: string;
     }) {
         DataValidator.validatePhoneNumber(phoneNumber);
         // Check if amount is a number
@@ -65,12 +64,6 @@ class DataValidator {
 
         if (parseFloat(amount) < 50) {
             throw new BadRequestError("Amount must be greater than 50");
-        }
-
-        const productCode =
-            await ProductService.viewSingleProductByMasterProductCode(disco);
-        if (!productCode) {
-            throw new InternalServerError("Product code not found");
         }
     }
 
@@ -104,19 +97,20 @@ export class DataVendController {
         next: NextFunction
     ) {
         console.log({ VENDOR_URL: VENDOR_URL });
-        const { phoneNumber, email,  } = req.body;
+        const { phoneNumber, email, bundleCode, channel } = req.body;
         // TODO: Add request type for request authenticated by API keys
         const partnerId = (req as any).key;
 
         let disco = req.body.networkProvider;
         // TODO: I'm using this for now to allow the schema validation since product code hasn't been created for airtime
-        const existingProductCodeForDisco =
-            await ProductService.viewSingleProductByNameAndCategory(
-                disco,
-                "DATA"
-            );
+        const dataBundle = await BundleService.viewSingleBundleByBundleCode(bundleCode)
+        if (!dataBundle) {
+            throw new NotFoundError("Bundle not found");
+        }
+
+        const existingProductCodeForDisco = await dataBundle.$get("product");
         if (!existingProductCodeForDisco) {
-            throw new NotFoundError("Product code not found for disco");
+            throw new InternalServerError("Product record not found for already validated request");
         }
 
         disco = existingProductCodeForDisco.masterProductCode;
@@ -125,13 +119,10 @@ export class DataVendController {
             throw new BadRequestError("Invalid product code for data");
         }
 
-        if (!existingProductCodeForDisco.amount) {
-            throw new BadRequestError("Invalid product code for data");
-        }
-        const superAgent = await TokenHandlerUtil.getBestVendorForPurchase(existingProductCodeForDisco.id, existingProductCodeForDisco.amount);
+        const amount = dataBundle.bundleAmount.toString();
+        const superAgent = await TokenHandlerUtil.getBestVendorForPurchase(dataBundle.id, dataBundle.bundleAmount);
 
         const reference = generateRandomString(10);
-        const amount = existingProductCodeForDisco.amount.toString();
         const transaction: Transaction =
             await TransactionService.addTransactionWithoutValidatingUserRelationship(
                 {
@@ -139,6 +130,7 @@ export class DataVendController {
                     amount: amount,
                     status: Status.PENDING,
                     disco: disco,
+                    bundleId: dataBundle.id,
                     superagent: superAgent,
                     paymentType: PaymentType.PAYMENT,
                     transactionTimestamp: new Date(),
@@ -154,6 +146,7 @@ export class DataVendController {
                             ? generateRandonNumbers(12)
                             : reference,
                     retryRecord: [],
+                    channel
                 }
             );
 
@@ -165,7 +158,7 @@ export class DataVendController {
         );
         await transactionEventService.addPhoneNumberValidationRequestedEvent();
 
-        await DataValidator.validateDataRequest({ phoneNumber, amount, disco });
+        await DataValidator.validateDataRequest({ phoneNumber, amount });
         await transactionEventService.addPhoneNumberValidationRequestedEvent();
 
         const userInfo = {
@@ -254,6 +247,10 @@ export class DataVendController {
             throw new BadRequestError("Duplicate reference");
         }
 
+        if (transaction.status === Status.COMPLETE as any) {
+            throw new BadRequestError("Transaction already completed");
+        }
+
         const transactionEventService = new DataTransactionEventService(
             transaction,
             transaction.superagent,
@@ -270,6 +267,14 @@ export class DataVendController {
             bankComment: bankComment,
         });
 
+        console.log({
+            transaction: transaction.dataValues,
+            existingTransaction: existingTransaction
+        })
+        if (!transaction.bundleId) {
+            throw new BadRequestError("Bundle code is required");
+        }
+
         await VendorPublisher.publshEventForDataPurchaseInitiate({
             transactionId: transactionId,
             phone: {
@@ -279,6 +284,9 @@ export class DataVendController {
             superAgent: transaction.superagent,
             partner: partner,
             user: user,
+            vendorRetryRecord: {
+                retryCount: 1,
+            },
         });
 
         res.status(200).json({

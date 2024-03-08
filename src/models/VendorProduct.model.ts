@@ -3,6 +3,7 @@ import { Table, Column, Model, DataType, HasOne, HasMany, IsUUID, PrimaryKey, Un
 import VendorRates from './VendorRates.model';
 import Product from "./Product.model";
 import Vendor from "./Vendor.model";
+import Bundle from "./Bundle.model";
 
 // Define the Sequelize model for the "VendorProduct" table
 @Table
@@ -56,13 +57,19 @@ export default class VendorProduct extends Model<IVendorProduct | VendorProduct>
     @Column({ type: DataType.STRING, allowNull: false })
     vendorHttpUrl: string;
 
-    // Vendor Bundle Name
+    @ForeignKey(() => Bundle)
+    @IsUUID(4)
     @Column({ type: DataType.STRING, allowNull: true })
-    bundleName: string | null;
+    bundleId?: string;
 
-    // Vendor Bundle Code
-    @Column({ type: DataType.STRING, allowNull: true})
-    bundleCode: string | null;
+    @BelongsTo(() => Bundle)
+    bundle: Bundle;
+
+    @Column({ type: DataType.STRING, allowNull: true })
+    bundleCode?: string;
+
+    @Column({ type: DataType.STRING, allowNull: true })
+    bundleName?: string;
 
     @BelongsTo(() => Vendor)
     vendor: Vendor;
@@ -97,10 +104,10 @@ export interface IVendorProduct {
         code: string
     } & Record<string, any>;
     vendorHttpUrl: string;
-    bundleAmount?: number;
     vendorName: string;
     vendorCode: string;
-    bundleName?: string | null;
     bundleCode?: string | null;
-
+    bundleName?: string | null;
+    bundleAmount?: number;
+    bundleId?: string | null;
 }

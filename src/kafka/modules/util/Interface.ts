@@ -213,7 +213,8 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
         user: User;
         partner: Partner;
         transactionId: string;
-        superAgent: Transaction['superagent']
+        superAgent: Transaction['superagent'],
+        vendorRetryRecord: VendorRetryRecord
     };
     [TOPICS.DATA_TRANSACTION_COMPLETE]: {
         phone: {
@@ -238,7 +239,8 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
         user: User;
         partner: Partner;
         transactionId: string;
-        superAgent: Transaction['superagent']
+        superAgent: Transaction['superagent'],
+        vendorRetryRecord: VendorRetryRecord
     };
     [TOPICS.DATA_RECEIVED_FROM_VENDOR]: {
         phone: { phoneNumber: string; amount: number; },
@@ -257,6 +259,7 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
         retryCount: number;
         superAgent: Transaction['superagent'],
         waitTime: number,
+        vendorRetryRecord: VendorRetryRecord
     };
     [TOPICS.DATA_PURCHASE_RETRY_FROM_NEW_VENDOR]: {
         phone: {

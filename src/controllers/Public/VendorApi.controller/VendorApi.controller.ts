@@ -55,6 +55,7 @@ interface valideMeterRequestBody {
     phoneNumber: string;
     partnerName: string;
     email: string;
+    channel: ITransaction['channel']
 }
 
 interface vendTokenRequestBody {
@@ -90,12 +91,27 @@ class VendorTokenHandler implements Registry {
                 this.consumerInstance.shutdown()
             }
 
+            const product = await ProductService.viewSingleProductByMasterProductCode(this.transaction.disco)
+            if (!product) {
+                logger.warn('Product not found', { meta: { transactionId: this.transaction.id } })
+                throw new InternalServerError('Product not found')
+            }
+
             this.response().status(200).send({
                 status: 'success',
                 message: 'Token purchase initiated successfully',
                 data: {
-                    transaction: this.transaction,
-                    meter: data.meter,
+                    transaction: {
+                        disco: product.productName,
+                        "amount": this.transaction.amount,
+                        "transactionId": this.transaction.id,
+                        "id": this.transaction.id,
+                        "bankRefId": this.transaction.bankRefId,
+                        "bankComment": this.transaction.bankComment,
+                        "productType": this.transaction.productType,
+                        "transactionTimestamp": this.transaction.transactionTimestamp,
+                    },
+                    meter: { ...data.meter, disco: product.productName },
                     token: data.meter.token
                 }
             })
@@ -507,21 +523,21 @@ export default class VendorController {
             status: "success",
             data: {
                 "transaction": {
-                  "transactionId": "3f8d14d9-9933-44a5-ac46-1840beed2500",
-                  "status": "PENDING"
+                    "transactionId": "3f8d14d9-9933-44a5-ac46-1840beed2500",
+                    "status": "PENDING"
                 },
                 "meter": {
-                  "disco": "ECEKEPE",
-                  "number": "12345678910",
-                  "address": "012 Fake Cresent, Fake City, Fake State",
-                  "phone": "0801234567",
-                  "vendType": "PREPAID",
-                  "name": "Ciroma Chukwuma Adekunle"
+                    "disco": "ECEKEPE",
+                    "number": "12345678910",
+                    "address": "012 Fake Cresent, Fake City, Fake State",
+                    "phone": "0801234567",
+                    "vendType": "PREPAID",
+                    "name": "Ciroma Chukwuma Adekunle"
                 }
-              },
+            },
         });
 
-       
+
     }
 
     static async validateMeter(req: Request, res: Response, next: NextFunction) {
@@ -530,6 +546,7 @@ export default class VendorController {
             phoneNumber,
             email,
             vendType,
+            channel
         }: valideMeterRequestBody = req.body;
         let { disco } = req.body;
         const partnerId = (req as any).key;
@@ -548,7 +565,6 @@ export default class VendorController {
         }
 
         const superagent = await TokenHandlerUtil.getBestVendorForPurchase(existingProductCodeForDisco.id, 1000);
-
         const transactionTypes = {
             'ELECTRICITY': TransactionType.ELECTRICITY,
             'AIRTIME': TransactionType.AIRTIME,
@@ -573,6 +589,7 @@ export default class VendorController {
                 previousVendors: [superagent],
                 vendorReferenceId: generateRandonNumbers(12),
                 productType: transactionTypes[existingProductCodeForDisco.category],
+                channel
             });
 
         Logger.apiRequest.info("Validate meter requested", { meta: { transactionId: transaction.id, ...req.body } })
@@ -687,19 +704,19 @@ export default class VendorController {
 
         // const responseData = { status: 'success', message: 'Meter validated successfully', data: { transaction: transaction, meter: meter } }
         // updated to allow proper mapping
-        const responseData = { 
-            status: 'success', 
-            message: 'Meter validated successfully', 
-            data: { 
+        const responseData = {
+            status: 'success',
+            message: 'Meter validated successfully',
+            data: {
                 transaction: {
                     "id": transaction?.id
-                }, 
+                },
                 meter: {
                     "address": meter?.address,
                     "meterNumber": meter?.meterNumber,
                     "vendType": meter?.vendType,
                 }
-            } 
+            }
         }
         res.status(200).json(responseData);
 
@@ -727,6 +744,10 @@ export default class VendorController {
             await TransactionService.viewSingleTransaction(transactionId);
         if (!transaction) {
             throw new NotFoundError("Transaction not found", errorMeta);
+        }
+
+        if (transaction.status === Status.COMPLETE as any) {
+            throw new BadRequestError("Transaction already completed");
         }
 
         Logger.apiRequest.info('Requesting token for transaction', { meta: { transactionId: transaction.id, ...req.query } })
@@ -811,23 +832,39 @@ export default class VendorController {
                 // removed to update endpoint reponse mapping
                 // const responseData = { status: 'success', message: 'Token purchase initiated successfully', data: { transaction: ResponseTrimmer.trimTransactionResponse(_transaction)}}
                 const _product = await ProductService.viewSingleProduct(_transaction.productCodeId || "")
-                const responseData = { 
-                    status: 'success', 
-                    message: 'Token purchase initiated successfully', 
-                    data: { 
+                const responseData = {
+                    status: 'success',
+                    message: 'Token purchase initiated successfully',
+                    data: {
                         transaction: {
-                             disco: _product?.productName,
+                            disco: _product?.productName,
                             "amount": _transaction?.amount,
-                            "transactionId" : _transaction?.id,
-                            "id" : _transaction?.id,
+                            "transactionId": _transaction?.id,
+                            "id": _transaction?.id,
                             "productType": _transaction?.productType,
                             "transactionTimestamp": _transaction?.transactionTimestamp,
                         }
                     }
                 }
-                res.status(200).json(responseData);
 
-                Logger.apiRequest.info('Token purchase initiated successfully', { meta: { transactionId: transaction.id, ...responseData } })
+                // Delay in background  for 30 seconds to check if token has been gotten from vendor
+                // IF not gotten, send response
+                // IF gotten, send response
+
+                setTimeout(async () => {
+                    const tokenHasBeenSentFromVendorConsumer = vendorTokenConsumer.getTokenSentState()
+                    if (!tokenHasBeenSentFromVendorConsumer) {
+                        responseData.message = 'Transaction is being processed'
+                        await vendorTokenConsumer.shutdown()
+                        res.status(200).json(responseData);
+                        Logger.apiRequest.info('Token purchase initiated successfully', { meta: { transactionId: transaction.id, ...responseData } })
+                        return
+                    }
+
+                    await transactionEventService.addTokenSentToPartnerEvent();
+                    return
+                }, 60000)
+
                 return
             }
 

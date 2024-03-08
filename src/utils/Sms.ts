@@ -13,15 +13,21 @@ const client = axios.create({
 
 
 export class SmsService {
+    private static formatPhoneNumber = (phoneNumber: string) => {
+        if (phoneNumber.startsWith("0")) {
+            return `+234${phoneNumber.slice(1)}`
+        }
+        return phoneNumber
+    }
+    
     static sendSms = async (to: string, message: string) => {
         try {
             const result = await client.post("", {
                 username: AFRICASTALKING_USERNAME,
-                to: to,
+                to: this.formatPhoneNumber(to),
                 message: message,
                 from: "32345"
             })
-            console.log(result)
             return result;
         } catch (ex) {
             throw ex;

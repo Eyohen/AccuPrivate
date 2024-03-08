@@ -33,6 +33,10 @@ export default class SysLog extends Model<SysLog | ISysLog> {
     @Column(DataType.JSONB)
     meta: Record<string, any>;
 
+    // Additional metadata associated with the log
+    @Column({ type: DataType.JSONB, allowNull: true, defaultValue: {} })
+    description: Record<string, any>;
+
     // Optional created at timestamp
     @CreatedAt
     @Column({ type: DataType.DATE, allowNull: false })
@@ -48,4 +52,5 @@ interface ISysLog {
     message: string;
     meta: object;
     transactionId: string;
+    description: object;
 }

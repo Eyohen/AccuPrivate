@@ -20,6 +20,7 @@ import sysLogRoute from "./Syslog.routes";
 import waitTimeRoute from "./WaitTime.routes";
 import MockEndpointRoute from './MockEndPoint.route'
 import discoStatusRoute from "./DiscoStatus.routes";
+import bundleRoute from "./Bundle.routes";
 
 const router = Router();
 
@@ -41,6 +42,7 @@ router
     .use("/complaints", complainRoute)
     .use("/productcode", productCodeRoute)
     .use("/master", masterRoute)
+    .use('/master/bundle', bundleRoute)
     .use("/syslog", sysLogRoute)
     .use("/discostatus", discoStatusRoute)
     .use("/waittime", waitTimeRoute)
