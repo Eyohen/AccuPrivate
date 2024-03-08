@@ -172,18 +172,7 @@
         </td>
     </tr>
 
-<%
-  // Define the percentage to be subtracted (in this example, 10%)
-  const percentageToRemove = 10;
 
-  // Calculate the amount after subtracting the percentage
-  const newAmount = transaction.amount - (transaction.amount * (percentageToRemove / 100)) - 100;
-%>
-
-<%
-  const percentageCharge = 1.5;
-  const chargeAmount = (transaction.amount * percentageCharge) / 100;
-%>
 
     <tr>
         <td>
@@ -233,14 +222,14 @@
 
             <div style=" font-size: x-small;  width:50%; ">
                 <span style="text-align: left; margin-left: 35px; float: left;">Electricity Charges</span>
-                <span style="text-align: left; float: right; ">&#8358;  <%= newAmount.toString().replace( /\B(?=(\d{3})+(?!\d))/g, "," ).toFixed(2)  %></span>
+                <span style="text-align: left; float: right; ">&#8358; <%= transaction.amount.toString().replace( /\B(?=(\d{3})+(?!\d))/g, "," ) %> </span>
                
             </div>
             <hr style="margin-left: 35px; width:45%; border:1px solid #f1ecec ">
 
             <div style=" font-size: x-small; width: 50%;">
                 <span style="text-align: left; margin-left: 35px; float: left;">VAT</span>
-                <span style="text-align: left; float: right; ">&#8358; <%= chargeAmount.toString().replace( /\B(?=(\d{3})+(?!\d))/g, "," ).toFixed(2) %></span>
+                <span style="text-align: left; float: right; ">&#8358; 50.00 </span>
                 
             </div>
             <hr style="margin-left: 35px; width: 45%; border:1px solid #f1ecec;  ">
@@ -254,7 +243,7 @@
             
             <div style=" font-size: medium; width: 50%;">
                 <span style="text-align: left; margin-left: 35px; float: left;">Total Amount </span>
-                <span style="text-align: left; float:right">&#8358; <%= transaction.amount.toString().replace( /\B(?=(\d{3})+(?!\d))/g, "," ).toFixed(2) %></span>
+                <span style="text-align: left; float:right">&#8358; <%= transaction.amount.toString().replace( /\B(?=(\d{3})+(?!\d))/g, "," ) %> </span>
             </div>
         </div>
         </td>
