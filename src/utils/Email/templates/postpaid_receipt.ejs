@@ -1,3 +1,22 @@
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accuvend Receipt</title>
+
+<style>
+        @font-face {
+            font-family: 'newfont';
+            src: url('https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/PayPalSansBigRegular.ttf');
+
+        }
+        html {
+            font-family: 'newfont', sans-serif;
+            
+        }
+    </style>
+</head>
+
 <table width="95%" border="0" align="center" cellpadding="0" cellspacing="0"
     style="max-width:670px;background:#fff; border-radius:3px; text-align:center;-webkit-box-shadow:0 6px 18px 0 rgba(0,0,0,.06);-moz-box-shadow:0 6px 18px 0 rgba(0,0,0,.06);box-shadow:0 6px 18px 0 rgba(0,0,0,.06);">
     <tr>
@@ -110,7 +129,15 @@
                                 
                                 </div>
                             </div>
-                    <% } else{ %>
+                    <% }else if (transaction.disco === 'IKEJA'){  %>
+                        <div>
+                            <div style=" text-decoration:none !important; font-weight:100; text-align: left; margin-bottom: 10px; width: 20%;  color:#000000; font-size:x-small;  display:block; float:left; margin-left: 40px; ">
+                                <span style="text-transform: uppercase;  padding-right: 10px;">Head Office </span><img width="30px" src="https://ui-fonts-bucket.s3.eu-west-2.amazonaws.com/IKEJA.jpeg">
+                              <p style="margin-bottom: 10px; "> Ground floor, 4 Madiana Close, off Dar-Es-Salam Street, off Aminu Kano Crescent, Wuse 2, Abuja 900288, Federal Capital Territory</p> 
+                            
+                            </div>
+                        </div>
+                <% }   else{ %>
                         <div></div>
                     <% } %>
                     
