@@ -73,7 +73,7 @@ const retry = {
     count: 0,
     limit: 5,
     limitToStopRetryingWhenTransactionIsSuccessful: 20,
-    retryCountBeforeSwitchingVendor: 3,
+    retryCountBeforeSwitchingVendor: 4,
     testForSwitchingVendor: true,
 }
 
@@ -222,11 +222,12 @@ export class TokenHandlerUtil {
         console.log({ currentVendor, retryRecord })
         let useCurrentVendor = false
         if (currentVendor.vendor === transaction.superagent) {
-            if (currentVendor.retryCount < retry.retryCountBeforeSwitchingVendor) {
+            if (currentVendor.retryCount < retry.retryCountBeforeSwitchingVendor ) {
                 // Update the retry record in the transaction
                 // Get the last record where this vendor was used
                 const lastRecord = retryRecord[retryRecord.length - 1]
                 lastRecord.retryCount = lastRecord.retryCount + 1
+                retryRecord[retryRecord.length - 1] = lastRecord
 
                 // Update the transaction
                 await TransactionService.updateSingleTransaction(transaction.id, { retryRecord })
