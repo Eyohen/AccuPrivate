@@ -75,7 +75,7 @@ const retry = {
     count: 0,
     limit: 5,
     limitToStopRetryingWhenTransactionIsSuccessful: 20,
-    retryCountBeforeSwitchingVendor: 2,
+    retryCountBeforeSwitchingVendor: 4,
     testForSwitchingVendor: true,
 }
 
@@ -230,7 +230,7 @@ export class TokenHandlerUtil {
         console.log({ currentVendor, retryRecord })
         let useCurrentVendor = false
         if (currentVendor.vendor === transaction.superagent) {
-            if (currentVendor.retryCount < 3) {
+            if (currentVendor.retryCount < retry.retryCountBeforeSwitchingVendor) {
                 // Update the retry record in the transaction
                 // Get the last record where this vendor was used
                 const lastRecord = retryRecord[retryRecord.length - 1]
@@ -251,7 +251,7 @@ export class TokenHandlerUtil {
         }
 
         const newVendor = useCurrentVendor ? currentVendor.vendor : await TokenHandlerUtil.getNextBestVendorForVendRePurchase(transaction.productCodeId, transaction.superagent, transaction.previousVendors, parseFloat(transaction.amount))
-        if (newVendor != currentVendor.vendor || currentVendor.retryCount > 2) {
+        if (newVendor != currentVendor.vendor || currentVendor.retryCount > retry.retryCountBeforeSwitchingVendor) {
             // Add new record to the retry record
             currentVendor = {
                 vendor: newVendor,
@@ -273,7 +273,7 @@ export class TokenHandlerUtil {
 
         retry.count = 0
 
-        const newTransactionReference = retryRecord[retryRecord.length - 1].reference[retryRecord[retryRecord.length - 1].reference.length - 1]
+        const newTransactionReference = retryRecord[retryRecord.length - 1].reference[retryRecord[retryRecord.length - 1].reference.length - 1 ]
         let accesToken = transaction.irechargeAccessToken
 
         if (newVendor === 'IRECHARGE') {
@@ -287,7 +287,7 @@ export class TokenHandlerUtil {
                 throw new CustomError('Irecharge vendor product not found')
             }
 
-            const meterValidationResult = await VendorService.irechargeValidateMeter(irechargeVendorProduct.schemaData.code, meter.meterNumber, transaction.vendorReferenceId).then((res) => ({ ...res, ...res.customer, }))
+            const meterValidationResult = await VendorService.irechargeValidateMeter(irechargeVendorProduct.schemaData.code, meter.meterNumber, newTransactionReference).then((res) => ({ ...res, ...res.customer, }))
             console.log({ meterValidationResult, info: 'New meter validation result' })
             accesToken = meterValidationResult.access_token
         }
@@ -732,6 +732,15 @@ class TokenHandler extends Registry {
                 }
             }
 
+            const transactionSuccessfulForBuyPower = tokenInfo.source === 'BUYPOWERNG' ? vendResultFromBuypower.responseCode === 200 : false
+            const transactionSuccessfulForIrecharge = tokenInfo.source === 'IRECHARGE' ? tokenInfo.status === '00' : false
+            const transactionSuccessfulForBaxi = tokenInfo.source === 'BAXI' ? tokenInfo.code === 200 : false
+            const transactionSuccessFul = transactionSuccessfulForBuyPower || transactionSuccessfulForIrecharge || transactionSuccessfulForBaxi
+            if (!transactionSuccessFul) {
+                requeryTransactionFromVendor = false
+                requeryFromNewVendor = true
+            }
+
             console.log({ tokenInResponse, requeryTransactionFromVendor })
             // If Transaction timedout - Requery the transaction at intervals
             if (requeryFromNewVendor) {
@@ -751,6 +760,8 @@ class TokenHandler extends Registry {
                 );
             }
 
+           
+          
             // Token purchase was successful
             // And token was found in request
             // Add and publish token received event
