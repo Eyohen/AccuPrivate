@@ -4,6 +4,8 @@ dotenv.config(); // Load environment variables from .env file
 const deployed = process.env.DEPLOYED;
 const path = deployed ? `/etc/secrets/.env` : `${__dirname}/../.env`;
 dotenv.config({ path });
+import fs from 'fs';
+import csvParser from 'csv-parser';
 
 export const MONGO_URI_LOG = process.env.MONGO_URI_LOG as string;
 export const BAXI_URL: string | undefined = process.env.BAXI_URL
@@ -2833,6 +2835,3084 @@ export const SEED_DATA = {
     }
 } as const
 
+export const SEED_DATA_WITH_BUNDLE_FLOW = {
+    '9MOBILE': [
+        {
+            "bundleCode": "9MOBILE001",
+            "bundle": "9MOBILE 1000Naira  30 days 4.2GB (2GB+2.2GB Night) ",
+            "amount": 1000,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE002",
+            "bundle": "9MOBILE 1200Naira  30 days 6.5GB (2.5GB+4GB Night) ",
+            "amount": 1200,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE003",
+            "bundle": "9MOBILE 2000Naira  30 days 9.5GB (5.5GB+4GB Night) ",
+            "amount": 2000,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE004",
+            "bundle": "9MOBILE 10000Naira  30 days ",
+            "amount": 10000,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE005",
+            "bundle": "9MOBILE 300Naira  1 days ",
+            "amount": 300,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE006",
+            "bundle": "9MOBILE 3000Naira  30 days ",
+            "amount": 3000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE007",
+            "bundle": "9MOBILE 4000Naira  30 days 18.5GB (15GB+3.5GB Night) ",
+            "amount": 4000,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE008",
+            "bundle": "9MOBILE 50Naira  1 day ",
+            "amount": 50,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE009",
+            "bundle": "9MOBILE 100Naira  1 day ",
+            "amount": 100,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE010",
+            "bundle": "9MOBILE 200Naira  1 day ",
+            "amount": 200,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE011",
+            "bundle": "9MOBILE 5000Naira  30 days ",
+            "amount": 5000,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE012",
+            "bundle": "9MOBILE 150Naira  1 days ",
+            "amount": 150,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE013",
+            "bundle": "9MOBILE 1500Naira  7 days ",
+            "amount": 1500,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE014",
+            "bundle": "9MOBILE 500Naira  30 days ",
+            "amount": 500,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE015",
+            "bundle": "9MOBILE 15000Naira  30 days ",
+            "amount": 15000,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE016",
+            "bundle": "9MOBILE 20000Naira  30 days ",
+            "amount": 20000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE017",
+            "bundle": "9MOBILE 2500Naira  30 days 11GB (7GB+ 4GB Night) ",
+            "amount": 2500,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE018",
+            "bundle": "9MOBILE 7000Naira  30 days ",
+            "amount": 7000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE019",
+            "bundle": "9MOBILE 200Naira  200MB ",
+            "amount": 200,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE020",
+            "bundle": "9MOBILE 1000Naira  1GB ",
+            "amount": 1000,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE021",
+            "bundle": "9MOBILE 2500Naira  3.5GB ",
+            "amount": 2500,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE022",
+            "bundle": "9MOBILE 3500Naira  5GB ",
+            "amount": 3500,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE023",
+            "bundle": "9MOBILE 8000Naira  11.5GB ",
+            "amount": 8000,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE024",
+            "bundle": "9MOBILE 18000Naira  27.5GB ",
+            "amount": 18000,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE025",
+            "bundle": "9MOBILE 27500Naira  30GB ",
+            "amount": 27500,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE026",
+            "bundle": "9MOBILE 55000Naira  60GB ",
+            "amount": 55000,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE027",
+            "bundle": "9MOBILE 84992Naira  100GB ",
+            "amount": 84992,
+            "vendors": [
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE028",
+            "bundle": "9MOBILE 110000Naira  120GB ",
+            "amount": 110000,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE029",
+            "bundle": "9MOBILE 50Naira   1day ",
+            "amount": 50,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE030",
+            "bundle": "9MOBILE 150Naira   1day ",
+            "amount": 150,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE031",
+            "bundle": "9MOBILE 300Naira   1day ",
+            "amount": 300,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE032",
+            "bundle": "9MOBILE 500Naira   3days ",
+            "amount": 500,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE033",
+            "bundle": "9MOBILE 3000Naira   30days ",
+            "amount": 3000,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE034",
+            "bundle": "9MOBILE 20000Naira   30days ",
+            "amount": 20000,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "9MOBILE035",
+            "bundle": "9MOBILE 50000Naira   180days ",
+            "amount": 50000,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        }
+    ],
+    AIRTEL: [
+        {
+            "bundleCode": "AIRTEL001",
+            "bundle": "AIRTEL 50Naira  1 day ",
+            "amount": 50,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL002",
+            "bundle": "AIRTEL 99Naira  1 day ",
+            "amount": 99,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL003",
+            "bundle": "AIRTEL 199Naira  3 days ",
+            "amount": 199,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL004",
+            "bundle": "AIRTEL 349Naira  7 days ",
+            "amount": 349,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL005",
+            "bundle": "AIRTEL 499Naira  7 days ",
+            "amount": 499,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL006",
+            "bundle": "AIRTEL 999Naira  30 days ",
+            "amount": 999,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL007",
+            "bundle": "AIRTEL 1499Naira  30 days ",
+            "amount": 1499,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL008",
+            "bundle": "AIRTEL 2499Naira  30 days ",
+            "amount": 2499,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG",
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL009",
+            "bundle": "AIRTEL 3999Naira  30 days ",
+            "amount": 3999,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL010",
+            "bundle": "AIRTEL 4999Naira  30 days ",
+            "amount": 4999,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL011",
+            "bundle": "AIRTEL 9999Naira  30 days ",
+            "amount": 9999,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL012",
+            "bundle": "AIRTEL 14999Naira  30 days ",
+            "amount": 14999,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL013",
+            "bundle": "AIRTEL 2999Naira  30 days ",
+            "amount": 2999,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL014",
+            "bundle": "AIRTEL 19999Naira  30 days ",
+            "amount": 19999,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL015",
+            "bundle": "AIRTEL 349Naira  1 day ",
+            "amount": 349,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL016",
+            "bundle": "AIRTEL 499Naira  1 day ",
+            "amount": 499,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL017",
+            "bundle": "AIRTEL 1499Naira  7 days ",
+            "amount": 1499,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL018",
+            "bundle": "AIRTEL 1199Naira  30 days ",
+            "amount": 1199,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL019",
+            "bundle": "AIRTEL 1999Naira  30 days ",
+            "amount": 1999,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG",
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL020",
+            "bundle": "AIRTEL 7999Naira  30 days ",
+            "amount": 7999,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL021",
+            "bundle": "AIRTEL 29999Naira  30 days ",
+            "amount": 29999,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL022",
+            "bundle": "AIRTEL 35999Naira  30 days ",
+            "amount": 35999,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL023",
+            "bundle": "AIRTEL 49999Naira  90 days ",
+            "amount": 49999,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL024",
+            "bundle": "AIRTEL 59999Naira  120 days ",
+            "amount": 59999,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL025",
+            "bundle": "AIRTEL 99999Naira  365 days ",
+            "amount": 99999,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL026",
+            "bundle": "AIRTEL 599Naira  14 day ",
+            "amount": 599,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL027",
+            "bundle": "AIRTEL 999Naira  7 day ",
+            "amount": 999,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL028",
+            "bundle": "AIRTEL 1999Naira  7 day ",
+            "amount": 1999,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL029",
+            "bundle": "AIRTEL 4999Naira  7 day ",
+            "amount": 4999,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL030",
+            "bundle": "AIRTEL 399Naira  1 day ",
+            "amount": 399,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL031",
+            "bundle": "AIRTEL 799Naira  2 day ",
+            "amount": 799,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL032",
+            "bundle": "AIRTEL 5999Naira  30 day ",
+            "amount": 5999,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL033",
+            "bundle": "AIRTEL 50Naira  This Data plan gives 40MB for N50 valid for 1day (Social Plan) ",
+            "amount": 50,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL034",
+            "bundle": "AIRTEL 100Naira  This Data plan gives 200MB for N100 valid for 5day (Social Plan) ",
+            "amount": 100,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL035",
+            "bundle": "AIRTEL 100Naira  This Data plan gives 400MB for N100 valid for 3day (TikTok) ",
+            "amount": 100,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL036",
+            "bundle": "AIRTEL 200Naira  This Data plan gives 1,024MB for N200 valid for 14day (Tik Tok) ",
+            "amount": 200,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL037",
+            "bundle": "AIRTEL 200Naira  This Data plan gives 2,048MB for N200 valid for 1 hr ",
+            "amount": 200,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL038",
+            "bundle": "AIRTEL 300Naira  This Data plan gives 700MB for N300 valid for 25days (Social Plan) ",
+            "amount": 300,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL039",
+            "bundle": "AIRTEL 400Naira \"1.5GB\"",
+            "amount": 400,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL040",
+            "bundle": "AIRTEL 800Naira \"3.5GB\"",
+            "amount": 800,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL041",
+            "bundle": "AIRTEL 1000Naira \"1.2GB\"",
+            "amount": 1000,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL042",
+            "bundle": "AIRTEL 1000Naira \"1.5GB\"",
+            "amount": 1000,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL043",
+            "bundle": "AIRTEL 1500Naira \"5GB\"",
+            "amount": 1500,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL044",
+            "bundle": "AIRTEL 3000Naira \"10GB\"",
+            "amount": 3000,
+            "vendors": [
+                "BAXI",
+                "BUYPOWER"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL045",
+            "bundle": "AIRTEL 4000Naira \"15GB\"",
+            "amount": 4000,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL046",
+            "bundle": "AIRTEL 5000Naira \"18GB\"",
+            "amount": 5000,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL047",
+            "bundle": "AIRTEL 5000Naira \"25GB\"",
+            "amount": 5000,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL048",
+            "bundle": "AIRTEL 8000Naira \"30GB\"",
+            "amount": 8000,
+            "vendors": [
+                "BAXI",
+                "BUYPOWER"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL049",
+            "bundle": "AIRTEL 30000Naira \"240GB\"",
+            "amount": 30000,
+            "vendors": [
+                "BAXI",
+                "BUYPOWER"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL050",
+            "bundle": "AIRTEL 500Naira \" 14days\"",
+            "amount": 500,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "AIRTEL051",
+            "bundle": "AIRTEL 1200Naira \" 30days\"",
+            "amount": 1200,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        }
+    ],
+    GLO: [
+        {
+            "bundleCode": "GLO001",
+            "amount": 50,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO002",
+            "amount": 100,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO003",
+            "amount": 200,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO004",
+            "amount": 500,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO005",
+            "amount": 1000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO006",
+            "amount": 1500,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO007",
+            "amount": 2000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO008",
+            "amount": 2500,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO009",
+            "amount": 3000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO010",
+            "amount": 4000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO011",
+            "amount": 5000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO012",
+            "amount": 8000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO013",
+            "amount": 10000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO014",
+            "amount": 15000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO015",
+            "amount": 18000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO016",
+            "amount": 20000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO017",
+            "amount": 25,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO018",
+            "amount": 50,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO019",
+            "amount": 100,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO020",
+            "amount": 300,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO021",
+            "amount": 500,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO022",
+            "amount": 1500,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO023",
+            "amount": 500,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO024",
+            "amount": 200,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO025",
+            "amount": 30000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO026",
+            "amount": 36000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO027",
+            "amount": 50000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO028",
+            "amount": 60000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO029",
+            "amount": 75000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO030",
+            "amount": 100000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO031",
+            "amount": 150,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO032",
+            "amount": 450,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO033",
+            "amount": 1400,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO034",
+            "amount": 900,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO035",
+            "amount": 3200,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO036",
+            "amount": 25,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO037",
+            "amount": 50,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO038",
+            "amount": 100,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO039",
+            "amount": 25,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO040",
+            "amount": 50,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO041",
+            "amount": 100,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO042",
+            "amount": 25,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO043",
+            "amount": 50,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO044",
+            "amount": 100,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO045",
+            "amount": 25,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO046",
+            "amount": 50,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO047",
+            "amount": 100,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO048",
+            "amount": 50,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO049",
+            "amount": 50,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO050",
+            "amount": 100,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO051",
+            "amount": 250,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO052",
+            "amount": 50,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO053",
+            "amount": 130,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO054",
+            "amount": 50,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO055",
+            "amount": 200,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "GLO056",
+            "amount": 25,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO057",
+            "amount": 25,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO058",
+            "amount": 50,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO059",
+            "amount": 50,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO060",
+            "amount": 100,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO061",
+            "amount": 100,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO062",
+            "amount": 200,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO063",
+            "amount": 200,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO064",
+            "amount": 500,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO065",
+            "amount": 1000,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO066",
+            "amount": 1500,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO067",
+            "amount": 2000,
+            "vendors": [
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO068",
+            "amount": 2500,
+            "vendors": [
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO069",
+            "amount": 3000,
+            "vendors": [
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO070",
+            "amount": 4000,
+            "vendors": [
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO071",
+            "amount": 5000,
+            "vendors": [
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO072",
+            "amount": 8000,
+            "vendors": [
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO073",
+            "amount": 10000,
+            "vendors": [
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO074",
+            "amount": 15000,
+            "vendors": [
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO075",
+            "amount": 18000,
+            "vendors": [
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO076",
+            "amount": 20000,
+            "vendors": [
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO077",
+            "amount": 30000,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO078",
+            "amount": 36000,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO079",
+            "amount": 50000,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO080",
+            "amount": 60000,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO081",
+            "amount": 75000,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO082",
+            "amount": 100000,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO083",
+            "amount": 50,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO084",
+            "amount": 100,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO085",
+            "amount": 200,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO086",
+            "amount": 500,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO087",
+            "amount": 1000,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO088",
+            "amount": 1500,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO089",
+            "amount": 50,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO090",
+            "amount": 100,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO091",
+            "amount": 200,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO092",
+            "amount": 500,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO093",
+            "amount": 1000,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "GLO094",
+            "amount": 1500,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        }
+    ],
+    MTN: [
+        {
+            "bundleCode": "MTN001",
+            "bundle": "MTN 20000  Xtradata 20000 Monthly Bundle ",
+            "amount": 20000,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN002",
+            "bundle": "MTN 15000  Xtradata 15000 Monthly Bundle ",
+            "amount": 15000,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN003",
+            "bundle": "MTN 10000  Xtradata 10000 Monthly Bundle ",
+            "amount": 10000,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN004",
+            "bundle": "MTN 5000  Xtradata 5000 Monthly Bundle ",
+            "amount": 5000,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN005",
+            "bundle": "MTN 2000  Xtradata 2000 Monthly Bundle ",
+            "amount": 2000,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN006",
+            "bundle": "MTN 1000  Xtradata 1000 Monthly Bundle ",
+            "amount": 1000,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN007",
+            "bundle": "MTN 500  Xtradata 500 Weekly Bundle ",
+            "amount": 500,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN008",
+            "bundle": "MTN 20000  Xtratalk 20000 Monthly Bundle ",
+            "amount": 20000,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN009",
+            "bundle": "MTN 15000  Xtratalk 15000 Monthly Bundle ",
+            "amount": 15000,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN010",
+            "bundle": "MTN 10000  Xtratalk 10000 Monthly Bundle ",
+            "amount": 10000,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN011",
+            "bundle": "MTN 5000  Xtratalk 5000 Monthly Bundle ",
+            "amount": 5000,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN012",
+            "bundle": "MTN 2000  Xtratalk 2000 Monthly Bundle ",
+            "amount": 2000,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN013",
+            "bundle": "MTN 1000  Xtratalk 1000 Monthly Bundle ",
+            "amount": 1000,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN014",
+            "bundle": "MTN 500  Xtratalk 500 Weekly Bundle ",
+            "amount": 500,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN015",
+            "bundle": "MTN 300  Xtratalk 300 Weekly Bundle\\r\\nXtratalk 300 Weekly Bundle ",
+            "amount": 300,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN016",
+            "bundle": "MTN 300  Xtradata 300 Weekly Bundle ",
+            "amount": 300,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN017",
+            "bundle": "MTN 200  Xtratalk 200 3days Bundle\\r\\nXtratalk 200 3days Bundle ",
+            "amount": 200,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN018",
+            "bundle": "MTN 2000  7GB Weekly Bundle ",
+            "amount": 2000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN019",
+            "bundle": "MTN 350000  1TB SME 3-Months Plan ",
+            "amount": 350000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN020",
+            "bundle": "MTN 50000  165GB SME 2-Months Plan ",
+            "amount": 50000,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN021",
+            "bundle": "MTN 120000  400GB Yearly Plan ",
+            "amount": 120000,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN022",
+            "bundle": "MTN 22000  120GB Monthly Plan + 80mins. ",
+            "amount": 22000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN023",
+            "bundle": "MTN 3500  10GB+2GB YouTube Night+300MB YouTube Music + 20mins. ",
+            "amount": 3500,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN024",
+            "bundle": "MTN 3000  8GB+2GB YouTube Night+200MB YouTube Music + 15mins. ",
+            "amount": 3000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN025",
+            "bundle": "MTN 1500  5GB Weekly Plan ",
+            "amount": 1500,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN026",
+            "bundle": "MTN 600  1GB Weekly Plan + FREE 1GB for YouTube and 100MB for YouTube Music + 5mins. ",
+            "amount": 600,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN027",
+            "bundle": "MTN 600  2.5GB 2-Day Plan ",
+            "amount": 600,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN028",
+            "bundle": "MTN 10000  25GB SME Monthly Plan ",
+            "amount": 10000,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN029",
+            "bundle": "MTN 800  3GB 2-Days Bundle ",
+            "amount": 800,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN030",
+            "bundle": "MTN 100000  360GB SME 3-Months Plan ",
+            "amount": 100000,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN031",
+            "bundle": "MTN 100  DataPlan 100MB Daily ",
+            "amount": 100,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN032",
+            "bundle": "MTN 16000  75GB Monthly Plan + 40mins. ",
+            "amount": 16000,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN033",
+            "bundle": "MTN 350  1GB Daily Plan + 3mins. ",
+            "amount": 350,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN034",
+            "bundle": "MTN 6500  25GB+2GB YouTube Night + 25mins. ",
+            "amount": 6500,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN035",
+            "bundle": "MTN 1600  3GB+2GB YouTube Night+200MB YouTube Music + 5mins. ",
+            "amount": 1600,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN036",
+            "bundle": "MTN 30000  160GB 2-Month Plan ",
+            "amount": 30000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN037",
+            "bundle": "MTN 450000  1-Year Plan ",
+            "amount": 450000,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN038",
+            "bundle": "MTN 250000  2.5TB Yearly Plan ",
+            "amount": 250000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN039",
+            "bundle": "MTN 100000  1 year Plan ",
+            "amount": 100000,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN040",
+            "bundle": "MTN 75000  600GB 3-Month Plan ",
+            "amount": 75000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN041",
+            "bundle": "MTN 50000  400GB 3-Month Plan ",
+            "amount": 50000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN042",
+            "bundle": "MTN 20000  100GB 2-Month Plan ",
+            "amount": 20000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN043",
+            "bundle": "MTN 11000  40GB Monthly Plan + 40mins. ",
+            "amount": 11000,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN044",
+            "bundle": "MTN 5500  20GB+2GB YouTube Night+300MB YouTube Music + 25mins. ",
+            "amount": 5500,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN045",
+            "bundle": "MTN 4000  12GB+2GB YouTube Night + 25mins. ",
+            "amount": 4000,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN046",
+            "bundle": "MTN 2000  4GB+2GB YouTube Night+200MB YouTube Music + 10mins. ",
+            "amount": 2000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN047",
+            "bundle": "MTN 200  Data Plan 200MB 3-Day Plan ",
+            "amount": 200,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN048",
+            "bundle": "MTN 1000  1.2GB Monthly Plan + FREE 2GB for YouTube and 200MB for YouTube Music + 5mins. ",
+            "amount": 1000,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN049",
+            "bundle": "MTN 6500  27GB Monthly Plan + 25mins. ",
+            "amount": 6500,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN050",
+            "bundle": "MTN 5500  22GB Monthly Plan + 25mins. ",
+            "amount": 5500,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN051",
+            "bundle": "MTN 4000  13GB Monthly Plan + 25mins. ",
+            "amount": 4000,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN052",
+            "bundle": "MTN 3500  11GB Monthly Plan + 20mins. ",
+            "amount": 3500,
+            "vendors": [
+                "IRECHARGE",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN053",
+            "bundle": "MTN 1200  1.5GB+2.4GB YouTube Night+3hr-200MB-YouTube Weekly + 5mins. ",
+            "amount": 1200,
+            "vendors": [
+                "IRECHARGE",
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN054",
+            "bundle": "MTN 13500  35GB SME Monthly Plan ",
+            "amount": 13500,
+            "vendors": [
+                "IRECHARGE"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+            }
+        },
+        {
+            "bundleCode": "MTN055",
+            "bundle": "MTN 50000  150GB ",
+            "amount": 50000,
+            "vendors": [
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN056",
+            "bundle": "MTN 2500  6GB ",
+            "amount": 2500,
+            "vendors": [
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN057",
+            "bundle": "MTN 3300  10GB ",
+            "amount": 3300,
+            "vendors": [
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN058",
+            "bundle": "MTN 100000  325GB ",
+            "amount": 100000,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN059",
+            "bundle": "MTN 30000  120GB ",
+            "amount": 30000,
+            "vendors": [
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN060",
+            "bundle": "MTN 2200  4.5GB 1-Month All Day plan ",
+            "amount": 2200,
+            "vendors": [
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN061",
+            "bundle": "MTN 550  750MB 2-Week Plan ",
+            "amount": 550,
+            "vendors": [
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN062",
+            "bundle": "MTN 1500  6GB ",
+            "amount": 1500,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN063",
+            "bundle": "MTN 300  350MB ",
+            "amount": 300,
+            "vendors": [
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN064",
+            "bundle": "MTN 300000  1000GB ",
+            "amount": 300000,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN065",
+            "bundle": "MTN 1200  2GB ",
+            "amount": 1200,
+            "vendors": [
+                "BAXI",
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN066",
+            "bundle": "MTN 75000  250GB ",
+            "amount": 75000,
+            "vendors": [
+                "BAXI"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN067",
+            "bundle": "MTN 450000   360days ",
+            "amount": 450000,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN068",
+            "bundle": "MTN 20000   30days ",
+            "amount": 20000,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN069",
+            "bundle": "MTN 5000   30days ",
+            "amount": 5000,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN070",
+            "bundle": "MTN 5000   30days ",
+            "amount": 5000,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN071",
+            "bundle": "MTN 250000   360days ",
+            "amount": 250000,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        },
+        {
+            "bundleCode": "MTN072",
+            "bundle": "MTN 75000   90days ",
+            "amount": 75000,
+            "vendors": [
+                "BUYPOWERNG"
+            ],
+            "dataCodes": {
+                "IRECHARGE": "DATA-01",
+                "BUYPOWERNG": "DATA-01",
+                "BAXI": "",
+            }
+        }
+    ]
+}
 export const DISCOS =['ABUJA', 'EKO', 'IKEJA', 'JOS', 'KADUNA', 'PORTHARCOURT', 'ENUGU', 'IBADAN', 'KANO']
 
 export const HTTP_URL = {
@@ -2854,4 +5934,13 @@ export const HTTP_URL = {
         CABLE: BAXI_URL!,
         ELECTRICITY: BAXI_URL!,
     },
+}
+
+interface Bundle {
+    bundleCode: string;
+    bundleName: string;
+    bundle: string;
+    amount: number;
+    vendors: string[];
+    dataCodes: { [key in 'IRECHARGE' | 'BAXI' | 'BUYPOWERNG']: string };
 }

@@ -20,7 +20,7 @@ import ProductService from "../../../services/Product.service";
 import Vendor from "../../../models/Vendor.model";
 import VendorProduct, { VendorProductSchemaData } from "../../../models/VendorProduct.model";
 import { TokenHandlerUtil } from "../../../kafka/modules/consumers/Token";
-import { BAXI_AGENT_ID, HTTP_URL, SCHEMADATA, SEED, SEED_DATA } from "../../../utils/Constants";
+import { BAXI_AGENT_ID, HTTP_URL, SCHEMADATA, SEED, SEED_DATA, SEED_DATA_WITH_BUNDLE_FLOW } from "../../../utils/Constants";
 import Product, { IProduct } from "../../../models/Product.model";
 import { randomUUID } from "crypto";
 import VendorService from "../../../services/Vendor.service";
@@ -280,7 +280,7 @@ export class AirtimeVendController {
             '9MOBILE': {
                 BUYPOWERNG: {
                     commission: 0.0,
-                    bonus: 10,
+                    bonus: 0,
                 },
                 IRECHARGE: {
                     commission: 3.5,
@@ -288,7 +288,7 @@ export class AirtimeVendController {
                 },
                 BAXI: {
                     commission: 3.0,
-                    bonus: 10,
+                    bonus: 0,
                 },
             },
             'MTN': {
@@ -345,6 +345,11 @@ export class AirtimeVendController {
                         bundle: '9MOBILE 1000Naira  30 days 4.2GB (2GB+2.2GB Night) ',
                         amount: 1000,
                         vendors: ['IRECHARGE', 'BUYPOWERNG', 'BAXI'],
+                        dataCodes: {
+                            IRECHARGE: 'DATA-01',
+                            BUYPOWERNG: '',
+                            BAXI: '9MOBILE',
+                        }
                     }
                 ]
             },
@@ -430,7 +435,13 @@ export class AirtimeVendController {
         for (let i = 0; i < networkProviders.length; i++) {
             const networkProvider = networkProviders[i] as typeof networkProviders[number];
             console.log(`Creating products for network provider: ${networkProvider}`);
-            const networkProviderBundleData = vendorAndProduct[networkProvider];
+            const productCodes ={
+                AIRTEL: 'TCATLVD',
+                MTN: 'TCMTNVD',
+                GLO: 'TCGLOVD',
+                '9MOBILE': 'TC9MBVD',
+            }
+            const networkProviderBundleData = { bundles: SEED_DATA_WITH_BUNDLE_FLOW[networkProvider], productCode: productCodes[networkProvider]}
             const networkProviderBundles = networkProviderBundleData.bundles;
 
             const productInfo: IProduct = {
@@ -447,12 +458,13 @@ export class AirtimeVendController {
             for (let j = 0; j < networkProviderBundles.length; j++) {
                 const bundleInfo = networkProviderBundles[j];
                 const bundleCode = bundleInfo.bundleCode;
+                const vendors = bundleInfo.vendors as ['IRECHARGE' | 'BUYPOWERNG' | 'BAXI']
                 console.log(`Creating bundle: ${bundleCode}`);
 
                 // Use regex to match days or day or month or months or years or year in the bundle name and get the number
-                const days = bundleInfo.bundle.match(/(\d+)\s*days?/i);
-                const months = bundleInfo.bundle.match(/(\d+)\s*months?/i);
-                const years = bundleInfo.bundle.match(/(\d+)\s*years?/i);
+                const days = (bundleInfo as any).bundle.match(/(\d+)\s*days?/i);
+                const months = (bundleInfo as any).bundle.match(/(\d+)\s*months?/i);
+                const years = (bundleInfo as any).bundle.match(/(\d+)\s*years?/i);
                 const _validity = days ? days[1] : months ? months[1] : years ? years[1] : 0;
                 const validity = `${_validity} ${days ? 'days' : months ? 'months' : years ? 'years' : 'days'}`;
 
@@ -460,7 +472,7 @@ export class AirtimeVendController {
                     id: randomUUID(),
                     productId: product.id,
                     bundleCode: bundleCode,
-                    bundleName: bundleInfo.bundleName,
+                    bundleName: (bundleInfo as any).bundle,
                     bundleAmount: bundleInfo.amount,
                     validity,
                     vendorIds: vendors.map(vendor => vendorDoc[vendor].id),
@@ -482,12 +494,12 @@ export class AirtimeVendController {
                         bonus: vendorAndRates[networkProvider][vendorName].bonus,   // TODO: Change bonus to the actual bonus from API
                         productCode: product.masterProductCode,
                         schemaData: {
-                            bundleName: bundleInfo.bundleName,
+                            bundleName: (bundleInfo as any).bundle,
                             code: vendorName === 'IRECHARGE' ? IRECHARGEDATACODE[networkProvider] : networkProvider,
-                            datacode: bundleInfo.bundleCode,
+                            datacode: bundleInfo.dataCodes[vendorName],
                         },
                         bundleCode: bundleInfo.bundleCode,
-                        bundleName: bundleInfo.bundleName,
+                        bundleName: (bundleInfo as any).bundle,
                         bundleAmount: bundleInfo.amount,
                         bundleId: bundleData.id,
                         vendorHttpUrl: HTTP_URL[vendorName]['DATA'],
