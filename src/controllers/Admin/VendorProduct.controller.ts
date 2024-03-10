@@ -15,6 +15,7 @@ export default class VendorProductController {
             bundleId: string,
             commission: number,
             bonus: number,
+
             schemaData: { code: string },
             vendorHttpUrl: string,
             amount: number,
@@ -44,7 +45,7 @@ export default class VendorProductController {
             if (!bundle) {
                 throw new NotFoundError('Bundle not found');
             }
-        } else if (product.category === 'DATA' ) {
+        } else if (product.category === 'DATA') {
             throw new BadRequestError('Bundle ID is required for Data product');
         }
 
@@ -64,9 +65,11 @@ export default class VendorProductController {
     }
 
     static async updateVendorProduct(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { vendorProductId, commission, bonus, vendorHttpUrl } = req.body as {
+        const { vendorProductId, vendorCode, bundleAmount, commission, bonus, vendorHttpUrl } = req.body as {
             vendorProductId: string,
             commission?: number,
+            bundleAmount?: number,
+            vendorCode?: string,
             bonus?: number,
             vendorHttpUrl?: string,
         };
@@ -85,7 +88,7 @@ export default class VendorProductController {
         if (schemaData && vendorProduct.schemaData) {
             schemaData = { ...vendorProduct.schemaData, ...schemaData };
         }
-        const data = { commission, bonus, schemaData, vendorHttpUrl };
+        const data = { commission, vendorCode, bundleAmount, bonus, schemaData, vendorHttpUrl };
         const updatedVendorProduct = await VendorProductService.updateVendorProduct(vendorProductId, data);
 
         if (!updatedVendorProduct) {
