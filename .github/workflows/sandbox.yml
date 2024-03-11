@@ -376,7 +376,7 @@ jobs:
             DB_NAME=$(grep DB_DB_NAME ./.env | cut -d "=" -f2) &&\
             DB_HOST=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=Sand Box DB Instance" --query "Reservations[].Instances[].[PrivateIpAddress]" --output text)
           
-            echo "DB_URL=postgres://$DB_USERNAME:$DB_PASSWORD@$DB_HOST:5432/$DB_NAME" >> .env
+            echo "DB_URL=postgres://$DB_USERNAME:$DB_PASSWORD@$DB_HOST:6432/$DB_NAME" >> .env
             
             #install depencendies in dist folder
             npm install
