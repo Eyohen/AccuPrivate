@@ -3,6 +3,7 @@ import { Transaction } from "sequelize";
 import Vendor, { IVendor } from "../models/Vendor.model";
 import VendorProduct from "../models/VendorProduct.model";
 import { NotFoundError } from "../utils/Errors";
+import Bundle from "../models/Bundle.model";
 
 // VendorService class for handling vendor-related operations
 export default class VendorService {
@@ -26,13 +27,13 @@ export default class VendorService {
 
     // Method for viewing a single vendor
     static async viewSingleVendor(vendorId: string): Promise<Vendor | null> {
-        const vendor = await Vendor.findByPk(vendorId, { include: VendorProduct });
+        const vendor = await Vendor.findByPk(vendorId, { include: [VendorProduct, Bundle] });
         return vendor;
     }
 
     // View Vendor by name
     static async viewSingleVendorByName(name: string): Promise<Vendor | null> {
-        const vendor = await Vendor.findOne({ where: { name }, include: VendorProduct });
+        const vendor = await Vendor.findOne({ where: { name }, include: [VendorProduct, Bundle] });
         return vendor;
     }
 

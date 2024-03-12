@@ -15,12 +15,13 @@ import {
     PublisherEventAndParameters,
     Registry,
     TransactionErrorCause,
+    VendorRetryRecord,
 } from "../util/Interface";
 import MessageProcessor from "../util/MessageProcessor";
 import { v4 as uuidv4 } from "uuid";
 import EventService from "../../../services/Event.service";
-import VendorService, { ElectricityPurchaseResponse, ElectricityRequeryResponse, SuccessResponseForBuyPowerRequery, Vendor } from "../../../services/VendorApi.service";
-import { generateRandomToken } from "../../../utils/Helper";
+import VendorService, { ElectricityPurchaseResponse, ElectricityRequeryResponse, IRechargeVendorService, SuccessResponseForBuyPowerRequery, Vendor } from "../../../services/VendorApi.service";
+import { generateRandomString, generateRandomToken, generateRandonNumbers } from "../../../utils/Helper";
 import ProductService from "../../../services/Product.service";
 import { CustomError } from "../../../utils/Errors";
 import VendorProductService from "../../../services/VendorProduct.service";
@@ -28,6 +29,7 @@ import VendorModelService from "../../../services/Vendor.service"
 import { BaxiRequeryResultForPurchase, BaxiSuccessfulPuchaseResponse } from "../../../services/VendorApi.service/Baxi/Config";
 import { error } from "console";
 import test from "node:test";
+import WaitTimeService from "../../../services/Waittime.service";
 
 interface EventMessage {
     meter: {
@@ -51,6 +53,7 @@ interface TriggerRequeryTransactionTokenProps {
     transactionTimedOutFromBuypower: boolean;
     superAgent: Transaction['superagent'];
     retryCount: number;
+    vendorRetryRecord: VendorRetryRecord
 }
 
 interface TokenPurchaseData {
@@ -70,9 +73,10 @@ interface ProcessVendRequestReturnData extends Record<Transaction['superagent'],
 
 const retry = {
     count: 0,
-    limit: 2,
-    limitToStopRetryingWhenTransactionIsSuccessful: 5,
-    retryCountBeforeSwitchingVendor: 2,
+    limit: 5,
+    limitToStopRetryingWhenTransactionIsSuccessful: 20,
+    retryCountBeforeSwitchingVendor: 4,
+    testForSwitchingVendor: true,
 }
 
 const TEST_FAILED = NODE_ENV === 'production' ? false : false // TOGGLE - Will simulate failed transaction
@@ -84,10 +88,30 @@ const TransactionErrorCodeAndCause = {
 }
 
 
-export function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
+export async function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
     // Use geometric progression  calculate wait time, where R = 2
-    const waitTime = 2 ** (retryCount - 1)
-    return waitTime < 5 ? 5 : waitTime
+    const defaultValues = [10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 20480, 40960, 81920, 163840, 327680, 655360, 1310720, 2621440, 5242880]
+    const timesToRetry = await WaitTimeService.getWaitTime() ?? defaultValues
+    timesToRetry.unshift(1)
+
+    if (retryCount >= timesToRetry.length) {
+        return timesToRetry[timesToRetry.length - 1]
+    }
+
+    return timesToRetry[retryCount]
+}
+
+
+export async function getCurrentWaitTimeForSwitchEvent(retryCount: number) {
+    // Use geometric progression  calculate wait time, where R = 2
+    const defaultValues = [10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 20480, 40960, 81920, 163840, 327680, 655360, 1310720, 2621440, 5242880]
+    const timesToRetry = await WaitTimeService.getWaitTime() ?? defaultValues
+
+    if (retryCount >= timesToRetry.length) {
+        return timesToRetry[timesToRetry.length - 1]
+    }
+
+    return timesToRetry[retryCount]
 }
 
 type TransactionWithProductId = Exclude<Transaction, 'productCodeId'> & { productCodeId: NonNullable<Transaction['productCodeId']> }
@@ -98,6 +122,7 @@ export class TokenHandlerUtil {
         transactionTimedOutFromBuypower,
         tokenInResponse,
         retryCount,
+        vendorRetryRecord,
         superAgent
     }: TriggerRequeryTransactionTokenProps) {
         // Check if the transaction has hit the requery limit
@@ -146,7 +171,8 @@ export class TokenHandlerUtil {
             timeStamp: new Date(),
             retryCount,
             superAgent,
-            waitTime: getCurrentWaitTimeForRequeryEvent(retryCount)
+            vendorRetryRecord,
+            waitTime: await getCurrentWaitTimeForRequeryEvent(retryCount)
         };
 
         // Start timer to requery transaction at intervals
@@ -175,21 +201,68 @@ export class TokenHandlerUtil {
 
     static async triggerEventToRetryTransactionWithNewVendor(
         {
-            transaction, transactionEventService, meter,
+            transaction, transactionEventService, meter, vendorRetryRecord
         }: {
             transaction: TransactionWithProductId,
             transactionEventService: TransactionEventService,
             meter: MeterInfo & { id: string },
+            vendorRetryRecord: VendorRetryRecord
         }
     ) {
-        logger.info('Retrying transaction with new vendor', { meta: { transactionId: transaction.id } })
+
+        let waitTime = await getCurrentWaitTimeForSwitchEvent(vendorRetryRecord.retryCount)
+
+        logger.warn('Reinitiating transaction with new vendor', { meta: { transactionId: transaction.id } })
         const meta = {
             transactionId: transaction.id,
         }
         // Attempt purchase from new vendor
         if (!transaction.bankRefId) throw new CustomError('BankRefId not found', meta)
 
-        const newVendor = await TokenHandlerUtil.getNextBestVendorForVendRePurchase(transaction.productCodeId, transaction.superagent, transaction.previousVendors, parseFloat(transaction.amount))
+        let retryRecord = transaction.retryRecord
+
+        retryRecord = retryRecord.length === 0
+            ? [{ vendor: transaction.superagent, retryCount: 1, reference: [transaction.reference], attempt: 1 }]
+            : retryRecord
+
+        // Make sure to use the same vendor thrice before switching to another vendor
+        let currentVendor = retryRecord[retryRecord.length - 1]
+        console.log({ currentVendor, retryRecord })
+        let useCurrentVendor = false
+        if (currentVendor.vendor === transaction.superagent) {
+            if (currentVendor.retryCount < retry.retryCountBeforeSwitchingVendor) {
+                // Update the retry record in the transaction
+                // Get the last record where this vendor was used
+                const lastRecord = retryRecord[retryRecord.length - 1]
+                lastRecord.retryCount = lastRecord.retryCount + 1
+
+                // Update the transaction
+                await TransactionService.updateSingleTransaction(transaction.id, { retryRecord })
+
+                useCurrentVendor = true
+                logger.info('Using current vendor', meta)
+            }
+
+            // Check for the reference used in the last retry record
+            retryRecord[retryRecord.length - 1].reference.push(currentVendor.vendor === 'IRECHARGE' ? generateRandonNumbers(12) : generateRandomString(12))
+        } else {
+            logger.warn('Switching to new vendor', meta)
+            // Add new record to the retry record
+        }
+
+        const newVendor = useCurrentVendor ? currentVendor.vendor : await TokenHandlerUtil.getNextBestVendorForVendRePurchase(transaction.productCodeId, transaction.superagent, transaction.previousVendors, parseFloat(transaction.amount))
+        if (newVendor != currentVendor.vendor || currentVendor.retryCount > retry.retryCountBeforeSwitchingVendor) {
+            // Add new record to the retry record
+            currentVendor = {
+                vendor: newVendor,
+                retryCount: 1,
+                reference: [currentVendor.reference[currentVendor.reference.length - 1]],
+                attempt: 1
+            }
+            retryRecord.push(currentVendor)
+            waitTime = await getCurrentWaitTimeForSwitchEvent(currentVendor.retryCount)
+        }
+
         await transactionEventService.addPowerPurchaseRetryWithNewVendor({ bankRefId: transaction.bankRefId, currentVendor: transaction.superagent, newVendor })
 
         const user = await transaction.$get('user')
@@ -199,7 +272,52 @@ export class TokenHandlerUtil {
         if (!partner) throw new CustomError('Partner not found for transaction', meta)
 
         retry.count = 0
-        await transaction.update({ previousVendors: [...transaction.previousVendors, newVendor] })
+
+        const newTransactionReference = retryRecord[retryRecord.length - 1].reference[retryRecord[retryRecord.length - 1].reference.length - 1]
+        let accesToken = transaction.irechargeAccessToken
+
+        if (newVendor === 'IRECHARGE') {
+            const irechargeVendor = await VendorModelService.viewSingleVendorByName('IRECHARGE')
+            if (!irechargeVendor) {
+                throw new CustomError('Irecharge vendor not found')
+            }
+
+            const irechargeVendorProduct = await VendorProductService.viewSingleVendorProductByVendorIdAndProductId(irechargeVendor.id, transaction.productCodeId)
+            if (!irechargeVendorProduct) {
+                throw new CustomError('Irecharge vendor product not found')
+            }
+
+            const meterValidationResult = await VendorService.irechargeValidateMeter(irechargeVendorProduct.schemaData.code, meter.meterNumber, newTransactionReference).then((res) => ({ ...res, ...res.customer, }))
+            console.log({ meterValidationResult, info: 'New meter validation result' })
+            accesToken = meterValidationResult.access_token
+        }
+
+        // Start timer to requery transaction at intervals
+        async function countDownTimer(time: number): Promise<void> {
+            return new Promise<void>((resolve) => {
+                for (let i = time; i > 0; i--) {
+                    setTimeout(() => {
+                        logger.warn(`Reinitating transaction with vendor in ${i} seconds`, {
+                            meta: { transactionId: transaction.id }
+                        });
+                        if (i === 1) {
+                            resolve(); // Resolve the Promise when countdown is complete
+                        }
+                    }, (time - i) * 1000);
+                }
+            });
+        }
+        await countDownTimer(waitTime);
+
+        await TransactionService.updateSingleTransaction(transaction.id, {
+            superagent: newVendor,
+            retryRecord,
+            vendorReferenceId: newTransactionReference,
+            reference: newTransactionReference,
+            irechargeAccessToken: accesToken,
+            previousVendors: [...transaction.previousVendors, newVendor],
+        })
+
         return await VendorPublisher.publishEventForRetryPowerPurchaseWithNewVendor({
             meter: meter,
             partner: partner,
@@ -306,6 +424,7 @@ export class TokenHandlerUtil {
         const vendorRates = sortedVendorProductsAccordingToCommissionRate.map(vendorProduct => {
             const vendor = vendorProduct.vendor
             if (!vendor) throw new CustomError('Vendor not found')
+
             return {
                 vendorName: vendor.name,
                 commission: vendorProduct.commission,
@@ -316,7 +435,11 @@ export class TokenHandlerUtil {
         const sortedOtherVendors = vendorRates.filter(vendorRate => vendorRate.vendorName !== currentVendor)
 
         nextBestVendor: for (const vendorRate of sortedOtherVendors) {
-            if (!previousVendors.includes(vendorRate.vendorName)) return vendorRate.vendorName as Transaction['superagent']
+            if (!previousVendors.includes(vendorRate.vendorName)) {
+                console.log({ currentVendor, newVendor: vendorRate.vendorName })
+
+                return vendorRate.vendorName as Transaction['superagent']
+            }
         }
 
         if (previousVendors.length === vendors.length) {
@@ -325,6 +448,9 @@ export class TokenHandlerUtil {
         }
 
         // If the current vendor is the vendor with the highest commission rate, then switch to the vendor with the next highest commission rate
+
+        console.log({ currentVendor, newVendor: sortedOtherVendors[0].vendorName })
+
         return sortedOtherVendors[0].vendorName as Transaction['superagent']
     }
 
@@ -421,6 +547,7 @@ class TokenHandler extends Registry {
             partner: data.partner,
             transactionId: transaction.id,
             superAgent: data.newVendor,
+            vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1]
         })
     }
 
@@ -429,7 +556,7 @@ class TokenHandler extends Registry {
     ) {
         try {
 
-            console.log({ log: 'New token request', currentVendor: data.superAgent })
+            console.log({ log: 'New token request', currentVendor: data.superAgent, retry: data.vendorRetryRecord })
 
             const transaction = await TransactionService.viewSingleTransaction(
                 data.transactionId,
@@ -445,6 +572,8 @@ class TokenHandler extends Registry {
                 );
                 return;
             }
+
+            console.log({ vendorRecord: data.vendorRetryRecord, transaction: transaction.retryRecord })
 
             const { user, meter, partner } = transaction;
 
@@ -468,7 +597,7 @@ class TokenHandler extends Registry {
                 vendType: meter.vendType,
                 phone: user.phoneNumber,
                 accessToken: transaction.irechargeAccessToken
-            })
+            }).catch(e => e);
 
             logger.info('Token request processed', logMeta);
             const updatedTransaction = await TransactionService.viewSingleTransaction(data.transactionId);
@@ -545,6 +674,7 @@ class TokenHandler extends Registry {
                                 superAgent: data.superAgent,
                                 tokenInResponse: null,
                                 transactionTimedOutFromBuypower: false,
+                                vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1]
                             },
                         );
                     }
@@ -557,7 +687,7 @@ class TokenHandler extends Registry {
                 /* Commmented out because no transaction should be allowed to fail, any failed transaction should be retried with a different vendor
                 await transactionEventService.addTokenRequestFailedNotificationToPartnerEvent();
                 return await VendorPublisher.publishEventForFailedTokenRequest(eventMessage); */
-                return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter: data.meter, transaction: transaction as TransactionWithProductId, transactionEventService })
+                return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter: data.meter, transaction: transaction as TransactionWithProductId, transactionEventService, vendorRetryRecord: data.vendorRetryRecord })
             }
 
             /**
@@ -572,7 +702,8 @@ class TokenHandler extends Registry {
             const responseFromIrecharge = tokenInfo as Awaited<ReturnType<typeof VendorService.irechargeVendToken>>
             const transactionTimedOutFromIrecharge = vendResultFromIrecharge.source === 'IRECHARGE' ? ['15', '43'].includes(vendResultFromIrecharge.status) : false
             let transactionTimedOutFromBuypower = vendResultFromBuypower.source === 'BUYPOWERNG' ? vendResultFromBuypower.status === true && vendResultFromBuypower.data.responseCode == 202 : false // TODO: Add check for when transaction timeout from baxi
-            const transactionTimedOut = transactionTimedOutFromBuypower || transactionTimedOutFromIrecharge
+            const transactionTimedOutFromBaxi = vendResultFromBaxi.source === 'BAXI' ? vendResultFromBaxi.status === true && vendResultFromBaxi.data.statusCode === '0' : false
+            const transactionTimedOut = transactionTimedOutFromBuypower || transactionTimedOutFromIrecharge || transactionTimedOutFromBaxi
             let tokenInResponse: string | null = null;
 
             const prepaid = meter.vendType === 'PREPAID';
@@ -589,18 +720,32 @@ class TokenHandler extends Registry {
                 tokenInResponse = null // There is no token for postpaid meters
             }
 
-
             let requeryTransactionFromVendor = transactionTimedOut
-            if (((tokenInResponse && prepaid) || (!tokenInResponse && !prepaid)) && TEST_FAILED) {
-                const totalRetries = (retry.retryCountBeforeSwitchingVendor * transaction.previousVendors.length - 1) + retry.count + 1
+            let requeryFromNewVendor = false
+            if (TEST_FAILED) {
+                if (((tokenInResponse && prepaid) || (!tokenInResponse && !prepaid)) && TEST_FAILED) {
+                    const totalRetries = (retry.retryCountBeforeSwitchingVendor * transaction.previousVendors.length - 1) + retry.count + 1
 
-                // If we are in test mode, and the transaction is successful, after a number of retries, we should assume the transaction is successful
-                const shouldAssumeToBeSuccessful = (totalRetries > retry.limitToStopRetryingWhenTransactionIsSuccessful) && TEST_FAILED
-                requeryTransactionFromVendor = !shouldAssumeToBeSuccessful
+                    // If we are in test mode, and the transaction is successful, after a number of retries, we should assume the transaction is successful
+                    const shouldAssumeToBeSuccessful = (totalRetries > retry.limitToStopRetryingWhenTransactionIsSuccessful) && TEST_FAILED
+                    requeryTransactionFromVendor = !shouldAssumeToBeSuccessful
+                }
+            }
+
+            const transactionSuccessfulForBuyPower = tokenInfo.source === 'BUYPOWERNG' ? vendResultFromBuypower.responseCode === 200 : false
+            const transactionSuccessfulForIrecharge = tokenInfo.source === 'IRECHARGE' ? tokenInfo.status === '00' : false
+            const transactionSuccessfulForBaxi = tokenInfo.source === 'BAXI' ? tokenInfo.code === 200 : false
+            const transactionSuccessFul = transactionSuccessfulForBuyPower || transactionSuccessfulForIrecharge || transactionSuccessfulForBaxi
+            if (!transactionSuccessFul) {
+                requeryTransactionFromVendor = false
+                requeryFromNewVendor = true
             }
 
             console.log({ tokenInResponse, requeryTransactionFromVendor })
             // If Transaction timedout - Requery the transaction at intervals
+            if (requeryFromNewVendor) {
+                return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter: data.meter, transaction: transaction as TransactionWithProductId, transactionEventService, vendorRetryRecord: data.vendorRetryRecord })
+            }
             if (requeryTransactionFromVendor || (!tokenInResponse && prepaid)) {
                 return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
                     {
@@ -610,6 +755,7 @@ class TokenHandler extends Registry {
                         tokenInResponse,
                         superAgent: transaction.superagent,
                         retryCount: 1,
+                        vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1]
                     },
                 );
             }
@@ -618,7 +764,7 @@ class TokenHandler extends Registry {
             // And token was found in request
             // Add and publish token received event
             await transactionEventService.addTokenReceivedEvent(tokenInResponse ?? 'null');
-            return await VendorPublisher.publishEventForTokenReceivedFromVendor({
+            await VendorPublisher.publishEventForTokenReceivedFromVendor({
                 transactionId: transaction!.id,
                 user: {
                     name: user.name as string,
@@ -637,109 +783,45 @@ class TokenHandler extends Registry {
                     token: tokenInResponse ?? 'null',
                 },
             });
-        } catch (error) {
-            if (error instanceof CustomError) {
-                error.meta = error.meta ?? {
-                    transactionId: data.transactionId
-                }
-            }
 
-            throw error
-        }
-    }
-
-    private static async handleTokenReceived(
-        data: PublisherEventAndParameters[TOPICS.TOKEN_RECIEVED_FROM_VENDOR],
-    ) {
-        try {
-            const logMeta = { meta: { transactionId: data.transactionId } }
-
-            const transaction = await TransactionService.viewSingleTransaction(
-                data.transactionId,
-            );
-            if (!transaction) {
-                throw new CustomError(
-                    `CustomError fetching transaction with id ${data.transactionId}`,
-                    {
-                        transactionId: data.transactionId
-                    }
-                );
-            }
-
-            // Check if transaction is already complete
-            if (transaction.status === Status.COMPLETE) {
-                throw new CustomError(
-                    `Transaction with id ${data.transactionId} is already complete`,
-                    {
-                        transactionId: data.transactionId
-                    }
-                );
-            }
-
-            /**
-             * This check was removed because BUYPOWERNG throws an error when you try to requery a transaction that has already been completed within 10s,
-             * And the event that triggers this consumer is also used by other consumers which also requery the transaction.
-             * 
-             * Plus there is no need for extra check because only completed transactions are published to this topic
-             */
-            // // Requery transaction from provider and update transaction status
-            // const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction);
-            // const requeryResultFromBuypower = requeryResult as Awaited<ReturnType<typeof VendorService.buyPowerRequeryTransaction>>
-            // const requeryResultFromBaxi = requeryResult as Awaited<ReturnType<typeof VendorService.baxiRequeryTransaction>>
-            // const requeryResultFromIrecharge = requeryResult as Awaited<ReturnType<typeof VendorService.irechargeRequeryTransaction>>
-
-            // const transactionSuccessFromBuypower = requeryResultFromBuypower.source === 'BUYPOWERNG' ? requeryResultFromBuypower.responseCode === 200 : false
-            // const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false
-            // const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' && requeryResultFromIrecharge. : false
-
-            // const transactionSuccess = transactionSuccessFromBuypower || transactionSuccessFromBaxi || transactionSuccessFromIrecharge
-            // if (!transactionSuccess) {
-            //     throw new CustomError(
-            //         `CustomError requerying transaction with id ${data.transactionId}`,
-            //     );
-            // }
-
-            // If successful, check if a power unit exists for the transaction, if none exists, create one
             let powerUnit =
                 await PowerUnitService.viewSinglePowerUnitByTransactionId(
                     data.transactionId,
                 );
 
-            const prepaid = data.meter.vendType === 'PREPAID';
-            data.meter.token = !prepaid ? '' : data.meter.token
 
             console.log({ disco: data.meter })
-            const product = await ProductService.viewSingleProduct(transaction.productCodeId)
-            if (!product) throw new CustomError('Product not found')
-
+            const _product = await ProductService.viewSingleProduct(transaction.productCodeId)
+            if (!_product) throw new CustomError('Product not found')
 
             const discoLogo =
-                DISCO_LOGO[product.productName as keyof typeof DISCO_LOGO] ?? LOGO_URL
+                DISCO_LOGO[_product.productName as keyof typeof DISCO_LOGO] ?? LOGO_URL
 
-            console.log(discoLogo)
-            logger.info('Saving token record', logMeta);
-            powerUnit = powerUnit
-                ? await PowerUnitService.updateSinglePowerUnit(powerUnit.id, {
-                    token: data.meter.token,
-                    transactionId: data.transactionId,
-                })
-                : await PowerUnitService.addPowerUnit({
-                    id: uuidv4(),
-                    transactionId: data.transactionId,
-                    disco: data.meter.disco,
-                    discoLogo,
-                    amount: transaction.amount,
-                    meterId: data.meter.id,
-                    superagent: "BUYPOWERNG",
-                    token: data.meter.token,
-                    tokenNumber: 0,
-                    tokenUnits: "0",
-                    address: transaction.meter.address,
-                });
+            if (tokenInResponse) {
+                logger.info('Saving token record', logMeta);
+                powerUnit = powerUnit
+                    ? await PowerUnitService.updateSinglePowerUnit(powerUnit.id, {
+                        token: tokenInResponse,
+                        transactionId: data.transactionId,
+                    })
+                    : await PowerUnitService.addPowerUnit({
+                        id: uuidv4(),
+                        transactionId: data.transactionId,
+                        disco: data.meter.disco,
+                        discoLogo,
+                        amount: transaction.amount,
+                        meterId: data.meter.id,
+                        superagent: "BUYPOWERNG",
+                        token: tokenInResponse,
+                        tokenNumber: 0,
+                        tokenUnits: "0",
+                        address: transaction.meter.address,
+                    });
+            }
 
             return await TransactionService.updateSingleTransaction(data.transactionId, {
                 status: Status.COMPLETE,
-                powerUnitId: powerUnit.id,
+                powerUnitId: powerUnit?.id,
             });
         } catch (error) {
             if (error instanceof CustomError) {
@@ -752,18 +834,123 @@ class TokenHandler extends Registry {
         }
     }
 
+    // private static async handleTokenReceived(
+    //     data: PublisherEventAndParameters[TOPICS.TOKEN_RECIEVED_FROM_VENDOR],
+    // ) {
+    //     try {
+    //         const logMeta = { meta: { transactionId: data.transactionId } }
+
+    //         const transaction = await TransactionService.viewSingleTransaction(
+    //             data.transactionId,
+    //         );
+    //         if (!transaction) {
+    //             throw new CustomError(
+    //                 `CustomError fetching transaction with id ${data.transactionId}`,
+    //                 {
+    //                     transactionId: data.transactionId
+    //                 }
+    //             );
+    //         }
+
+    //         // Check if transaction is already complete
+    //         if (transaction.status === Status.COMPLETE) {
+    //             throw new CustomError(
+    //                 `Transaction with id ${data.transactionId} is already complete`,
+    //                 {
+    //                     transactionId: data.transactionId
+    //                 }
+    //             );
+    //         }
+
+    //         /**
+    //          * This check was removed because BUYPOWERNG throws an error when you try to requery a transaction that has already been completed within 10s,
+    //          * And the event that triggers this consumer is also used by other consumers which also requery the transaction.
+    //          * 
+    //          * Plus there is no need for extra check because only completed transactions are published to this topic
+    //          */
+    //         // // Requery transaction from provider and update transaction status
+    //         // const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction);
+    //         // const requeryResultFromBuypower = requeryResult as Awaited<ReturnType<typeof VendorService.buyPowerRequeryTransaction>>
+    //         // const requeryResultFromBaxi = requeryResult as Awaited<ReturnType<typeof VendorService.baxiRequeryTransaction>>
+    //         // const requeryResultFromIrecharge = requeryResult as Awaited<ReturnType<typeof VendorService.irechargeRequeryTransaction>>
+
+    //         // const transactionSuccessFromBuypower = requeryResultFromBuypower.source === 'BUYPOWERNG' ? requeryResultFromBuypower.responseCode === 200 : false
+    //         // const transactionSuccessFromBaxi = requeryResultFromBaxi.source === 'BAXI' ? requeryResultFromBaxi.responseCode === 200 : false
+    //         // const transactionSuccessFromIrecharge = requeryResultFromIrecharge.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' && requeryResultFromIrecharge. : false
+
+    //         // const transactionSuccess = transactionSuccessFromBuypower || transactionSuccessFromBaxi || transactionSuccessFromIrecharge
+    //         // if (!transactionSuccess) {
+    //         //     throw new CustomError(
+    //         //         `CustomError requerying transaction with id ${data.transactionId}`,
+    //         //     );
+    //         // }
+
+    //         // If successful, check if a power unit exists for the transaction, if none exists, create one
+    //         let powerUnit =
+    //             await PowerUnitService.viewSinglePowerUnitByTransactionId(
+    //                 data.transactionId,
+    //             );
+
+    //         const prepaid = data.meter.vendType === 'PREPAID';
+    //         data.meter.token = !prepaid ? '' : data.meter.token
+
+    //         console.log({ disco: data.meter })
+    //         const product = await ProductService.viewSingleProduct(transaction.productCodeId)
+    //         if (!product) throw new CustomError('Product not found')
+
+
+    //         const discoLogo =
+    //             DISCO_LOGO[product.productName as keyof typeof DISCO_LOGO] ?? LOGO_URL
+
+    //         console.log(discoLogo)
+    //         logger.info('Saving token record', logMeta);
+    //         powerUnit = powerUnit
+    //             ? await PowerUnitService.updateSinglePowerUnit(powerUnit.id, {
+    //                 token: data.meter.token,
+    //                 transactionId: data.transactionId,
+    //             })
+    //             : await PowerUnitService.addPowerUnit({
+    //                 id: uuidv4(),
+    //                 transactionId: data.transactionId,
+    //                 disco: data.meter.disco,
+    //                 discoLogo,
+    //                 amount: transaction.amount,
+    //                 meterId: data.meter.id,
+    //                 superagent: "BUYPOWERNG",
+    //                 token: data.meter.token,
+    //                 tokenNumber: 0,
+    //                 tokenUnits: "0",
+    //                 address: transaction.meter.address,
+    //             });
+
+    //         return await TransactionService.updateSingleTransaction(data.transactionId, {
+    //             status: Status.COMPLETE,
+    //             powerUnitId: powerUnit.id,
+    //         });
+    //     } catch (error) {
+    //         if (error instanceof CustomError) {
+    //             error.meta = error.meta ?? {
+    //                 transactionId: data.transactionId
+    //             }
+    //         }
+
+    //         throw error
+    //     }
+    // }
+
     private static async requeryTransactionForToken(
         data: PublisherEventAndParameters[TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY],
     ) {
         try {
-
-            console.warn(" Retrying transaction from vendor")
+            const logMeta = { meta: { transactionId: data.transactionId } }
+            logger.warn("Retrying transaction from vendor", logMeta)
             retry.count = data.retryCount;
+            console.log({ data: data.vendorRetryRecord, retyrCount: data.retryCount })
 
             // Check if token has been found
             const transaction = await TransactionService.viewSingleTransaction(data.transactionId);
             if (!transaction) {
-                logger.error("Transaction not found");
+                logger.error("Transaction not found", logMeta);
                 return;
             }
 
@@ -804,6 +991,20 @@ class TokenHandler extends Registry {
             const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction).catch(e => e);
 
             if (requeryResult instanceof Error) {
+                let requeryFromNewVendor = false
+                if (TEST_FAILED) {
+                    requeryFromNewVendor = retry.testForSwitchingVendor && (data.retryCount >= retry.retryCountBeforeSwitchingVendor)
+                }
+
+                console.log({
+                    retryCount: data.retryCount, retryCountBeforeSwitchingVendor: retry.retryCountBeforeSwitchingVendor, retry, test: TEST_FAILED, eval:
+                        retry.testForSwitchingVendor && (data.retryCount >= retry.retryCountBeforeSwitchingVendor)
+                })
+                console.log([requeryFromNewVendor])
+
+                if (requeryFromNewVendor) {
+                    return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter, transaction, transactionEventService, vendorRetryRecord: data.vendorRetryRecord })
+                }
                 if (requeryResult instanceof AxiosError) {
                     const requeryWasTriggeredTooEarly = requeryResult.response?.status === 429 && transaction.superagent === 'BUYPOWERNG'
                     if (requeryWasTriggeredTooEarly) {
@@ -819,6 +1020,7 @@ class TokenHandler extends Registry {
                                 superAgent: data.superAgent,
                                 tokenInResponse: null,
                                 transactionTimedOutFromBuypower: false,
+                                vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1]
                             },
                         );
                     }
@@ -893,8 +1095,15 @@ class TokenHandler extends Registry {
                     }
                 }
 
+                if (TEST_FAILED) {
+                    requeryFromNewVendor = requeryFromNewVendor ?? (retry.testForSwitchingVendor && (data.retryCount >= retry.retryCountBeforeSwitchingVendor))
+                }
+
+                console.log({ retryCount: data.retryCount, retryCountBeforeSwitchingVendor: retry.retryCountBeforeSwitchingVendor, retry, test: TEST_FAILED })
+                console.log([requeryFromNewVendor])
+
                 if (requeryFromNewVendor) {
-                    return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter, transaction, transactionEventService })
+                    return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter, transaction, transactionEventService, vendorRetryRecord: data.vendorRetryRecord })
                 }
 
                 if (requeryFromSameVendor) {
@@ -910,6 +1119,7 @@ class TokenHandler extends Registry {
                             superAgent: data.superAgent,
                             tokenInResponse: null,
                             transactionTimedOutFromBuypower: false,
+                            vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1]
                         },
                     );
                 }
@@ -933,6 +1143,15 @@ class TokenHandler extends Registry {
 
             const disco = vendorProduct.schemaData.code
 
+            if (TEST_FAILED) {
+                const requeryFromNewVendor = (retry.testForSwitchingVendor && (data.retryCount >= retry.retryCountBeforeSwitchingVendor))
+                console.log({ retryCount: data.retryCount, retryCountBeforeSwitchingVendor: retry.retryCountBeforeSwitchingVendor, retry, test: TEST_FAILED, type: 'second' })
+                console.log([requeryFromNewVendor])
+                if (requeryFromNewVendor) {
+                    return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter, transaction, transactionEventService, vendorRetryRecord: data.vendorRetryRecord })
+                }
+            }
+
             const prepaid = data.meter.vendType === 'PREPAID';
             if (!token && prepaid) {
                 return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
@@ -954,6 +1173,7 @@ class TokenHandler extends Registry {
                         retryCount: data.retryCount + 1,
                         superAgent: data.superAgent,
                         tokenInResponse: null,
+                        vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1],
                         transactionTimedOutFromBuypower: false,
                     },
                 );
@@ -989,7 +1209,7 @@ class TokenHandler extends Registry {
 
     static registry = {
         [TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER]: this.handleTokenRequest,
-        [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: this.handleTokenReceived,
+        // [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: this.handleTokenReceived,
         [TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY]:
             this.requeryTransactionForToken,
         [TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER_REQUERY]:

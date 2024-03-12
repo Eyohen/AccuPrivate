@@ -12,23 +12,69 @@ const router: Router = express.Router();
 
 // Vendor routes
 router
-    .post('/vendor/create', basicAuth('access'), rbac.validateRole([RoleEnum.SuperAdmin]), AuthenticatedController(VendorController.createVendor))
-    .patch('/vendor', basicAuth('access'), rbac.validateRole([RoleEnum.SuperAdmin]), AuthenticatedController(VendorController.updateVendor))
-    .get('/vendor', basicAuth('access'), AuthenticatedController(VendorController.getAllVendors))
-    .get('/vendor/info', basicAuth('access'), AuthenticatedController(VendorController.getVendorInfo));
+    .post(
+        "/vendor/create",
+        basicAuth("access"),
+        rbac.validateRole([RoleEnum.SuperAdmin]),
+        AuthenticatedController(VendorController.createVendor),
+    )
+    .patch(
+        "/vendor",
+        basicAuth("access"),
+        rbac.validateRole([RoleEnum.SuperAdmin]),
+        AuthenticatedController(VendorController.updateVendor),
+    )
+    .get(
+        "/vendor",
+        basicAuth("access"),
+        AuthenticatedController(VendorController.getAllVendors),
+    )
+    .get(
+        "/vendor/info",
+        basicAuth("access"),
+        AuthenticatedController(VendorController.getVendorInfo),
+    );
 
 // VendorProduct routes
 router
-    .post('/vendor-product/create', basicAuth('access'), rbac.validateRole([RoleEnum.SuperAdmin]), AuthenticatedController(VendorProductController.createVendorProduct))
-    .patch('/vendor-product', basicAuth('access'), rbac.validateRole([RoleEnum.SuperAdmin]), AuthenticatedController(VendorProductController.updateVendorProduct))
-    .get('/vendor-product', basicAuth('access'), AuthenticatedController(VendorProductController.getAllVendorProducts))
-    .get('/vendor-product/info', basicAuth('access'), AuthenticatedController(VendorProductController.getVendorProductInfo));
+    .post(
+        "/vendor-product/create",
+        basicAuth("access"),
+        rbac.validateRole([RoleEnum.SuperAdmin]),
+        AuthenticatedController(VendorProductController.createVendorProduct),
+    )
+    .patch(
+        "/vendor-product",
+        basicAuth("access"),
+        rbac.validateRole([RoleEnum.SuperAdmin]),
+        AuthenticatedController(VendorProductController.updateVendorProduct),
+    )
+    .get(
+        "/vendor-product",
+        AuthenticatedController(VendorProductController.getAllVendorProducts),
+    )
+    .get(
+        "/vendor-product/info",
+        AuthenticatedController(VendorProductController.getVendorProductInfo),
+    );
 
 // Product routes
 router
-    .post('/product/create', basicAuth('access'), rbac.validateRole([RoleEnum.SuperAdmin]), AuthenticatedController(ProductController.createProduct))
-    .patch('/product', basicAuth('access'), rbac.validateRole([RoleEnum.SuperAdmin]), AuthenticatedController(ProductController.updateProduct))
-    .get('/product', basicAuth('access'), AuthenticatedController(ProductController.getAllProducts))
-    .get('/product/info', basicAuth('access'), AuthenticatedController(ProductController.getProductInfo))
+    .post(
+        "/product/create",
+        basicAuth("access"),
+        rbac.validateRole([RoleEnum.SuperAdmin]),
+        AuthenticatedController(ProductController.createProduct),
+    )
+    .patch(
+        "/product",
+        rbac.validateRole([RoleEnum.SuperAdmin]),
+        AuthenticatedController(ProductController.updateProduct),
+    )
+    .get("/product", AuthenticatedController(ProductController.getAllProducts))
+    .get(
+        "/product/info",
+        AuthenticatedController(ProductController.getProductInfo),
+    );
 
 export default router;

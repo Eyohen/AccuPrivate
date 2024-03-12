@@ -3,6 +3,7 @@ import { Transaction } from "sequelize";
 import Product, { IProduct, IUpdateProduct } from "../models/Product.model";
 import VendorProduct from "../models/VendorProduct.model";
 import { NotFoundError } from "../utils/Errors";
+import Bundle from "../models/Bundle.model";
 
 // ProductService class for handling product-related operations
 export default class ProductService {
@@ -26,34 +27,34 @@ export default class ProductService {
 
     // Method for viewing a single product
     static async viewSingleProduct(productId: string): Promise<Product | null> {
-        const product = await Product.findByPk(productId, { include: VendorProduct });
+        const product = await Product.findByPk(productId, { include: [VendorProduct, Bundle] });
         return product;
     }
 
     static async viewProductCodeByProductName(productName: string): Promise<Product | null> {
-        const product = await Product.findOne({ where: { productName }, include: VendorProduct });
+        const product = await Product.findOne({ where: { productName }, include: [VendorProduct, Bundle] });
         return product;
     }
 
     static async viewSingleProductByNameAndCategory(productName: string, category: string): Promise<Product | null> {
-        const product = await Product.findOne({ where: { productName, category }, include: VendorProduct });
+        const product = await Product.findOne({ where: { productName, category }, include: [VendorProduct, Bundle] });
         return product;
     }
 
     static async viewSingleProductByProductNameAndVendType(productName: string, vendType: string): Promise<Product | null> {
-        const product = await Product.findOne({ where: { productName, type: vendType }, include: VendorProduct });
+        const product = await Product.findOne({ where: { productName, type: vendType }, include: [VendorProduct, Bundle] });
         return product;
     }
 
     static async viewSingleProductByMasterProductCode(masterProductCode: string): Promise<Product | null> {
-        const product = await Product.findOne({ where: { masterProductCode }, include: VendorProduct });
+        const product = await Product.findOne({ where: { masterProductCode }, include: [VendorProduct, Bundle] });
         return product;
     }
 
     // Method for retrieving all products
     static async getAllProducts(query?: { category?: IProduct['category'], type?: IProduct['type'] }): Promise<Product[]> {
         console.log({ query })
-        const products = await Product.findAll({ where: query ?? {} });
+        const products = await Product.findAll({ where: query ?? {}, include: [Bundle] });
         return products;
-    }
+    }    
 }
