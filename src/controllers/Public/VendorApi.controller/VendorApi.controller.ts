@@ -147,7 +147,7 @@ class VendorTokenReceivedSubscriber extends ConsumerFactory {
 
     constructor(transaction: Transaction, response: Response) {
         const tokenHandler = new VendorTokenHandler(transaction, response)
-        const messageProcessor = new MessageProcessorFactory(tokenHandler.registry, randomUUID())
+        const messageProcessor = new MessageProcessorFactory(tokenHandler.registry, transaction.id)
         super(messageProcessor)
         this.tokenHandler = tokenHandler
     }
