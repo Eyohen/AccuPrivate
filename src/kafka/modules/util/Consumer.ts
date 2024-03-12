@@ -67,8 +67,7 @@ export default class ConsumerFactory {
     }
 
     private createKafkaConsumer(): Consumer {
-        const uuid = randomUUID()
-        const consumer = Kafka.consumer({ groupId: this.messageProcessor.getConsumerName() + uuid })
+        const consumer = Kafka.consumer({ groupId: this.messageProcessor.getConsumerName() })
         return consumer
     }
 }

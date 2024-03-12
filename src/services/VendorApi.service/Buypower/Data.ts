@@ -83,6 +83,8 @@ export default class BuypowerDataApi extends BuyPowerApi {
             "amount": `${amount}`,
         }
 
+        console.log({ requestPayload })
+
         const response = await this.API
             .post<PurchaseResponse>('/vend', requestPayload)
             .catch((error) => {

@@ -1,12 +1,15 @@
 import axios from "axios"
-import { IRECHARGE_PRIVATE_KEY, IRECHARGE_PUBLIC_KEY, NODE_ENV, IRECHARGE_VENDOR_CODE } from "../../../utils/Constants"
+import { IRECHARGE_PRIVATE_KEY, IRECHARGE_PUBLIC_KEY, NODE_ENV, IRECHARGE_VENDOR_CODE, VENDOR_URL } from "../../../utils/Constants"
 import crypto from "crypto"
 
 export class IRechargeBaseConfig {
     protected static PRIVATE_KEY = IRECHARGE_PRIVATE_KEY
     protected static PUBLIC_KEY = IRECHARGE_PUBLIC_KEY
     protected static API = axios.create({
-        baseURL: NODE_ENV === 'production' ? "https://irecharge.com.ng/pwr_api_live/v2" : "https://irecharge.com.ng/pwr_api_sandbox/v2"
+         baseURL:
+            NODE_ENV === "production"
+                ? VENDOR_URL.IRECHARGE.PROD
+                : VENDOR_URL.IRECHARGE.DEV,
     })
     protected static VENDOR_CODE = IRECHARGE_VENDOR_CODE
 
