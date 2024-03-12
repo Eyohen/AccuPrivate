@@ -815,6 +815,8 @@ export default class VendorController {
                 }
             })
 
+            await TransactionService.updateSingleTransaction(transaction.id, { status: Status.INPROGRESS })
+
             if (response instanceof Error) {
                 throw error
             }

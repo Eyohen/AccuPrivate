@@ -789,7 +789,7 @@ class TokenHandler extends Registry {
                     data.transactionId,
                 );
 
-           
+
             console.log({ disco: data.meter })
             const _product = await ProductService.viewSingleProduct(transaction.productCodeId)
             if (!_product) throw new CustomError('Product not found')
@@ -942,7 +942,8 @@ class TokenHandler extends Registry {
         data: PublisherEventAndParameters[TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY],
     ) {
         try {
-            console.warn(" Retrying transaction from vendor")
+            const logMeta = { meta: { transactionId: data.transactionId } }
+            logger.warn(" Retrying transaction from vendor",)
             retry.count = data.retryCount;
             console.log({ data: data.vendorRetryRecord, retyrCount: data.retryCount })
 
