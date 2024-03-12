@@ -943,14 +943,14 @@ class TokenHandler extends Registry {
     ) {
         try {
             const logMeta = { meta: { transactionId: data.transactionId } }
-            logger.warn(" Retrying transaction from vendor",)
+            logger.warn("Retrying transaction from vendor", logMeta)
             retry.count = data.retryCount;
             console.log({ data: data.vendorRetryRecord, retyrCount: data.retryCount })
 
             // Check if token has been found
             const transaction = await TransactionService.viewSingleTransaction(data.transactionId);
             if (!transaction) {
-                logger.error("Transaction not found");
+                logger.error("Transaction not found", logMeta);
                 return;
             }
 
