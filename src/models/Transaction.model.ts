@@ -15,6 +15,7 @@ export enum Status {
     COMPLETE = 'COMPLETE',
     PENDING = 'PENDING',
     FAILED = 'FAILED',
+    INPROGRESS = 'INPROGRESS',
     FLAGGED = 'FLAGGED'
 }
 
