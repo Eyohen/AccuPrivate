@@ -73,7 +73,7 @@ const retry = {
     count: 0,
     limit: 5,
     limitToStopRetryingWhenTransactionIsSuccessful: 20,
-    retryCountBeforeSwitchingVendor: 3,
+    retryCountBeforeSwitchingVendor: 4,
     testForSwitchingVendor: true,
 }
 
@@ -227,6 +227,7 @@ export class TokenHandlerUtil {
                 // Get the last record where this vendor was used
                 const lastRecord = retryRecord[retryRecord.length - 1]
                 lastRecord.retryCount = lastRecord.retryCount + 1
+                retryRecord[retryRecord.length - 1] = lastRecord
 
                 // Update the transaction
                 await TransactionService.updateSingleTransaction(transaction.id, { retryRecord })
@@ -542,8 +543,6 @@ class TokenHandler extends Registry {
             }
         }))
 
-        console.log({ vendorAndDiscos, superagent: transaction.superagent })
-
         const vendorProductCode = vendorAndDiscos.find(vendorAndDisco => vendorAndDisco.vendorName === transaction.superagent)?.dataCode
         if (!vendorProductCode) throw new CustomError('Vendor product code not found')
 
@@ -650,7 +649,6 @@ class TokenHandler extends Registry {
             eventMessage.error.cause = tokenInfo.status === '00' ? TransactionErrorCause.TRANSACTION_TIMEDOUT : TransactionErrorCause.TRANSACTION_FAILED
         }
 
-        console.log({ tokenInfo: tokenInfo.response?.data, transactionSuccessFul, transactionFailed: retry.count > retry.retryCountBeforeSwitchingVendor, requeryFromNewVendor, requeryFromSameVendor })
         if (!transactionSuccessFul) {
             logger.error('Transaction unsuccessful', logMeta)
             if (requeryFromNewVendor) {

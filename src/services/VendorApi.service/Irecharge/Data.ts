@@ -50,22 +50,8 @@ export class IRechargeDataApi extends IRechargeBaseConfig {
             | IRechargeApi.RequeryResponse
         >("/vend_data.php", { params });
 
-        console.log(response);
-        return (
-            NODE_ENV === "development"
-                ? {
-                      status: "00",
-                      order: "API MTN N200 to 08012345673. ",
-                      receiver: "08012345673",
-                      message: "Successful",
-                      wallet_balance: "103940",
-                      ref: "202401310924086739",
-                      amount: 200,
-                      response_hash: "e6ece15bcb33d379933252aab4528ce102198de3",
-                      source: "IRECHARGE",
-                  }
-                : response.data
-        ) as
+        console.log({ params, response: response.data });
+        return (response.data) as
             | IRechargeApi.DataSuccessfulVendResponse
             | IRechargeApi.RequeryResponse;
     }
