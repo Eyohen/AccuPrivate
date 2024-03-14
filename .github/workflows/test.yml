@@ -409,7 +409,8 @@ jobs:
       id: check_server_status
       run : |
         EC2_HOST_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=Test-core-engine" --query "Reservations[].Instances[].[PublicIpAddress]" --output text)
-        sleep 10 # wait 10 seconds to make sure the server is up and running before somke test 
+        sleep 30 # wait 30 seconds to make sure the server is up and running before somke test 
+        echo "http://${EC2_HOST_IP}/healthcheck"
         if curl "http://${EC2_HOST_IP}/healthcheck" | grep "Server is working"
         then
             echo "SMOKE_TEST_RESULT PASSED"
