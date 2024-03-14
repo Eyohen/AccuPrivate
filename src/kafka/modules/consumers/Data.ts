@@ -894,7 +894,7 @@ export default class DataConsumer extends ConsumerFactory {
     constructor() {
         const messageProcessor = new MessageProcessor(
             TokenHandler.registry,
-            "TOKEN_CONSUMER",
+            "DATA_CONSUMER",
         );
         super(messageProcessor);
     }

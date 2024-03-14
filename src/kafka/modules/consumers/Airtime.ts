@@ -670,7 +670,7 @@ export default class AirtimeConsumer extends ConsumerFactory {
     constructor() {
         const messageProcessor = new MessageProcessor(
             TokenHandler.registry,
-            "TOKEN_CONSUMER",
+            "AIRTIME_CONSUMER",
         );
         super(messageProcessor);
     }
