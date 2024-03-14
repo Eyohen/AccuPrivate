@@ -49,7 +49,7 @@ jobs:
         CRYPTO_ALGORITHM=${{ secrets.CRYPTO_ALGORITHM}}
         CRYPTO_IV=${{ secrets.CRYPTO_IV}}
         CRYPTO_PASSWORD=${{ secrets.CRYPTO_PASSWORD}}
-        DB_DB_NAME=${{ secrets.DB_DB_NAME}}
+        DB_DB_NAME=${{ secrets.TEST_DB_DB_NAME}}
         DB_DIALECT=${{ secrets.DB_DIALECT}}
         DB_HOST=${{ secrets.TEST_DB_HOST}}
         DB_NAME=${{ secrets.DB_NAME}}
@@ -57,7 +57,7 @@ jobs:
         DB_PASSWORD=${{ secrets.TEST_DB_PASS}}
         DB_URL=${{ secrets.DB_URL}}
         DB_PORT=${{ secrets.TEST_DB_PORT}}
-        DB_USER_NAME=${{ secrets.DB_USER_NAME}}
+        DB_USER_NAME=${{ secrets.TEST_DB_USER_NAME}}
         DEFAULT_ELECTRICITY_PROVIDER=${{ secrets.DEFAULT_ELECTRICITY_PROVIDER}}
         DEPLOYMENT_PREFIX=${{ secrets.DEPLOYMENT_PREFIX}}
         EMAIL_HOST=${{ secrets.EMAIL_HOST}}
