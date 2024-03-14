@@ -379,7 +379,7 @@ jobs:
             DB_PASSWORD=$(grep DB_PASSWORD ./.env | cut -d "=" -f2) &&\
             DB_NAME=$(grep DB_DB_NAME ./.env | cut -d "=" -f2) &&\
             DB_PORT=$(grep DB_PORT ./.env | cut -d "=" -f2) &&\
-            DB_HOST=$(grep DB_HOST ./.env | cut -d "=" -f2) &&\
+            DB_HOST=$(grep DB_HOST ./.env | cut -d "=" -f2)
           
             echo "DB_URL=postgres://$DB_USERNAME:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME" >> .env
             
