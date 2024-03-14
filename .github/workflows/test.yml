@@ -54,7 +54,7 @@ jobs:
         DB_HOST=${{ secrets.TEST_DB_HOST}}
         DB_NAME=${{ secrets.DB_NAME}}
         DB_PASS=${{ secrets.TEST_DB_PASS}}
-        DB_PASSWORD=${{ secrets.DB_PASSWORD}}
+        DB_PASSWORD=${{ secrets.TEST_DB_PASS}}
         DB_URL=${{ secrets.DB_URL}}
         DB_PORT=${{ secrets.TEST_DB_PORT}}
         DB_USER_NAME=${{ secrets.DB_USER_NAME}}
@@ -71,7 +71,7 @@ jobs:
         KAFKA_INSTANCE_TYPE=${{ secrets.KAFKA_INSTANCE_TYPE}}
         LOAD_TEST_MODE=${{ secrets.LOAD_TEST_MODE}}
         LOGO_URL=${{ secrets.LOGO_URL}}
-        NEW_RELIC_APP_NAME=${{ secrets.NEW_RELIC_APP_NAME}}
+        NEW_RELIC_APP_NAME=${{ secrets.TEST_NEW_RELIC_APP_NAME}}
         NEW_RELIC_ENABLED=${{ secrets.NEW_RELIC_ENABLED}}
         NEW_RELIC_LICENSE_KEY=${{ secrets.NEW_RELIC_LICENSE_KEY}}
         NEW_RELIC_LOG_LEVEL=${{ secrets.NEW_RELIC_LOG_LEVEL}}
@@ -168,10 +168,10 @@ jobs:
         echo "JWT_SECRET=$JWT_SECRET" >> .env
         echo "LOAD_TEST_MODE=$LOAD_TEST_MODE" >> .env
         echo "LOGO_URL=$LOGO_URL" >> .env
-        # echo "NEW_RELIC_APP_NAME=$NEW_RELIC_APP_NAME" >> .env
-        # echo "NEW_RELIC_ENABLED=$NEW_RELIC_ENABLED" >> .env
-        # echo "NEW_RELIC_LICENSE_KEY=$NEW_RELIC_LICENSE_KEY" >> .env
-        # echo "NEW_RELIC_LOG_LEVEL=$NEW_RELIC_LOG_LEVEL" >> .env
+        echo "NEW_RELIC_APP_NAME=$NEW_RELIC_APP_NAME" >> .env
+        echo "NEW_RELIC_ENABLED=$NEW_RELIC_ENABLED" >> .env
+        echo "NEW_RELIC_LICENSE_KEY=$NEW_RELIC_LICENSE_KEY" >> .env
+        echo "NEW_RELIC_LOG_LEVEL=$NEW_RELIC_LOG_LEVEL" >> .env
         echo "NODE_ENV=$NODE_ENV" >> .env
         echo "OAUTH_CLIENT_ID=$OAUTH_CLIENT_ID" >> .env
         echo "OAUTH_CLIENT_SECRET=$OAUTH_CLIENT_SECRET" >> .env
