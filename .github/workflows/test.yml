@@ -150,7 +150,6 @@ jobs:
         echo "DB_DB_NAME=$DB_DB_NAME" >> .env
         echo "DB_DIALECT=$DB_DIALECT" >> .env
         echo "DB_HOST=$DB_HOST" >> .env
-        echo "DB_HOST=$DB_HOST" >> .env
         echo "DB_NAME=$DB_NAME" >> .env
         echo "DB_PASS=$DB_PASS" >> .env
         echo "DB_PORT=$DB_PORT" >> .env
