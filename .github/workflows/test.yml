@@ -309,8 +309,8 @@ jobs:
           fi
           unzip dist.zip 
           ls -R dist
-          cp ./dist.zp testdist.zip
-          aws s3 cp ./dist.zip s3://staging-bucket-deployment/ 
+          cp ./dist.zip testdist.zip
+          aws s3 cp ./testdist.zip s3://staging-bucket-deployment/ 
 
   # Depolys the backend to build
   deploy-build:
@@ -349,13 +349,13 @@ jobs:
             cd /home/ubuntu/
             pm2 stop server #stop the server 
             # GET THE LATEST_SUCCESSFUL_RUN_ID 
-            if aws s3 cp s3://accuvend-bucket-configuration/staging_last_run.txt ./staging_last_run.txt | grep "does not exist" 
+            if aws s3 cp s3://accuvend-bucket-configuration/test_staging_last_run.txt ./test_staging_last_run.txt | grep "does not exist" 
             then
                 echo 'FILE DOES NOT EXIST'
                 LAST_SUCCESSFUL_RUN_NUMBER=0               
             else
                 echo 'FILE EXIST'
-                LAST_SUCCESSFUL_RUN_NUMBER=$(grep LAST_SUCCESSFUL_RUN_ID ./staging_last_run.txt | cut -d "=" -f2)            
+                LAST_SUCCESSFUL_RUN_NUMBER=$(grep LAST_SUCCESSFUL_RUN_ID ./test_staging_last_run.txt | cut -d "=" -f2)            
             fi
             #rename the old folder 
             echo "$LAST_SUCCESSFUL_RUN_NUMBER"
@@ -451,13 +451,13 @@ jobs:
               cd /home/ubuntu/
               pm2 stop server #stop the server 
               # GET THE LATEST_SUCCESSFUL_RUN_ID 
-              if aws s3 cp s3://accuvend-bucket-configuration/staging_last_run.txt ./staging_last_run.txt | grep "does not exist" 
+              if aws s3 cp s3://accuvend-bucket-configuration/test_staging_last_run.txt ./test_staging_last_run.txt | grep "does not exist" 
               then
                   echo 'FILE DOES NOT EXIST'
                   LAST_SUCCESSFUL_RUN_NUMBER=0               
               else
                   echo 'FILE EXIST'
-                  LAST_SUCCESSFUL_RUN_NUMBER=$(grep LAST_SUCCESSFUL_RUN_ID ./staging_last_run.txt | cut -d "=" -f2)            
+                  LAST_SUCCESSFUL_RUN_NUMBER=$(grep LAST_SUCCESSFUL_RUN_ID ./test_staging_last_run.txt | cut -d "=" -f2)            
               fi
               #rename the old folder 
               echo "$LAST_SUCCESSFUL_RUN_NUMBER"
@@ -546,13 +546,13 @@ jobs:
               cd /home/ubuntu/
               pm2 stop server #stop the server 
               # GET THE LATEST_SUCCESSFUL_RUN_ID 
-              if aws s3 cp s3://accuvend-bucket-configuration/staging_last_run.txt ./staging_last_run.txt | grep "does not exist" 
+              if aws s3 cp s3://accuvend-bucket-configuration/test_staging_last_run.txt ./test_staging_last_run.txt | grep "does not exist" 
               then
                   echo 'FILE DOES NOT EXIST'
                   LAST_SUCCESSFUL_RUN_NUMBER=0               
               else
                   echo 'FILE EXIST'
-                  LAST_SUCCESSFUL_RUN_NUMBER=$(grep LAST_SUCCESSFUL_RUN_ID ./staging_last_run.txt | cut -d "=" -f2)            
+                  LAST_SUCCESSFUL_RUN_NUMBER=$(grep LAST_SUCCESSFUL_RUN_ID ./test_staging_last_run.txt | cut -d "=" -f2)            
               fi
               #delete the old folder 
               echo "$LAST_SUCCESSFUL_RUN_NUMBER"
@@ -591,8 +591,8 @@ jobs:
           PRIVATE_KEY: ${{ secrets.SAND_BOX_SSH_KEY }}
           GITHUB_RUN_NUMBER: ${{ secrets.GITHUB_RUN_NUMBER }}
         run: |
-          echo "LAST_SUCCESSFUL_RUN_ID=$GITHUB_RUN_NUMBER" > staging_last_run.txt
-          aws s3 cp ./staging_last_run.txt s3://accuvend-bucket-configuration/staging_last_run.txt
+          echo "LAST_SUCCESSFUL_RUN_ID=$GITHUB_RUN_NUMBER" > test_staging_last_run.txt
+          aws s3 cp ./test_staging_last_run.txt s3://accuvend-bucket-configuration/test_staging_last_run.txt
         
   # create-update-environment:
   #   name: create-environment
