@@ -186,6 +186,7 @@ jobs:
         echo "SU_HOST_EMAIL_1=$SU_HOST_EMAIL_1" >> .env
         echo "SU_HOST_EMAIL_2=$SU_HOST_EMAIL_2" >> .env
         echo "SU_HOST_EMAIL_3=$SU_HOST_EMAIL_3" >> .env
+        echo "NODE_TLS_REJECT_UNAUTHORIZED=0" >> .env
         cat .env
     - name: push to state to s3
       run: |
@@ -381,7 +382,7 @@ jobs:
             DB_PORT=$(grep DB_PORT ./.env | cut -d "=" -f2) &&\
             DB_HOST=$(grep DB_HOST ./.env | cut -d "=" -f2)
           
-            echo "DB_URL=postgres://$DB_USERNAME:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME" >> .env
+            echo "DB_URL=postgres://$DB_USERNAME:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=require" >> .env
             
             #install depencendies in dist folder
             npm install
