@@ -73,7 +73,7 @@ jobs:
         LOGO_URL=${{ secrets.LOGO_URL}}
         NEW_RELIC_APP_NAME=${{ secrets.TEST_NEW_RELIC_APP_NAME}}
         NEW_RELIC_ENABLED=${{ secrets.NEW_RELIC_ENABLED}}
-        NEW_RELIC_LICENSE_KEY=${{ secrets.NEW_RELIC_LICENSE_KEY}}
+        NEW_RELIC_LICENSE_KEY=${{ secrets.TEST_NEW_RELIC_LICENSE_KEY}}
         NEW_RELIC_LOG_LEVEL=${{ secrets.NEW_RELIC_LOG_LEVEL}}
         NODE_ENV=${{ secrets.NODE_ENV}}
         OAUTH_CLIENT_ID=${{ secrets.OAUTH_CLIENT_ID}}
@@ -168,7 +168,7 @@ jobs:
         echo "LOAD_TEST_MODE=$LOAD_TEST_MODE" >> .env
         echo "LOGO_URL=$LOGO_URL" >> .env
         echo "NEW_RELIC_APP_NAME=$NEW_RELIC_APP_NAME" >> .env
-        echo "NEW_RELIC_ENABLED=$NEW_RELIC_ENABLED" >> .env
+        echo "NEW_RELIC_LOG_ENABLED=$NEW_RELIC_ENABLED" >> .env
         echo "NEW_RELIC_LICENSE_KEY=$NEW_RELIC_LICENSE_KEY" >> .env
         echo "NEW_RELIC_LOG_LEVEL=$NEW_RELIC_LOG_LEVEL" >> .env
         echo "NODE_ENV=$NODE_ENV" >> .env
