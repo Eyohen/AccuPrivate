@@ -702,12 +702,13 @@ class TokenHandler extends Registry {
             const responseFromIrecharge = tokenInfo as Awaited<ReturnType<typeof VendorService.irechargeVendToken>>
             const transactionTimedOutFromIrecharge = vendResultFromIrecharge.source === 'IRECHARGE' ? ['15', '43'].includes(vendResultFromIrecharge.status) : false
             let transactionTimedOutFromBuypower = vendResultFromBuypower.source === 'BUYPOWERNG' ? vendResultFromBuypower.status === true && vendResultFromBuypower.data.responseCode == 202 : false // TODO: Add check for when transaction timeout from baxi
-            const transactionTimedOutFromBaxi = vendResultFromBaxi.source === 'BAXI' ? vendResultFromBaxi.status === true && vendResultFromBaxi.data.statusCode === '0' : false
+            const transactionTimedOutFromBaxi = vendResultFromBaxi.source === 'BAXI' ? (vendResultFromBaxi.status === true && vendResultFromBaxi.data.statusCode === '0'  && vendResultFromBaxi.data.transactionStatus !== 'success'): false
             const transactionTimedOut = transactionTimedOutFromBuypower || transactionTimedOutFromIrecharge || transactionTimedOutFromBaxi
             let tokenInResponse: string | null = null;
 
             const prepaid = meter.vendType === 'PREPAID';
 
+            console.log({ vendResultFromBaxi: vendResultFromBaxi.data})
             if (prepaid) {
                 if (vendResult.source === 'BUYPOWERNG') {
                     tokenInResponse = vendResultFromBuypower.status === true && vendResultFromBuypower.data.responseCode !== 202 ? vendResultFromBuypower.data.token : null
