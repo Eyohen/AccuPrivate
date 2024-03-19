@@ -51,7 +51,9 @@ export default class TransactionController {
         res.status(200).json({
             status: "success",
             message: "Transaction info retrieved successfully",
-            data: { transaction: { ...ResponseTrimmer.trimTransactionResponse(transaction.dataValues), powerUnit, disco: transaction.productType == 'AIRTIME' ? undefined : transaction.disco } },
+            // removed to include Events
+            //data: { transaction: { ...ResponseTrimmer.trimTransactionResponse(transaction.dataValues), powerUnit, disco: transaction.productType == 'AIRTIME' ? undefined : transaction.disco } },
+            data: { transaction: { ...transaction.dataValues, powerUnit, disco: transaction.productType == 'AIRTIME' ? undefined : transaction.disco } },
         });
     }
 
