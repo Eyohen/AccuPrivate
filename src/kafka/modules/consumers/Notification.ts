@@ -97,13 +97,13 @@ class NotificationHandler extends Registry {
 
             const msgTemplate = data.meter.vendType === 'POSTPAID' ? await SmsService.postpaidElectricityTemplate(transaction) : await SmsService.prepaidElectricityTemplate(transaction)
             await SmsService.sendSms(data.user.phoneNumber, msgTemplate)
+                .then(async () => {
+                    await transactionEventService.addSmsTokenSentToUserEvent()
+                })
                 .catch((error: AxiosError) => {
                     console.log(error.response?.data)
                     logger.error('Error sending sms', error)
                 })
-            if (data.user.phoneNumber) {
-                await transactionEventService.addSmsTokenSentToUserEvent()
-            }
             await transactionEventService.addTokenSentToUserEmailEvent()
         }
         return
