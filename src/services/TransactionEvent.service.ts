@@ -1255,6 +1255,32 @@ export default class TransactionEventService {
 
         return await EventService.addEvent(event);
     }
+    
+    public async addSmsTokenSentToUserEvent(): Promise<Event> {
+        const user = await this.transaction.$get('user');
+        if (!user) {
+            throw new Error('Transaction does not have a user');
+        }
+
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.SMS_TOKEN_SENT_TO_USER,
+            eventText: TOPICS.SMS_TOKEN_SENT_TO_USER,
+            payload: JSON.stringify({
+                email: user.email,
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+                disco: this.meterInfo.disco,
+                phone: user.phoneNumber
+            }),
+            source: this.transaction.superagent.toUpperCase(),
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.COMPLETE,
+        }
+
+        return await EventService.addEvent(event);
+    }
 
     public async addTokenSentToPartnerEvent(): Promise<Event> {
         const partner = await this.transaction.$get('partner');
