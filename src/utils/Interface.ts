@@ -135,6 +135,8 @@ export interface IReceiptEmailTemplateProps {
     transaction: ITransaction;
     meterNumber: string;
     token: string;
+    address: string;
+    name: string;
 }
 
 export interface INotification {

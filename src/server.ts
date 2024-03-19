@@ -25,7 +25,7 @@ async function startServer(): Promise<void> {
             
         });
 
-        // startCrons()
+        startCrons()
     } catch (err) {
         console.error(err)
         // Log any errors that occur during server startup
