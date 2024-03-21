@@ -322,7 +322,9 @@ export class TokenHandlerUtil {
             previousVendors: [...transaction.previousVendors, newVendor],
         })
 
-        return await VendorPublisher.publishEventForRetryPowerPurchaseWithNewVendor({
+        await TransactionService.updateSingleTransaction(transaction.id, { superagent: newVendor })
+        await transactionEventService.addPowerPurchaseInitiatedEvent(transaction.bankRefId, transaction.amount);
+        await VendorPublisher.publishEventForRetryPowerPurchaseWithNewVendor({
             meter: meter,
             partner: partner,
             transactionId: transaction.id,
@@ -334,6 +336,14 @@ export class TokenHandlerUtil {
                 phoneNumber: user.phoneNumber,
             },
             newVendor,
+        })
+        await VendorPublisher.publishEventForInitiatedPowerPurchase({
+            meter: meter,
+            user: user,
+            partner: partner,
+            transactionId: transaction.id,
+            superAgent: newVendor,
+            vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1]
         })
     }
 
@@ -542,17 +552,7 @@ class TokenHandler extends Registry {
             })
         }
 
-        await TransactionService.updateSingleTransaction(transaction.id, { superagent: data.newVendor })
-        const transactionEventService = new EventService.transactionEventService(transaction, data.meter, data.newVendor, data.partner.email);
-        await transactionEventService.addPowerPurchaseInitiatedEvent(transaction.bankRefId, transaction.amount);
-        await VendorPublisher.publishEventForInitiatedPowerPurchase({
-            meter: data.meter,
-            user: data.user,
-            partner: data.partner,
-            transactionId: transaction.id,
-            superAgent: data.newVendor,
-            vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1]
-        })
+
     }
 
     private static async handleTokenRequest(
@@ -1181,7 +1181,6 @@ class TokenHandler extends Registry {
                 : false
             const transactionFailed = transactionFailedFromBuypower || transactionFailedFromBaxi || transactionFailedFromIrecharge
 
-            let requeryTransaction = true
             let retryTransaction = transactionFailed
 
             if (requeryResult instanceof Error) {
@@ -1219,8 +1218,6 @@ class TokenHandler extends Registry {
             } else if (transactionSuccessFromIrecharge) {
                 tokenInResponse = requeryResultFromIrecharge.token
             }
-
-            requeryTransaction = !tokenInResponse
 
             if (tokenInResponse) {
                 let powerUnit =
@@ -1288,7 +1285,6 @@ class TokenHandler extends Registry {
             if (transaction.createdAt < twoHoursAgo) {
                 return await TokenHandlerUtil.flaggTransaction(transaction.id)
             }
-
 
             const vendor = await VendorModelService.viewSingleVendorByName(data.superAgent)
             if (!vendor) throw new CustomError('Vendor not found')
@@ -1411,7 +1407,7 @@ class TokenHandler extends Registry {
             // else if (requeryResult.source === 'BAXI') token = requeryResultFromBaxi.data.rawData.standardTokenValue
             // else if (requeryResult.source === 'IRECHARGE') token = requeryResultFromIrecharge.token
 
-            
+
 
             // if (TEST_FAILED) {
             //     const requeryFromNewVendor = (retry.testForSwitchingVendor && (data.retryCount >= retry.retryCountBeforeSwitchingVendor))
@@ -1484,7 +1480,7 @@ class TokenHandler extends Registry {
             this.requeryTransactionForToken,
         [TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER_REQUERY]:
             this.requeryTransactionForToken,
-        [TOPICS.RETRY_PURCHASE_FROM_NEW_VENDOR]: this.retryPowerPurchaseWithNewVendor
+        // [TOPICS.RETRY_PURCHASE_FROM_NEW_VENDOR]: this.retryPowerPurchaseWithNewVendor
     };
 }
 
