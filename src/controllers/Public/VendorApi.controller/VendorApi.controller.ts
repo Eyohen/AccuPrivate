@@ -47,6 +47,8 @@ import VendorProductService from "../../../services/VendorProduct.service";
 import VendorDocService from '../../../services/Vendor.service'
 import { generateRandomString, generateRandonNumbers } from "../../../utils/Helper";
 import ResponseTrimmer from "../../../utils/ResponseTrimmer";
+import PowerUnit from "../../../models/PowerUnit.model";
+import PowerUnitService from "../../../services/PowerUnit.service";
 interface valideMeterRequestBody {
     meterNumber: string;
     superagent: "BUYPOWERNG" | "BAXI";
@@ -564,7 +566,8 @@ export default class VendorController {
             throw new BadRequestError('Invalid product code for electricity', errorMeta)
         }
 
-        const superagent = await TokenHandlerUtil.getBestVendorForPurchase(existingProductCodeForDisco.id, 1000);
+        // const superagent = await TokenHandlerUtil.getBestVendorForPurchase(existingProductCodeForDisco.id, 1000);
+        const superagent = 'BAXI'
         const transactionTypes = {
             'ELECTRICITY': TransactionType.ELECTRICITY,
             'AIRTIME': TransactionType.AIRTIME,
@@ -868,9 +871,35 @@ export default class VendorController {
                 }, 60000)
 
                 return
+            } else {
+                const powerUnit = await transaction.$get('powerUnit')
+                if (!powerUnit) {
+                    throw new InternalServerError('Power unit not found')
+                }
+
+                // Send response if token has been gotten from vendor
+                res.status(200).json({
+                    status: 'success',
+                    message: 'Token purchase initiated successfully',
+                    data: {
+                        transaction: {
+                            disco: transaction.disco,
+                            "amount": transaction.amount,
+                            "transactionId": transaction.id,
+                            "id": transaction.id,
+                            "bankRefId": transaction.bankRefId,
+                            "bankComment": transaction.bankComment,
+                            "productType": transaction.productType,
+                            "transactionTimestamp": transaction.transactionTimestamp,
+                        },
+                        meter: { ...meterInfo, token: powerUnit.token }
+                    }
+                })
+
+                return
             }
 
-            // Add Code to send response if token has been gotten from vendor
+            // TODO: Add Code to send response if token has been gotten from vendor
 
             await transactionEventService.addTokenSentToPartnerEvent();
 
