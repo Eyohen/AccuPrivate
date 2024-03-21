@@ -5,20 +5,23 @@ import { BadRequestError, NotFoundError } from "../../utils/Errors";
 import { randomUUID } from "crypto";
 import ProductService from "../../services/Product.service";
 import VendorService from "../../services/Vendor.service";
+import BundleService from "../../services/Bundle.service";
 
 export default class VendorProductController {
     static async createVendorProduct(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { vendorId, productId, commission, bonus, schemaData, vendorHttpUrl, amount } = req.body as {
+        const { vendorId, productId, commission, bonus, schemaData, vendorHttpUrl, amount, bundleId } = req.body as {
             vendorId: string,
             productId: string,
+            bundleId: string,
             commission: number,
             bonus: number,
+
             schemaData: { code: string },
             vendorHttpUrl: string,
             amount: number,
         };
 
-        if (!vendorId || !productId || !commission || !bonus || !schemaData || !vendorHttpUrl) {
+        if (!vendorId || !productId || (!commission && commission !== 0) || ( !bonus && bonus !== 0) || !schemaData || !vendorHttpUrl) {
             throw new BadRequestError('Vendor ID, Product ID, Commission, Bonus, Schema Data, and Vendor HTTP URL are required');
         }
 
@@ -37,11 +40,20 @@ export default class VendorProductController {
             throw new NotFoundError('Product not found');
         }
 
+        if (bundleId) {
+            const bundle = await BundleService.viewSingleBundleById(bundleId);
+            if (!bundle) {
+                throw new NotFoundError('Bundle not found');
+            }
+        } else if (product.category === 'DATA') {
+            throw new BadRequestError('Bundle ID is required for Data product');
+        }
+
         if (product.category === 'DATA' && !amount) {
             throw new BadRequestError('Amount is required for Data product');
         }
 
-        const data = { vendorId, vendorName: vendor.name, vendorCode: schemaData.code, productId, commission, bonus, bundleAmount: amount, schemaData, vendorHttpUrl, id: randomUUID(), productCode: product.masterProductCode };
+        const data = { vendorId, vendorName: vendor.name, vendorCode: schemaData.code, productId, commission, bonus, bundleId, bundleAmount: amount, schemaData, vendorHttpUrl, id: randomUUID(), productCode: product.masterProductCode };
         const vendorProduct = await VendorProductService.addVendorProduct(data);
 
         res.status(201).json({
@@ -53,9 +65,11 @@ export default class VendorProductController {
     }
 
     static async updateVendorProduct(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-        const { vendorProductId, commission, bonus, vendorHttpUrl } = req.body as {
+        const { vendorProductId, vendorCode, bundleAmount, commission, bonus, vendorHttpUrl } = req.body as {
             vendorProductId: string,
             commission?: number,
+            bundleAmount?: number,
+            vendorCode?: string,
             bonus?: number,
             vendorHttpUrl?: string,
         };
@@ -74,7 +88,7 @@ export default class VendorProductController {
         if (schemaData && vendorProduct.schemaData) {
             schemaData = { ...vendorProduct.schemaData, ...schemaData };
         }
-        const data = { commission, bonus, schemaData, vendorHttpUrl };
+        const data = { commission, vendorCode, bundleAmount, bonus, schemaData, vendorHttpUrl };
         const updatedVendorProduct = await VendorProductService.updateVendorProduct(vendorProductId, data);
 
         if (!updatedVendorProduct) {

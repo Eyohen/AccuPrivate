@@ -411,7 +411,7 @@ class WebhookHandler extends Registry {
         },
     ) {
         const retryCount = meta.retryCount ?? 0;
-        const waitTime = getCurrentWaitTimeForRequeryEvent(retryCount);
+        const waitTime = await getCurrentWaitTimeForRequeryEvent(retryCount);
 
         setTimeout(async () => {
             await eventService.addWebHookNotificationRetryEvent({
