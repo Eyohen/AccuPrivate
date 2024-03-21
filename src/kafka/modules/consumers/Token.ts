@@ -131,12 +131,12 @@ export class TokenHandlerUtil {
     }: TriggerRequeryTransactionTokenProps) {
         // Check if the transaction has hit the requery limit
         // If yes, flag transaction
-        if (retryCount >= MAX_REQUERY_PER_VENDOR) {
-            logger.info(`Flagged transaction with id ${eventData.transactionId} after hitting requery limit`, {
-                meta: { transactionId: eventData.transactionId }
-            })
-            return await TransactionService.updateSingleTransaction(eventData.transactionId, { status: Status.FLAGGED })
-        }
+        // if (retryCount >= MAX_REQUERY_PER_VENDOR) {
+        //     logger.info(`Flagged transaction with id ${eventData.transactionId} after hitting requery limit`, {
+        //         meta: { transactionId: eventData.transactionId }
+        //     })
+        //     return await TransactionService.updateSingleTransaction(eventData.transactionId, { status: Status.FLAGGED })
+        // }
 
         /**
          * Not all transactions that are requeried are due to timeout
@@ -179,28 +179,28 @@ export class TokenHandlerUtil {
             waitTime: await getCurrentWaitTimeForRequeryEvent(retryCount)
         };
 
-        // Start timer to requery transaction at intervals
         async function countDownTimer(time: number) {
-            for (let i = time; i > 0; i--) {
-                setTimeout(() => {
-                    logger.info(`Retrying transaction ${i} seconds`, {
-                        meta: { transactionId: eventData.transactionId }
-                    })
-                }, (time - i) * 1000)
-            }
+            return new Promise<void>((resolve) => {
+                // Start timer to requery transaction at intervals
+                for (let i = time; i > 0; i--) {
+                    setTimeout(() => {
+                        logger.info(`Requerying transaction ${i} seconds`, {
+                            meta: { transactionId: eventData.transactionId }
+                        })
+                        if (i === 1) {
+                            resolve()
+                        }
+                    }, (time - i) * 1000)
+                }
+            })
         }
-        countDownTimer(eventMetaData.waitTime);
+        await countDownTimer(eventMetaData.waitTime);
 
         // Publish event in increasing intervals of seconds i.e 1, 2, 4, 8, 16, 32, 64, 128, 256, 512
         // TODO: Use an external service to schedule this task
-        setTimeout(async () => {
-            logger.info('Retrying transaction from vendor', {
-                meta: { transactionId: eventData.transactionId }
-            })
-            await VendorPublisher.publishEventForGetTransactionTokenRequestedFromVendorRetry(
-                eventMetaData,
-            );
-        }, eventMetaData.waitTime * 1000);
+        await VendorPublisher.publishEventForGetTransactionTokenRequestedFromVendorRetry(
+            eventMetaData,
+        );
     }
 
     static async triggerEventToRetryTransactionWithNewVendor(
@@ -216,7 +216,7 @@ export class TokenHandlerUtil {
 
         let waitTime = await getCurrentWaitTimeForSwitchEvent(vendorRetryRecord.retryCount)
 
-        logger.warn('Reinitiating transaction with new vendor', { meta: { transactionId: transaction.id } })
+        logger.warn('Retrying transaction with new vendor', { meta: { transactionId: transaction.id } })
         const meta = {
             transactionId: transaction.id,
         }
@@ -291,7 +291,7 @@ export class TokenHandlerUtil {
                 throw new CustomError('Irecharge vendor product not found')
             }
 
-            const meterValidationResult = await VendorService.irechargeValidateMeter(irechargeVendorProduct.schemaData.code, meter.meterNumber, newTransactionReference).then((res) => ({ ...res, ...res.customer, }))
+            const meterValidationResult = await VendorService.irechargeValidateMeter(irechargeVendorProduct.schemaData.code, meter.meterNumber, newTransactionReference, transaction.id).then((res) => ({ ...res, ...res.customer, }))
             console.log({ meterValidationResult, info: 'New meter validation result' })
             accesToken = meterValidationResult.access_token
         }
@@ -301,7 +301,7 @@ export class TokenHandlerUtil {
             return new Promise<void>((resolve) => {
                 for (let i = time; i > 0; i--) {
                     setTimeout(() => {
-                        logger.warn(`Reinitating transaction with vendor in ${i} seconds`, {
+                        logger.warn(`Retrying transaction with vendor in ${i} seconds`, {
                             meta: { transactionId: transaction.id }
                         });
                         if (i === 1) {
@@ -371,7 +371,7 @@ export class TokenHandlerUtil {
             })
 
             logger.info('Validating meter', { transactionId: data.transaction.id })
-            const meterValidationResult = await VendorService.irechargeValidateMeter(_data.disco, _data.meterNumber, data.transaction.vendorReferenceId).catch((error) => {
+            const meterValidationResult = await VendorService.irechargeValidateMeter(_data.disco, _data.meterNumber, data.transaction.vendorReferenceId, _data.transactionId).catch((error) => {
                 throw new CustomError('Error validating meter', {
                     transactionId: data.transaction.id,
                 })
@@ -539,19 +539,19 @@ export class TokenHandlerUtil {
 
 
 class TokenHandler extends Registry {
-    private static async retryPowerPurchaseWithNewVendor(data: PublisherEventAndParameters[TOPICS.RETRY_PURCHASE_FROM_NEW_VENDOR]) {
-        const transaction = await TransactionService.viewSingleTransaction(data.transactionId);
-        if (!transaction) {
-            throw new CustomError(`CustomError fetching transaction with id ${data.transactionId}`, {
-                transactionId: data.transactionId
-            });
-        }
-        if (!transaction.bankRefId) {
-            throw new CustomError('BankRefId not found', {
-                transactionId: data.transactionId
-            })
-        }
-    }
+    // private static async retryPowerPurchaseWithNewVendor(data: PublisherEventAndParameters[TOPICS.RETRY_PURCHASE_FROM_NEW_VENDOR]) {
+    //     const transaction = await TransactionService.viewSingleTransaction(data.transactionId);
+    //     if (!transaction) {
+    //         throw new CustomError(`CustomError fetching transaction with id ${data.transactionId}`, {
+    //             transactionId: data.transactionId
+    //         });
+    //     }
+    //     if (!transaction.bankRefId) {
+    //         throw new CustomError('BankRefId not found', {
+    //             transactionId: data.transactionId
+    //         })
+    //     }
+    // }
 
     private static async handleTokenRequest(
         data: PublisherEventAndParameters[TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER],
@@ -707,6 +707,16 @@ class TokenHandler extends Registry {
                 } else if (!transactionTimedOut) {
                     // Even when transactionType is POSTPAID, a success message doesn't guarantee that everything went well, we still need to check if it timmedout
                     requeryTransaction = false
+                }
+            }
+
+            if (TEST_FAILED) {
+                if ((tokenInResponse && meter.vendType === 'PREPAID') || (!tokenInResponse && meter.vendType != 'PREPAID')) {
+                    const totalRetries = (retry.retryCountBeforeSwitchingVendor * transaction.previousVendors.length - 1) + retry.count + 1
+
+                    // If we are in test mode, and the transaction is successful, after a number of retries, we should assume the transaction is successful
+                    const shouldAssumeToBeSuccessful = (totalRetries > retry.limitToStopRetryingWhenTransactionIsSuccessful) && TEST_FAILED
+                    requeryTransaction = !shouldAssumeToBeSuccessful
                 }
             }
 
@@ -1128,7 +1138,7 @@ class TokenHandler extends Registry {
     ) {
         try {
             const logMeta = { meta: { transactionId: data.transactionId } }
-            logger.warn("Retrying transaction from vendor", logMeta)
+            logger.warn("Requerying transaction from vendor", logMeta)
             retry.count = data.retryCount;
             console.log({ data: data.vendorRetryRecord, retyrCount: data.retryCount })
 
@@ -1196,11 +1206,11 @@ class TokenHandler extends Registry {
                 point: 'requery',
                 requeryResult
             })
+            if (TEST_FAILED) {
+                retryTransaction = (retry.testForSwitchingVendor && (data.retryCount >= retry.retryCountBeforeSwitchingVendor))
+            }
             if (requeryResult instanceof Error) {
                 logger.error("Error occured while requerying transaction", logMeta)
-                if (TEST_FAILED) {
-                    retryTransaction = retry.testForSwitchingVendor && (data.retryCount >= retry.retryCountBeforeSwitchingVendor)
-                }
 
                 if (retryTransaction) {
                     return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter, transaction, transactionEventService, vendorRetryRecord: data.vendorRetryRecord })
@@ -1221,6 +1231,8 @@ class TokenHandler extends Registry {
                         vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1]
                     }
                 )
+            } else if (retryTransaction) {
+                return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter, transaction, transactionEventService, vendorRetryRecord: data.vendorRetryRecord })
             }
 
             let tokenInResponse: string | undefined
@@ -1230,6 +1242,13 @@ class TokenHandler extends Registry {
                 tokenInResponse = 'rawData' in requeryResultFromBaxi.data ? requeryResultFromBaxi.data.rawData.standardTokenValue : undefined
             } else if (transactionSuccessFromIrecharge) {
                 tokenInResponse = requeryResultFromIrecharge.token
+            }
+
+            if (transactionSuccess && TEST_FAILED) {
+                const totalRetries = (retry.retryCountBeforeSwitchingVendor * transaction.previousVendors.length - 1) + retry.count + 1
+
+                // If we are in test mode, and the transaction is successful, after a number of retries, we should assume the transaction is successful
+                tokenInResponse = totalRetries > retry.limitToStopRetryingWhenTransactionIsSuccessful ? '0' : undefined
             }
 
             if (tokenInResponse) {

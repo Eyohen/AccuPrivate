@@ -439,7 +439,7 @@ class VendorControllerUtil {
                 disco: irechargeVendorProduct.schemaData.code,
                 vendType,
             })
-            return VendorService.irechargeValidateMeter(irechargeVendorProduct.schemaData.code, meterNumber, transaction.vendorReferenceId).then((res) => ({ ...res, ...res.customer, }))
+            return VendorService.irechargeValidateMeter(irechargeVendorProduct.schemaData.code, meterNumber, transaction.vendorReferenceId, transaction.id).then((res) => ({ ...res, ...res.customer, }))
         }
 
         // Try with the first super agetn, if it fails try with the next, then update the transaction superagent
@@ -459,6 +459,7 @@ class VendorControllerUtil {
         superAgents.splice(superAgents.indexOf(previousSuperAgent), 1)
         superAgents.unshift(previousSuperAgent)
 
+        const transactionEventService = new EventService.transactionEventService(transaction, { meterNumber, disco, vendType }, superAgents[0], transaction.partner.email)
         let selectedVendor = superAgents[0]
         let returnedResponse: IResponses[keyof IResponses] | Error = new Error('No response')
         for (const superAgent of superAgents) {
@@ -479,6 +480,12 @@ class VendorControllerUtil {
             } catch (error) {
                 console.log(error)
                 logger.error(`Error validating meter with ${superAgent}`, { meta: { transactionId: transaction.id } })
+
+                await transactionEventService.addMeterValidationFailedEvent(superAgent, {
+                    meterNumber: meterNumber,
+                    disco: disco,
+                    vendType: vendType
+                })
 
                 console.log(superAgents.indexOf(superAgent))
                 const isLastSuperAgent = superAgents.indexOf(superAgent) === superAgents.length - 1
@@ -566,8 +573,7 @@ export default class VendorController {
             throw new BadRequestError('Invalid product code for electricity', errorMeta)
         }
 
-        // const superagent = await TokenHandlerUtil.getBestVendorForPurchase(existingProductCodeForDisco.id, 1000);
-        const superagent = 'BAXI'
+        const superagent = await TokenHandlerUtil.getBestVendorForPurchase(existingProductCodeForDisco.id, 1000);
         const transactionTypes = {
             'ELECTRICITY': TransactionType.ELECTRICITY,
             'AIRTIME': TransactionType.AIRTIME,
@@ -818,7 +824,7 @@ export default class VendorController {
                 }
             })
 
-            await TransactionService.updateSingleTransaction( transaction.id, { status: Status.INPROGRESS})
+            await TransactionService.updateSingleTransaction(transaction.id, { status: Status.INPROGRESS })
 
             if (response instanceof Error) {
                 throw error
