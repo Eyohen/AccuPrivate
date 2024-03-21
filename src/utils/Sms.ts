@@ -26,7 +26,7 @@ export class SmsService {
                 username: AFRICASTALKING_USERNAME,
                 to: this.formatPhoneNumber(to),
                 message: message,
-                from: "88455"
+                from: "32345"
             })
             return result;
         } catch (ex) {
