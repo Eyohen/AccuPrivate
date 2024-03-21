@@ -701,7 +701,8 @@ class TokenHandler extends Registry {
                     if (tokenInfo.source === 'BUYPOWERNG') {
                         tokenInResponse = 'responseCode' in tokenInfoResponseForBuyPower ? tokenInfoResponseForBuyPower.responseCode === 200 ? tokenInfoResponseForBuyPower.data.token : undefined : undefined
                     } else if (tokenInfo.source === 'BAXI') {
-                        tokenInResponse = 'rawOutput' in tokenInfoResponseForBaxi.data ? tokenInfoResponseForBaxi.data.rawOutput.token : undefined
+                        console.log({ check: 'BAXICHECK', data: (tokenInfoResponseForBaxi.data as any) })
+                        tokenInResponse = 'rawOutput' in tokenInfoResponseForBaxi.data ? tokenInfoResponseForBaxi.data.rawOutput.standardTokenValue : undefined
                     } else if (tokenInfo.source === 'IRECHARGE') {
                         tokenInResponse = tokenInfoResponseForIrecharge.meter_token
                     }
@@ -1190,7 +1191,7 @@ class TokenHandler extends Registry {
             const requeryResultFromIrecharge = requeryResult as Awaited<ReturnType<typeof VendorService.irechargeRequeryTransaction>>
 
             const transactionSuccessFromBuypower = requeryResult.source === 'BUYPOWERNG' ? requeryResultFromBuypower.responseCode === 200 : false
-            const transactionSuccessFromBaxi = requeryResult.source === 'BAXI' ? requeryResultFromBaxi.status : false
+            const transactionSuccessFromBaxi = requeryResult.source === 'BAXI' ? requeryResultFromBaxi.status && requeryResultFromBaxi.code === 200 : false
             const transactionSuccessFromIrecharge = requeryResult.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' && requeryResultFromIrecharge.vend_status === 'successful' : false
             let transactionSuccess = transactionSuccessFromBuypower || transactionSuccessFromBaxi || transactionSuccessFromIrecharge
 
@@ -1207,10 +1208,7 @@ class TokenHandler extends Registry {
 
             let retryTransaction = transactionFailed
 
-            console.log({
-                point: 'requery',
-                requeryResult
-            })
+           
             if (TEST_FAILED) {
                 retryTransaction = (retry.testForSwitchingVendor && (data.retryCount >= retry.retryCountBeforeSwitchingVendor))
             }
@@ -1244,6 +1242,10 @@ class TokenHandler extends Registry {
             if (transactionSuccessFromBuypower) {
                 tokenInResponse = requeryResultFromBuypower.responseCode === 200 ? requeryResultFromBuypower.data.token : undefined
             } else if (transactionSuccessFromBaxi) {
+                console.log({
+                    point: 'requery',
+                    requeryResult: (requeryResult as any).data.rawData.standardTokenValue
+                })
                 tokenInResponse = 'rawData' in requeryResultFromBaxi.data ? requeryResultFromBaxi.data.rawData.standardTokenValue : undefined
             } else if (transactionSuccessFromIrecharge) {
                 tokenInResponse = requeryResultFromIrecharge.token
@@ -1261,13 +1263,17 @@ class TokenHandler extends Registry {
                 if (!_product) throw new CustomError('Product not found')
 
                 const discoLogo =
-                    DISCO_LOGO[_product.productName as keyof typeof DISCO_LOGO] ?? LOGO_URL
+                DISCO_LOGO[_product.productName as keyof typeof DISCO_LOGO] ?? LOGO_URL
                 let powerUnit =
-                    await PowerUnitService.viewSinglePowerUnitByTransactionId(
-                        data.transactionId,
+                await PowerUnitService.viewSinglePowerUnitByTransactionId(
+                    data.transactionId,
                     );
-                if (data.meter.vendType === 'PREPAID') {
-                    if (tokenInResponse) {
+                    if (data.meter.vendType === 'PREPAID') {
+                        if (tokenInResponse) {
+                        logger.warn('Transaction successful')
+                        logger.warn('Transaction successful')
+                        logger.warn('Transaction successful')
+                        logger.warn('Transaction successful')
                         logger.info('Saving token record', logMeta);
                         powerUnit = powerUnit
                             ? await PowerUnitService.updateSinglePowerUnit(powerUnit.id, {
@@ -1310,7 +1316,7 @@ class TokenHandler extends Registry {
                     powerUnitId: powerUnit?.id,
                 });
                 await transactionEventService.addTokenReceivedEvent(tokenInResponse ?? '');
-                await VendorPublisher.publishEventForTokenReceivedFromVendor({
+                return await VendorPublisher.publishEventForTokenReceivedFromVendor({
                     transactionId: transaction!.id,
                     user: {
                         name: user.name as string,
