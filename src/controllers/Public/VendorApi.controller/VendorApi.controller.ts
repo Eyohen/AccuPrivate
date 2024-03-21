@@ -47,6 +47,8 @@ import VendorProductService from "../../../services/VendorProduct.service";
 import VendorDocService from '../../../services/Vendor.service'
 import { generateRandomString, generateRandonNumbers } from "../../../utils/Helper";
 import ResponseTrimmer from "../../../utils/ResponseTrimmer";
+import PowerUnit from "../../../models/PowerUnit.model";
+import PowerUnitService from "../../../services/PowerUnit.service";
 interface valideMeterRequestBody {
     meterNumber: string;
     superagent: "BUYPOWERNG" | "BAXI";
@@ -437,7 +439,7 @@ class VendorControllerUtil {
                 disco: irechargeVendorProduct.schemaData.code,
                 vendType,
             })
-            return VendorService.irechargeValidateMeter(irechargeVendorProduct.schemaData.code, meterNumber, transaction.vendorReferenceId).then((res) => ({ ...res, ...res.customer, }))
+            return VendorService.irechargeValidateMeter(irechargeVendorProduct.schemaData.code, meterNumber, transaction.vendorReferenceId, transaction.id).then((res) => ({ ...res, ...res.customer, }))
         }
 
         // Try with the first super agetn, if it fails try with the next, then update the transaction superagent
@@ -457,6 +459,7 @@ class VendorControllerUtil {
         superAgents.splice(superAgents.indexOf(previousSuperAgent), 1)
         superAgents.unshift(previousSuperAgent)
 
+        const transactionEventService = new EventService.transactionEventService(transaction, { meterNumber, disco, vendType }, superAgents[0], transaction.partner.email)
         let selectedVendor = superAgents[0]
         let returnedResponse: IResponses[keyof IResponses] | Error = new Error('No response')
         for (const superAgent of superAgents) {
@@ -477,6 +480,12 @@ class VendorControllerUtil {
             } catch (error) {
                 console.log(error)
                 logger.error(`Error validating meter with ${superAgent}`, { meta: { transactionId: transaction.id } })
+
+                await transactionEventService.addMeterValidationFailedEvent(superAgent, {
+                    meterNumber: meterNumber,
+                    disco: disco,
+                    vendType: vendType
+                })
 
                 console.log(superAgents.indexOf(superAgent))
                 const isLastSuperAgent = superAgents.indexOf(superAgent) === superAgents.length - 1
@@ -815,7 +824,7 @@ export default class VendorController {
                 }
             })
 
-            await TransactionService.updateSingleTransaction( transaction.id, { status: Status.INPROGRESS})
+            await TransactionService.updateSingleTransaction(transaction.id, { status: Status.INPROGRESS })
 
             if (response instanceof Error) {
                 throw error
@@ -868,9 +877,35 @@ export default class VendorController {
                 }, 60000)
 
                 return
+            } else {
+                const powerUnit = await transaction.$get('powerUnit')
+                if (!powerUnit) {
+                    throw new InternalServerError('Power unit not found')
+                }
+
+                // Send response if token has been gotten from vendor
+                res.status(200).json({
+                    status: 'success',
+                    message: 'Token purchase initiated successfully',
+                    data: {
+                        transaction: {
+                            disco: transaction.disco,
+                            "amount": transaction.amount,
+                            "transactionId": transaction.id,
+                            "id": transaction.id,
+                            "bankRefId": transaction.bankRefId,
+                            "bankComment": transaction.bankComment,
+                            "productType": transaction.productType,
+                            "transactionTimestamp": transaction.transactionTimestamp,
+                        },
+                        meter: { ...meterInfo, token: powerUnit.token }
+                    }
+                })
+
+                return
             }
 
-            // Add Code to send response if token has been gotten from vendor
+            // TODO: Add Code to send response if token has been gotten from vendor
 
             await transactionEventService.addTokenSentToPartnerEvent();
 
