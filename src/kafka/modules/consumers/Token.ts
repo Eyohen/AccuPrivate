@@ -704,6 +704,9 @@ class TokenHandler extends Registry {
 
                     // Requery the transaction if no token in the response
                     requeryTransaction = !tokenInResponse
+                } else if (!transactionTimedOut) {
+                    // Even when transactionType is POSTPAID, a success message doesn't guarantee that everything went well, we still need to check if it timmedout
+                    requeryTransaction = false
                 }
             }
 
