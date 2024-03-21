@@ -34,16 +34,14 @@ export class VendorPublisher extends ProducerFactory {
         });
     }
 
-
     static async publishEvnetForVendElectricityRequestedFromVendor(
-        data: PublisherEventAndParameters[TOPICS.VEND_ELECTRICITY_REQUESTED_FROM_VENDOR],
+        data: PublisherEventAndParameters[TOPICS.VEND_ELECTRICITY_REQUESTED_FROM_VENDOR]
     ) {
         Logger.kafkaPublisher.info('Sending message to topic: ' + TOPICS.VEND_ELECTRICITY_REQUESTED_FROM_VENDOR, {
             meta: {
                 transactionId: data.transactionId,
             }
         })
-
         return ProducerFactory.sendMessage({
             topic: TOPICS.VEND_ELECTRICITY_REQUESTED_FROM_VENDOR,
             message: {
@@ -51,6 +49,7 @@ export class VendorPublisher extends ProducerFactory {
                     meterNumber: data.meter.meterNumber,
                     disco: data.meter.disco,
                     vendType: data.meter.vendType,
+                    id: data.meter.id
                 },
                 transactionId: data.transactionId,
                 superAgent: data.superAgent
