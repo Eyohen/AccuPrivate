@@ -501,39 +501,39 @@ export class TokenHandlerUtil {
     }
 
     static async getBestVendorForPurchase(productCodeId: NonNullable<Transaction['productCodeId']>, amount: number): Promise<Transaction['superagent']> {
-        const product = await ProductService.viewSingleProduct(productCodeId)
-        if (!product) throw new CustomError('Product code not found')
+        // const product = await ProductService.viewSingleProduct(productCodeId)
+        // if (!product) throw new CustomError('Product code not found')
 
-        const vendorProducts = await product.$get('vendorProducts')
-        // Populate all te vendors
-        const vendors = await Promise.all(vendorProducts.map(async vendorProduct => {
-            const vendor = await vendorProduct.$get('vendor')
-            if (!vendor) throw new CustomError('Vendor not found')
-            vendorProduct.vendor = vendor
-            return vendor
-        }))
+        // const vendorProducts = await product.$get('vendorProducts')
+        // // Populate all te vendors
+        // const vendors = await Promise.all(vendorProducts.map(async vendorProduct => {
+        //     const vendor = await vendorProduct.$get('vendor')
+        //     if (!vendor) throw new CustomError('Vendor not found')
+        //     vendorProduct.vendor = vendor
+        //     return vendor
+        // }))
 
-        logger.info('Getting best vendor for purchase')
-        // Check other vendors, sort them according to their commission rates
-        // If the current vendor is the vendor with the highest commission rate, then switch to the vendor with the next highest commission rate
-        // If the next vendor has been used before, switch to the next vendor with the next highest commission rate
-        // If all the vendors have been used before, switch to the vendor with the highest commission rate
+        // logger.info('Getting best vendor for purchase')
+        // // Check other vendors, sort them according to their commission rates
+        // // If the current vendor is the vendor with the highest commission rate, then switch to the vendor with the next highest commission rate
+        // // If the next vendor has been used before, switch to the next vendor with the next highest commission rate
+        // // If all the vendors have been used before, switch to the vendor with the highest commission rate
 
-        const sortedVendorProductsAccordingToCommissionRate = vendorProducts.sort((a, b) => ((b.commission * amount) + b.bonus) - ((a.commission * amount) + a.bonus))
+        // const sortedVendorProductsAccordingToCommissionRate = vendorProducts.sort((a, b) => ((b.commission * amount) + b.bonus) - ((a.commission * amount) + a.bonus))
 
-        const vendorRates = sortedVendorProductsAccordingToCommissionRate.map(vendorProduct => {
-            const vendor = vendorProduct.vendor
-            if (!vendor) throw new CustomError('Vendor not found')
-            return {
-                vendorName: vendor.name,
-                commission: vendorProduct.commission,
-                bonus: vendorProduct.bonus,
-                value: (vendorProduct.commission * amount) + vendorProduct.bonus
-            }
-        })
+        // const vendorRates = sortedVendorProductsAccordingToCommissionRate.map(vendorProduct => {
+        //     const vendor = vendorProduct.vendor
+        //     if (!vendor) throw new CustomError('Vendor not found')
+        //     return {
+        //         vendorName: vendor.name,
+        //         commission: vendorProduct.commission,
+        //         bonus: vendorProduct.bonus,
+        //         value: (vendorProduct.commission * amount) + vendorProduct.bonus
+        //     }
+        // })
 
-        console.log({ vendorRates })
-        return vendorRates[0].vendorName as Transaction['superagent']
+        // console.log({ vendorRates })
+        return (await this.getSortedVendorsAccordingToCommissionRate(productCodeId, amount))[0]
     }
 }
 
@@ -551,8 +551,6 @@ class TokenHandler extends Registry {
                 transactionId: data.transactionId
             })
         }
-
-
     }
 
     private static async handleTokenRequest(
@@ -601,6 +599,10 @@ class TokenHandler extends Registry {
                 accessToken: transaction.irechargeAccessToken
             }).catch(e => e);
 
+            console.log({
+                point: 'power purchase initiated',
+                tokenInfo
+            })
             logger.info('Token request processed', logMeta);
             const updatedTransaction = await TransactionService.viewSingleTransaction(data.transactionId);
             if (!updatedTransaction) {
@@ -640,11 +642,17 @@ class TokenHandler extends Registry {
             const tokenInfoResponseForIrecharge = tokenInfo as ElectricityPurchaseResponse['IRECHARGE'] & { source: 'IRECHARGE' }
 
             // Check if the transaction is successful
-            const tokenInfoResponseSuccessfulForBuyPower = tokenInfo.source === 'BUYPOWERNG' ? tokenInfoResponseForBuyPower.data.responseCode === 200 : false
+            const tokenInfoResponseSuccessfulForBuyPower = tokenInfo.source === 'BUYPOWERNG' ? 'responseCode' in tokenInfoResponseForBuyPower ? tokenInfoResponseForBuyPower.responseCode === 200 : false : false
             const tokenInfoResponseSuccessfulForIrecharge = tokenInfo.source === 'IRECHARGE' ? tokenInfoResponseForIrecharge.status === '00' : false
             const tokenInfoResponseSuccessfulForBaxi = tokenInfo.source === 'BAXI' ? tokenInfoResponseForBaxi.code === 200 : false
             const tokenInfoResponseSuccessful = tokenInfoResponseSuccessfulForBuyPower || tokenInfoResponseSuccessfulForIrecharge || tokenInfoResponseSuccessfulForBaxi
 
+            console.log({
+                tokenInfoResponseSuccessfulForBuyPower,
+                tokenInfoResponseSuccessfulForIrecharge,
+                tokenInfoResponseSuccessfulForBaxi,
+                tokenInfoResponseSuccessful
+            })
             // Check if transaction timedout
             const transactionTimedOutFromIrecharge = tokenInfo.source === 'IRECHARGE' ? ['15', '43'].includes(tokenInfoResponseForIrecharge.status) : false
             const transactionTimedOutFromBuypower = tokenInfo.source === 'BUYPOWERNG' ? tokenInfoResponseForBuyPower.data.responseCode === 202 : false
@@ -679,8 +687,6 @@ class TokenHandler extends Registry {
                 })
             }
 
-
-
             let requeryTransaction = true
             const transactionTypeIsPrepaid = meter.vendType === 'PREPAID'
             let tokenInResponse: string | undefined;
@@ -689,7 +695,7 @@ class TokenHandler extends Registry {
                 // If not requery
                 if (transactionTypeIsPrepaid) {
                     if (tokenInfo.source === 'BUYPOWERNG') {
-                        tokenInResponse = tokenInfoResponseForBuyPower.data.responseCode === 200 ? tokenInfoResponseForBuyPower.data.token : undefined
+                        tokenInResponse = 'responseCode' in tokenInfoResponseForBuyPower ? tokenInfoResponseForBuyPower.responseCode === 200 ? tokenInfoResponseForBuyPower.data.token : undefined : undefined
                     } else if (tokenInfo.source === 'BAXI') {
                         tokenInResponse = 'rawOutput' in tokenInfoResponseForBaxi.data ? tokenInfoResponseForBaxi.data.rawOutput.token : undefined
                     } else if (tokenInfo.source === 'IRECHARGE') {
@@ -1183,6 +1189,10 @@ class TokenHandler extends Registry {
 
             let retryTransaction = transactionFailed
 
+            console.log({
+                point: 'requery',
+                requeryResult
+            })
             if (requeryResult instanceof Error) {
                 logger.error("Error occured while requerying transaction", logMeta)
                 if (TEST_FAILED) {
@@ -1282,7 +1292,7 @@ class TokenHandler extends Registry {
 
             // Check if transaction has hit 2hrs limit
             const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000)
-            if (transaction.createdAt < twoHoursAgo) {
+            if (transaction.transactionTimestamp < twoHoursAgo) {
                 return await TokenHandlerUtil.flaggTransaction(transaction.id)
             }
 
