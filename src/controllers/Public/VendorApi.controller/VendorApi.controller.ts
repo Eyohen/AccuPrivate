@@ -630,7 +630,8 @@ export default class VendorController {
         // REMOVED !!!! BECAUSE WE SHOULD NEVER AUTOGENERATE THIS IN THE CODE
         const bankRefId = req.query.bankRefId as string;
         if (parseInt(amount.toString()) < 1000) {
-            throw new BadRequestError("Amount must be greater than 500", errorMeta);
+            logger.error('Amount must be greater than 1000', { meta: { transactionId } })
+            throw new BadRequestError("Amount must be greater than 100");
         }
 
         const transaction: Transaction | null =
