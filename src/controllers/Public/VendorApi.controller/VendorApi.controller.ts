@@ -250,6 +250,7 @@ class VendorControllerValdator {
             partnerEntity: entity,
         };
     }
+
     static async validateMeter({ meterNumber, disco, vendType, transaction }: {
         meterNumber: string, disco: string, vendType: 'PREPAID' | 'POSTPAID', transaction: Transaction
     }) {
@@ -642,6 +643,10 @@ export default class VendorController {
             throw new BadRequestError("Transaction already completed");
         }
 
+        if (transaction.status !== Status.PENDING) {
+            throw new BadRequestError("Transaction not in pending state");
+        }
+
         Logger.apiRequest.info('Requesting token for transaction', { meta: { transactionId: transaction.id, ...req.query } })
 
         const meter = await transaction.$get("meter");
@@ -784,13 +789,13 @@ export default class VendorController {
                         meter: { ...meterInfo, token: powerUnit.token }
                     }
                 })
-
+                
+                // TODO: Add Code to send response if token has been gotten from vendor
+                await transactionEventService.addTokenSentToPartnerEvent();
                 return
             }
+            
 
-            // TODO: Add Code to send response if token has been gotten from vendor
-
-            await transactionEventService.addTokenSentToPartnerEvent();
 
             return
         } catch (error) {
