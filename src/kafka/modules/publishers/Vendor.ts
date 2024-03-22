@@ -29,6 +29,30 @@ export class VendorPublisher extends ProducerFactory {
         });
     }
 
+    static async publishEventToScheduleRetry(
+        data: PublisherEventAndParameters[TOPICS.SCHEDULE_RETRY_FOR_TRANSACTION],
+    ) {
+        Logger.kafkaPublisher.info('Sending message to topic: ' + TOPICS.SCHEDULE_RETRY_FOR_TRANSACTION, {
+            meta: {
+                transactionId: data.scheduledMessagePayload.transactionId,
+            }
+        })
+        return ProducerFactory.sendMessage({
+            topic: TOPICS.SCHEDULE_RETRY_FOR_TRANSACTION,
+            message: {
+                scheduledMessagePayload: data.scheduledMessagePayload,
+                timeStamp: data.timeStamp,
+                delayInSeconds: data.delayInSeconds,
+            },
+        }).catch((e) => {
+            Logger.kafkaPublisher.error(
+                `An error occured while publishing ${TOPICS.SCHEDULE_RETRY_FOR_TRANSACTION} event for transaction` +
+                data.scheduledMessagePayload.transactionId,
+            );
+            return e;
+        });
+    }
+
     static async publishEventForMeterValidationRequested(
         data: PublisherEventAndParameters[TOPICS.METER_VALIDATION_REQUEST_SENT_TO_VENDOR],
     ) {

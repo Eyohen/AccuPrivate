@@ -283,54 +283,27 @@ export class TokenHandlerUtil {
             accesToken = meterValidationResult.access_token
         }
 
-        // Start timer to requery transaction at intervals
-        async function countDownTimer(time: number): Promise<void> {
-            return new Promise<void>((resolve) => {
-                for (let i = time; i > 0; i--) {
-                    setTimeout(() => {
-                        logger.warn(`Retrying transaction with vendor in ${i} seconds`, {
-                            meta: { transactionId: transaction.id }
-                        });
-                        if (i === 1) {
-                            resolve(); // Resolve the Promise when countdown is complete
-                        }
-                    }, (time - i) * 1000);
-                }
-            });
-        }
-        await countDownTimer(waitTime);
-
-        await TransactionService.updateSingleTransaction(transaction.id, {
-            superagent: newVendor,
-            retryRecord,
-            vendorReferenceId: newTransactionReference,
-            reference: newTransactionReference,
-            irechargeAccessToken: accesToken,
-            previousVendors: [...transaction.previousVendors, newVendor],
-        })
-
-        await TransactionService.updateSingleTransaction(transaction.id, { superagent: newVendor })
-        await VendorPublisher.publishEventForRetryPowerPurchaseWithNewVendor({
-            meter: meter,
-            partner: partner,
-            transactionId: transaction.id,
-            superAgent: newVendor,
-            user: {
-                name: user.name as string,
-                email: user.email,
-                address: user.address,
-                phoneNumber: user.phoneNumber,
+        await VendorPublisher.publishEventToScheduleRetry({
+            scheduledMessagePayload: {
+                meter: meter,
+                partner: partner,
+                transactionId: transaction.id,
+                superAgent: newVendor,
+                user: {
+                    name: user.name as string,
+                    email: user.email,
+                    address: user.address,
+                    phoneNumber: user.phoneNumber,
+                },
+                vendorRetryRecord: retryRecord[retryRecord.length - 1],
+                retryRecord,
+                newVendor,
+                newTransactionReference,
+                irechargeAccessToken: accesToken,
+                previousVendors: [...transaction.previousVendors, newVendor] as Transaction['superagent'][]
             },
-            newVendor,
-        })
-        await transactionEventService.addPowerPurchaseInitiatedEvent(transaction.bankRefId, transaction.amount);
-        await VendorPublisher.publishEventForInitiatedPowerPurchase({
-            meter: meter,
-            user: user,
-            partner: partner,
-            transactionId: transaction.id,
-            superAgent: newVendor,
-            vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1]
+            timeStamp: new Date().toString(),
+            delayInSeconds: waitTime
         })
     }
 
@@ -705,10 +678,6 @@ class TokenHandler extends Registry {
 
                     // Requery the transaction if no token in the response
                     requeryTransaction = !tokenInResponse
-                    console.warn({ requeryTransaction, tokenInResponse })
-                    console.warn({ requeryTransaction, tokenInResponse })
-                    console.warn({ requeryTransaction, tokenInResponse })
-                    console.warn({ requeryTransaction, tokenInResponse })
                 } else if (!transactionTimedOut) {
                     // Even when transactionType is POSTPAID, a success message doesn't guarantee that everything went well, we still need to check if it timmedout
                     requeryTransaction = false
@@ -1272,10 +1241,6 @@ class TokenHandler extends Registry {
                     );
                 if (data.meter.vendType === 'PREPAID') {
                     if (tokenInResponse) {
-                        logger.warn('Transaction successful')
-                        logger.warn('Transaction successful')
-                        logger.warn('Transaction successful')
-                        logger.warn('Transaction successful')
                         logger.info('Saving token record', logMeta);
                         powerUnit = powerUnit
                             ? await PowerUnitService.updateSinglePowerUnit(powerUnit.id, {
@@ -1558,6 +1523,71 @@ class TokenHandler extends Registry {
         })
     }
 
+    private static async scheduleRetryTransaction(
+        data: PublisherEventAndParameters[TOPICS.SCHEDULE_RETRY_FOR_TRANSACTION],
+    ) {
+        // Check the timeStamp, and the delayInSeconds
+        const { timeStamp, delayInSeconds } = data;
+
+        const timeInMIlliSecondsSinceInit = new Date().getTime() - new Date(timeStamp).getTime()
+        const waitTimeInMilliSeconds = parseInt(delayInSeconds.toString(), 10) * 1000
+        const timeDifference = waitTimeInMilliSeconds - timeInMIlliSecondsSinceInit
+
+        console.log({ timeDifference, timeStamp, currentTime: new Date(), delayInSeconds, waitTimeInMilliSeconds, timeInMIlliSecondsSinceInit })
+
+        // Check if current time is greater than the timeStamp + delayInSeconds
+        if (timeDifference < 0) {
+            const existingTransaction = await TransactionService.viewSingleTransaction(data.scheduledMessagePayload.transactionId)
+            if (!existingTransaction) {
+                throw new CustomError('Transaction not found')
+            }
+
+            const transactionEventService = new TransactionEventService(
+                existingTransaction,
+                data.scheduledMessagePayload.meter,
+                existingTransaction.superagent,
+                data.scheduledMessagePayload.superAgent,
+            )
+
+            await TransactionService.updateSingleTransaction(data.scheduledMessagePayload.transactionId, {
+                superagent: data.scheduledMessagePayload.newVendor,
+                retryRecord: data.scheduledMessagePayload.retryRecord,
+                vendorReferenceId: data.scheduledMessagePayload.newTransactionReference,
+                reference: data.scheduledMessagePayload.newTransactionReference,
+                irechargeAccessToken: data.scheduledMessagePayload.irechargeAccessToken,
+                previousVendors: data.scheduledMessagePayload.previousVendors,
+            })
+
+            await VendorPublisher.publishEventForRetryPowerPurchaseWithNewVendor({
+                meter: data.scheduledMessagePayload.meter,
+                partner: data.scheduledMessagePayload.partner,
+                transactionId: data.scheduledMessagePayload.transactionId,
+                superAgent: data.scheduledMessagePayload.superAgent,
+                user: data.scheduledMessagePayload.user,
+                newVendor: data.scheduledMessagePayload.newVendor,
+            })
+
+            await transactionEventService.addPowerPurchaseInitiatedEvent(data.scheduledMessagePayload.newTransactionReference, existingTransaction.amount);
+            await VendorPublisher.publishEventForInitiatedPowerPurchase({
+                meter: data.scheduledMessagePayload.meter,
+                user: data.scheduledMessagePayload.user,
+                partner: data.scheduledMessagePayload.partner,
+                transactionId: existingTransaction.id,
+                superAgent: data.scheduledMessagePayload.newVendor,
+                vendorRetryRecord: data.scheduledMessagePayload.vendorRetryRecord
+            })
+            return await VendorPublisher.publishEventForInitiatedPowerPurchase(data.scheduledMessagePayload)
+        }
+
+        logger.info("Rescheduling retry for transaction", { meta: { transactionId: data.scheduledMessagePayload.transactionId } })
+        // Else, schedule a new event to requery transaction from vendor
+        return await VendorPublisher.publishEventToScheduleRetry({
+            scheduledMessagePayload: data.scheduledMessagePayload,
+            timeStamp: data.timeStamp,
+            delayInSeconds: data.delayInSeconds,
+        })
+    }
+
     // private static async scheduleRetryTransaction(
     //     data: PublisherEventAndParameters[TOPICS.SCHEDULE_RETRY_FOR_TRANSACTION],
     // ) {
@@ -1596,6 +1626,7 @@ class TokenHandler extends Registry {
         [TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER_REQUERY]:
             this.requeryTransactionForToken,
         [TOPICS.SCHEDULE_REQUERY_FOR_TRANSACTION]: this.scheduleRequeryTransaction,
+        [TOPICS.SCHEDULE_RETRY_FOR_TRANSACTION]: this.scheduleRetryTransaction,
         // [TOPICS.SCHEDULE_RETRY_FOR_TRANSACTION]: this.scheduleRetryTransaction,
         // [TOPICS.RETRY_PURCHASE_FROM_NEW_VENDOR]: this.retryPowerPurchaseWithNewVendor
     };
