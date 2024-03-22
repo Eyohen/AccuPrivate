@@ -258,129 +258,6 @@ interface RequestTokenUtilParams {
     previousRetryEvent: Event
 }
 class VendorControllerUtil {
-    static async replayRequestToken({ transaction, meterInfo, previousRetryEvent }: RequestTokenUtilParams) {
-        const transactionEventService = new TransactionEventService(
-            transaction, meterInfo, transaction.superagent, transaction.partner.email
-        )
-
-        const vendorRetryRecord = transaction.retryRecord[transaction.retryRecord.length - 1]
-        const eventPayload = JSON.parse(previousRetryEvent.payload) as TokenRetryEventPayload
-        await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
-            {
-                eventService: transactionEventService,
-                eventData: {
-                    meter: {
-                        meterNumber: meterInfo.meterNumber,
-                        disco: transaction.disco,
-                        vendType: meterInfo.vendType,
-                        id: meterInfo.id,
-                    },
-                    transactionId: transaction.id,
-                    error: {
-                        code: 100,
-                        cause: TransactionErrorCause.UNKNOWN
-                    },
-                },
-                tokenInResponse: null,
-                transactionTimedOutFromBuypower: false,
-                superAgent: transaction.superagent,
-                retryCount: eventPayload.retryCount + 1,
-                vendorRetryRecord
-            }
-        )
-    }
-
-    static async replayWebhookNotification({ transaction, meterInfo }: { transaction: Transaction, meterInfo: { meterNumber: string, disco: string, vendType: 'PREPAID' | 'POSTPAID', id: string } }) {
-        const transactionEventService = new TransactionEventService(
-            transaction, meterInfo, transaction.superagent,
-            transaction.partner.email
-        )
-
-        const user = await transaction.$get('user')
-        if (!user) {
-            throw new InternalServerError('User not found')
-        }
-
-        const powerUnit = await transaction.$get('powerUnit')
-        if (!powerUnit) {
-            throw new BadRequestError('Can not replay transaction if no powerunit')
-        }
-
-        const partner = await transaction.$get('partner')
-        if (!partner) {
-            throw new InternalServerError('Partner not found')
-        }
-
-        const webhook = await WebhookService.viewWebhookByPartnerId(partner.id)
-        if (!webhook) {
-            throw new InternalServerError('Webhook not found')
-        }
-
-        await transactionEventService.addWebHookNotificationRetryEvent({
-            retryCount: 1,
-            timeStamp: new Date(),
-            url: webhook.url
-        })
-        await VendorPublisher.publishEventForWebhookNotificationToPartnerRetry({
-            meter: { ...meterInfo, token: powerUnit.token },
-            user: {
-                name: user.name as string,
-                ...user.dataValues
-            },
-            transactionId: transaction.id,
-            partner: partner,
-            retryCount: 1,
-            superAgent: transaction.superagent,
-        })
-    }
-
-    static async replayTokenSent({ transaction }: { transaction: Transaction }) {
-        const powerUnit = await transaction.$get('powerUnit')
-        if (!powerUnit) {
-            throw new InternalServerError('Power unit not found')
-        }
-
-        const meter = await powerUnit.$get('meter')
-        if (!meter) {
-            throw new InternalServerError('Meter not found')
-        }
-
-        const user = await transaction.$get('user')
-        if (!user) {
-            throw new InternalServerError('User not found')
-        }
-
-        const partner = await transaction.$get('partner')
-        if (!partner) {
-            throw new InternalServerError('Partner not found')
-        }
-
-        const transactionEventService = new TransactionEventService(
-            transaction, {
-            meterNumber: powerUnit.meter.meterNumber,
-            disco: transaction.disco,
-            vendType: powerUnit.meter.vendType as IMeter['vendType'],
-        }, transaction.superagent, partner.email
-        )
-
-        await transactionEventService.addTokenSentToPartnerRetryEvent()
-        await VendorPublisher.publishEventForTokenSentToPartnerRetry({
-            meter: {
-                meterNumber: meter.meterNumber,
-                disco: transaction.disco,
-                vendType: meter.vendType as IMeter['vendType'],
-                id: meter.id,
-                token: powerUnit.token
-            },
-            user: {
-                name: user.name as string,
-                ...user.dataValues
-            },
-            partner: partner,
-            transactionId: transaction.id,
-        })
-    }
-
     static async validateMeter({ meterNumber, disco, vendType, transaction }: {
         meterNumber: string, disco: string, vendType: 'PREPAID' | 'POSTPAID', transaction: Transaction
     }) {
@@ -432,7 +309,6 @@ class VendorControllerUtil {
                 throw new InternalServerError('Irecharge vendor product not found')
             }
 
-
             console.log({
                 transactionId: transaction.id,
                 meterNumber,
@@ -462,37 +338,53 @@ class VendorControllerUtil {
         const transactionEventService = new EventService.transactionEventService(transaction, { meterNumber, disco, vendType }, superAgents[0], transaction.partner.email)
         let selectedVendor = superAgents[0]
         let returnedResponse: IResponses[keyof IResponses] | Error = new Error('No response')
-        for (const superAgent of superAgents) {
-            try {
-                console.log({ superAgent })
-                response = superAgent === "BUYPOWERNG" ? await validateWithBuypower() :
-                    superAgent === "BAXI" ? await validateWithBaxi() : await validateWithIrecharge()
-                if (response instanceof Error) {
-                    throw response
-                }
-                console.log({ superAgent })
-                const token = superAgent === 'IRECHARGE' ? (response as IResponses['IRECHARGE']).access_token : undefined
-                await transaction.update({ superagent: superAgent as any, irechargeAccessToken: token })
+        let continueValidation = true
+        const startTime = new Date()
 
-                selectedVendor = superAgent
-                returnedResponse = response
-                break
-            } catch (error) {
-                console.log(error)
-                logger.error(`Error validating meter with ${superAgent}`, { meta: { transactionId: transaction.id } })
+        while (continueValidation) {
+            const currentTime = new Date()
 
-                await transactionEventService.addMeterValidationFailedEvent(superAgent, {
-                    meterNumber: meterNumber,
-                    disco: disco,
-                    vendType: vendType
-                })
+            const timeDifference = currentTime.getTime() - startTime.getTime()
+            const timeDifferenceIsMoreThanOneMinute = timeDifference > 60000
+            if (timeDifferenceIsMoreThanOneMinute) {
+                await TransactionService.updateSingleTransaction(transaction.id, { status: Status.FAILED })
+                Logger.apiRequest.info(`Meter could not be validated`, { meta: { transactionId: transaction.id } })
+                throw new BadRequestError('Meter could not be validated')
+            }
 
-                console.log(superAgents.indexOf(superAgent))
-                const isLastSuperAgent = superAgents.indexOf(superAgent) === superAgents.length - 1
-                if (isLastSuperAgent) {
-                    throw error
-                } else {
-                    Logger.apiRequest.info(`Trying to validate meter with next super agent - ${superAgents[superAgents.indexOf(superAgent) + 1]}`, { meta: { transactionId: transaction.id } })
+            for (const superAgent of superAgents) {
+                try {
+                    console.log({ superAgent })
+                    response = superAgent === "BUYPOWERNG" ? await validateWithBuypower() :
+                        superAgent === "BAXI" ? await validateWithBaxi() : await validateWithIrecharge()
+                    if (response instanceof Error) {
+                        throw response
+                    }
+                    console.log({ superAgent })
+                    const token = superAgent === 'IRECHARGE' ? (response as IResponses['IRECHARGE']).access_token : undefined
+                    await transaction.update({ superagent: superAgent as any, irechargeAccessToken: token })
+
+                    selectedVendor = superAgent
+                    returnedResponse = response
+                    continueValidation = false
+                    break
+                } catch (error) {
+                    console.log(error)
+                    logger.error(`Error validating meter with ${superAgent}`, { meta: { transactionId: transaction.id } })
+
+                    await transactionEventService.addMeterValidationFailedEvent(superAgent, {
+                        meterNumber: meterNumber,
+                        disco: disco,
+                        vendType: vendType
+                    })
+
+                    console.log(superAgents.indexOf(superAgent))
+                    const isLastSuperAgent = superAgents.indexOf(superAgent) === superAgents.length - 1
+                    if (isLastSuperAgent) {
+                        continue
+                    } else {
+                        Logger.apiRequest.info(`Trying to validate meter with next super agent - ${superAgents[superAgents.indexOf(superAgent) + 1]}`, { meta: { transactionId: transaction.id } })
+                    }
                 }
             }
         }
