@@ -81,6 +81,31 @@ interface RequestTokenValidatorResponse {
     transaction: Transaction;
     partnerEntity: Entity;
 }
+
+interface UserInfo {
+    name: string,
+    email: string,
+    phoneNumber: string,
+    id: string
+}
+
+interface ValidateMeterParams extends valideMeterRequestBody {
+    transaction: Transaction,
+    userInfo: UserInfo
+}
+
+interface RequestTokenUtilParams {
+    transaction: Transaction,
+    meterInfo: {
+        meterNumber: string,
+        disco: string,
+        vendType: 'PREPAID' | 'POSTPAID',
+        id: string,
+    },
+    previousRetryEvent: Event
+}
+
+
 class VendorTokenHandler implements Registry {
     private tokenSent = false
     private transaction: Transaction
@@ -163,11 +188,8 @@ class VendorTokenReceivedSubscriber extends ConsumerFactory {
     }
 }
 
-
 // Validate request parameters for each controller
 class VendorControllerValdator {
-    static validateMeter() { }
-
     static async requestToken({
         bankRefId,
         transactionId,
@@ -228,36 +250,6 @@ class VendorControllerValdator {
             partnerEntity: entity,
         };
     }
-
-    static getDiscos() { }
-
-    static checkDisco() { }
-}
-
-
-interface UserInfo {
-    name: string,
-    email: string,
-    phoneNumber: string,
-    id: string
-}
-
-interface ValidateMeterParams extends valideMeterRequestBody {
-    transaction: Transaction,
-    userInfo: UserInfo
-}
-
-interface RequestTokenUtilParams {
-    transaction: Transaction,
-    meterInfo: {
-        meterNumber: string,
-        disco: string,
-        vendType: 'PREPAID' | 'POSTPAID',
-        id: string,
-    },
-    previousRetryEvent: Event
-}
-class VendorControllerUtil {
     static async validateMeter({ meterNumber, disco, vendType, transaction }: {
         meterNumber: string, disco: string, vendType: 'PREPAID' | 'POSTPAID', transaction: Transaction
     }) {
@@ -407,7 +399,6 @@ class VendorControllerUtil {
     }
 }
 
-
 export default class VendorController {
 
     static async validateMeterMock(req: Request, res: Response, next: NextFunction) {
@@ -520,7 +511,7 @@ export default class VendorController {
 
         const vendorDiscoCode = (vendorProduct.schemaData as VendorProductSchemaData.BUYPOWERNG).code
         // We Check for Meter User *
-        const response = await VendorControllerUtil.validateMeter({ meterNumber, disco: vendorDiscoCode, vendType, transaction })
+        const response = await VendorControllerValdator.validateMeter({ meterNumber, disco: vendorDiscoCode, vendType, transaction })
         const userInfo = {
             name: (response as any).name,
             email: email,
@@ -806,132 +797,6 @@ export default class VendorController {
             logger.error('SuttingDown vendor token consumer of id')
             await vendorTokenConsumer.shutdown()
         }
-    }
-
-    private static getTransactionStage(events: Event[]) {
-        /**
-         * The events are in groups, if the last event in the group is not complete, then the transaction is still in that stage
-         * 
-         * METER_VALIDATION stage - METER_VALIDATION_REQUEST_SENT_TO_VENDOR, METER_VALIDATION_RECIEVED_FROM_VENDOR
-         * CREATE_USER stage - CREATE_USER_INITIATED, CREATE_USER_CONFIRMED
-         * POWER_PURCHASE stage - POWER_PURCHASE_INITIATED_BY_CUSTOMER, TOKEN_RECIEVED_FROM_VENDOR
-         *      Power purchase has other stages that may occur due to error
-         *      GET_TRANSACTION_TOKEN stage - GET_TRANSACTION_TOKEN_FROM_VENDOR_INITIATED, GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY, GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR
-         * 
-         * WEBHOOK_NOTIFICATION stage - WEBHOOK_NOTIFICATION_SENT_TO_PARTNER, WEBHOOK_NOTIFICATION_CONFIRMED_FROM_PARTNER
-         * TOKEN_SENT stage - TOKEN_SENT_TO_PARTNER, TOKEN_SENT_TO_EMAIL, TOKEN_SENT_TO_NUMBER
-         * PARTNER_TRANSACTION_COMPLETE stage - PARTNER_TRANSACTION_COMPLETE
-         */
-
-        /**
-         * Find the stage that the transaction is in, then continue from there
-         * 
-         * If transaction is in power purchase stage, check if it is in the GET_TRANSACTION_TOKEN stage
-         */
-
-        const stages = {
-            METER_VALIDATION: [
-                TOPICS.METER_VALIDATION_REQUEST_SENT_TO_VENDOR, TOPICS.METER_VALIDATION_RECIEVED_FROM_VENDOR, TOPICS.METER_VALIDATION_REQUEST_SENT_TO_VENDOR,
-            ],
-            CREATE_USER: [
-                TOPICS.CREATE_USER_INITIATED, TOPICS.CREATE_USER_CONFIRMED
-            ],
-            POWER_PURCHASE: [
-                TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER, TOPICS.TOKEN_RECIEVED_FROM_VENDOR
-            ],
-            GET_TRANSACTION_TOKEN: [
-                TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_INITIATED, TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY, TOPICS.GET_TRANSACTION_TOKEN_REQUESTED_FROM_VENDOR
-            ],
-            WEBHOOK_NOTIFICATION: [
-                TOPICS.WEBHOOK_NOTIFICATION_SENT_TO_PARTNER, TOPICS.WEBHOOK_NOTIFICATION_CONFIRMED_FROM_PARTNER
-            ],
-            TOKEN_SENT: [
-                TOPICS.TOKEN_SENT_TO_PARTNER, TOPICS.TOKEN_SENT_TO_EMAIL, TOPICS.TOKEN_SENT_TO_NUMBER
-            ],
-            PARTNER_TRANSACTION_COMPLETE: [
-                TOPICS.PARTNER_TRANSACTION_COMPLETE
-            ]
-        }
-
-        const stagesKeys = Object.keys(stages) as (keyof typeof stages)[]
-
-        // Sort events by timestamp
-        const sortedEvents = events.sort((a, b) => {
-            return a.createdAt.getTime() - b.createdAt.getTime()
-        })
-
-        // Get the last event for the transaction
-        const lastEventInTransaction = sortedEvents[sortedEvents.length - 1]
-
-        // Find the stage that the latest event belongs to
-        const stage = stagesKeys.find((stage) => {
-            const stageEvents = stages[stage]
-            return stageEvents.includes(lastEventInTransaction.eventType)
-        })
-
-        return { stage, lastEventInTransaction }
-    }
-
-    static async replayTransaction(req: Request, res: Response, next: NextFunction) {
-        const { eventId } = req.body
-
-        const event = await EventService.viewSingleEvent(eventId)
-        if (!event) {
-            throw new NotFoundError('Event not found')
-        }
-
-        const transaction = await TransactionService.viewSingleTransaction(event.transactionId)
-        if (!transaction) {
-            throw new NotFoundError('Transaction not found')
-        }
-
-        const { stage, lastEventInTransaction } = this.getTransactionStage(await transaction.$get('events'))
-
-        const meter = await transaction.$get('meter')
-        if (!meter) {
-            throw new InternalServerError('Meter not found for replayed transaction')
-        }
-
-        switch (stage) {
-            case 'GET_TRANSACTION_TOKEN':
-                await VendorControllerUtil.replayRequestToken({
-                    transaction,
-                    meterInfo: {
-                        meterNumber: meter.meterNumber,
-                        disco: transaction.disco,
-                        vendType: meter.vendType,
-                        id: meter.id,
-                    },
-                    previousRetryEvent: lastEventInTransaction
-                })
-                break
-            case 'WEBHOOK_NOTIFICATION':
-                await VendorControllerUtil.replayWebhookNotification({
-                    meterInfo: {
-                        meterNumber: meter.meterNumber,
-                        disco: transaction.disco,
-                        vendType: meter.vendType,
-                        id: meter.id,
-                    },
-                    transaction,
-                })
-                break
-            case 'TOKEN_SENT':
-                await VendorControllerUtil.replayTokenSent({
-                    transaction,
-                })
-            default:
-                throw new BadRequestError('Transaction cannot be replayed')
-        }
-
-        res.status(200).json({
-            status: 'success',
-            message: 'Transaction replayed successfully',
-            data: {
-                transaction: await TransactionService.viewSingleTransaction(transaction.id)
-            }
-        })
-
     }
 
     static async checkDisco(req: Request, res: Response) {
