@@ -104,8 +104,8 @@ export async function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
 
 export async function getCurrentWaitTimeForSwitchEvent(retryCount: number) {
     // Use geometric progression  calculate wait time, where R = 2
-    const defaultValues = [10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 20480, 40960, 81920, 163840, 327680, 655360, 1310720, 2621440, 5242880]
-    const timesToRetry = await WaitTimeService.getWaitTime() ?? defaultValues
+    const defaultValues = [10, 20, 40, 80]
+    const timesToRetry = defaultValues
 
     if (retryCount >= timesToRetry.length) {
         return timesToRetry[timesToRetry.length - 1]
@@ -179,28 +179,15 @@ export class TokenHandlerUtil {
             waitTime: await getCurrentWaitTimeForRequeryEvent(retryCount)
         };
 
-        async function countDownTimer(time: number) {
-            return new Promise<void>((resolve) => {
-                // Start timer to requery transaction at intervals
-                for (let i = time; i > 0; i--) {
-                    setTimeout(() => {
-                        logger.info(`Requerying transaction ${i} seconds`, {
-                            meta: { transactionId: eventData.transactionId }
-                        })
-                        if (i === 1) {
-                            resolve()
-                        }
-                    }, (time - i) * 1000)
-                }
-            })
-        }
-        await countDownTimer(eventMetaData.waitTime);
-
         // Publish event in increasing intervals of seconds i.e 1, 2, 4, 8, 16, 32, 64, 128, 256, 512
-        // TODO: Use an external service to schedule this task
-        await VendorPublisher.publishEventForGetTransactionTokenRequestedFromVendorRetry(
-            eventMetaData,
-        );
+        //  Use an external service to schedule this task
+        await VendorPublisher.publishEventToScheduleRequery(
+            {
+                scheduledMessagePayload: eventMetaData,
+                timeStamp: new Date().toString(),
+                delayInSeconds: eventMetaData.waitTime
+            }
+        )
     }
 
     static async triggerEventToRetryTransactionWithNewVendor(
@@ -323,7 +310,6 @@ export class TokenHandlerUtil {
         })
 
         await TransactionService.updateSingleTransaction(transaction.id, { superagent: newVendor })
-        await transactionEventService.addPowerPurchaseInitiatedEvent(transaction.bankRefId, transaction.amount);
         await VendorPublisher.publishEventForRetryPowerPurchaseWithNewVendor({
             meter: meter,
             partner: partner,
@@ -337,6 +323,7 @@ export class TokenHandlerUtil {
             },
             newVendor,
         })
+        await transactionEventService.addPowerPurchaseInitiatedEvent(transaction.bankRefId, transaction.amount);
         await VendorPublisher.publishEventForInitiatedPowerPurchase({
             meter: meter,
             user: user,
@@ -1270,6 +1257,7 @@ class TokenHandler extends Registry {
 
                 // If we are in test mode, and the transaction is successful, after a number of retries, we should assume the transaction is successful
                 tokenInResponse = totalRetries > retry.limitToStopRetryingWhenTransactionIsSuccessful ? '0' : undefined
+                transactionSuccess = true
             }
 
             if (transactionSuccess) {
@@ -1544,6 +1532,62 @@ class TokenHandler extends Registry {
         }
     }
 
+    private static async scheduleRequeryTransaction(
+        data: PublisherEventAndParameters[TOPICS.SCHEDULE_REQUERY_FOR_TRANSACTION],
+    ) {
+        // Check the timeStamp, and the delayInSeconds
+        const { timeStamp, delayInSeconds } = data;
+
+        const timeInMIlliSecondsSinceInit = new Date().getTime() - new Date(timeStamp).getTime()
+        const waitTimeInMilliSeconds = parseInt(delayInSeconds.toString(), 10) * 1000
+        const timeDifference = waitTimeInMilliSeconds - timeInMIlliSecondsSinceInit
+
+        console.log({ timeDifference, timeStamp, currentTime: new Date(), delayInSeconds, waitTimeInMilliSeconds, timeInMIlliSecondsSinceInit })
+
+        // Check if current time is greater than the timeStamp + delayInSeconds
+        if (timeDifference < 0) {
+            return await VendorPublisher.publishEventForGetTransactionTokenRequestedFromVendorRetry(data.scheduledMessagePayload)
+        }
+
+        logger.info("Rescheduling requery for transaction", { meta: { transactionId: data.scheduledMessagePayload.transactionId } })
+        // Else, schedule a new event to requery transaction from vendor
+        return await VendorPublisher.publishEventToScheduleRequery({
+            scheduledMessagePayload: data.scheduledMessagePayload,
+            timeStamp: data.timeStamp,
+            delayInSeconds: data.delayInSeconds,
+        })
+    }
+
+    // private static async scheduleRetryTransaction(
+    //     data: PublisherEventAndParameters[TOPICS.SCHEDULE_RETRY_FOR_TRANSACTION],
+    // ) {
+    //     // Check the timeStamp, and the delayInSeconds
+    //     const { timeStamp, delayInSeconds } = data;
+    //     const currentTime = new Date().getTime();
+
+    //     const waitTime = new Date(timeStamp).getTime() + parseInt(delayInSeconds.toString(), 10) * 1000
+    //     const timeDifference = currentTime - waitTime
+
+    //     console.log({ timeDifference })
+
+    //     const existingTransaction = await TransactionService.viewSingleTransaction(data.scheduledMessagePayload.transactionId)
+    //     if (!existingTransaction) {
+    //         throw new CustomError('Transaction not found')
+    //     }
+
+    //     // Check if current time is greater than the timeStamp + delayInSeconds
+    //     if (timeDifference < 0) {
+    //         return await VendorPublisher.publishEventForGetTransactionTokenRequestedFromVendorRetry(data.scheduledMessagePayload)
+    //     }
+
+    //     // Else, schedule a new event to requery transaction from vendor
+    //     return await VendorPublisher.publishEventToScheduleRequery({
+    //         scheduledMessagePayload: data.scheduledMessagePayload,
+    //         timeStamp: data.timeStamp,
+    //         delayInSeconds: data.delayInSeconds,
+    //     })
+    // }
+
     static registry = {
         [TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER]: this.handleTokenRequest,
         // [TOPICS.TOKEN_RECIEVED_FROM_VENDOR]: this.handleTokenReceived,
@@ -1551,6 +1595,8 @@ class TokenHandler extends Registry {
             this.requeryTransactionForToken,
         [TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER_REQUERY]:
             this.requeryTransactionForToken,
+        [TOPICS.SCHEDULE_REQUERY_FOR_TRANSACTION]: this.scheduleRequeryTransaction,
+        // [TOPICS.SCHEDULE_RETRY_FOR_TRANSACTION]: this.scheduleRetryTransaction,
         // [TOPICS.RETRY_PURCHASE_FROM_NEW_VENDOR]: this.retryPowerPurchaseWithNewVendor
     };
 }

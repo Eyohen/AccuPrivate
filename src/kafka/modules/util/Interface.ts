@@ -50,6 +50,11 @@ export interface VendorRetryRecord {
 }
 
 export interface PublisherEventAndParameters extends Record<TOPICS, any> {
+    [TOPICS.SCHEDULE_REQUERY_FOR_TRANSACTION]: {
+        timeStamp: string,
+        delayInSeconds: number,
+        scheduledMessagePayload: PublisherEventAndParameters[TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY]
+    }
     [TOPICS.METER_VALIDATION_REQUEST_SENT_TO_VENDOR]: {
         meter: MeterInfo;
         transactionId: string;
