@@ -104,7 +104,7 @@ export async function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
 
 export async function getCurrentWaitTimeForSwitchEvent(retryCount: number) {
     // Use geometric progression  calculate wait time, where R = 2
-    const defaultValues = [10, 20, 40, 80]
+    const defaultValues = [5, 10, 20, 40]
     const timesToRetry = defaultValues
 
     if (retryCount >= timesToRetry.length) {
