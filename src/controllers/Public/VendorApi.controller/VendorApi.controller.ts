@@ -389,6 +389,19 @@ class VendorControllerValdator {
     }
 }
 
+function transformPhoneNumber(phoneNumber: string) {
+    // It could be 09xxxxxxxx initially
+    // or it could be +23409xxxxxxxx
+    // Convert phone number to +2349xxxxxxxx
+    if (phoneNumber.startsWith("09") || phoneNumber.startsWith('08')) {
+        return "+234" + phoneNumber.slice(1);
+    } else if (phoneNumber.startsWith("+23409") || phoneNumber.startsWith('+23408')) {
+        return "+234" + phoneNumber.slice(4);
+    } else {
+        return phoneNumber;
+    }
+}
+
 export default class VendorController {
 
     static async validateMeterMock(req: Request, res: Response, next: NextFunction) {
@@ -425,7 +438,6 @@ export default class VendorController {
     static async validateMeter(req: Request, res: Response, next: NextFunction) {
         const {
             meterNumber,
-            phoneNumber,
             email,
             vendType,
             channel,
@@ -433,6 +445,10 @@ export default class VendorController {
         }: valideMeterRequestBody = req.body;
         let { disco } = req.body;
         const partnerId = (req as any).key;
+
+
+        let phoneNumber = req.body.phoneNumber
+        phoneNumber = transformPhoneNumber(phoneNumber)
 
         const transactionId = uuidv4()
         const errorMeta = { transactionId: transactionId }
