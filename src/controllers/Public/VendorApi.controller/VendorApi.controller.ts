@@ -57,7 +57,8 @@ interface valideMeterRequestBody {
     phoneNumber: string;
     partnerName: string;
     email: string;
-    channel: ITransaction['channel']
+    channel: ITransaction['channel'];
+    amount: number
 }
 
 interface vendTokenRequestBody {
@@ -205,16 +206,9 @@ class VendorControllerValdator {
         }
 
         // Check if Disco is Up
-        const checKDisco: boolean | Error =
-            await VendorService.buyPowerCheckDiscoUp(vendorDiscoCode);
-        if (!checKDisco && transactionRecord.superagent === 'BUYPOWERNG') throw new BadRequestError("Disco is currently down");
-
-        // Check if bankRefId has been used before
-        const existingTransaction: Transaction | null =
-            await TransactionService.viewSingleTransactionByBankRefID(bankRefId);
-        if (existingTransaction instanceof Transaction) {
-            throw new BadRequestError("Bank reference has been used before");
-        }
+        // const checKDisco: boolean | Error =
+        //     await VendorService.buyPowerCheckDiscoUp(vendorDiscoCode);
+        // if (!checKDisco && transactionRecord.superagent === 'BUYPOWERNG') throw new BadRequestError("Disco is currently down");
 
         const transactionHasCompleted =
             transactionRecord.status === Status.COMPLETE;
@@ -439,7 +433,8 @@ export default class VendorController {
             phoneNumber,
             email,
             vendType,
-            channel
+            channel,
+            amount
         }: valideMeterRequestBody = req.body;
         let { disco } = req.body;
         const partnerId = (req as any).key;
@@ -449,6 +444,11 @@ export default class VendorController {
         const existingProductCodeForDisco = await ProductService.viewSingleProductByProductNameAndVendType(disco, vendType)
         if (!existingProductCodeForDisco) {
             throw new NotFoundError('Product code not found for disco', errorMeta)
+        }
+
+        if (parseInt(amount.toString()) < 1000) {
+            logger.error('Amount must be greater than 1000', { meta: { transactionId } })
+            throw new BadRequestError("Amount must be greater than 100");
         }
 
         disco = existingProductCodeForDisco.masterProductCode
@@ -468,7 +468,7 @@ export default class VendorController {
         const transaction: Transaction =
             await TransactionService.addTransactionWithoutValidatingUserRelationship({
                 id: transactionId,
-                amount: "",
+                amount: amount.toString(),
                 status: Status.PENDING,
                 superagent: superagent,
                 paymentType: PaymentType.PAYMENT,
@@ -622,23 +622,20 @@ export default class VendorController {
     }
 
     static async requestToken(req: Request, res: Response, next: NextFunction) {
-        const { transactionId, bankComment, amount, vendType } =
+        const { transactionId, bankComment, vendType } =
             req.query as Record<string, any>;
-        console.log({ transactionId, bankComment, amount, vendType })
+        console.log({ transactionId, bankComment, vendType })
 
         const errorMeta = { transactionId: transactionId };
-        // REMOVED !!!! BECAUSE WE SHOULD NEVER AUTOGENERATE THIS IN THE CODE
         const bankRefId = req.query.bankRefId as string;
-        if (parseInt(amount.toString()) < 1000) {
-            logger.error('Amount must be greater than 1000', { meta: { transactionId } })
-            throw new BadRequestError("Amount must be greater than 100");
-        }
 
         const transaction: Transaction | null =
             await TransactionService.viewSingleTransaction(transactionId);
         if (!transaction) {
             throw new NotFoundError("Transaction not found", errorMeta);
         }
+
+        const amount = transaction.amount
 
         if (transaction.status === Status.COMPLETE as any) {
             throw new BadRequestError("Transaction already completed");
