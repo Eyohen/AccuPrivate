@@ -446,6 +446,10 @@ export default class VendorController {
         let { disco } = req.body;
         const partnerId = (req as any).key;
 
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(email)) {
+            throw new BadRequestError("Invalid email address");
+        }
 
         let phoneNumber = req.body.phoneNumber
         phoneNumber = transformPhoneNumber(phoneNumber)
