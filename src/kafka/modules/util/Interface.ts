@@ -53,7 +53,7 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
     [TOPICS.SCHEDULE_REQUERY_FOR_TRANSACTION]: {
         timeStamp: string,
         delayInSeconds: number,
-        scheduledMessagePayload: PublisherEventAndParameters[TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY]
+        scheduledMessagePayload: PublisherEventAndParameters[TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_REQUERY]
     }
     [TOPICS.SCHEDULE_RETRY_FOR_TRANSACTION]: {
         timeStamp: string,
@@ -107,7 +107,7 @@ export interface PublisherEventAndParameters extends Record<TOPICS, any> {
         retryCount: number;
         superAgent: Transaction['superagent'],
     };
-    [TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY]: {
+    [TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_REQUERY]: {
         meter: MeterInfo & { id: string };
         transactionId: string;
         timeStamp: Date;

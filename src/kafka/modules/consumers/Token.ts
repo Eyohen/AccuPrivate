@@ -757,7 +757,7 @@ class TokenHandler extends Registry {
     }
 
     private static async requeryTransactionForToken(
-        data: PublisherEventAndParameters[TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY],
+        data: PublisherEventAndParameters[TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_REQUERY],
     ) {
         try {
             const logMeta = { meta: { transactionId: data.transactionId } }
@@ -1088,7 +1088,7 @@ class TokenHandler extends Registry {
 
     static registry = {
         [TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER]: this.handleTokenRequest,
-        [TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY]:
+        [TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_REQUERY]:
             this.requeryTransactionForToken,
         [TOPICS.POWER_PURCHASE_INITIATED_BY_CUSTOMER_REQUERY]:
             this.requeryTransactionForToken,

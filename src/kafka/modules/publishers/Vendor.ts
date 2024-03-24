@@ -350,15 +350,15 @@ export class VendorPublisher extends ProducerFactory {
     }
 
     static async publishEventForGetTransactionTokenRequestedFromVendorRetry(
-        data: PublisherEventAndParameters[TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY],
+        data: PublisherEventAndParameters[TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_REQUERY],
     ) {
-        Logger.kafkaPublisher.info(`Sending message to topic: ${TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY}`, {
+        Logger.kafkaPublisher.info(`Sending message to topic: ${TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_REQUERY}`, {
             meta: {
                 transactionId: data.transactionId,
             }
         })
         return ProducerFactory.sendMessage({
-            topic: TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY,
+            topic: TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_REQUERY,
             message: {
                 meter: {
                     meterNumber: data.meter.meterNumber,
