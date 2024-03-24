@@ -194,16 +194,11 @@ class VendorControllerValdator {
     static async requestToken({
         bankRefId,
         transactionId,
+        transaction: transactionRecord,
         vendorDiscoCode
-    }: RequestTokenValidatorParams): Promise<RequestTokenValidatorResponse> {
+    }: RequestTokenValidatorParams & { transaction: Transaction }): Promise<RequestTokenValidatorResponse> {
         if (!bankRefId)
             throw new BadRequestError("Transaction reference is required");
-
-        const transactionRecord: Transaction | null =
-            await TransactionService.viewSingleTransaction(transactionId);
-        if (!transactionRecord) {
-            throw new BadRequestError("Transaction does not exist");
-        }
 
         // Check if Disco is Up
         // const checKDisco: boolean | Error =
@@ -679,7 +674,7 @@ export default class VendorController {
         const transactionEventService = new EventService.transactionEventService(updatedTransaction, meterInfo, transaction.superagent, transaction.partner.email);
         await transactionEventService.addPowerPurchaseInitiatedEvent(bankRefId, amount);
 
-        const { user, partnerEntity } = await VendorControllerValdator.requestToken({ bankRefId, transactionId, vendorDiscoCode });
+        const { user, partnerEntity } = await VendorControllerValdator.requestToken({ bankRefId, transactionId, vendorDiscoCode, transaction });
         await transaction.update({
             bankRefId: bankRefId,
             bankComment,
@@ -787,12 +782,12 @@ export default class VendorController {
                         meter: { ...meterInfo, token: powerUnit.token }
                     }
                 })
-                
+
                 // TODO: Add Code to send response if token has been gotten from vendor
                 await transactionEventService.addTokenSentToPartnerEvent();
                 return
             }
-            
+
 
 
             return

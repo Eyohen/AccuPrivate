@@ -1113,17 +1113,42 @@ export default class VendorService {
         vendor: T;
     }): Promise<ElectricityPurchaseResponse[T]> {
         if (vendor === "BUYPOWERNG") {
-            return (await this.buyPowerVendToken(
+            const response = (await this.buyPowerVendToken(
                 data,
             )) as ElectricityPurchaseResponse[T];
+
+            logger.info('Transposed Response from Buypower', {
+                meta: {
+                    transactionId: data.transactionId,
+                    response,
+                }
+            })
+
+            return response
         } else if (vendor === "IRECHARGE") {
-            return (await this.irechargeVendToken(
+            const response =  (await this.irechargeVendToken(
                 data,
             )) as ElectricityPurchaseResponse[T];
+
+            logger.info('Transposed Response from IRECHARGE', {
+                meta: {
+                    transationId: data.transactionId,
+                    response
+                }
+            })
+            return response
         } else if (vendor === "BAXI") {
-            return (await this.baxiVendToken(
+            const response =  (await this.baxiVendToken(
                 data,
             )) as ElectricityPurchaseResponse[T];
+
+            logger.info('Transposed Response from BAXI', {
+                meta: {
+                    transationId: data.transactionId,
+                    response
+                }
+            })
+            return response
         } else {
             throw new Error("UNAVAILABLE_VENDOR");
         }
