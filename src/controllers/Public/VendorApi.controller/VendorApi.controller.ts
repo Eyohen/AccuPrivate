@@ -198,7 +198,7 @@ class VendorControllerValdator {
         vendorDiscoCode
     }: RequestTokenValidatorParams & { transaction: Transaction }): Promise<RequestTokenValidatorResponse> {
         if (!bankRefId)
-            throw new BadRequestError("Transaction reference is required");
+            throw new BadRequestError("No bankRefId found");
 
         // Check if Disco is Up
         // const checKDisco: boolean | Error =
