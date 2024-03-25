@@ -21,6 +21,7 @@ import waitTimeRoute from "./WaitTime.routes";
 import MockEndpointRoute from './MockEndPoint.route'
 import discoStatusRoute from "./DiscoStatus.routes";
 import bundleRoute from "./Bundle.routes";
+import responsePathRoute from "./ResponsePath.routes";
 
 const router = Router();
 
@@ -47,5 +48,6 @@ router
     .use("/discostatus", discoStatusRoute)
     .use("/waittime", waitTimeRoute)
     .use('/mock', MockEndpointRoute)
+    .use('/response_path', responsePathRoute)
 
 export default router;
