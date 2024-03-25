@@ -6,7 +6,7 @@ import PowerUnitService from "../../../services/PowerUnit.service";
 import TransactionService from "../../../services/Transaction.service";
 import TransactionEventService from "../../../services/TransactionEvent.service";
 import { DISCO_LOGO, LOGO_URL, MAX_REQUERY_PER_VENDOR, NODE_ENV } from "../../../utils/Constants";
-import logger from "../../../utils/Logger";
+import logger, { Logger } from "../../../utils/Logger";
 import { TOPICS } from "../../Constants";
 import { VendorPublisher } from "../publishers/Vendor";
 import ConsumerFactory from "../util/Consumer";
@@ -88,7 +88,8 @@ const TransactionErrorCodeAndCause = {
 
 export async function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
     // Time in seconds
-    const defaultValues = [10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 20480, 40960, 81920, 163840, 327680, 655360, 1310720, 2621440, 5242880]
+    // const defaultValues = [10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 20480, 40960, 81920, 163840, 327680, 655360, 1310720, 2621440, 5242880]
+    const defaultValues = [120, 120, 120] // Default to 2mins because of buypowerng minimum wait time for requery
     const timesToRetry = await WaitTimeService.getWaitTime() ?? defaultValues
     timesToRetry.unshift(1)
 
@@ -682,10 +683,7 @@ class TokenHandler extends Registry {
                 );
             }
 
-            // Token purchase was successful
-            // And token was found in request
-            // Add and publish token received event
-            await transactionEventService.addTokenReceivedEvent(tokenInResponse ?? 'null');
+            // Token purchase was successful, there is a token in the response, but we must requery
             await VendorPublisher.publishEventForTokenReceivedFromVendor({
                 transactionId: transaction!.id,
                 user: {
@@ -706,45 +704,15 @@ class TokenHandler extends Registry {
                 },
             });
 
-            let powerUnit =
-                await PowerUnitService.viewSinglePowerUnitByTransactionId(
-                    data.transactionId,
-                );
-
-            console.log({ disco: data.meter })
-            const _product = await ProductService.viewSingleProduct(transaction.productCodeId)
-            if (!_product) throw new CustomError('Product not found')
-
-            const discoLogo =
-                DISCO_LOGO[_product.productName as keyof typeof DISCO_LOGO] ?? LOGO_URL
-
-            if (tokenInResponse) {
-                logger.info('Saving token record', logMeta);
-                powerUnit = powerUnit
-                    ? await PowerUnitService.updateSinglePowerUnit(powerUnit.id, {
-                        token: tokenInResponse,
-                        transactionId: data.transactionId,
-                    })
-                    : await PowerUnitService.addPowerUnit({
-                        id: uuidv4(),
-                        transactionId: data.transactionId,
-                        disco: data.meter.disco,
-                        discoLogo,
-                        amount: transaction.amount,
-                        meterId: data.meter.id,
-                        superagent: "BUYPOWERNG",
-                        token: tokenInResponse,
-                        tokenNumber: 0,
-                        tokenUnits: "0",
-                        address: transaction.meter.address,
-                    });
-            }
-
-            return await TransactionService.updateSingleTransaction(data.transactionId, {
-                status: Status.COMPLETE,
-                powerUnitId: powerUnit?.id,
-            });
-
+            await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor({
+                eventService: transactionEventService,
+                eventData: eventMessage,
+                transactionTimedOutFromBuypower,
+                tokenInResponse: tokenInResponse ? tokenInResponse : null,
+                superAgent: transaction.superagent,
+                retryCount: 1,
+                vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1]
+            })
         } catch (error) {
             if (error instanceof CustomError) {
                 error.meta = error.meta ?? {
@@ -832,6 +800,26 @@ class TokenHandler extends Registry {
                 logger.error("Error occured while requerying transaction", logMeta)
 
                 if (retryTransaction) {
+                    // Check if disco is up
+                    const vendor = await VendorModelService.viewSingleVendorByName(data.superAgent)
+                    if (!vendor) throw new CustomError('Vendor not found')
+
+                    const product = await ProductService.viewSingleProductByMasterProductCode(transaction.disco)
+                    if (!product) throw new CustomError('Product not found')
+
+                    const vendorProduct = await VendorProductService.viewSingleVendorProductByVendorIdAndProductId(vendor.id, product.id)
+                    if (!vendorProduct) throw new CustomError('Vendor product not found')
+
+                    const disco = vendorProduct.schemaData.code
+                    const logMeta = { meta: { transactionId: data.transactionId } }
+                    logger.info('Processing token request', logMeta);
+
+                    const discoUp = await VendorService.buyPowerCheckDiscoUp(disco)
+                    if (!discoUp) {
+                        logger.error(`Disco ${disco} is down`, {
+                            meta: { ...logMeta.meta, disco, discoLocation: transaction.disco }
+                        })
+                    }
                     return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter, transaction, transactionEventService, vendorRetryRecord: data.vendorRetryRecord })
                 }
 
