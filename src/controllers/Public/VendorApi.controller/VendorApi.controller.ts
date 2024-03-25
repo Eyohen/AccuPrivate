@@ -498,7 +498,7 @@ export default class VendorController {
                 vendorReferenceId: generateRandonNumbers(12),
                 productType: transactionTypes[existingProductCodeForDisco.category],
                 channel
-            });
+            })
 
         Logger.apiRequest.info("Validate meter requested", { meta: { transactionId: transaction.id, ...req.body } })
         const transactionEventService = new EventService.transactionEventService(
@@ -700,6 +700,15 @@ export default class VendorController {
             bankComment,
             amount,
             status: Status.PENDING,
+        }).catch(e => {
+            console.log({ error: e.name })
+            console.log({ error: e.name })
+            console.log({ error: e.name })
+            if (e.name === 'SequelizeUniqueConstraintError') {
+                throw new BadRequestError('BankRefId already exists')
+            }
+
+            throw new BadRequestError('nes')
         });
 
         const vendorTokenConsumer = new VendorTokenReceivedSubscriber(transaction, res)

@@ -16,10 +16,8 @@ export default class ResponsePath extends Model<ResponsePath | IResponsePath> {
     @Column
     id: string;
 
-    @ForeignKey(() => Vendor)
-    @IsUUID(4)
-    @Column
-    vendorId: string
+    @Column({ type: DataType.STRING, allowNull: false })
+    vendor: string
 
     @Column({ type: DataType.STRING, allowNull: true })
     path: string
@@ -32,16 +30,12 @@ export default class ResponsePath extends Model<ResponsePath | IResponsePath> {
 
     @Column({ type: DataType.STRING, allowNull: false })
     requestType: string
-
-
-    @BelongsTo(() => Vendor)
-    vendor: Vendor
 }
 
 // Interface to represent a ResponsePath object with specific properties
 export interface IResponsePath {
     id: string
-    vendorId: string
+    vendor: string
     path?: string
     description?: string
     accuvendRefCode?: string

@@ -13,5 +13,6 @@ router
     .get('/', AuthenticatedController(ResponsePathController.getResponsePaths))
     .post('/new', AuthenticatedController(ResponsePathController.createResponsePath))
     .patch('/', AuthenticatedController(ResponsePathController.updateResponsePath))
+    .post('/seed', AuthenticatedController(ResponsePathController.seedResponsePatsh))
 
 export default router

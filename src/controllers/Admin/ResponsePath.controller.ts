@@ -20,54 +20,39 @@ export default class ResponsePathController {
         // It has columns, id, Path, Vendor, AccuvendRefCode, RequestType, description
         const rows = csvData.split('\n');
         const data = rows.map(row => {
-            const [id, path, vendorName, accuvendRefCode, requestType, description] = row.split(',');
+            const [id, path, vendor, accuvendRefCode, requestType, description] = row.split(',');
 
             return {
                 id,
                 path,
-                vendorName: vendorName as 'IRECHARGE' | 'BUYPOWERNG' | 'BAXI',
+                vendor,
                 accuvendRefCode,
                 requestType,
                 description
             };
         });
 
-        // Get all vendors
-        const irechargeVendor = await VendorService.viewSingleVendorByName('IRECHARGE');
-        const buypowerNg = await VendorService.viewSingleVendorByName('BUYPOWERNG');
-        const baxi = await VendorService.viewSingleVendorByName('BAXI');
-
-        if (!irechargeVendor || !buypowerNg || !baxi) {
-            console.log('Vendors not found');
-            return;
-        }
-
-        const vendorIds = {
-            IRECHARGE: irechargeVendor.id,
-            BUYPOWERNG: buypowerNg.id,
-            BAXI: baxi.id,
-        }
-
         // Seed data
         for (const row of data) {
-            const { id, path, vendorName, accuvendRefCode, requestType, description } = row;
-            const vendorId = vendorIds[vendorName];
-
-            if (!vendorId) {
-                console.log(`Vendor with name ${vendorName} not found`);
-                continue;
-            }
+            const { id, path, vendor, accuvendRefCode, requestType, description } = row;
 
             await ResponsePathService.addResponsePath({
                 id,
                 path,
-                vendorId,
+                vendor,
                 accuvendRefCode,
                 requestType,
                 description
             });
         }
         console.log('Data seeded successfully!');
+
+
+        res.status(200).send({
+            message: 'Success',
+            success: true,
+            data: {}
+        })
     }
     static async createResponsePath(
         req: AuthenticatedRequest,
@@ -75,20 +60,20 @@ export default class ResponsePathController {
         next: NextFunction,
     ) {
         const {
-            path, accuvendRefCode, description, requestType, vendorId
+            path, accuvendRefCode, description, requestType, vendor
         } = req.body
 
-        const existingVendor = await VendorService.viewSingleVendor(vendorId)
-        if (!existingVendor) {
-            res.status(400).send({
-                success: false,
-                message: "Vendor does not exist",
-                data: {},
-            });
-            return
-        }
+        // const existingVendor = await VendorService.viewSingleVendor(vendorId)
+        // if (!existingVendor) {
+        //     res.status(400).send({
+        //         success: false,
+        //         message: "Vendor does not exist",
+        //         data: {},
+        //     });
+        //     return
+        // }
         const responsePath = await ResponsePathService.addResponsePath({
-            path, accuvendRefCode, description, requestType, id: randomUUID(), vendorId: vendorId
+            path, accuvendRefCode, description, requestType, id: randomUUID(), vendor
         })
 
         res.status(200).send({
