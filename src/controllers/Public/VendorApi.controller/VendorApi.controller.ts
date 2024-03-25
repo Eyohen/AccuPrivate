@@ -711,6 +711,8 @@ export default class VendorController {
             throw e
         });
 
+        await TransactionService.updateSingleTransaction(transaction.id, { status: Status.INPROGRESS })
+
         const vendorTokenConsumer = new VendorTokenReceivedSubscriber(transaction, res)
         await vendorTokenConsumer.start()
         vendorTokenConsumer.setConsumerInstance(vendorTokenConsumer)
@@ -733,8 +735,6 @@ export default class VendorController {
                     retryCount: 1,
                 }
             })
-
-            await TransactionService.updateSingleTransaction(transaction.id, { status: Status.INPROGRESS })
 
             if (response instanceof Error) {
                 throw error

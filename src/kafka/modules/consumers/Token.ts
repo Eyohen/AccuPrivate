@@ -655,6 +655,8 @@ class TokenHandler extends Registry {
                         tokenInResponse = tokenInfoResponseForIrecharge.meter_token
                     }
 
+                    if (tokenInResponse) logger.info('Token from vending', { meta: { transactionId: data.transactionId, vendRequestToken: tokenInResponse}})
+
                     // Requery the transaction if no token in the response
                     requeryTransaction = !tokenInResponse
                 } else if (!transactionTimedOut) {
@@ -847,7 +849,7 @@ class TokenHandler extends Registry {
                     );
                 if (data.meter.vendType === 'PREPAID') {
                     if (tokenInResponse) {
-                        logger.info('Saving token record', logMeta);
+                        logger.info('Token from requery ', { meta: { ...logMeta, requeryToken: tokenInResponse}});
                         powerUnit = powerUnit
                             ? await PowerUnitService.updateSinglePowerUnit(powerUnit.id, {
                                 token: tokenInResponse,
