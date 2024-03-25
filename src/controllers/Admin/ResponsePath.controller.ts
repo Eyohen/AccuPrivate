@@ -33,9 +33,10 @@ export default class ResponsePathController {
         });
 
         // Seed data
-        for (const row of data) {
+        for (const row of data.slice(1)) {
             const { id, path, vendor, accuvendRefCode, requestType, description } = row;
 
+            console.log({ row })
             await ResponsePathService.addResponsePath({
                 id,
                 path,

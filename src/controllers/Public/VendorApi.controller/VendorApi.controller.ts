@@ -701,14 +701,14 @@ export default class VendorController {
             amount,
             status: Status.PENDING,
         }).catch(e => {
-            console.log({ error: e.name })
-            console.log({ error: e.name })
-            console.log({ error: e.name })
             if (e.name === 'SequelizeUniqueConstraintError') {
-                throw new BadRequestError('BankRefId already exists')
+                // Check if the key is the bankRefId
+                if (e.errors[0].message.includes('bankRefId')) {
+                    throw new BadRequestError('BankRefId should be a unique id')
+                }
             }
 
-            throw new BadRequestError('nes')
+            throw e
         });
 
         const vendorTokenConsumer = new VendorTokenReceivedSubscriber(transaction, res)
