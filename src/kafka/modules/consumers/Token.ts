@@ -800,26 +800,6 @@ class TokenHandler extends Registry {
                 logger.error("Error occured while requerying transaction", logMeta)
 
                 if (retryTransaction) {
-                    // Check if disco is up
-                    const vendor = await VendorModelService.viewSingleVendorByName(data.superAgent)
-                    if (!vendor) throw new CustomError('Vendor not found')
-
-                    const product = await ProductService.viewSingleProductByMasterProductCode(transaction.disco)
-                    if (!product) throw new CustomError('Product not found')
-
-                    const vendorProduct = await VendorProductService.viewSingleVendorProductByVendorIdAndProductId(vendor.id, product.id)
-                    if (!vendorProduct) throw new CustomError('Vendor product not found')
-
-                    const disco = vendorProduct.schemaData.code
-                    const logMeta = { meta: { transactionId: data.transactionId } }
-                    logger.info('Processing token request', logMeta);
-
-                    const discoUp = await VendorService.buyPowerCheckDiscoUp(disco)
-                    if (!discoUp) {
-                        logger.error(`Disco ${disco} is down`, {
-                            meta: { ...logMeta.meta, disco, discoLocation: transaction.disco }
-                        })
-                    }
                     return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter, transaction, transactionEventService, vendorRetryRecord: data.vendorRetryRecord })
                 }
 
@@ -887,6 +867,25 @@ class TokenHandler extends Registry {
                                 address: transaction.meter.address,
                             });
                     } else {
+                        // Check if disco is up
+                        const vendor = await VendorModelService.viewSingleVendorByName(data.superAgent)
+                        if (!vendor) throw new CustomError('Vendor not found')
+
+                        const product = await ProductService.viewSingleProductByMasterProductCode(transaction.disco)
+                        if (!product) throw new CustomError('Product not found')
+
+                        const vendorProduct = await VendorProductService.viewSingleVendorProductByVendorIdAndProductId(vendor.id, product.id)
+                        if (!vendorProduct) throw new CustomError('Vendor product not found')
+
+                        const disco = vendorProduct.schemaData.code
+                        const logMeta = { meta: { transactionId: data.transactionId } }
+
+                        const discoUp = await VendorService.buyPowerCheckDiscoUp(disco)
+                        if (!discoUp) {
+                            logger.error(`Disco ${disco} is down`, {
+                                meta: { ...logMeta.meta, disco, discoLocation: transaction.disco }
+                            })
+                        }
                         return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
                             {
                                 eventData: {
