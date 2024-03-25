@@ -90,7 +90,7 @@ export async function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
     // Time in seconds
     // const defaultValues = [10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 20480, 40960, 81920, 163840, 327680, 655360, 1310720, 2621440, 5242880]
     const defaultValues = [120, 120, 120] // Default to 2mins because of buypowerng minimum wait time for requery
-    const timesToRetry = await WaitTimeService.getWaitTime() ?? defaultValues
+    const timesToRetry = defaultValues
     timesToRetry.unshift(1)
 
     if (retryCount >= timesToRetry.length) {
