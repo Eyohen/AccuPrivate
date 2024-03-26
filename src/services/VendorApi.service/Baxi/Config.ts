@@ -1,12 +1,20 @@
-import axios, { AxiosInstance } from 'axios';
-import { BAXI_AGENT_ID, BAXI_TOKEN } from '../../../utils/Constants';
-
+import axios, { AxiosInstance } from "axios";
+import {
+    BAXI_AGENT_ID,
+    BAXI_TOKEN,
+    NODE_ENV,
+    VENDOR_URL,
+} from "../../../utils/Constants";
 
 class BaxiApiBaseConfig {
     protected static baxiApi = axios.create({
-        baseURL: 'https://payments.baxipay.com.ng/api/baxipay/services',
+        baseURL:
+            NODE_ENV === "production"
+                ? VENDOR_URL.BAXI.PROD
+                : VENDOR_URL.BAXI.DEV,
+
         headers: {
-            'x-api-key': BAXI_TOKEN,
+            "x-api-key": BAXI_TOKEN,
         },
     });
     protected static agentId = BAXI_AGENT_ID;
@@ -32,11 +40,11 @@ export interface BaxiSuccessfulPuchaseResponse {
             responseCode: string;
         };
     };
-};
+}
 
 export interface BaxiSuccessfulPuchaseResponse {
     Prepaid: {
-        status: 'success';
+        status: "success";
         message: string;
         code: number;
         data: {
@@ -46,6 +54,32 @@ export interface BaxiSuccessfulPuchaseResponse {
             transactionMessage: string;
             baxiReference: number;
             provider_message: string;
+            rawOutput: {
+                bsstTokenValue: string,
+                fixedTariff: 'Fixed',
+                bsstTokenAmount: number,
+                tokenTechnologyCode: '02',
+                standardTokenUnits: 16.4,
+                tariffIndex: '52',
+                bsstTokenUnits: 63.67,
+                bsstTokenTax: 0,
+                keyRevisionNumber: '1',
+                terminalId: '1',
+                standardTokenValue: string,
+                bsstTokenDescription: 'FBE',
+                debtTariff: 'Debt Recovery',
+                responseCode: 'elec000',
+                algorithmCode: '05',
+                debtDescription: '1122',
+                standardTokenTax: 132.63,
+                fixedAmount: 144.74,
+                utilityAddress: '59 WaterFront, Durban. 5899.',
+                utilityName: 'Eskom Online',
+                debtAmount: 223.68,
+                retailerMessage: 'Hello Operator Message.',
+                standardTokenDescription: 'Normal Sale',
+                clientId: string,
+            },
             extraData: {
                 balance: string;
                 exchangeReference: string;
@@ -55,31 +89,30 @@ export interface BaxiSuccessfulPuchaseResponse {
                 responseCode: string;
             };
         };
-    }
+    };
     Postpaid: {
-        status: 'success',
-        message: 'Successful',
-        code: 200,
+        status: "success";
+        message: "Successful";
+        code: 200;
         data: {
-            transactionStatus: 'success',
-            transactionReference: number,
-            statusCode: '0',
-            transactionMessage: 'Payment Successful',
-            provider_message: 'Successful',
-            baxiReference: number
-        }
-    }
-
-};
+            transactionStatus: "success";
+            transactionReference: number;
+            statusCode: "0";
+            transactionMessage: "Payment Successful";
+            provider_message: "Successful";
+            baxiReference: number;
+        };
+    };
+}
 
 export interface BaxiRequeryResultForPurchase {
     Prepaid: {
-        status: 'success';
-        message: 'Successful',
-        code: 200,
+        status: "success";
+        message: "Successful";
+        code: 200;
         data: {
-            statusCode: '0';
-            transactionStatus: 'success';
+            statusCode: "0";
+            transactionStatus: "success";
             transactionReference: number;
             transactionMessage: string;
             baxiReference: string;
@@ -119,37 +152,37 @@ export interface BaxiRequeryResultForPurchase {
                 responseMessage: string;
                 status: string;
                 standardTokenAmount: number;
-            }
-        }
-    },
+            };
+        };
+    };
     Postpaid: {
-        status: 'success',
-        message: 'Successful',
-        code: 200,
+        status: "success";
+        message: "Successful";
+        code: 200;
         data: {
-            statusCode: '0',
-            transactionStatus: 'success',
-            transactionReference: number,
-            transactionMessage: 'Successful',
-            baxiReference: '1552283',
-            pins: [],
-            tokenCode: '',
+            statusCode: "0";
+            transactionStatus: "success";
+            transactionReference: number;
+            transactionMessage: "Successful";
+            baxiReference: "1552283";
+            pins: [];
+            tokenCode: "";
             rawData: {
-                reference: string,
-                purchasedUnits: '0.0 Kwh',
-                totalAmount: number,
-                vendAmount: number,
-                vat: number,
-                generatedAmount: number,
-                freeUnits: '0',
-                responseMessage: 'Successful',
-                receiptNumber: string,
-                status: 'ACCEPTED',
-                responseCode: '200',
-                outstandingBalance: number
-            }
-        }
-    }
+                reference: string;
+                purchasedUnits: "0.0 Kwh";
+                totalAmount: number;
+                vendAmount: number;
+                vat: number;
+                generatedAmount: number;
+                freeUnits: "0";
+                responseMessage: "Successful";
+                receiptNumber: string;
+                status: "ACCEPTED";
+                responseCode: "200";
+                outstandingBalance: number;
+            };
+        };
+    };
 }
 
 export default BaxiApiBaseConfig;

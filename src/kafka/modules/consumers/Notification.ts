@@ -81,6 +81,8 @@ class NotificationHandler extends Registry {
 
         // If you've not notified the user before, notify them
         if (!notifyUserEvent) {
+            const meter = await transaction.$get('meter')
+            const user = await transaction.$get('user')
             await EmailService.sendEmail({
                 to: transaction.user.email,
                 subject: "Token Purchase",
@@ -88,14 +90,20 @@ class NotificationHandler extends Registry {
                     transaction: transaction,
                     meterNumber: data.meter.meterNumber,
                     token: data.meter.token,
+                    address: meter?.address ?? '',
+                    name: user?.dataValues.name ?? ''
                 }),
             })
 
             const msgTemplate = data.meter.vendType === 'POSTPAID' ? await SmsService.postpaidElectricityTemplate(transaction) : await SmsService.prepaidElectricityTemplate(transaction)
-            await SmsService.sendSms(data.user.phoneNumber, msgTemplate).catch((error: AxiosError) => {
-                console.log(error.response?.data)
-                logger.error('Error sending sms', error)
-            })
+            await SmsService.sendSms(data.user.phoneNumber, msgTemplate)
+                .then(async () => {
+                    await transactionEventService.addSmsTokenSentToUserEvent()
+                })
+                .catch((error: AxiosError) => {
+                    console.log(error.response?.data)
+                    logger.error('Error sending sms', error)
+                })
             await transactionEventService.addTokenSentToUserEmailEvent()
         }
         return

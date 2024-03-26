@@ -1,4 +1,5 @@
 import app from "./app";
+import startCrons from "./crons";
 import KafkaService from "./kafka";
 import { initiateDB, Database } from "./models";
 import logger from "./utils/Logger";
@@ -21,7 +22,10 @@ async function startServer(): Promise<void> {
         app.listen(process.env.PORT || 3000, () => {
             logger.info("Server Started on Port 3000");
             console.log('Server Connected Successfully')
+            
         });
+
+        startCrons()
     } catch (err) {
         console.error(err)
         // Log any errors that occur during server startup
@@ -33,3 +37,5 @@ async function startServer(): Promise<void> {
 
 // Call the function to start the server
 startServer();
+
+

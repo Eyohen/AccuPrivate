@@ -232,8 +232,8 @@ export class AirtimeTransactionEventService {
     public async addGetAirtimeFromVendorRetryEvent(error: { cause: TransactionErrorCause, code: number, }, retryCount: number): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
-            eventType: TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY,
-            eventText: TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY,
+            eventType: TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_REQUERY,
+            eventText: TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_REQUERY,
             payload: JSON.stringify({
                 transactionId: this.transaction.id,
                 phoneNumber: this.phoneNumber,
@@ -619,8 +619,8 @@ export class DataTransactionEventService {
     public async addGetDataFromVendorRetryEvent(error: { cause: TransactionErrorCause, code: number, }, retryCount: number): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
-            eventType: TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY,
-            eventText: TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY,
+            eventType: TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_REQUERY,
+            eventText: TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_REQUERY,
             payload: JSON.stringify({
                 transactionId: this.transaction.id,
                 phoneNumber: this.phoneNumber,
@@ -845,6 +845,74 @@ export default class TransactionEventService {
 
     public getTransactionInfo(): Transaction {
         return this.transaction
+    }
+
+    public async addScheduleRetryEvent({ timeStamp, waitTime }: { timeStamp: string, waitTime: number }): Promise<Event> {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.SCHEDULE_RETRY_FOR_TRANSACTION,
+            eventText: TOPICS.SCHEDULE_RETRY_FOR_TRANSACTION,
+            payload: JSON.stringify({
+                timeStamp,
+                waitTime,
+                meterNumber: this.meterInfo.meterNumber,
+                disco: this.meterInfo.disco,
+                vendType: this.meterInfo.vendType,
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+            }),
+            source: 'API',
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.PENDING,
+        }
+
+        return await EventService.addEvent(event);
+    }
+
+    public async addScheduleRequeryEvent({ timeStamp, waitTime }: { timeStamp: string, waitTime: number }): Promise<Event> {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.SCHEDULE_REQUERY_FOR_TRANSACTION,
+            eventText: TOPICS.SCHEDULE_REQUERY_FOR_TRANSACTION,
+            payload: JSON.stringify({
+                timeStamp,
+                waitTime,
+                meterNumber: this.meterInfo.meterNumber,
+                disco: this.meterInfo.disco,
+                vendType: this.meterInfo.vendType,
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+            }),
+            source: 'API',
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.PENDING,
+        }
+
+        return await EventService.addEvent(event);
+    }
+
+    public async addMeterValidationFailedEvent(superAgent: string, meterInfo: {
+        meterNumber: string, disco: string, vendType: string
+    }) {
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.METER_VALIDATION_FAILED,
+            eventText: TOPICS.METER_VALIDATION_FAILED,
+            payload: JSON.stringify({
+                meterInfo: meterInfo,
+                disco: this.transaction.disco,
+                superagent: this.superAgent,
+                partnerEmail: this.partner
+            }),
+            source: 'API',
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.COMPLETE,
+        }
+
+        return await EventService.addEvent(event);
     }
 
     public async addMeterValidationRequestedEvent(): Promise<Event> {
@@ -1130,8 +1198,8 @@ export default class TransactionEventService {
     public async addGetTransactionTokenRequestedFromVendorRetryEvent(error: { cause: TransactionErrorCause, code: number, }, retryCount: number): Promise<Event> {
         const event: ICreateEvent = {
             transactionId: this.transaction.id,
-            eventType: TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY,
-            eventText: TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_RETRY,
+            eventType: TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_REQUERY,
+            eventText: TOPICS.GET_TRANSACTION_TOKEN_FROM_VENDOR_REQUERY,
             payload: JSON.stringify({
                 transactionId: this.transaction.id,
                 superAgent: this.transaction.superagent,
@@ -1246,6 +1314,32 @@ export default class TransactionEventService {
                 superagent: this.superAgent,
                 partnerEmail: this.partner,
                 disco: this.meterInfo.disco,
+            }),
+            source: this.transaction.superagent.toUpperCase(),
+            eventTimestamp: new Date(),
+            id: uuidv4(),
+            status: Status.COMPLETE,
+        }
+
+        return await EventService.addEvent(event);
+    }
+
+    public async addSmsTokenSentToUserEvent(): Promise<Event> {
+        const user = await this.transaction.$get('user');
+        if (!user) {
+            throw new Error('Transaction does not have a user');
+        }
+
+        const event: ICreateEvent = {
+            transactionId: this.transaction.id,
+            eventType: TOPICS.SMS_TOKEN_SENT_TO_USER,
+            eventText: TOPICS.SMS_TOKEN_SENT_TO_USER,
+            payload: JSON.stringify({
+                email: user.email,
+                superagent: this.superAgent,
+                partnerEmail: this.partner,
+                disco: this.meterInfo.disco,
+                phone: user.phoneNumber
             }),
             source: this.transaction.superagent.toUpperCase(),
             eventTimestamp: new Date(),
