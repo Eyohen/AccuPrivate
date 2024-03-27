@@ -27,6 +27,35 @@ export default class ErrorCodeService {
         }
     }
 
+    static async getErrorCodesForValidation({
+        request, vendor, responseCode, vendCode, category, message, httpCode
+    }: Partial<{
+        request: string, vendor: string, responseCode: string, vendCode: string, category: string, message: string,
+        httpCode: number
+    }>): Promise<ErrorCode | void | null> {
+        try {
+            const queryParms = { } as Record<string, string | number>;
+
+            // Include only the query parameters that are not null
+            if (request) queryParms['request'] = request;
+            if (vendor) queryParms['vendor'] = vendor;
+            if (responseCode) queryParms['response_code'] = responseCode;
+            if (vendCode) queryParms['vend_code'] = vendCode;
+            if (category) queryParms['category'] = category;
+            if (message) queryParms['message'] = message;
+            if (httpCode) queryParms['httpCode'] = httpCode;
+
+            // Find and retrieve an ErrorCode by its UUID
+            const errorCodes: ErrorCode| null = await ErrorCode.findOne({
+                where: queryParms
+            });
+            return errorCodes;
+        } catch (error) {
+            console.error("Error reading ErrorCodes");
+            throw error
+        }
+    }
+
     // Method for retrieving a single ErrorCode by its ID
     static async getErrorCodeById(id: string): Promise<ErrorCode | null> {
         try {

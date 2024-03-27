@@ -1,4 +1,4 @@
-import { Axios, AxiosError } from "axios";
+import { Axios, AxiosError, AxiosResponse } from "axios";
 import { Status } from "../../../models/Transaction.model";
 import Meter from "../../../models/Meter.model";
 import Transaction from "../../../models/Transaction.model";
@@ -31,6 +31,7 @@ import { error } from "console";
 import test from "node:test";
 import WaitTimeService from "../../../services/Waittime.service";
 import ResponsePathService from "../../../services/ResponsePath.service";
+import ErrorCodeService from "../../../services/ErrorCodes.service";
 
 interface EventMessage {
     meter: {
@@ -495,16 +496,81 @@ export class TokenHandlerUtil {
 class ResponseValidationUtil {
 
     static async validateTransactionCondition({
-        requestType, vendor
+        requestType, vendor, responseObject,
+        httpCode
     }: {
-        requestType: 'VEND_REQUEST' | 'REQUERY'
-        vendor: Transaction['superagent']
+        httpCode: string | number,
+        requestType: 'VENDREQUEST' | 'REQUERY'
+        vendor: Transaction['superagent'] | string,
+        responseObject: Record<string, any>
     }): Promise<-1 | 1 | 0> {
+        console.log({
+            requestType, vendor, responseObject, httpCode
+        })
         const responsePath = await ResponsePathService.viewResponsePathForValidation({
             requestType, vendor
         })
 
-        return -1
+        if (!responsePath) {
+            logger.error('Response path not found', {
+                meta: { requestType, vendor }
+            })
+            throw new CustomError('Response path not found')
+        }
+
+        const propertiesToConsider: string[] = []
+
+        // Get the values to consider
+        Array.from(responsePath).forEach(path => {
+            propertiesToConsider.push(path.path)
+        })
+
+        function getFieldValueFromResponseObject(prop: string) {
+            let _prop = responseObject
+            const path = prop.split('.')
+            for (const p of path) {
+                if (_prop[p]) {
+                    _prop = _prop[p]
+                }
+            }
+
+            return _prop
+        }
+
+        const missingPropertiesInResponse: string[] = []
+
+        // Check if they exist in the response
+        Array.from(propertiesToConsider).forEach(property => {
+            if (!getFieldValueFromResponseObject(property)) {
+                logger.error(`Property ${property} not found in response`, {
+                    meta: { property }
+                })
+                missingPropertiesInResponse.push(property)
+            }
+        })
+
+        console.log({ missingPropertiesInResponse, propertiesToConsider })
+
+        if (missingPropertiesInResponse.length > 0) {
+            logger.error('Missing properties in response', {
+                meta: { missingPropertiesInResponse, responseObject, expectedProperties: propertiesToConsider }
+            })
+            throw new CustomError('Missing properties in response')
+        }
+
+        const errorCode = await ErrorCodeService.getErrorCodesForValidation({
+            request: requestType === 'VENDREQUEST' ? 'Vend Token' : 'Requery',
+            vendor, httpCode: httpCode as number
+        })
+
+        if (!errorCode) {
+            logger.error('Error code not found', {
+                meta: { requestType, vendor, httpCode }
+            })
+            throw new CustomError('Error code not found')
+        }
+
+        return (errorCode.accuvendMasterResponseCode as -1 | 0 | 1) ?? -1
     }
 }
 
@@ -601,6 +667,53 @@ class TokenHandler extends Registry {
                 data.superAgent,
                 partner.email
             );
+
+            if (tokenInfo.source === 'BUYPOWERNG') {
+                const response = await ResponseValidationUtil.validateTransactionCondition({
+                    requestType: 'VENDREQUEST',
+                    vendor: 'BUYPOWER',
+                    httpCode: tokenInfo?.httpStatusCode,
+                    responseObject: tokenInfo
+                })
+
+                switch (response) {
+                    case -1:
+                        logger.error('Transaction condition pending - Requery', logMeta)
+                        await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor({
+                            eventData: { ...eventMessage, error: { ...eventMessage.error, cause: TransactionErrorCause.UNEXPECTED_ERROR } },
+                            eventService: transactionEventService,
+                            retryCount: 1,
+                            superAgent: data.superAgent,
+                            tokenInResponse: null,
+                            transactionTimedOutFromBuypower: false,
+                            vendorRetryRecord: data.vendorRetryRecord
+                        })
+                        break;
+                    case 0:
+                        logger.error('Transaction condition not met - Retry', logMeta)
+                        await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({
+                            transaction: updatedTransaction,
+                            transactionEventService: transactionEventService,
+                            meter: eventMessage.meter,
+                            vendorRetryRecord: data.vendorRetryRecord
+                        })
+                        break;
+                    case 1:
+                        logger.info('Transaction condition met - Successful', logMeta)
+                        await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor({
+                            eventData: { ...eventMessage, error: { ...eventMessage.error, cause: TransactionErrorCause.UNEXPECTED_ERROR } },
+                            eventService: transactionEventService,
+                            retryCount: 1,
+                            superAgent: data.superAgent,
+                            tokenInResponse: null,
+                            transactionTimedOutFromBuypower: false,
+                            vendorRetryRecord: data.vendorRetryRecord
+                        })
+                        break;
+                }
+
+                return
+            }
 
             console.log({ tokenInfo })
             const tokenInfoResponseForBuyPower = tokenInfo as ElectricityPurchaseResponse['BUYPOWERNG'] & { source: 'BUYPOWERNG' }
@@ -819,6 +932,69 @@ class TokenHandler extends Registry {
             const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction).catch(e => e);
 
             console.log({ requeryResult })
+            if (requeryResult.source === 'BUYPOWERNG') {
+                const response = await ResponseValidationUtil.validateTransactionCondition({
+                    requestType: 'REQUERY',
+                    vendor: 'BUYPOWER',
+                    httpCode: requeryResult.httpStatusCode,
+                    responseObject: requeryResult
+                })
+
+
+                let eventMessage = {
+                    meter: {
+                        meterNumber: meter.meterNumber,
+                        disco: meter.disco,
+                        vendType: meter.vendType,
+                        id: meter.id,
+                    },
+                    transactionId: transaction.id,
+                    error: {
+                        code: (requeryResult instanceof AxiosError
+                            ? requeryResult.response?.data?.responseCode
+                            : undefined) as number | 0,
+                        cause: TransactionErrorCause.UNKNOWN,
+                    },
+                }
+                switch (response) {
+                    case -1:
+                        logger.error('Transaction condition pending - Requery', logMeta)
+                        await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor({
+                            eventData: { ...eventMessage, error: { ...eventMessage.error, cause: TransactionErrorCause.UNEXPECTED_ERROR } },
+                            eventService: transactionEventService,
+                            retryCount: 1,
+                            superAgent: data.superAgent,
+                            tokenInResponse: null,
+                            transactionTimedOutFromBuypower: false,
+                            vendorRetryRecord: data.vendorRetryRecord
+                        })
+                        break;
+                    case 0:
+                        logger.error('Transaction condition not met - Retry', logMeta)
+                        await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({
+                            transaction: transaction,
+                            transactionEventService: transactionEventService,
+                            meter: eventMessage.meter,
+                            vendorRetryRecord: data.vendorRetryRecord
+                        })
+                        break;
+                    case 1:
+                        logger.info('Transaction condition met - Successful', logMeta)
+                        await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor({
+                            eventData: { ...eventMessage, error: { ...eventMessage.error, cause: TransactionErrorCause.UNEXPECTED_ERROR } },
+                            eventService: transactionEventService,
+                            retryCount: 1,
+                            superAgent: data.superAgent,
+                            tokenInResponse: null,
+                            transactionTimedOutFromBuypower: false,
+                            vendorRetryRecord: data.vendorRetryRecord
+                        })
+                        break;
+                }
+
+                return
+            }
+
             // process.exit(1)
             const requeryResultFromBuypower = requeryResult as Awaited<ReturnType<typeof VendorService.buyPowerRequeryTransaction>>
             const requeryResultFromBaxi = requeryResult as {
