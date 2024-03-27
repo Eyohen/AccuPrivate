@@ -393,10 +393,12 @@ function transformPhoneNumber(phoneNumber: string) {
     // It could be 09xxxxxxxx initially
     // or it could be +23409xxxxxxxx
     // Convert phone number to +2349xxxxxxxx
-    if (phoneNumber.startsWith("09") || phoneNumber.startsWith('08')) {
+    if (phoneNumber.startsWith("0") || phoneNumber.startsWith('0')) {
         return "+234" + phoneNumber.slice(1);
     } else if (phoneNumber.startsWith("+23409") || phoneNumber.startsWith('+23408')) {
         return "+234" + phoneNumber.slice(4);
+    } else if (!phoneNumber.startsWith('+234')) {
+        return "+234" + phoneNumber
     } else {
         return phoneNumber;
     }
@@ -462,8 +464,8 @@ export default class VendorController {
         }
 
         if (parseInt(amount.toString()) < 1000) {
-            logger.error('Amount must be greater than 1000', { meta: { transactionId } })
-            throw new BadRequestError("Amount must be greater than 100");
+            logger.error('Mininum vend amount is 1000', { meta: { transactionId } })
+            throw new BadRequestError("Mininum vend amount is 1000");
         }
 
         disco = existingProductCodeForDisco.masterProductCode
@@ -601,6 +603,16 @@ export default class VendorController {
             vendType,
         });
 
+        logger.info('Meter validation info', {
+            meta: {
+                transactionId: transaction.id,
+                user: {
+                    phoneNumber,
+                    email,
+                },
+                meter: meter
+            }
+        })
         const update = await TransactionService.updateSingleTransaction(transaction.id, { meterId: meter.id })
         console.log({ update: update?.superagent })
         const successful =
@@ -699,7 +711,7 @@ export default class VendorController {
             bankRefId: bankRefId,
             bankComment,
             amount,
-            status: Status.PENDING,
+            status: Status.INPROGRESS,
         }).catch(e => {
             if (e.name === 'SequelizeUniqueConstraintError') {
                 // Check if the key is the bankRefId
@@ -711,7 +723,6 @@ export default class VendorController {
             throw e
         });
 
-        await TransactionService.updateSingleTransaction(transaction.id, { status: Status.INPROGRESS })
 
         const vendorTokenConsumer = new VendorTokenReceivedSubscriber(transaction, res)
         await vendorTokenConsumer.start()

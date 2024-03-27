@@ -659,6 +659,36 @@ class TokenHandler extends Registry {
                         await TransactionService.updateSingleTransaction(transaction.id, { tokenFromVend: tokenInResponse })
 
                         logger.info('Token from vending', { meta: { transactionId: data.transactionId, vendRequestToken: tokenInResponse } })
+
+                        const _product = await ProductService.viewSingleProduct(transaction.productCodeId)
+                        if (!_product) throw new CustomError('Product not found')
+
+                        const discoLogo =
+                            DISCO_LOGO[_product.productName as keyof typeof DISCO_LOGO] ?? LOGO_URL
+                        let powerUnit =
+                            await PowerUnitService.viewSinglePowerUnitByTransactionId(
+                                data.transactionId,
+                            );
+                        await TransactionService.updateSingleTransaction(transaction.id, { tokenFromRequery: tokenInResponse })
+                        powerUnit
+                            ? await PowerUnitService.updateSinglePowerUnit(powerUnit.id, {
+                                token: tokenInResponse,
+                                transactionId: data.transactionId,
+                            })
+                            : await PowerUnitService.addPowerUnit({
+                                id: uuidv4(),
+                                transactionId: data.transactionId,
+                                disco: data.meter.disco,
+                                discoLogo,
+                                amount: transaction.amount,
+                                meterId: data.meter.id,
+                                superagent: "BUYPOWERNG",
+                                token: tokenInResponse,
+                                tokenFromVend: tokenInResponse,
+                                tokenNumber: 0,
+                                tokenUnits: "0",
+                                address: transaction.meter.address,
+                            });
                     }
 
                     // Requery the transaction if no token in the response

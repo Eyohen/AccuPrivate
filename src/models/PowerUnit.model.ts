@@ -43,6 +43,9 @@ export default class PowerUnit extends Model<PowerUnit | IPowerUnit> {
     @Column({ type: DataType.STRING, allowNull: false, defaultValue: '0' })
     tokenUnits: string
 
+    @Column({ type: DataType.STRING, allowNull: true })
+    tokenFromVend: string;
+    
     // Foreign key for the associated Meter
     @ForeignKey(() => Meter)
     @IsUUID(4)
@@ -78,6 +81,7 @@ export interface IPowerUnit {
     tokenUnits: string;    // Token units associated with the PowerUnit.
     meterId: string;         // Unique identifier of the Meter associated with the PowerUnit.
     transactionId: string;  // Unique identifier of the Transaction associated with the PowerUnit.
+    tokenFromVend?: string;  // Token from Vend associated with the PowerUnit.
 }
 
 // Define an interface that extends the IPowerUnit interface, representing the shape of a new PowerUnit to be created.
