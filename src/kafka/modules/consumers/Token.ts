@@ -30,6 +30,7 @@ import { BaxiRequeryResultForPurchase, BaxiSuccessfulPuchaseResponse } from "../
 import { error } from "console";
 import test from "node:test";
 import WaitTimeService from "../../../services/Waittime.service";
+import ResponsePathService from "../../../services/ResponsePath.service";
 
 interface EventMessage {
     meter: {
@@ -488,8 +489,24 @@ export class TokenHandlerUtil {
     static async getBestVendorForPurchase(productCodeId: NonNullable<Transaction['productCodeId']>, amount: number): Promise<Transaction['superagent']> {
         return (await this.getSortedVendorsAccordingToCommissionRate(productCodeId, amount))[0]
     }
+
 }
 
+class ResponseValidationUtil {
+
+    static async validateTransactionCondition({
+        requestType, vendor
+    }: {
+        requestType: 'VEND_REQUEST' | 'REQUERY'
+        vendor: Transaction['superagent']
+    }): Promise<-1 | 1 | 0> {
+        const responsePath = await ResponsePathService.viewResponsePathForValidation({
+            requestType, vendor
+        })
+
+        return -1
+    }
+}
 
 class TokenHandler extends Registry {
     private static async handleTokenRequest(
@@ -818,7 +835,7 @@ class TokenHandler extends Registry {
             const transactionSuccessFromBuypower = requeryResult.source === 'BUYPOWERNG'
                 ? 'result' in requeryResultFromBuypower ? ((requeryResultFromBuypower.result.responseCode === 200) && (requeryResultFromBuypower.result.data.responseCode === 100))
                     : false
-                    : false
+                : false
             const transactionSuccessFromBaxi = requeryResult.source === 'BAXI' ? requeryResultFromBaxi.data.statusCode == '0' && requeryResultFromBaxi.code === 200 : false
             const transactionSuccessFromIrecharge = requeryResult.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' && requeryResultFromIrecharge.vend_status === 'successful' : false
             let transactionSuccess = transactionSuccessFromBuypower || transactionSuccessFromBaxi || transactionSuccessFromIrecharge
@@ -865,7 +882,7 @@ class TokenHandler extends Registry {
 
             let tokenInResponse: string | undefined
             if (transactionSuccessFromBuypower) {
-                tokenInResponse = 'result' in requeryResultFromBuypower ? requeryResultFromBuypower.result.data.token  : undefined
+                tokenInResponse = 'result' in requeryResultFromBuypower ? requeryResultFromBuypower.result.data.token : undefined
             } else if (transactionSuccessFromBaxi) {
                 tokenInResponse = 'rawData' in requeryResultFromBaxi.data ? requeryResultFromBaxi.data.rawData.standardTokenValue : undefined
             } else if (transactionSuccessFromIrecharge) {

@@ -1,0 +1,211 @@
+HTTP Code,vend_code,Response Code,Category,message,Description,AccuvendMasterResponseCode,Accuvend Description,Request,vendor
+200,,200,Successful,,This signifies that the request has been fulfilled,1,successful response,Validate Meter,buypower
+200,,200,Successful,,This signifies that the request has been fulfilled,1,successful response,Requery,buypower
+200,,200,Successful,,This signifies that the request has been fulfilled,1,successful response,Vend token,buypower
+202,,202,Accepted,,"This is returned when we have received your request but there isn't a response yet.You are expected to make a re-query when this occurs. Please allow at least 2 minutes before making a re-query.",-1,Requires a requery,Vend token,buypower
+202,,202,Accepted,,"This is returned when we have received your request but there isn't a response yet. You are expected to make a re-query when this occurs. Please allow at least 2 minutes before making a re-query.",-1,Requires a requery,Requery,buypower
+400,,400,Validation Error,,"Inputs passed during request may not be as specified. You are expected to re-validate inputs before trying again.",-1,require a requery,Vend token,buypower
+400,,400,Validation Error,,"Inputs passed during request may not be as specified.You are expected to re-validate inputs before trying again.",-1,Requires a requery,Requery,buypower
+400,,201,Validation Error,Transaction is still processing. Kindly retry in 2 minute,,-1,Requires a requery,Requery,buypower
+400,,203,Validation Error,Transaction not initiated.,,0,No transaction,Requery,buypower
+400,,202,Validation Error,Transaction not successful. Please retry.,,-1,Requires a requery,Requery,buypower
+400,,202,Validation Error,Transaction failed.,,0,No transaction,Requery,buypower
+422,,422,Unprocessable,,"The request is valid but for some other reasons the request can not be fulfilled. Example may include insufficient wallet balance.",-1,Requires requery,Vend token,buypower
+422,,422,Unprocessable,,"The request is valid but for some other reasons the request can not be fulfilled. Example may include insufficient wallet balance.",-1,Requires a requery,Requery,buypower
+409,,409,Conflict,,The request may not have been sent properly. An example is when a request has ben sent more than once.,-1,require a requery,Vend token,buypower
+409,,409,Conflict,,The request may not have been sent properly. An example is when a request has ben sent more than once.,-1,require a requery,Requery,buypower
+500,,500,Server Error,,This is a generic error which means the server can not process the request at the time it was made.,-1,require a requery,Vend token,buypower
+500,,500,Server Error,,This is a generic error which means the server can not process the request at the time it was made.,-1,require a requery,Requery,buypower
+501,,501,Not Implemented,,"This error signifies that the request can not be fulfilled.An example may include a Service Provider rejecting a request to purchase a token because the meter has not been activated on their system.",-1,require a requery,Requery,buypower
+501,,501,Not Implemented,,"This error signifies that the request can not be fulfilled.An example may include a Service Provider rejecting a request to purchase a token because the meter has not been activated on their system.",-1,require a requery,Vend token,buypower
+502,,502,Unexpected Error,,"This error reflects when we receive an unexpected response from the provider. This should be treated as a pending transaction and should be requeried to resolve the transaction [which could end up as failure or success].",-1,require a requery,Requery,buypower
+502,,502,Unexpected Error,,"This error reflects when we receive an unexpected response from the provider. This should be treated as a pending transaction and should be requeried to resolve the transaction [which could end up as failure or success].",-1,require a requery,Vend token,buypower
+500,,503,Service Not Available,,This is a temporary error that may occur when we cannot fulfil the request. This usually does not last as long as it may clear within a few minutes,-1,require a requery,Requery,buypower
+500,,503,Service Not Available,,This is a temporary error that may occur when we cannot fulfil the request. This usually does not last as long as it may clear within a few minutes,-1,require a requery,vend token,buypower
+,,,,,,,,,buypower
+,,,,,,,,,buypower
+,,,,,,,,,buypower
+404,,20,Not found Error,No transaction found with reference:,This transaction is not available,0,No transaction,Requery,buypower
+,,,,,,,,,
+200,,200,Successful,,,1,successful response,Requery,Baxi
+200,,200,Successful,,,1,successful response,Vend token,Baxi
+201,,201,Pending,,,-1,"Requires a requery  pending transaction",Requery,Baxi
+201,,201,Pending,,,-1,"Requires a requery  pending transaction",Vend token,Baxi
+400,,400,Bad Request data,,,,failure Bad request data,Requery,Baxi
+400,,400,Bad Request data,,,-1,"Requires a requery  request data",Vend token,Baxi
+503,,503,requires a requery from the service provider,,,-1,Requires a requery service provider error,Requery,Baxi
+503,,503,requires a requery from the service provider,,,-1,Requires a requery service provider error,Vend token,Baxi
+500,,500,requires a requery from the service provider,,,-1,Requires a requery service provider error,Requery,Baxi
+500,,500,requires a requery from the service provider,,,-1,Requires a requery service provider error,Vend token,Baxi
+404,,404,Transaction / Resource not found,,,-1,Requires a requery,Requery,Baxi
+404,,404,Transaction / Resource not found,,,-1,require a requery,Vend token,Baxi
+,,BX0001,Connection Timeout: Retried 3 times and no response from the service provider,,,-1,Requires a requery,Vend token,Baxi
+,,BX0002,Transaction does not exist,,,-1,require a requery,Vend token,Baxi
+,,BX0003,Invalid request parameters data,,,-1,require a requery,Vend token,Baxi
+,,BX0004,An In-valid user account in authorization headers sent,,,-1,"requires a requery  invalid authorization header",Vend token,Baxi
+,,BX0005,"Baxi request date is too old use the current GMT date.",,,-1,requires a requery,Vend token,Baxi
+,,BX0006,Hash Signature does not match request data sent.,,,,,Vend token,Baxi
+,,BX0007,Unidentified User Account,,,-1,"requires a requery agent error",Vend token,Baxi
+,,BX0008,The request coming from an untrusted source,,,,,Vend token,Baxi
+,,BX0009,Client not permitted to access user data,,,,,Vend token,Baxi
+,,BX0010,The agent does not exist,,,-1,"requires a requery agent error",Vend token,Baxi
+,,BX0011,"Invalid Bearer String expected keyword Baxi or API key",,,-1,"requires a requery agent authentication error",Vend token,Baxi
+,,BX0012,Authentication/Authorization mechanism not implemented,,,-1,"requires a requery agent authentication error",Vend token,Baxi
+,,BX0013,Bearer Token not provided,,,-1,"requires a requery agent authentication error",Vend token,Baxi
+,,BX0014,Token has expired.,,,-1,"requires a requery agent authentication error",Vend token,Baxi
+,,BX0015,Invalid token supplied,,,-1,"requires a requery agent authentication error",Vend token,Baxi
+,,BX0016,"Token has been blacklisted,",,,-1,"requires a requery agent authentication error",Vend token,Baxi
+,,BX0017,Server Error: Unable to retrieve property,,,-1,Require requery server error,Vend token,Baxi
+,,BX0018,"Request route not found,",,,,,Vend token,Baxi
+,,BX0019,"Request status unknown Connection Timeout",,,-1,Requires a requery timeout,Vend token,Baxi
+,,BX0020,An error occurred during transaction or request processing,,,-1,"Requires requery  transaction processing",Vend token,Baxi
+,,BX0021,Transaction status unknown: Please query to confirm final status,,,-1,Requires a requery,Vend token,Baxi
+,,BX0022,requires a requery from the service provider,,,-1,"requires a requery  from service provider",Vend token,Baxi
+,,BX0023,Duplicate Agent Transaction Reference,,,-1,"requires a requery  duplicate transaction",Vend token,Baxi
+,,BX0024,No response from the connecting service provider,,,-1,Requires a requery,Vend token,Baxi
+,,BX0025,Error encountered during name finder validation,,,-1,"requires a requery  user validation error",Vend token,Baxi
+,,BX0026,Requested biller service does not exist,,,-1,"requires a requery  unknown biller",Vend token,Baxi
+,,PROG0001,Programming error on the platform. (Should contact CDL support),,,-1,"requires a requery  vendor error",Vend token,Baxi
+,,PROG0002,Programming error on the platform. (Should contact CDL support),,,-1,"requires a requery  vendor error",Vend token,Baxi
+,,PROG0003,Programming error on the platform. (Should contact CDL support),,,-1,"requires a requery  vendor error",Vend token,Baxi
+,,SEC00001,Bad credentials,,,-1,"requires a requery user account error",Vend token,Baxi
+,,SEC00002,The user account has expired.,,,-1,"requires a requery user account error",Vend token,Baxi
+,,SEC00003,User credentials have expired.,,,-1,"requires a requery user account error",Vend token,Baxi
+,,SEC00004,The user is not active.,,,-1,"requires a requery user account error",Vend token,Baxi
+,,SEC00005,The user is blocked.,,,-1,"requires a requery user account error",Vend token,Baxi
+,,SEC00100,Unknown authentication error. (Should contact CDL support),,,-1,"requires a requery  biller error  support required",Vend token,Baxi
+,,EXC00102,Not enough funds were available to complete the exchange.,,,-1,"requires a requery  insufficient funds",Vend token,Baxi
+,,EXC00103,The requested service is not active. (Should resolve through API),,,-1,Requires a requery,Vend token,Baxi
+,,EXC00105,The balance could not be obtained. (Should resolve through API),,,-1,Requires a requery,Vend token,Baxi
+,,EXC00107,The cancellation of the exchange was rejected by the provider. (Should contact CDL support),,,-1,"requires a requery  biller error",Vend token,Baxi
+,,EXC00109,The service is blocked. (Should resolve through API),,,-1,Requires a requery,Vend token,Baxi
+,,EXC00112,The query of exchange failed because the exchange was never registered on the platform.,,,-1,Requires a requery,Vend token,Baxi
+,,EXC00113,The exchange is already canceled by the provider.,,,-1,"Requires a requery  vendor error",Vend token,Baxi
+,,EXC00114,The exchange is still pending. (Should resolve through API),,,-1,Requires a requery,Vend token,Baxi
+,,EXC00115,The exchange was not sent to the provider.,,,-1,"Requires a requery  vendor error",Vend token,Baxi
+,,EXC00116,The exchange request was already registered on the platform with the same ID but with different values. (Should check client implementation),,,-1,"Requires a requery  vendor error",Vend token,Baxi
+,,EXC00117,There was an error while calculating commissions. (Must contact CDL support immediately),,,-1,"Requires a requery  vendor error",Vend token,Baxi
+,,EXC00118,The sent service fee is invalid.,,,-1,"Requires a requery  vendor error",Vend token,Baxi
+,,EXC00119,The payment collector code is not recognized. (Should check client implementation),,,,"failure  vendor service",Vend token,Baxi
+,,EXC00123,Service is not allowed.,,,,"failure  vendor service",Vend token,Baxi
+,,EXC00124,The provider platform did not respond in a timely manner. (Should resolve through API),,,-1,Requires a requery,Vend token,Baxi
+,,EXC00125,The exchange request is not valid.,,,,,Vend token,Baxi
+,,EXC00126,The cancellation failed. (Must be resolved through 'query' API call),,,-1,Requires a requery,Vend token,Baxi
+,,EXC00127,The exchange amount is too high.,,,-1,"Requires a requery  vendor amount limit",Vend token,Baxi
+,,EXC00130,Payment method not recognized. (Should check client implementation),,,-1,"requires a requery  payment error",Vend token,Baxi
+,,EXC00131,The exchange request is not allowed at the moment.,,,-1,"Requires a requery  exchange request not available at the moment",Vend token,Baxi
+,,EXC00144,Platform is not available to receive new requests for exchange at the moment.,,,-1,Requires a requery,Vend token,Baxi
+,,UNK0001,,,,-1,Requires a requery,Vend token,Baxi
+,,EXC00001,,,,-1,Requires a requery,Vend token,Baxi
+,,BX0001,Connection Timeout: Retried 3 times and no response from the service provider,,,-1,Requires a requery,Requery,Baxi
+,,BX0002,Transaction does not exist,,,0,No transaction,Requery,Baxi
+,,BX0003,Invalid request parameters data,,,-1,Requires a requery,Requery,Baxi
+,,BX0004,An In-valid user account in authorization headers sent,,,-1,Requires a requery,Requery,Baxi
+,,BX0005,"Baxi request date is too old use the current GMT date.",,,-1,Requires a requery,Requery,Baxi
+,,BX0006,Hash Signature does not match request data sent.,,,-1,Requires a requery,Requery,Baxi
+,,BX0007,Unidentified User Account,,,-1,Requires a requery,Requery,Baxi
+,,BX0008,The request coming from an untrusted source,,,-1,Requires a requery,Requery,Baxi
+,,BX0009,Client not permitted to access user data,,,-1,Requires a requery,Requery,Baxi
+,,BX0010,The agent does not exist,,,-1,Requires a requery,Requery,Baxi
+,,BX0011,"Invalid Bearer String expected keyword Baxi or API key",,,-1,Requires a requery,Requery,Baxi
+,,BX0012,Authentication/Authorization mechanism not implemented,,,-1,Requires a requery,Requery,Baxi
+,,BX0013,Bearer Token not provided,,,-1,Requires a requery,Requery,Baxi
+,,BX0014,Token has expired.,,,-1,Requires a requery,Requery,Baxi
+,,BX0015,Invalid token supplied,,,-1,Requires a requery,Requery,Baxi
+,,BX0016,"Token has been blacklisted,",,,-1,Requires a requery,Requery,Baxi
+,,BX0017,Server Error: Unable to retrieve property,,,-1,Requires a requery,Requery,Baxi
+,,BX0018,"Request route not found,",,,-1,Requires a requery,Requery,Baxi
+,,BX0019,"Request status unknown Connection Timeout",,,-1,Requires a requery,Requery,Baxi
+,,BX0020,An error occurred during transaction or request processing,,,-1,Requires a requery,Requery,Baxi
+,,BX0021,Transaction status unknown: Please query to confirm final status,,,-1,Requires a requery,Requery,Baxi
+,,BX0022,requires a requery from the service provider,,,-1,Requires a requery,Requery,Baxi
+,,BX0023,Duplicate Agent Transaction Reference,,,-1,Requires a requery,Requery,Baxi
+,,BX0024,No response from the connecting service provider,,,-1,Requires a requery,Requery,Baxi
+,,BX0025,Error encountered during name finder validation,,,-1,Requires a requery,Requery,Baxi
+,,BX0026,Requested biller service does not exist,,,-1,Requires a requery,Requery,Baxi
+,,PROG0001,Programming error on the platform. (Should contact CDL support),,,-1,Requires a requery,Requery,Baxi
+,,PROG0002,Programming error on the platform. (Should contact CDL support),,,-1,Requires a requery,Requery,Baxi
+,,PROG0003,Programming error on the platform. (Should contact CDL support),,,-1,Requires a requery,Requery,Baxi
+,,SEC00001,Bad credentials,,,-1,Requires a requery,Requery,Baxi
+,,SEC00002,The user account has expired.,,,-1,Requires a requery,Requery,Baxi
+,,SEC00003,User credentials have expired.,,,-1,Requires a requery,Requery,Baxi
+,,SEC00004,The user is not active.,,,-1,Requires a requery,Requery,Baxi
+,,SEC00005,The user is blocked.,,,-1,Requires a requery,Requery,Baxi
+,,SEC00100,Unknown authentication error. (Should contact CDL support),,,-1,Requires a requery,Requery,Baxi
+,,EXC00102,Not enough funds were available to complete the exchange.,,,-1,Requires a requery,Requery,Baxi
+,,EXC00103,The requested service is not active. (Should resolve through API),,,-1,Requires a requery,Requery,Baxi
+,,EXC00105,The balance could not be obtained. (Should resolve through API),,,-1,Requires a requery,Requery,Baxi
+,,EXC00107,The cancellation of the exchange was rejected by the provider. (Should contact CDL support),,,-1,Requires a requery,Requery,Baxi
+,,EXC00109,The service is blocked. (Should resolve through API),,,-1,Requires a requery,Requery,Baxi
+,,EXC00112,The query of exchange failed because the exchange was never registered on the platform.,,,-1,Requires a requery,Requery,Baxi
+,,EXC00113,The exchange is already canceled by the provider.,,,-1,Requires a requery,Requery,Baxi
+,,EXC00114,The exchange is still pending. (Should resolve through API),,,-1,Requires a requery,Requery,Baxi
+,,EXC00115,The exchange was not sent to the provider.,,,,,Requery,Baxi
+,,EXC00116,The exchange request was already registered on the platform with the same ID but with different values. (Should check client implementation),,,,,Requery,Baxi
+,,EXC00117,There was an error while calculating commissions. (Must contact CDL support immediately),,,,,Requery,Baxi
+,,EXC00118,The sent service fee is invalid.,,,,,Requery,Baxi
+,,EXC00119,The payment collector code is not recognized. (Should check client implementation),,,,,Requery,Baxi
+,,EXC00123,Service is not allowed.,,,,,Requery,Baxi
+,,EXC00124,The provider platform did not respond in a timely manner. (Should resolve through API),,,-1,Requires a requery,Requery,Baxi
+,,EXC00125,The exchange request is not valid.,,,,,Validate meter,Baxi
+,,EXC00125,The exchange request is not valid.,The Meter 6528651914 is unknown/not registered. ALERT ID-010117 Contact the Support services for assistance if required.,,,,Requery,Baxi
+,,EXC00126,The cancellation failed. (Must be resolved through 'query' API call),,,-1,Requires a requery,Requery,Baxi
+,,EXC00127,The exchange amount is too high.,,,,,Requery,Baxi
+,,EXC00130,Payment method not recognized. (Should check client implementation),,,,,Requery,Baxi
+,,EXC00131,The exchange request is not allowed at the moment.,,,,,Requery,Baxi
+,,EXC00144,Platform is not available to receive new requests for exchange at the moment.,,,-1,Requires a requery,Requery,Baxi
+,,UNK0001,,,,-1,Requires a requery,Requery,Baxi
+,,EXC00001,,,,-1,Requires a requery,Requery,Baxi
+,,,,,,,,,
+200,,0,Successfull,,,1,successful response,Requery,irecharge
+200,,0,Successfull,,,1,successful response,Vend token,irecharge
+200,,0,Successfull,,,1,successful response,validate meter,irecharge
+200,,-1,Unauthorised Access,,,,failure vendor access error,Requery,irecharge
+200,,-1,Unauthorised Access,,,,failure vendor access error,Vend token,irecharge
+200,,-1,Unauthorised Access,,,,failure vendor access error,validate meter,irecharge
+200,,2,IP Blacklisted,,,,failure vendor access error,Requery,irecharge
+200,,2,IP Blacklisted,,,,failure vendor access error,Vend token,irecharge
+200,,2,IP Blacklisted,,,,failure vendor access error,validate meter,irecharge
+200,,3,Invalid IP/Key/Vendor,,,,failure vendor authorization error,Requery,irecharge
+200,,3,Invalid IP/Key/Vendor,,,,failure vendor authorization error,Vend token,irecharge
+200,,3,Invalid IP/Key/Vendor,,,,failure vendor authorization error,validate meter,irecharge
+200,,4,Status not active,,,,,Requery,irecharge
+200,,4,Status not active,,,,,Vend token,irecharge
+200,,4,Status not active,,,,,validate meter,irecharge
+200,,5,Invalid Hash,,,,,Vend token,irecharge
+200,,6,Missing Parameters,,,,,Vend token,irecharge
+200,,11,Service temporarily unavailable,,,,,Vend token,irecharge
+200,,12,Unknown User,,,,,Vend token,irecharge
+200,,13,Invalid Meter,,,,,validate meter,irecharge
+200,,14,Unknown Meter,,,,,validate meter,irecharge
+200,,15,Meter has Pending Transaction,,,,,Vend token,irecharge
+200,,19,Invalid Test Request,,,,,Vend token,irecharge
+200,,20,Duplicate Reference ID,,,,,Vend token,irecharge
+200,,40,Amount entered too low or too high,,,,,Vend token,irecharge
+200,,41,Invalid phone number,,,,,Vend token,irecharge
+200,,42,Vendor Closed for Business,,,,,Vend token,irecharge
+200,,43,Sorry your request could not be completed at the moment. Please try again later.,,,,,Vend token,irecharge
+200,,44,Insufficient Wallet Balance,,,,,Vend token,irecharge
+200,,50,Error encountered. Please reconfirm Meter number,,,,,Vend token,irecharge
+200,,51,Network Error,,,,,Vend token,irecharge
+200,,6,Missing Parameters,,,,,requery,irecharge
+200,,11,Service temporarily unavailable,,,,,requery,irecharge
+200,,12,Unknown User,,,,,requery,irecharge
+200,,13,Invalid Meter,,,,,validate meter,irecharge
+200,,14,Unknown Meter,,,,,validate meter,irecharge
+200,,15,Meter has Pending Transaction,,,,,requery,irecharge
+200,,19,Invalid Test Request,,,,,requery,irecharge
+200,,20,Duplicate Reference ID,,,,,requery,irecharge
+200,,40,Amount entered too low or too high,,,,,requery,irecharge
+200,,41,Invalid phone number,,,,,requery,irecharge
+200,,42,Vendor Closed for Business,,,,,requery,irecharge
+200,,43,Sorry your request could not be completed at the moment. Please try again later.,,,,,requery,irecharge
+200,,44,Insufficient Wallet Balance,,,,,requery,irecharge
+200,,50,Error encountered. Please reconfirm Meter number,,,,,requery,irecharge
+200,,51,Network Error,,,,,requery,irecharge
+200,01',00',pending,,,,,requery,irecharge
+200,00',00',successful,,,,,requery,irecharge
+200,02',00',failed,,,,,requery,irecharge
+200,03',00',unknown,,,,,requery,irecharge
+,,,,,,,,,irecharge
+,,,,,,,,,irecharge
