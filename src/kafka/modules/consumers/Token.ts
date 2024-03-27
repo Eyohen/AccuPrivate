@@ -655,7 +655,11 @@ class TokenHandler extends Registry {
                         tokenInResponse = tokenInfoResponseForIrecharge.meter_token
                     }
 
-                    if (tokenInResponse) logger.info('Token from vending', { meta: { transactionId: data.transactionId, vendRequestToken: tokenInResponse}})
+                    if (tokenInResponse) {
+                        await TransactionService.updateSingleTransaction(transaction.id, { tokenFromVend: tokenInResponse })
+
+                        logger.info('Token from vending', { meta: { transactionId: data.transactionId, vendRequestToken: tokenInResponse } })
+                    }
 
                     // Requery the transaction if no token in the response
                     requeryTransaction = !tokenInResponse
@@ -849,7 +853,8 @@ class TokenHandler extends Registry {
                     );
                 if (data.meter.vendType === 'PREPAID') {
                     if (tokenInResponse) {
-                        logger.info('Token from requery ', { meta: { ...logMeta, requeryToken: tokenInResponse}});
+                        logger.info('Token from requery ', { meta: { ...logMeta, requeryToken: tokenInResponse } });
+                        await TransactionService.updateSingleTransaction(transaction.id, { tokenFromRequery: tokenInResponse })
                         powerUnit = powerUnit
                             ? await PowerUnitService.updateSinglePowerUnit(powerUnit.id, {
                                 token: tokenInResponse,
