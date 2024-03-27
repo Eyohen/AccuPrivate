@@ -20,16 +20,7 @@ export default class ErrorCode extends Model<ErrorCode | IErrorCode> {
     httpCode: number
 
     @Column({ type: DataType.STRING, allowNull: true })
-    vend_code: string
-
-    @Column({ type: DataType.STRING, allowNull: true })
     category: string
-
-    @Column({ type: DataType.STRING, allowNull: true })
-    response_code: string
-
-    @Column({ type: DataType.STRING, allowNull: true })
-    message: string
 
     @Column({ type: DataType.STRING, allowNull: true })
     description: string
@@ -44,6 +35,22 @@ export default class ErrorCode extends Model<ErrorCode | IErrorCode> {
     request: string
 
     @Column({ type: DataType.STRING, allowNull: true })
+    STATUS_CODE: string
+
+    @Column({ type: DataType.BOOLEAN, allowNull: true })
+    STATUS_BOOLEAN: boolean
+
+    @Column({ type: DataType.STRING, allowNull: true })
+    STATUS: string
+
+    @Column({ type: DataType.STRING, allowNull: true })
+    CODE: string
+
+    @Column({ type: DataType.STRING, allowNull: true })
+    MSG: string
+
+
+    @Column({ type: DataType.STRING, allowNull: true })
     vendor: string
 }
 
@@ -51,15 +58,18 @@ export default class ErrorCode extends Model<ErrorCode | IErrorCode> {
 export interface IErrorCode {
     id: string
     httpCode?: number
-    vend_code?: string
-    response_code?: string
-    message?: string
     description?: string
     accuvendDescription?: string
     accuvendMasterResponseCode?: number
     category?: string
     request?: string
     vendor?: string
+    STATUS_CODE?: string
+    STATUS_BOOLEAN?: boolean
+    STATUS?: string
+    CODE?: string
+    MSG?: string
+
 }
 
 // Interface to represent thep structure of data for creating a new ErrorCode

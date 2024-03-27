@@ -26,3 +26,12 @@ cefcc4f2-bafc-4316-a787-b5ff68b83d79,message,BAXI,MSG,REQUERY,Request Message fo
 6251ab42-9223-4789-aa96-53d52a096a5b,code,BAXI,CODE,REQUERY,Request Code for Requery.
 a0116d3d-f412-47c1-8214-9374778d7b75,data.tokenCode,BAXI,TK,REQUERY,Request Token for Requery.
 896d25d3-10fe-4ced-ac5d-6a3515bc6f60,,BAXI,,VALIDATEMETER,
+,,,,,
+,,,,,
+,,,CODE,,
+,,,STATUS,,
+,,,MSG,,
+,,,TK,,
+,,,STATUS_CODE,,
+,,,,,
+,,,STATUS_BOOLEAN,,

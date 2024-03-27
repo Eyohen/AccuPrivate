@@ -32,6 +32,7 @@ import test from "node:test";
 import WaitTimeService from "../../../services/Waittime.service";
 import ResponsePathService from "../../../services/ResponsePath.service";
 import ErrorCodeService from "../../../services/ErrorCodes.service";
+import ErrorCode from "../../../models/ErrorCodes.model";
 
 interface EventMessage {
     meter: {
@@ -518,38 +519,49 @@ class ResponseValidationUtil {
             throw new CustomError('Response path not found')
         }
 
-        const propertiesToConsider: string[] = []
+        const dbQueryParams = { request: requestType, vendor } as Record<string, string | number>
+
+        // Get the paths and refCode (accuvendRefCode)
+        // Create map of refCode and values of responseObject[path]
+        // Search for error code with match and return the accuvendMasterResponseCode
+        const propertiesToConsider: [string, string][] = [] // [[path, refCode]]
 
         // Get the values to consider
         Array.from(responsePath).forEach(path => {
-            propertiesToConsider.push(path.path)
+            propertiesToConsider.push([path.path, path.accuvendRefCode])
         })
 
         function getFieldValueFromResponseObject(prop: string) {
             let _prop = responseObject
             const path = prop.split('.')
+            let value: any | undefined = undefined
             for (const p of path) {
                 if (_prop[p]) {
                     _prop = _prop[p]
                 }
             }
 
-            return _prop
+            return _prop as any
         }
 
         const missingPropertiesInResponse: string[] = []
+        const propValue = {} as Record<string, any>
 
         // Check if they exist in the response
         Array.from(propertiesToConsider).forEach(property => {
-            if (!getFieldValueFromResponseObject(property)) {
+            const value = getFieldValueFromResponseObject(property[0])
+            if (!value) {
                 logger.error(`Property ${property} not found in response`, {
                     meta: { property }
                 })
-                missingPropertiesInResponse.push(property)
+                missingPropertiesInResponse.push(property[0])
             }
+
+            propValue[property[0]] = value
+            dbQueryParams[property[1]] = value
         })
 
-        console.log({ missingPropertiesInResponse, propertiesToConsider })
+        console.log({ missingPropertiesInResponse, propertiesToConsider, propValue, dbQueryParams })
 
         if (missingPropertiesInResponse.length > 0) {
             logger.error('Missing properties in response', {
@@ -558,10 +570,18 @@ class ResponseValidationUtil {
             throw new CustomError('Missing properties in response')
         }
 
-        const errorCode = await ErrorCodeService.getErrorCodesForValidation({
-            request: requestType === 'VENDREQUEST' ? 'Vend Token' : 'Requery',
-            vendor, httpCode: httpCode as number
+        if (dbQueryParams.CODE) {
+            dbQueryParams.CODE = dbQueryParams.CODE.toString()
+        }
+        const errorCode =  await ErrorCodeService.getErrorCodesForValidation(dbQueryParams)
+
+        logger.info('Error code for transaction validation', {
+            meta: {
+                transactionId: responseObject.transactionId,
+                errorCodeData: errorCode?.dataValues
+            }
         })
+
 
         if (!errorCode) {
             logger.error('Error code not found', {

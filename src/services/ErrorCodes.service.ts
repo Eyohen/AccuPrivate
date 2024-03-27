@@ -6,6 +6,8 @@ export default class ErrorCodeService {
     // Method for adding a new ErrorCode to the database
     static async addErrorCode(errorCodeData: ICreateErrorCode): Promise<ErrorCode> {
         try {
+            // Remove all the values that are undefined
+            Object.keys(errorCodeData).forEach(key => (errorCodeData as any)[key] === undefined && delete (errorCodeData as any)[key]);
             // Create a new ErrorCode using the ErrorCode model
             const newErrorCode: ErrorCode = await ErrorCode.create(errorCodeData);
             return newErrorCode;
@@ -39,11 +41,13 @@ export default class ErrorCodeService {
             // Include only the query parameters that are not null
             if (request) queryParms['request'] = request;
             if (vendor) queryParms['vendor'] = vendor;
-            if (responseCode) queryParms['response_code'] = responseCode;
-            if (vendCode) queryParms['vend_code'] = vendCode;
             if (category) queryParms['category'] = category;
-            if (message) queryParms['message'] = message;
             if (httpCode) queryParms['httpCode'] = httpCode;
+            if (responseCode) queryParms['STATUS_CODE'] = responseCode;
+            if (vendCode) queryParms['CODE'] = vendCode;
+            if (message) queryParms['MSG'] = message;
+
+            console.log({ queryParms })
 
             // Find and retrieve an ErrorCode by its UUID
             const errorCodes: ErrorCode| null = await ErrorCode.findOne({

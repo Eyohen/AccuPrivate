@@ -21,15 +21,17 @@ export default class ErrorCodeController {
         // It has columns, id, Path, Vendor, AccuvendRefCode, RequestType, description
         const rows = csvData.split('\n');
         const data = rows.map(row => {
-            const [httpCode, vend_code, responseCode, category, message, description, accuvendMasterResponseCode, accuvendDescription, request, vendor] = row.split(',');
+            const [httpCode, STATUS_CODE, STATUS, STATUS_BOOLEAN, CODE, MSG, category, description, accuvendMasterResponseCode, accuvendDescription, request, vendor] = row.split(',');
 
             return {
                 id: randomUUID(),
                 httpCode,
-                vend_code,
-                responseCode,
+                STATUS_CODE,
+                STATUS,
+                STATUS_BOOLEAN: STATUS_BOOLEAN === 'TRUE' ? true : false,
+                CODE,
+                MSG,
                 category,
-                message,
                 description,
                 accuvendMasterResponseCode,
                 accuvendDescription,
@@ -41,10 +43,12 @@ export default class ErrorCodeController {
         // Seed data
         for (const row of data.slice(1)) {
             const { id, httpCode,
-                vend_code,
-                responseCode,
+                STATUS_CODE,
+                STATUS_BOOLEAN,
+                STATUS,
+                CODE,
+                MSG,
                 category,
-                message,
                 description,
                 accuvendMasterResponseCode,
                 accuvendDescription,
@@ -55,11 +59,13 @@ export default class ErrorCodeController {
             await ErrorCodeService.addErrorCode({
                 id,
                 httpCode: httpCode ? parseInt(httpCode?.toString(), 10) : undefined,
-                vend_code,
-                response_code: responseCode?.toString(),
                 category,
-                message,
                 description,
+                STATUS_CODE,
+                STATUS_BOOLEAN,
+                STATUS,
+                CODE,
+                MSG,
                 accuvendMasterResponseCode: accuvendMasterResponseCode ? parseInt(accuvendMasterResponseCode?.toString(), 10) : undefined,
                 accuvendDescription,
                 request,
@@ -78,10 +84,12 @@ export default class ErrorCodeController {
 
     static async createErrorCode(req: Request, res: Response): Promise<void> {
         const {
-            httpCode, vend_code, response_code, message, description, accuvendDescription, accuvendMasterResponseCode, request, vendor
+            httpCode, description, accuvendDescription, accuvendMasterResponseCode, request, vendor,
+            STATUS_CODE, STATUS_BOOLEAN, STATUS, CODE, MSG
         }: ICreateErrorCode = req.body;
         const errorCodeData: ICreateErrorCode = {
-            id: randomUUID(), httpCode, vend_code, response_code, message, description, accuvendDescription, accuvendMasterResponseCode, request, vendor
+            id: randomUUID(), httpCode,  description, accuvendDescription, accuvendMasterResponseCode, request, vendor,
+            STATUS_CODE, STATUS_BOOLEAN, STATUS, CODE, MSG
         };
         const newErrorCode = await ErrorCodeService.addErrorCode(errorCodeData);
         res.status(201).send({ success: true, message: "ErrorCode created successfully", data: { errorCode: newErrorCode } });
@@ -104,17 +112,20 @@ export default class ErrorCodeController {
 
     static async updateErrorCode(req: Request, res: Response): Promise<void> {
         const { errorCodeId, httpCode,
-            vend_code,
-            responseCode,
             category,
-            message,
             description,
             accuvendMasterResponseCode,
             accuvendDescription,
             request,
+            STATUS,
+            STATUS_BOOLEAN,
+            STATUS_CODE,
+            CODE,
+            MSG,
             vendor } = req.body;
         const updatedData: Partial<IErrorCode> = {
-            httpCode, vend_code, response_code: responseCode, category, message, description, accuvendDescription, accuvendMasterResponseCode, request, vendor
+            httpCode,  category, description, accuvendDescription, accuvendMasterResponseCode, request, vendor,
+            STATUS_CODE, STATUS_BOOLEAN, STATUS, CODE, MSG
         }
         const errorCode: ErrorCode | null = await ErrorCodeService.updateErrorCode(errorCodeId, updatedData);
         if (!errorCode) {

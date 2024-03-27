@@ -1024,7 +1024,7 @@ export default class VendorService {
         logger.info("Vend response from IRecharge", {
             meta: { responseData: response, transactionId: body.transactionId },
         });
-        return { ...response, source: "IRECHARGE", httpStatusCode: response.status };
+        return { ...response, source: "IRECHARGE", httpStatusCode: response.httpStatusCode };
     }
 
     static async irechargeRequeryTransaction({
