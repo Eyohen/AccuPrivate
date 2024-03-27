@@ -207,6 +207,7 @@ class VendorControllerValdator {
             );
         }
 
+        console.log({ bankRefId, partnerCode: partner.partnerCode})
         const bankRefIdStartsWithPartnerCode = bankRefId.startsWith(partner.partnerCode ?? "");
         if (!bankRefIdStartsWithPartnerCode) throw new BadRequestError("BankRefId must start with partner code");
 
