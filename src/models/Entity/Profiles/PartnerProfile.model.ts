@@ -41,7 +41,7 @@ export default class PartnerProfile extends Model<PartnerProfile | IPartnerProfi
     apiKeys: ApiKey[];
 
 
-    @Column({ type: DataType.STRING, allowNull: false })
+    @Column({ type: DataType.STRING, allowNull: true })
     partnerCode?: string;
 
     @Column({ type: DataType.STRING, allowNull: false })

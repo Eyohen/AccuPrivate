@@ -200,6 +200,16 @@ class VendorControllerValdator {
         if (!bankRefId)
             throw new BadRequestError("No bankRefId found");
 
+        const partner = await transactionRecord.$get("partner");
+        if (!partner) {
+            throw new InternalServerError(
+                `Transaction ${transactionRecord.id} does not have a partner`
+            );
+        }
+
+        const bankRefIdStartsWithPartnerCode = bankRefId.startsWith(partner.partnerCode ?? "");
+        if (!bankRefIdStartsWithPartnerCode) throw new BadRequestError("BankRefId must start with partner code");
+
         // Check if Disco is Up
         // const checKDisco: boolean | Error =
         //     await VendorService.buyPowerCheckDiscoUp(vendorDiscoCode);
@@ -226,7 +236,6 @@ class VendorControllerValdator {
             );
         }
 
-        const partner = await transactionRecord.$get("partner");
         const entity = await partner?.$get("entity");
         if (!entity) {
             throw new InternalServerError("Entity not found");
@@ -649,12 +658,11 @@ export default class VendorController {
     }
 
     static async requestToken(req: Request, res: Response, next: NextFunction) {
-        const { transactionId, bankComment, vendType } =
+        const { transactionId, bankComment, vendType, bankRefId } =
             req.query as Record<string, any>;
         console.log({ transactionId, bankComment, vendType })
 
         const errorMeta = { transactionId: transactionId };
-        const bankRefId = req.query.bankRefId as string;
 
         const transaction: Transaction | null =
             await TransactionService.viewSingleTransaction(transactionId);

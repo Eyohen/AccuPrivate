@@ -23,6 +23,16 @@ import WebhookService from "../../services/Webhook.service";
 import RoleService from "../../services/Role.service";
 require('newrelic');
 
+async function getUniquePartnerCode (partnerName: string, count = 0) {
+    partnerName = partnerName.toUpperCase()
+    const partnerCode = partnerName.slice(0, 1) + partnerName.slice(-2) + 'BK' + '000' + count.toString()
+    const partner = await PartnerService.viewSinglePartnerByPartnerCode(partnerCode)
+    if (partner) {
+        return getUniquePartnerCode(partnerName, count + 1)
+    }
+    return partnerCode
+
+}
 export default class AuthController {
     static async signup(req: Request, res: Response, next: NextFunction) {
         const { email, password } = req.body
@@ -52,6 +62,7 @@ export default class AuthController {
             const newPartner = await PartnerService.addPartner({
                 id: uuidv4(),
                 email,
+                partnerCode: await getUniquePartnerCode(email.split('@')[0]),
             }, transaction)
 
             const entity = await EntityService.addEntity({
