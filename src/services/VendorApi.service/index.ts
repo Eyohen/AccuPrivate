@@ -111,15 +111,15 @@ interface _RequeryBuypowerSuccessResponse extends BaseResponse {
             responseCode: number;
             responseMessage: string;
         };
+        message: string;
+        responseCode: 200;
     };
 }
 
-export interface SuccessResponseForBuyPowerRequery extends BaseResponse {
+export interface SuccessResponseForBuyPowerRequery extends _RequeryBuypowerSuccessResponse {
     source: "BUYPOWERNG";
-    status: true;
-    message: string;
-    data: _RequeryBuypowerSuccessResponse["result"]["data"];
-    responseCode: 200;
+    result: _RequeryBuypowerSuccessResponse["result"];
+    // data: _RequeryBuypowerSuccessResponse["result"]["data"];
 }
 
 interface InprogressResponseForBuyPowerRequery {
@@ -518,22 +518,22 @@ export default class VendorService {
             });
             if (responseData.status === "success") {
                 return {
+                    ...responseData,
                     source: "BAXI" as const,
-                    status: true,
-                    code: responseData.code,
-                    message: "Transaction successful",
-                    data: responseData.data,
-                    responseCode: 200,
+                    // status: responseData.status,
+                    // code: responseData.code,
+                    // message: responseData.message,
+                    // data: responseData.data,
                 };
             }
 
             return {
+                ...responseData,
                 source: "BAXI" as const,
-                status: false,
-                code: responseData.code,
-                message: responseData.message,
-                data: responseData.data,
-                responseCode: 202,
+                // status: responseData.status,
+                // code: responseData.code,
+                // message: responseData.message,
+                // data: responseData.data,
             };
         } catch (error) {
             throw error;
@@ -781,11 +781,9 @@ export default class VendorService {
 
             if (successResponse.result.status === true) {
                 return {
+                    ...successResponse,
+                    result: successResponse.result,
                     source: "BUYPOWERNG",
-                    status: true,
-                    message: "Transaction successful",
-                    data: successResponse.result.data,
-                    responseCode: 200,
                 } as SuccessResponseForBuyPowerRequery;
             }
 
@@ -1126,7 +1124,7 @@ export default class VendorService {
 
             return response
         } else if (vendor === "IRECHARGE") {
-            const response =  (await this.irechargeVendToken(
+            const response = (await this.irechargeVendToken(
                 data,
             )) as ElectricityPurchaseResponse[T];
 
@@ -1138,7 +1136,7 @@ export default class VendorService {
             })
             return response
         } else if (vendor === "BAXI") {
-            const response =  (await this.baxiVendToken(
+            const response = (await this.baxiVendToken(
                 data,
             )) as ElectricityPurchaseResponse[T];
 

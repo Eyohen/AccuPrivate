@@ -88,8 +88,8 @@ const TransactionErrorCodeAndCause = {
 
 export async function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
     // Time in seconds
-    // const defaultValues = [10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 20480, 40960, 81920, 163840, 327680, 655360, 1310720, 2621440, 5242880]
-    const defaultValues = [0, 120] // Default to 2mins because of buypowerng minimum wait time for requery
+    const defaultValues = [10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 20480, 40960, 81920, 163840, 327680, 655360, 1310720, 2621440, 5242880]
+    // const defaultValues = [0, 120] // Default to 2mins because of buypowerng minimum wait time for requery
     const timesToRetry = defaultValues
     timesToRetry.unshift(1)
 
@@ -585,6 +585,7 @@ class TokenHandler extends Registry {
                 partner.email
             );
 
+            console.log({ tokenInfo })
             const tokenInfoResponseForBuyPower = tokenInfo as ElectricityPurchaseResponse['BUYPOWERNG'] & { source: 'BUYPOWERNG' }
             const tokenInfoResponseForBaxi = tokenInfo as ElectricityPurchaseResponse['BAXI'] & { source: 'BAXI' }
             const tokenInfoResponseForIrecharge = tokenInfo as ElectricityPurchaseResponse['IRECHARGE'] & { source: 'IRECHARGE' }
@@ -649,7 +650,6 @@ class TokenHandler extends Registry {
                     if (tokenInfo.source === 'BUYPOWERNG') {
                         tokenInResponse = 'responseCode' in tokenInfoResponseForBuyPower ? tokenInfoResponseForBuyPower.responseCode === 200 ? tokenInfoResponseForBuyPower.data.token : undefined : undefined
                     } else if (tokenInfo.source === 'BAXI') {
-                        console.log({ check: 'BAXICHECK', data: (tokenInfoResponseForBaxi.data as any) })
                         tokenInResponse = 'rawOutput' in tokenInfoResponseForBaxi.data ? tokenInfoResponseForBaxi.data.rawOutput.standardTokenValue : undefined
                     } else if (tokenInfo.source === 'IRECHARGE') {
                         tokenInResponse = tokenInfoResponseForIrecharge.meter_token
@@ -801,6 +801,8 @@ class TokenHandler extends Registry {
 
             const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction).catch(e => e);
 
+            console.log({ requeryResult })
+            // process.exit(1)
             const requeryResultFromBuypower = requeryResult as Awaited<ReturnType<typeof VendorService.buyPowerRequeryTransaction>>
             const requeryResultFromBaxi = requeryResult as {
                 source: 'BAXI',
@@ -813,7 +815,10 @@ class TokenHandler extends Registry {
             const requeryResultFromIrecharge = requeryResult as Awaited<ReturnType<typeof VendorService.irechargeRequeryTransaction>>
 
             console.log({ result: requeryResultFromBaxi })
-            const transactionSuccessFromBuypower = requeryResult.source === 'BUYPOWERNG' ? requeryResultFromBuypower.responseCode === 200 : false
+            const transactionSuccessFromBuypower = requeryResult.source === 'BUYPOWERNG'
+                ? 'result' in requeryResultFromBuypower ? ((requeryResultFromBuypower.result.responseCode === 200) && (requeryResultFromBuypower.result.data.responseCode === 100))
+                    : false
+                    : false
             const transactionSuccessFromBaxi = requeryResult.source === 'BAXI' ? requeryResultFromBaxi.data.statusCode == '0' && requeryResultFromBaxi.code === 200 : false
             const transactionSuccessFromIrecharge = requeryResult.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' && requeryResultFromIrecharge.vend_status === 'successful' : false
             let transactionSuccess = transactionSuccessFromBuypower || transactionSuccessFromBaxi || transactionSuccessFromIrecharge
@@ -858,13 +863,9 @@ class TokenHandler extends Registry {
                 return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter, transaction, transactionEventService, vendorRetryRecord: data.vendorRetryRecord })
             }
 
-            console.log({
-                point: 'requery',
-                requeryResult: (requeryResult as any).data
-            })
             let tokenInResponse: string | undefined
             if (transactionSuccessFromBuypower) {
-                tokenInResponse = requeryResultFromBuypower.responseCode === 200 ? requeryResultFromBuypower.data.token : undefined
+                tokenInResponse = 'result' in requeryResultFromBuypower ? requeryResultFromBuypower.result.data.token  : undefined
             } else if (transactionSuccessFromBaxi) {
                 tokenInResponse = 'rawData' in requeryResultFromBaxi.data ? requeryResultFromBaxi.data.rawData.standardTokenValue : undefined
             } else if (transactionSuccessFromIrecharge) {
@@ -1055,7 +1056,7 @@ class TokenHandler extends Registry {
         const waitTimeInMilliSeconds = parseInt(delayInSeconds.toString(), 10) * 1000
         const timeDifference = waitTimeInMilliSeconds - timeInMIlliSecondsSinceInit
 
-        console.log({ timeDifference, timeStamp, currentTime: new Date(), delayInSeconds, waitTimeInMilliSeconds, timeInMIlliSecondsSinceInit })
+        // console.log({ timeDifference, timeStamp, currentTime: new Date(), delayInSeconds, waitTimeInMilliSeconds, timeInMIlliSecondsSinceInit })
 
         // Check if current time is greater than the timeStamp + delayInSeconds
         if (timeDifference < 0) {
