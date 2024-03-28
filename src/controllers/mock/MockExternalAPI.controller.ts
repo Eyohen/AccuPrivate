@@ -12,6 +12,20 @@ export default class MockExternalControllerAPI {
         return response.status(mockEndpointData.httpCode).json(mockEndpointData.vendorResponse)
     }
 
+    static async setVendorError(req: Request, res: Response, next: NextFunction){
+        try{
+
+            
+
+        }catch(err){
+            // Catch and handle errors
+            console.log(err)
+            return res.status(500).json({
+                message: 'Server Error'
+            })
+        }
+    }
+
     
 
     // Validates meter for Irecharge
