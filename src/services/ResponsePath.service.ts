@@ -26,8 +26,23 @@ export default class ResponsePathService {
         }
     }
 
+    static async viewResponsePathForValidation({
+        requestType, vendor
+    }: { requestType: string, vendor: string }): Promise<ResponsePath[] | void | null> {
+        try {
+            // Find and retrieve an bundle by its UUID
+            const bundle: ResponsePath[] | null = await ResponsePath.findAll({
+                where: { requestType, vendor }
+            });
+            return bundle;
+        } catch (err) {
+            logger.info("Error reading ResponsePath");
+            throw err
+        }
+    }
+
     // Method for viewing a single bundle by its UUID
-    static async viewSingleResponsePathById(uuid: string, inclQuery?: { include: boolean}): Promise<ResponsePath | void | null> {
+    static async viewSingleResponsePathById(uuid: string, inclQuery?: { include: boolean }): Promise<ResponsePath | void | null> {
         try {
             // Find and retrieve an bundle by its UUID
             const bundle: ResponsePath | null = await ResponsePath.findOne({

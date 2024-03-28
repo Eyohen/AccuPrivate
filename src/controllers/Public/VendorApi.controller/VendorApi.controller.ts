@@ -200,6 +200,17 @@ class VendorControllerValdator {
         if (!bankRefId)
             throw new BadRequestError("No bankRefId found");
 
+        const partner = await transactionRecord.$get("partner");
+        if (!partner) {
+            throw new InternalServerError(
+                `Transaction ${transactionRecord.id} does not have a partner`
+            );
+        }
+
+        console.log({ bankRefId, partnerCode: partner.partnerCode})
+        const bankRefIdStartsWithPartnerCode = bankRefId.startsWith(partner.partnerCode ?? "");
+        if (!bankRefIdStartsWithPartnerCode) throw new BadRequestError("BankRefId must start with partner code");
+
         // Check if Disco is Up
         // const checKDisco: boolean | Error =
         //     await VendorService.buyPowerCheckDiscoUp(vendorDiscoCode);
@@ -226,7 +237,6 @@ class VendorControllerValdator {
             );
         }
 
-        const partner = await transactionRecord.$get("partner");
         const entity = await partner?.$get("entity");
         if (!entity) {
             throw new InternalServerError("Entity not found");
@@ -393,10 +403,12 @@ function transformPhoneNumber(phoneNumber: string) {
     // It could be 09xxxxxxxx initially
     // or it could be +23409xxxxxxxx
     // Convert phone number to +2349xxxxxxxx
-    if (phoneNumber.startsWith("09") || phoneNumber.startsWith('08')) {
+    if (phoneNumber.startsWith("0") || phoneNumber.startsWith('0')) {
         return "+234" + phoneNumber.slice(1);
     } else if (phoneNumber.startsWith("+23409") || phoneNumber.startsWith('+23408')) {
         return "+234" + phoneNumber.slice(4);
+    } else if (!phoneNumber.startsWith('+234')) {
+        return "+234" + phoneNumber
     } else {
         return phoneNumber;
     }
@@ -462,8 +474,8 @@ export default class VendorController {
         }
 
         if (parseInt(amount.toString()) < 1000) {
-            logger.error('Amount must be greater than 1000', { meta: { transactionId } })
-            throw new BadRequestError("Amount must be greater than 100");
+            logger.error('Mininum vend amount is 1000', { meta: { transactionId } })
+            throw new BadRequestError("Mininum vend amount is 1000");
         }
 
         disco = existingProductCodeForDisco.masterProductCode
@@ -601,6 +613,16 @@ export default class VendorController {
             vendType,
         });
 
+        logger.info('Meter validation info', {
+            meta: {
+                transactionId: transaction.id,
+                user: {
+                    phoneNumber,
+                    email,
+                },
+                meter: meter
+            }
+        })
         const update = await TransactionService.updateSingleTransaction(transaction.id, { meterId: meter.id })
         console.log({ update: update?.superagent })
         const successful =
@@ -637,12 +659,11 @@ export default class VendorController {
     }
 
     static async requestToken(req: Request, res: Response, next: NextFunction) {
-        const { transactionId, bankComment, vendType } =
+        const { transactionId, bankComment, vendType, bankRefId } =
             req.query as Record<string, any>;
         console.log({ transactionId, bankComment, vendType })
 
         const errorMeta = { transactionId: transactionId };
-        const bankRefId = req.query.bankRefId as string;
 
         const transaction: Transaction | null =
             await TransactionService.viewSingleTransaction(transactionId);
@@ -699,7 +720,7 @@ export default class VendorController {
             bankRefId: bankRefId,
             bankComment,
             amount,
-            status: Status.PENDING,
+            status: Status.INPROGRESS,
         }).catch(e => {
             if (e.name === 'SequelizeUniqueConstraintError') {
                 // Check if the key is the bankRefId
@@ -711,7 +732,6 @@ export default class VendorController {
             throw e
         });
 
-        await TransactionService.updateSingleTransaction(transaction.id, { status: Status.INPROGRESS })
 
         const vendorTokenConsumer = new VendorTokenReceivedSubscriber(transaction, res)
         await vendorTokenConsumer.start()

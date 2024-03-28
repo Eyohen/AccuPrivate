@@ -1,5 +1,5 @@
 // Import required modules and types
-import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
+import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, HttpStatusCode } from "axios";
 import {
     BaseResponse,
     IBaxiGetProviderResponse,
@@ -44,6 +44,7 @@ import { info } from "console";
 
 export interface PurchaseResponse extends BaseResponse {
     source: "BUYPOWERNG";
+    httpStatusCode: number,
     status: string;
     statusCode: string;
     responseCode: 200;
@@ -84,6 +85,7 @@ export interface PurchaseResponse extends BaseResponse {
 
 interface TimedOutResponse extends BaseResponse {
     source: "BUYPOWERNG";
+    httpStatusCode: number,
     data: {
         status: false;
         error: true;
@@ -95,6 +97,7 @@ interface TimedOutResponse extends BaseResponse {
 
 interface _RequeryBuypowerSuccessResponse extends BaseResponse {
     source: "BUYPOWERNG";
+    httpStatusCode: number,
     result: {
         status: true;
         data: {
@@ -111,19 +114,21 @@ interface _RequeryBuypowerSuccessResponse extends BaseResponse {
             responseCode: number;
             responseMessage: string;
         };
+        message: string;
+        responseCode: 200;
     };
 }
 
-export interface SuccessResponseForBuyPowerRequery extends BaseResponse {
+export interface SuccessResponseForBuyPowerRequery extends _RequeryBuypowerSuccessResponse {
     source: "BUYPOWERNG";
-    status: true;
-    message: string;
-    data: _RequeryBuypowerSuccessResponse["result"]["data"];
-    responseCode: 200;
+    httpStatusCode: number,
+    result: _RequeryBuypowerSuccessResponse["result"];
+    // data: _RequeryBuypowerSuccessResponse["result"]["data"];
 }
 
 interface InprogressResponseForBuyPowerRequery {
     source: "BUYPOWERNG";
+    httpStatusCode: number,
     status: false;
     message: string;
     responseCode: 201;
@@ -131,6 +136,7 @@ interface InprogressResponseForBuyPowerRequery {
 
 interface FailedResponseForBuyPowerRequery {
     source: "BUYPOWERNG";
+    httpStatusCode: number,
     status: false;
     message: string;
     responseCode: 202;
@@ -138,6 +144,7 @@ interface FailedResponseForBuyPowerRequery {
 
 interface IRechargeSuccessfulVendResponse {
     source: "IRECHARGE";
+    httpStatusCode: number,
     status: "00" | "15" | "43"; // there are other response codes, but these are the only necessary ones. only '00' will have the response data shown below
     message: "Successful";
     wallet_balance: string;
@@ -151,6 +158,7 @@ interface IRechargeSuccessfulVendResponse {
 
 interface IRechargeRequeryResponse {
     source: "IRECHARGE";
+    httpStatusCode: number,
     status: "00" | "15" | "43";
     vend_status: "successful" | 'failed';
     vend_code: "00";
@@ -161,6 +169,7 @@ interface IRechargeRequeryResponse {
 
 interface IRechargeMeterValidationResponse {
     status: "00";
+    httpStatusCode: number,
     message: string;
     access_token: string;
     customer: {
@@ -270,7 +279,7 @@ export class IRechargeVendorService {
                 `/get_meter_info.php/?vendor_code=${this.VENDOR_CODE}&reference_id=${reference}&meter=${meterNumber}&disco=${disco}&response_format=json&hash=${hash}`,
             );
 
-        return response.data;
+        return { ...response.data, httpStatusCode: response.status };
     }
 
     static async vend({
@@ -364,7 +373,7 @@ export class IRechargeVendorService {
             meta: { responseData: response.data, transactionId, ...mainMeta },
         });
 
-        const responseData = { ...response.data, source: "IRECHARGE" };
+        const responseData = { ...response.data, source: "IRECHARGE", httpStatusCode: response.status };
         return responseData;
     }
 
@@ -416,7 +425,7 @@ export class IRechargeVendorService {
         logger.info("Requery response from irecharge", {
             meta: { responseData: response.data, transactionId, ...mainMeta },
         });
-        return { ...response.data, source: "IRECHARGE" };
+        return { ...response.data, source: "IRECHARGE", httpStatusCode: response.status };
     }
 }
 
@@ -471,7 +480,7 @@ export default class VendorService {
                     transactionId: body.transactionId,
                 },
             });
-            return { ...response.data, source: "BAXI" as const };
+            return { ...response.data, source: "BAXI" as const, httpStatusCode: response.status };
         } catch (error: any) {
             console.log({
                 message: error.message,
@@ -518,22 +527,24 @@ export default class VendorService {
             });
             if (responseData.status === "success") {
                 return {
+                    ...responseData,
                     source: "BAXI" as const,
-                    status: true,
-                    code: responseData.code,
-                    message: "Transaction successful",
-                    data: responseData.data,
-                    responseCode: 200,
+                    httpStatusCode: response.status
+                    // status: responseData.status,
+                    // code: responseData.code,
+                    // message: responseData.message,
+                    // data: responseData.data,
                 };
             }
 
             return {
+                ...responseData,
                 source: "BAXI" as const,
-                status: false,
-                code: responseData.code,
-                message: responseData.message,
-                data: responseData.data,
-                responseCode: 202,
+                httpStatusCode: response.status
+                // status: responseData.status,
+                // code: responseData.code,
+                // message: responseData.message,
+                // data: responseData.data,
             };
         } catch (error) {
             throw error;
@@ -727,7 +738,7 @@ export default class VendorService {
                     ...mainMeta,
                 },
             });
-            return { ...response.data, source: "BUYPOWERNG" };
+            return { ...response.data, source: "BUYPOWERNG", httpStatusCode: response.status };
         } catch (error: any) {
             if (error instanceof AxiosError) {
                 const requery =
@@ -781,15 +792,13 @@ export default class VendorService {
 
             if (successResponse.result.status === true) {
                 return {
-                    source: "BUYPOWERNG",
-                    status: true,
-                    message: "Transaction successful",
-                    data: successResponse.result.data,
-                    responseCode: 200,
+                    ...successResponse,
+                    result: successResponse.result,
+                    source: "BUYPOWERNG", httpStatusCode: response.status
                 } as SuccessResponseForBuyPowerRequery;
             }
 
-            return { ...response.data, source: "BUYPOWERNG" } as
+            return { ...response.data, source: "BUYPOWERNG", httpStatusCode: response.status } as
                 | InprogressResponseForBuyPowerRequery
                 | FailedResponseForBuyPowerRequery;
         } catch (error) {
@@ -1015,7 +1024,7 @@ export default class VendorService {
         logger.info("Vend response from IRecharge", {
             meta: { responseData: response, transactionId: body.transactionId },
         });
-        return { ...response, source: "IRECHARGE" };
+        return { ...response, source: "IRECHARGE", httpStatusCode: response.httpStatusCode };
     }
 
     static async irechargeRequeryTransaction({
@@ -1126,7 +1135,7 @@ export default class VendorService {
 
             return response
         } else if (vendor === "IRECHARGE") {
-            const response =  (await this.irechargeVendToken(
+            const response = (await this.irechargeVendToken(
                 data,
             )) as ElectricityPurchaseResponse[T];
 
@@ -1138,7 +1147,7 @@ export default class VendorService {
             })
             return response
         } else if (vendor === "BAXI") {
-            const response =  (await this.baxiVendToken(
+            const response = (await this.baxiVendToken(
                 data,
             )) as ElectricityPurchaseResponse[T];
 
