@@ -33,14 +33,30 @@ export default class ErrorCodeService {
         try {
             const queryParms = {} as Record<string, string | number>;
 
+            const keysInErrorCode = Object.keys(ErrorCode.build({
+                CODE: '',
+                httpCode: 1,
+                description: '',
+                accuvendDescription: '',
+                accuvendMasterResponseCode: 1,
+                category: '',
+                request: '',
+                vendor: '',
+                STATUS_CODE: '',
+                STATUS_BOOLEAN: true,
+                STATUS: '',
+                MSG: '',
+                id: ''
+            }).dataValues)
+
             // Include only the query parameters with values excluding (undefined)
             for (const key in queryParams) {
-                if (queryParams[key as keyof typeof queryParams]) {
+                if (keysInErrorCode.includes(key) && queryParams[key as keyof typeof queryParams]) {
                     queryParms[key] = queryParams[key as keyof typeof queryParams] as string | number;
                 }
             }
 
-            console.log({ queryParms })
+            console.log({ queryParms, keysInErrorCode })
 
             // Find and retrieve an ErrorCode by its UUID
             const errorCodes: ErrorCode | null = await ErrorCode.findOne({ where: queryParms });

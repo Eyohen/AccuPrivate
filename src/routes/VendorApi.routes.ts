@@ -6,6 +6,7 @@ import { AirtimeVendController } from "../controllers/Public/VendorApi.controlle
 import { DataVendController } from "../controllers/Public/VendorApi.controller/Data.controller";
 import RBACMiddelware from "../middlewares/Rbac";
 import { RoleEnum } from "../models/Role.model";
+import VendorAdminController from "../controllers/Admin/VendorApi.controller";
 
 const router: Router = express.Router()
 
@@ -25,9 +26,9 @@ router
     .post('/validate/meter/mock', validateApiKey, VendorController.validateMeterMock)
     .get('/data/bundles', validateApiKey, DataVendController.getDataBundles)
 
-    .post('/intervene', basicAuth('access'), RBACMiddelware.validateRole([RoleEnum.SuperAdmin, RoleEnum.Admin]), AuthenticatedController(VendorController.initManualIntervention))
+    // .post('/intervene', basicAuth('access'), RBACMiddelware.validateRole([RoleEnum.SuperAdmin, RoleEnum.Admin]), AuthenticatedController(VendorController.initManualIntervention))
+    .post('/intervene', basicAuth('access'), AuthenticatedController(VendorAdminController.initManualIntervention))
 
 
 
 export default router
-
