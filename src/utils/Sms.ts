@@ -1,5 +1,5 @@
 import AfricasTalking from 'africastalking'
-import { AFRICASTALKING_API_KEY, AFRICASTALKING_USERNAME, NODE_ENV } from './Constants';
+import { AFRICASTALKING_API_KEY, AFRICASTALKING_USERNAME, CYBER_PAY_BASE_URL, CYBER_PAY_PASSWORD, CYBER_PAY_USERNAME, NODE_ENV } from './Constants';
 import axios from 'axios'
 import Transaction from '../models/Transaction.model';
 
@@ -11,24 +11,62 @@ const client = axios.create({
     }
 })
 
+abstract class SmsServiceHandler {
+    abstract sendSms(to: string, message: string): Promise<any>
+}
+export class CyberPaySmsService implements SmsServiceHandler {
+    private client = axios.create({
+        baseURL: CYBER_PAY_BASE_URL,
+        headers: {
+            "Content-Type": "application/json",
+        }
+    })
+    login = async () => {
+        const response = await this.client.post('/auth/login', {
+            username: CYBER_PAY_USERNAME,
+            password: CYBER_PAY_PASSWORD
+        })
+
+        console.log({ data: response.data})
+    }
+
+    sendSms(to: string, message: string): Promise<any> {
+
+    }
+}
+
+export class AfricasTalkingSmsService implements SmsServiceHandler {
+    sendSms = async (to: string, message: string) => {
+        try {
+            const result = await client.post("", {
+                username: AFRICASTALKING_USERNAME,
+                to: (to),
+                message: message,
+                from: "32345"
+            })
+            return result;
+        } catch (ex) {
+            throw ex;
+        }
+    }
+}
+
+new CyberPaySmsService().login().catch(e => {
+    console.log({ e: e.response})
+})
 
 export class SmsService {
+    private static smsHost = new CyberPaySmsService()
     private static formatPhoneNumber = (phoneNumber: string) => {
         if (phoneNumber.startsWith("0")) {
             return `+234${phoneNumber.slice(1)}`
         }
         return phoneNumber
     }
-    
+
     static sendSms = async (to: string, message: string) => {
         try {
-            const result = await client.post("", {
-                username: AFRICASTALKING_USERNAME,
-                to: this.formatPhoneNumber(to),
-                message: message,
-                from: "32345"
-            })
-            return result;
+            return await this.smsHost.sendSms(this.formatPhoneNumber(to), message)
         } catch (ex) {
             throw ex;
         }

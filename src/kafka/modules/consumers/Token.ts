@@ -547,6 +547,8 @@ class ResponseValidationUtil {
             for (const p of path) {
                 if (_prop[p]) {
                     _prop = _prop[p]
+                } else {
+                    _prop = undefined
                 }
             }
 
@@ -684,7 +686,7 @@ class TokenHandler extends Registry {
                 vendType: meter.vendType,
                 phone: user.phoneNumber,
                 accessToken: transaction.irechargeAccessToken
-            }).catch(e => e);
+            }).catch(e => e.response);
 
             console.log({
                 point: 'power purchase initiated',
@@ -856,7 +858,7 @@ class TokenHandler extends Registry {
                 },
             );
 
-            const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction).catch(e => e);
+            const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction).catch(e => e.response);
 
             console.log({ requeryResult })
             const response = await ResponseValidationUtil.validateTransactionCondition({
