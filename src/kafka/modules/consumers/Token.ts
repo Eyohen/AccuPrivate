@@ -542,10 +542,10 @@ class ResponseValidationUtil {
         })
 
         function getFieldValueFromResponseObject(prop: string) {
-            let _prop = responseObject
+            let _prop: Record<string, any> | undefined = responseObject
             const path = prop.split('.')
             for (const p of path) {
-                if (_prop[p]) {
+                if (_prop && _prop[p]) {
                     _prop = _prop[p]
                 } else {
                     _prop = undefined
