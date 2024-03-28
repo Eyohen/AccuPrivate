@@ -1,7 +1,7 @@
 // Import necessary modules and dependencies
 import { Table, Column, Model, DataType, IsUUID, PrimaryKey, ForeignKey, BelongsTo } from "sequelize-typescript";
 import Meter from "./Meter.model";
-import Transaction from "./Transaction.model";
+import Transaction, { ITransaction } from "./Transaction.model";
 
 // Define the Sequelize model for the "PowerUnit" table
 @Table
@@ -74,7 +74,7 @@ export interface IPowerUnit {
     address: string;         // address associated with the PowerUnit.
     disco: string;           // Disco (Distribution Company) associated with the PowerUnit.
     discoLogo: string;       // Disco (Distribution Company) associated with the PowerUnit.
-    superagent: 'BUYPOWERNG' | 'BAXI';      // superagent associated with the PowerUnit.
+    superagent: ITransaction['superagent'];      // superagent associated with the PowerUnit.
     amount: string;          // amount related to the PowerUnit.
     tokenNumber: number;    // Token number associated with the PowerUnit.
     token: String;          // Token number associated with the PowerUnit

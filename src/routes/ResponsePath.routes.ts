@@ -8,7 +8,7 @@ import { RoleEnum } from "../models/Role.model";
 export const router: Router = express.Router()
 
 router
-    .use(basicAuth('access'), RBACMiddelware.validateRole([RoleEnum.SuperAdmin]))
+    // .use(basicAuth('access'), RBACMiddelware.validateRole([RoleEnum.SuperAdmin]))
     .get('/info', AuthenticatedController(ResponsePathController.getResponsePathInfo))
     .get('/', AuthenticatedController(ResponsePathController.getResponsePaths))
     .post('/new', AuthenticatedController(ResponsePathController.createResponsePath))

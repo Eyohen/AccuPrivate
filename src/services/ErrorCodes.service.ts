@@ -29,30 +29,21 @@ export default class ErrorCodeService {
         }
     }
 
-    static async getErrorCodesForValidation({
-        request, vendor, responseCode, vendCode, category, message, httpCode
-    }: Partial<{
-        request: string, vendor: string, responseCode: string, vendCode: string, category: string, message: string,
-        httpCode: number
-    }>): Promise<ErrorCode | void | null> {
+    static async getErrorCodesForValidation(queryParams: Partial<Omit<ErrorCode, 'id'>>): Promise<ErrorCode | void | null> {
         try {
-            const queryParms = { } as Record<string, string | number>;
+            const queryParms = {} as Record<string, string | number>;
 
-            // Include only the query parameters that are not null
-            if (request) queryParms['request'] = request;
-            if (vendor) queryParms['vendor'] = vendor;
-            if (category) queryParms['category'] = category;
-            if (httpCode) queryParms['httpCode'] = httpCode;
-            if (responseCode) queryParms['STATUS_CODE'] = responseCode;
-            if (vendCode) queryParms['CODE'] = vendCode;
-            if (message) queryParms['MSG'] = message;
+            // Include only the query parameters with values excluding (undefined)
+            for (const key in queryParams) {
+                if (queryParams[key as keyof typeof queryParams]) {
+                    queryParms[key] = queryParams[key as keyof typeof queryParams] as string | number;
+                }
+            }
 
             console.log({ queryParms })
 
             // Find and retrieve an ErrorCode by its UUID
-            const errorCodes: ErrorCode| null = await ErrorCode.findOne({
-                where: queryParms
-            });
+            const errorCodes: ErrorCode | null = await ErrorCode.findOne({ where: queryParms });
             return errorCodes;
         } catch (error) {
             console.error("Error reading ErrorCodes");
