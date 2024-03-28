@@ -92,17 +92,16 @@ const TransactionErrorCodeAndCause = {
 export async function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
     // Time in seconds
     // const defaultValues = [10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 20480, 40960, 81920, 163840, 327680, 655360, 1310720, 2621440, 5242880]
-    const defaultValues = [0, 120] // Default to 2mins because of buypowerng minimum wait time for requery
-    const timesToRetry = defaultValues
-    timesToRetry.unshift(1)
+    // const defaultValues = [120] // Default to 2mins because of buypowerng minimum wait time for requery
+    // const timesToRetry = defaultValues
+    // timesToRetry.unshift(1)
 
-    return 10
+    // if (retryCount >= timesToRetry.length) {
+    //     return timesToRetry[timesToRetry.length - 1]
+    // }
 
-    if (retryCount >= timesToRetry.length) {
-        return timesToRetry[timesToRetry.length - 1]
-    }
-
-    return timesToRetry[retryCount]
+    // return timesToRetry[retryCount]
+    return 120
 }
 
 
@@ -537,7 +536,7 @@ class ResponseValidationUtil {
         const dbQueryParams = { request: requestType, vendor } as Record<string, string | number>
 
         const propertiesToConsider: [string, string][] = [] // [[path, refCode]]
-        
+
         // Get the values to consider
         Array.from(responsePath).forEach(path => {
             propertiesToConsider.push([path.path, path.accuvendRefCode])
@@ -1018,8 +1017,8 @@ class TokenHandler extends Registry {
             return await VendorPublisher.publishEventForGetTransactionTokenRequestedFromVendorRetry(data.scheduledMessagePayload)
         }
 
-        // Change error cause to SCHEDULED_BEFORE_WAIT_TIME
-        data.scheduledMessagePayload.error.cause = TransactionErrorCause.SCHEDULED_BEFORE_WAIT_TIME
+        // Change error cause to RESCHEDULED_BEFORE_WAIT_TIME
+        data.scheduledMessagePayload.error.cause = TransactionErrorCause.RESCHEDULED_BEFORE_WAIT_TIME
 
         logger.info("Rescheduling requery for transaction", { meta: { transactionId: data.scheduledMessagePayload.transactionId } })
         // Else, schedule a new event to requery transaction from vendor
