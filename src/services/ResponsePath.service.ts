@@ -30,7 +30,6 @@ export default class ResponsePathService {
         requestType, vendor
     }: { requestType: string, vendor: string }): Promise<ResponsePath[] | void | null> {
         try {
-            // Find and retrieve an bundle by its UUID
             const bundle: ResponsePath[] | null = await ResponsePath.findAll({
                 where: { requestType, vendor }
             });

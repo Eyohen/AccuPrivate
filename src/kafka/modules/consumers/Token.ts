@@ -91,8 +91,8 @@ const TransactionErrorCodeAndCause = {
 
 export async function getCurrentWaitTimeForRequeryEvent(retryCount: number) {
     // Time in seconds
-    const defaultValues = [10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 20480, 40960, 81920, 163840, 327680, 655360, 1310720, 2621440, 5242880]
-    // const defaultValues = [0, 120] // Default to 2mins because of buypowerng minimum wait time for requery
+    // const defaultValues = [10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 20480, 40960, 81920, 163840, 327680, 655360, 1310720, 2621440, 5242880]
+    const defaultValues = [0, 0, 120] // Default to 2mins because of buypowerng minimum wait time for requery
     const timesToRetry = defaultValues
     timesToRetry.unshift(1)
 
@@ -514,11 +514,13 @@ class ResponseValidationUtil {
         vendor: Transaction['superagent'] | string,
         responseObject: Record<string, any>
     }): Promise<TxnValidationResponse> {
+        vendor = vendor === 'BUYPOWERNG' ? 'BUYPOWER' : vendor
+
         console.log({
             requestType, vendor, responseObject, httpCode
         })
 
-        // Get response path adn refCode for current request and vendor
+        // Get response path and refCode for current request and vendor
         const responsePath = await ResponsePathService.viewResponsePathForValidation({
             requestType, vendor
         })
@@ -545,6 +547,8 @@ class ResponseValidationUtil {
             for (const p of path) {
                 if (_prop[p]) {
                     _prop = _prop[p]
+                } else {
+                    _prop = undefined
                 }
             }
 
@@ -682,7 +686,7 @@ class TokenHandler extends Registry {
                 vendType: meter.vendType,
                 phone: user.phoneNumber,
                 accessToken: transaction.irechargeAccessToken
-            }).catch(e => e);
+            }).catch(e => e.response);
 
             console.log({
                 point: 'power purchase initiated',
@@ -724,7 +728,7 @@ class TokenHandler extends Registry {
 
             const response = await ResponseValidationUtil.validateTransactionCondition({
                 requestType: 'VENDREQUEST',
-                vendor: 'BUYPOWER',
+                vendor: vendor.name,
                 httpCode: tokenInfo?.httpStatusCode,
                 responseObject: tokenInfo,
                 vendType: meter.vendType,
@@ -792,171 +796,6 @@ class TokenHandler extends Registry {
                             vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1]
                         })
             }
-
-            // console.log({ tokenInfo })
-            // const tokenInfoResponseForBuyPower = tokenInfo as ElectricityPurchaseResponse['BUYPOWERNG'] & { source: 'BUYPOWERNG' }
-            // const tokenInfoResponseForBaxi = tokenInfo as ElectricityPurchaseResponse['BAXI'] & { source: 'BAXI' }
-            // const tokenInfoResponseForIrecharge = tokenInfo as ElectricityPurchaseResponse['IRECHARGE'] & { source: 'IRECHARGE' }
-
-            // // Check if the transaction is successful
-            // const tokenInfoResponseSuccessfulForBuyPower = tokenInfo.source === 'BUYPOWERNG' ? 'responseCode' in tokenInfoResponseForBuyPower ? tokenInfoResponseForBuyPower.responseCode === 200 : false : false
-            // const tokenInfoResponseSuccessfulForIrecharge = tokenInfo.source === 'IRECHARGE' ? tokenInfoResponseForIrecharge.status === '00' : false
-            // const tokenInfoResponseSuccessfulForBaxi = tokenInfo.source === 'BAXI' ? tokenInfoResponseForBaxi.code === 200 : false
-            // const tokenInfoResponseSuccessful = tokenInfoResponseSuccessfulForBuyPower || tokenInfoResponseSuccessfulForIrecharge || tokenInfoResponseSuccessfulForBaxi
-
-            // console.log({
-            //     tokenInfoResponseSuccessfulForBuyPower,
-            //     tokenInfoResponseSuccessfulForIrecharge,
-            //     tokenInfoResponseSuccessfulForBaxi,
-            //     tokenInfoResponseSuccessful
-            // })
-            // // Check if transaction timedout
-            // const transactionTimedOutFromIrecharge = tokenInfo.source === 'IRECHARGE' ? ['15', '43'].includes(tokenInfoResponseForIrecharge.status) : false
-            // const transactionTimedOutFromBuypower = tokenInfo.source === 'BUYPOWERNG' ? tokenInfoResponseForBuyPower.data.responseCode === 202 : false
-            // const baxiResponseCodesToRequery = ['BX0001', 'BX0019', 'BX0021', 'BX0024', 'EXC00103', 'EXC00105', 'EXC00109', 'EXC00114', 'EXC00124', 'UNK0001', 'EXC00144', 'EXC00001']
-            // const transactionTimedOutFromBaxi = tokenInfo.source === 'BAXI'
-            //     ? (tokenInfoResponseForBaxi.data.statusCode === '0' && tokenInfoResponseForBaxi.data.transactionStatus !== 'success') ||
-            //     baxiResponseCodesToRequery.includes(tokenInfoResponseForBaxi.code as unknown as string)
-            //     : false
-            // const transactionTimedOut = transactionTimedOutFromBuypower || transactionTimedOutFromIrecharge || transactionTimedOutFromBaxi
-
-            // if (tokenInfo instanceof Error) {
-            //     const error = {
-            //         code: 500,
-            //         cause: TransactionErrorCause.UNEXPECTED_ERROR
-            //     }
-            //     logger.error('Error occured while purchasing token', logMeta)
-            //     if (tokenInfo instanceof AxiosError) {
-            //         // If error is due to timeout, trigger event to requery transactioPn later
-            //         let responseCode = tokenInfo.response?.data.responseCode as keyof typeof TransactionErrorCodeAndCause;
-            //         responseCode = tokenInfo.message === 'Transaction timeout' ? 202 : responseCode
-
-            //         if (transaction.superagent === 'BUYPOWERNG' && transactionTimedOutFromBuypower) {
-            //             error.code = responseCode
-            //             error.cause = TransactionErrorCodeAndCause[responseCode] ?? TransactionErrorCause.TRANSACTION_TIMEDOUT
-            //         }
-            //     }
-
-            //     return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor({
-            //         eventData: { ...eventMessage, error },
-            //         eventService: transactionEventService,
-            //         retryCount: 1,
-            //         superAgent: data.superAgent,
-            //         tokenInResponse: null,
-            //         transactionTimedOutFromBuypower: transactionTimedOutFromBuypower,
-            //         vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1]
-            //     })
-            // }
-
-            // let requeryTransaction = true
-            // const transactionTypeIsPrepaid = meter.vendType === 'PREPAID'
-            // let tokenInResponse: string | undefined;
-            // if (tokenInfoResponseSuccessful) {
-            //     // Check if token is in the response
-            //     // If not requery
-            //     if (transactionTypeIsPrepaid) {
-            //         if (tokenInfo.source === 'BUYPOWERNG') {
-            //             tokenInResponse = 'responseCode' in tokenInfoResponseForBuyPower ? tokenInfoResponseForBuyPower.responseCode === 200 ? tokenInfoResponseForBuyPower.data.token : undefined : undefined
-            //         } else if (tokenInfo.source === 'BAXI') {
-            //             tokenInResponse = 'rawOutput' in tokenInfoResponseForBaxi.data ? tokenInfoResponseForBaxi.data.rawOutput.standardTokenValue : undefined
-            //         } else if (tokenInfo.source === 'IRECHARGE') {
-            //             tokenInResponse = tokenInfoResponseForIrecharge.meter_token
-            //         }
-
-            //         if (tokenInResponse) {
-            //             await TransactionService.updateSingleTransaction(transaction.id, { tokenFromVend: tokenInResponse })
-
-            //             logger.info('Token from vending', { meta: { transactionId: data.transactionId, vendRequestToken: tokenInResponse } })
-
-            //             const _product = await ProductService.viewSingleProduct(transaction.productCodeId)
-            //             if (!_product) throw new CustomError('Product not found')
-
-            //             const discoLogo =
-            //                 DISCO_LOGO[_product.productName as keyof typeof DISCO_LOGO] ?? LOGO_URL
-            //             let powerUnit =
-            //                 await PowerUnitService.viewSinglePowerUnitByTransactionId(
-            //                     data.transactionId,
-            //                 );
-            //             await TransactionService.updateSingleTransaction(transaction.id, { tokenFromRequery: tokenInResponse })
-            //             powerUnit
-            //                 ? await PowerUnitService.updateSinglePowerUnit(powerUnit.id, {
-            //                     token: tokenInResponse,
-            //                     transactionId: data.transactionId,
-            //                 })
-            //                 : await PowerUnitService.addPowerUnit({
-            //                     id: uuidv4(),
-            //                     transactionId: data.transactionId,
-            //                     disco: data.meter.disco,
-            //                     discoLogo,
-            //                     amount: transaction.amount,
-            //                     meterId: data.meter.id,
-            //                     superagent: "BUYPOWERNG",
-            //                     token: tokenInResponse,
-            //                     tokenFromVend: tokenInResponse,
-            //                     tokenNumber: 0,
-            //                     tokenUnits: "0",
-            //                     address: transaction.meter.address,
-            //                 });
-            //         }
-
-            //         // Requery the transaction if no token in the response
-            //         requeryTransaction = !tokenInResponse
-            //     } else if (!transactionTimedOut) {
-            //         // Even when transactionType is POSTPAID, a success message doesn't guarantee that everything went well, we still need to check if it timmedout
-            //         requeryTransaction = false
-            //     }
-            // }
-
-            // if (requeryTransaction) {
-            //     // Check the cause of the requery then add to the event message
-            //     if (transactionTimedOut) {
-            //         eventMessage.error.code = 202
-            //         eventMessage.error.cause = TransactionErrorCause.TRANSACTION_TIMEDOUT
-            //     }
-
-            //     return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
-            //         {
-            //             eventService: transactionEventService,
-            //             eventData: eventMessage,
-            //             transactionTimedOutFromBuypower,
-            //             tokenInResponse: tokenInResponse!,
-            //             superAgent: transaction.superagent,
-            //             retryCount: 1,
-            //             vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1]
-            //         },
-            //     );
-            // }
-
-            // // Token purchase was successful, there is a token in the response, but we must requery
-            // await VendorPublisher.publishEventForTokenReceivedFromVendor({
-            //     transactionId: transaction!.id,
-            //     user: {
-            //         name: user.name as string,
-            //         email: user.email,
-            //         address: user.address,
-            //         phoneNumber: user.phoneNumber,
-            //     },
-            //     partner: {
-            //         email: partner.email,
-            //     },
-            //     meter: {
-            //         id: meter.id,
-            //         meterNumber: meter.meterNumber,
-            //         disco: transaction!.disco,
-            //         vendType: meter.vendType,
-            //         token: tokenInResponse ?? 'null',
-            //     },
-            // });
-
-            // await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor({
-            //     eventService: transactionEventService,
-            //     eventData: eventMessage,
-            //     transactionTimedOutFromBuypower,
-            //     tokenInResponse: tokenInResponse ? tokenInResponse : null,
-            //     superAgent: transaction.superagent,
-            //     retryCount: 1,
-            //     vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1]
-            // })
         } catch (error) {
             if (error instanceof CustomError) {
                 error.meta = error.meta ?? {
@@ -1019,12 +858,12 @@ class TokenHandler extends Registry {
                 },
             );
 
-            const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction).catch(e => e);
+            const requeryResult = await TokenHandlerUtil.requeryTransactionFromVendor(transaction).catch(e => e.response);
 
             console.log({ requeryResult })
             const response = await ResponseValidationUtil.validateTransactionCondition({
                 requestType: 'REQUERY',
-                vendor: 'BUYPOWER',
+                vendor: vendor.name,
                 httpCode: requeryResult.httpStatusCode,
                 responseObject: requeryResult,
                 vendType: meter.vendType,
@@ -1048,6 +887,8 @@ class TokenHandler extends Registry {
                 },
             }
 
+            console.log({ response })
+            // process.exit(1)
             switch (response.action) {
                 case -1:
                     logger.error('Transaction condition pending - Requery', logMeta)
@@ -1098,7 +939,7 @@ class TokenHandler extends Registry {
                                 discoLogo,
                                 amount: transaction.amount,
                                 meterId: data.meter.id,
-                                superagent: "BUYPOWERNG",
+                                superagent: data.superAgent as ITransaction['superagent'],
                                 token: response.token,
                                 tokenNumber: 0,
                                 tokenUnits: "0",
@@ -1148,189 +989,6 @@ class TokenHandler extends Registry {
             }
 
             return
-
-            // process.exit(1)
-            // const requeryResultFromBuypower = requeryResult as Awaited<ReturnType<typeof VendorService.buyPowerRequeryTransaction>>
-            // const requeryResultFromBaxi = requeryResult as {
-            //     source: 'BAXI',
-            //     data: BaxiRequeryResultForPurchase['Prepaid']['data'],
-            //     responseCode: 200 | 202,
-            //     status: boolean,
-            //     code?: string | number,
-            //     message: 'Transaction successful'
-            // }
-            // const requeryResultFromIrecharge = requeryResult as Awaited<ReturnType<typeof VendorService.irechargeRequeryTransaction>>
-
-            // console.log({ result: requeryResultFromBaxi })
-            // const transactionSuccessFromBuypower = requeryResult.source === 'BUYPOWERNG'
-            //     ? 'result' in requeryResultFromBuypower ? ((requeryResultFromBuypower.result.responseCode === 200) && (requeryResultFromBuypower.result.data.responseCode === 100))
-            //         : false
-            //     : false
-            // const transactionSuccessFromBaxi = requeryResult.source === 'BAXI' ? requeryResultFromBaxi.data.statusCode == '0' && requeryResultFromBaxi.code === 200 : false
-            // const transactionSuccessFromIrecharge = requeryResult.source === 'IRECHARGE' ? requeryResultFromIrecharge.status === '00' && requeryResultFromIrecharge.vend_status === 'successful' : false
-            // let transactionSuccess = transactionSuccessFromBuypower || transactionSuccessFromBaxi || transactionSuccessFromIrecharge
-
-            // const transactionFailedFromIrecharge = requeryResult.source === 'IRECHARGE' ? ['02', '03'].includes(requeryResultFromIrecharge.vend_code) || requeryResultFromIrecharge.vend_status === 'failed' : false
-            // const transactionFailedFromBaxi = requeryResult.source === 'BAXI' ? (requeryResultFromBaxi.responseCode === 202 && [500, 503, 'BX0002'].includes(requeryResultFromBaxi.code ?? '')) : false
-            // const transactionFailedFromBuypower = requeryResult instanceof AxiosError
-            //     ? (
-            //         (requeryResult.response?.data?.responseCode === 202 && requeryResult.response?.data?.message === 'Transaction failed.') ||   // Not successful 
-            //         requeryResult.response?.data?.responseCode === 203 ||   // Not initiated
-            //         requeryResult.response?.data?.responseCode === 20       // Transaction not found
-            //     )
-            //     : false
-            // const transactionFailed = transactionFailedFromBuypower || transactionFailedFromBaxi || transactionFailedFromIrecharge
-
-            // let retryTransaction = transactionFailed
-
-            // console.warn({ retryTransaction, transactionFailed, transactionSuccessFromBaxi })
-            // if (requeryResult instanceof Error) {
-            //     logger.error("Error occured while requerying transaction", logMeta)
-
-            //     if (retryTransaction) {
-            //         return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter, transaction, transactionEventService, vendorRetryRecord: data.vendorRetryRecord })
-            //     }
-
-            //     return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
-            //         {
-            //             eventData: {
-            //                 meter: data.meter,
-            //                 transactionId: data.transactionId,
-            //                 error: { code: 500, cause: TransactionErrorCause.UNEXPECTED_ERROR },
-            //             },
-            //             eventService: transactionEventService,
-            //             retryCount: data.retryCount + 1,
-            //             superAgent: data.superAgent,
-            //             tokenInResponse: null,
-            //             transactionTimedOutFromBuypower: false,
-            //             vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1]
-            //         }
-            //     )
-            // } else if (retryTransaction) {
-            //     return await TokenHandlerUtil.triggerEventToRetryTransactionWithNewVendor({ meter, transaction, transactionEventService, vendorRetryRecord: data.vendorRetryRecord })
-            // }
-
-            // let tokenInResponse: string | undefined
-            // if (transactionSuccessFromBuypower) {
-            //     tokenInResponse = 'result' in requeryResultFromBuypower ? requeryResultFromBuypower.result.data.token : undefined
-            // } else if (transactionSuccessFromBaxi) {
-            //     tokenInResponse = 'rawData' in requeryResultFromBaxi.data ? requeryResultFromBaxi.data.rawData.standardTokenValue : undefined
-            // } else if (transactionSuccessFromIrecharge) {
-            //     tokenInResponse = requeryResultFromIrecharge.token
-            // }
-
-            // if (transactionSuccess) {
-            //     const _product = await ProductService.viewSingleProduct(transaction.productCodeId)
-            //     if (!_product) throw new CustomError('Product not found')
-
-            //     const discoLogo =
-            //         DISCO_LOGO[_product.productName as keyof typeof DISCO_LOGO] ?? LOGO_URL
-            //     let powerUnit =
-            //         await PowerUnitService.viewSinglePowerUnitByTransactionId(
-            //             data.transactionId,
-            //         );
-            //     if (data.meter.vendType === 'PREPAID') {
-            //         if (tokenInResponse) {
-            //             logger.info('Token from requery ', { meta: { ...logMeta, requeryToken: tokenInResponse } });
-            //             await TransactionService.updateSingleTransaction(transaction.id, { tokenFromRequery: tokenInResponse })
-            //             powerUnit = powerUnit
-            //                 ? await PowerUnitService.updateSinglePowerUnit(powerUnit.id, {
-            //                     token: tokenInResponse,
-            //                     transactionId: data.transactionId,
-            //                 })
-            //                 : await PowerUnitService.addPowerUnit({
-            //                     id: uuidv4(),
-            //                     transactionId: data.transactionId,
-            //                     disco: data.meter.disco,
-            //                     discoLogo,
-            //                     amount: transaction.amount,
-            //                     meterId: data.meter.id,
-            //                     superagent: "BUYPOWERNG",
-            //                     token: tokenInResponse,
-            //                     tokenNumber: 0,
-            //                     tokenUnits: "0",
-            //                     address: transaction.meter.address,
-            //                 });
-            //         } else {
-            //             const discoUp = await VendorService.buyPowerCheckDiscoUp(product.productName)
-            //             if (!discoUp) {
-            //                 logger.error(`Disco ${disco} is down`, {
-            //                     meta: { ...logMeta.meta, disco, discoLocation: transaction.disco }
-            //                 })
-            //             }
-            //             return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
-            //                 {
-            //                     eventData: {
-            //                         meter: data.meter,
-            //                         transactionId: data.transactionId,
-            //                         error: { code: 202, cause: TransactionErrorCause.NO_TOKEN_IN_RESPONSE },
-            //                     },
-            //                     eventService: transactionEventService,
-            //                     retryCount: data.retryCount + 1,
-            //                     superAgent: data.superAgent,
-            //                     tokenInResponse: null,
-            //                     transactionTimedOutFromBuypower: false,
-            //                     vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1]
-            //                 })
-            //         }
-            //     }
-
-            //     await TransactionService.updateSingleTransaction(data.transactionId, {
-            //         status: Status.COMPLETE,
-            //         powerUnitId: powerUnit?.id,
-            //     });
-            //     await transactionEventService.addTokenReceivedEvent(tokenInResponse ?? '');
-            //     return await VendorPublisher.publishEventForTokenReceivedFromVendor({
-            //         transactionId: transaction!.id,
-            //         user: {
-            //             name: user.name as string,
-            //             email: user.email,
-            //             address: user.address,
-            //             phoneNumber: user.phoneNumber,
-            //         },
-            //         partner: {
-            //             email: partner.email,
-            //         },
-            //         meter: {
-            //             id: meter.id,
-            //             meterNumber: meter.meterNumber,
-            //             disco: transaction!.disco,
-            //             vendType: meter.vendType,
-            //             token: tokenInResponse ?? '',
-            //         },
-            //     });
-            // }
-
-            // // Check if transaction has hit 2hrs limit
-            // const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000)
-            // if (transaction.transactionTimestamp < twoHoursAgo) {
-            //     return await TokenHandlerUtil.flaggTransaction(transaction.id)
-            // }
-
-            // return await TokenHandlerUtil.triggerEventToRequeryTransactionTokenFromVendor(
-            //     {
-            //         eventService: transactionEventService,
-            //         eventData: {
-            //             meter: {
-            //                 meterNumber: meter.meterNumber,
-            //                 disco: disco,
-            //                 vendType: meter.vendType,
-            //                 id: meter.id,
-            //             },
-            //             transactionId: transaction.id,
-            //             error: {
-            //                 code: 202,
-            //                 cause: TransactionErrorCause.NO_TOKEN_IN_RESPONSE,
-            //             },
-            //         },
-            //         retryCount: data.retryCount + 1,
-            //         superAgent: data.superAgent,
-            //         tokenInResponse: null,
-            //         vendorRetryRecord: transaction.retryRecord[transaction.retryRecord.length - 1],
-            //         transactionTimedOutFromBuypower: false,
-            //     },
-            // );
-
         } catch (error) {
             if (error instanceof CustomError) {
                 error.meta = error.meta ?? {

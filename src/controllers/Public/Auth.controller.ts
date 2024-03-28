@@ -35,7 +35,7 @@ async function getUniquePartnerCode (partnerName: string, count = 0) {
 }
 export default class AuthController {
     static async signup(req: Request, res: Response, next: NextFunction) {
-        const { email, password } = req.body
+        const { email, password, companyName } = req.body
 
         const validEmail = Validator.validateEmail(email)
         if (!validEmail) {
@@ -62,7 +62,8 @@ export default class AuthController {
             const newPartner = await PartnerService.addPartner({
                 id: uuidv4(),
                 email,
-                partnerCode: await getUniquePartnerCode(email.split('@')[0]),
+                companyName,
+                partnerCode: await getUniquePartnerCode(companyName.split('@')[0]), // TODO: Use companyName instead of email
             }, transaction)
 
             const entity = await EntityService.addEntity({

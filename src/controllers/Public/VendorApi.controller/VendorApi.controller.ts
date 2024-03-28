@@ -14,7 +14,9 @@ import Meter, { IMeter } from "../../../models/Meter.model";
 import VendorService from "../../../services/VendorApi.service";
 import {
     DEFAULT_ELECTRICITY_PROVIDER,
+    DISCO_LOGO,
     discoProductMapping,
+    LOGO_URL,
 } from "../../../utils/Constants";
 import {
     BadRequestError,
@@ -200,6 +202,8 @@ class VendorControllerValdator {
         if (!bankRefId)
             throw new BadRequestError("No bankRefId found");
 
+        // TODO: Automatically Append partner code to bankRefId
+
         const partner = await transactionRecord.$get("partner");
         if (!partner) {
             throw new InternalServerError(
@@ -207,8 +211,12 @@ class VendorControllerValdator {
             );
         }
 
-        console.log({ bankRefId, partnerCode: partner.partnerCode})
-        const bankRefIdStartsWithPartnerCode = bankRefId.startsWith(partner.partnerCode ?? "");
+        if (!partner.partnerCode) {
+            throw new InternalServerError("Partner code not found");
+        }
+
+        console.log({ bankRefId, partnerCode: partner.partnerCode })
+        const bankRefIdStartsWithPartnerCode = bankRefId.startsWith(partner.partnerCode);
         if (!bankRefIdStartsWithPartnerCode) throw new BadRequestError("BankRefId must start with partner code");
 
         // Check if Disco is Up
@@ -927,4 +935,5 @@ export default class VendorController {
             },
         });
     }
+
 }

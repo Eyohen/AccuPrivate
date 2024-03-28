@@ -2,13 +2,13 @@ import express, { Router } from "express";
 import { AuthenticatedController } from "../utils/Interface";
 import { ComplaintController } from "../controllers/Admin/Complaint.controller";
 import FileUploadService from "../utils/FileUpload";
-import { basicAuth } from "../middlewares/Auth";
+import { basicAuth, validateApiKey } from "../middlewares/Auth";
 
 export const router: Router = express.Router();
 
 router
-    .post('/create/no_auth', ComplaintController.createComplaintWithoutAuthentication)
-    
+    .post('/create/frm_user', validateApiKey, FileUploadService.multerUpload.single('image'), AuthenticatedController(ComplaintController.createComplaintWithoutAuthentication))
+
     .use(basicAuth('access'))
     .get('/id', FileUploadService.multerUpload.single('complaint_image'), AuthenticatedController(ComplaintController.getComplaint))
     .post('/create', AuthenticatedController(ComplaintController.createComplaint))
