@@ -1018,6 +1018,9 @@ class TokenHandler extends Registry {
             return await VendorPublisher.publishEventForGetTransactionTokenRequestedFromVendorRetry(data.scheduledMessagePayload)
         }
 
+        // Change error cause to SCHEDULED_BEFORE_WAIT_TIME
+        data.scheduledMessagePayload.error.cause = TransactionErrorCause.SCHEDULED_BEFORE_WAIT_TIME
+
         logger.info("Rescheduling requery for transaction", { meta: { transactionId: data.scheduledMessagePayload.transactionId } })
         // Else, schedule a new event to requery transaction from vendor
         return await VendorPublisher.publishEventToScheduleRequery({
