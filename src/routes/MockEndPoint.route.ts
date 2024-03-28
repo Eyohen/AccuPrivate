@@ -15,4 +15,5 @@ router
     .get('/transaction',MockExternalControllerAPI.requeryBuyPower)
     .get('/superagent/transaction/requery',MockExternalControllerAPI.requeryBaxi)
     .get('/vend_status.php',MockExternalControllerAPI.requeryIrecharge)
+    .post('/set-request/',MockExternalControllerAPI.setVendorActiveRequest)
     export default router

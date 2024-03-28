@@ -56,4 +56,5 @@ export interface IMockEndpointData {
     httpCode: number;
     activated: boolean;
     desccription: string ;
+    apiType: string;
 }
