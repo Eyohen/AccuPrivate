@@ -14,7 +14,9 @@ import Meter, { IMeter } from "../../../models/Meter.model";
 import VendorService from "../../../services/VendorApi.service";
 import {
     DEFAULT_ELECTRICITY_PROVIDER,
+    DISCO_LOGO,
     discoProductMapping,
+    LOGO_URL,
 } from "../../../utils/Constants";
 import {
     BadRequestError,
@@ -200,6 +202,8 @@ class VendorControllerValdator {
         if (!bankRefId)
             throw new BadRequestError("No bankRefId found");
 
+        // TODO: Automatically Append partner code to bankRefId
+
         const partner = await transactionRecord.$get("partner");
         if (!partner) {
             throw new InternalServerError(
@@ -207,8 +211,12 @@ class VendorControllerValdator {
             );
         }
 
-        console.log({ bankRefId, partnerCode: partner.partnerCode})
-        const bankRefIdStartsWithPartnerCode = bankRefId.startsWith(partner.partnerCode ?? "");
+        if (!partner.partnerCode) {
+            throw new InternalServerError("Partner code not found");
+        }
+
+        console.log({ bankRefId, partnerCode: partner.partnerCode })
+        const bankRefIdStartsWithPartnerCode = bankRefId.startsWith(partner.partnerCode);
         if (!bankRefIdStartsWithPartnerCode) throw new BadRequestError("BankRefId must start with partner code");
 
         // Check if Disco is Up
@@ -924,6 +932,114 @@ export default class VendorController {
                     vendType: meter.vendType,
                     name: meter.userId,
                 },
+            },
+        });
+    }
+
+    static async initManualIntervention(
+        req: AuthenticatedRequest,
+        res: Response,
+        next: NextFunction
+    ) {
+        const { transactionId, token } = req.body
+
+        if (!transactionId) {
+            throw new BadRequestError('Transaction ID is required')
+        }
+
+        const transaction = await TransactionService.viewSingleTransaction(transactionId)
+        if (!transaction) {
+            throw new NotFoundError('Transaction not found')
+        }
+
+        const logMeta = { meta: { transactionId } }
+
+        logger.info('Transaction condition met - Successful', logMeta)
+        const _product = await ProductService.viewSingleProduct(transaction.productCodeId)
+        if (!_product) throw new InternalServerError('Product not found')
+
+        const discoLogo = DISCO_LOGO[_product.productName as keyof typeof DISCO_LOGO] ?? LOGO_URL
+        let powerUnit =
+            await PowerUnitService.viewSinglePowerUnitByTransactionId(
+                transactionId,
+            );
+
+        let tokenInResponse: string | null = null
+        const meter = await transaction.$get('meter')
+        if (!meter) {
+            throw new InternalServerError('Meter not found')
+        }
+
+        const user = await transaction.$get('user')
+        if (!user) {
+            throw new InternalServerError('User not found')
+        }
+
+        const partner = await transaction.$get('partner')
+        if (!partner) {
+            throw new InternalServerError('Partner not found')
+        }
+
+        if (meter.vendType === 'PREPAID') {
+            if (!token) throw new BadRequestError('Token is required')
+            
+            logger.info('Token from requery ', { meta: { ...logMeta, requeryToken: token } });
+            await TransactionService.updateSingleTransaction(transaction.id, { tokenFromRequery: token })
+            powerUnit = powerUnit
+                ? await PowerUnitService.updateSinglePowerUnit(powerUnit.id, {
+                    token: token,
+                    transactionId: transactionId,
+                })
+                : await PowerUnitService.addPowerUnit({
+                    id: uuidv4(),
+                    transactionId: transactionId,
+                    disco: meter.disco,
+                    discoLogo,
+                    amount: transaction.amount,
+                    meterId: meter.id,
+                    superagent: "BUYPOWERNG",
+                    token: token,
+                    tokenNumber: 0,
+                    tokenUnits: "0",
+                    address: transaction.meter.address,
+                });
+        }
+
+        await TransactionService.updateSingleTransaction(transactionId, {
+            status: Status.COMPLETE,
+            powerUnitId: powerUnit?.id,
+        });
+
+        const transactionEventService = new TransactionEventService(
+            transaction,
+            meter,
+            transaction.superagent,
+            partner.email
+        );
+        await transactionEventService.addTokenReceivedEvent(tokenInResponse ?? '');
+        logger.info('Initiated manual intervention', {
+            meta: {
+                transactionId,
+                admin: req.user.user,
+            }
+        })
+        return await VendorPublisher.publishEventForTokenReceivedFromVendor({
+            transactionId: transaction!.id,
+            user: {
+                name: user.name as string,
+                email: user.email,
+                address: user.address,
+                phoneNumber: user.phoneNumber,
+            },
+            partner: {
+                email: partner.email,
+            },
+            meter: {
+                id: meter.id,
+                meterNumber: meter.meterNumber,
+                disco: transaction!.disco,
+                vendType: meter.vendType,
+                token: tokenInResponse ?? '',
             },
         });
     }
