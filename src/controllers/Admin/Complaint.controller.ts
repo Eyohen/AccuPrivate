@@ -58,16 +58,14 @@ export class ComplaintController {
         const {
             message,
             category,
-            partnerCode,
             title,
         }: {
             message: string | null,
             category: string | null,
             title: string | null,
-            partnerCode: string | null
         } = req.body
 
-
+        const partnerId = (req as any).key;
         if (!message) {
             return next(new BadRequestError('No message  provided'))
         }
@@ -80,11 +78,11 @@ export class ComplaintController {
             return next(new BadRequestError('No category  provided'))
         }
 
-        if (!partnerCode) {
-            return next(new BadRequestError('No partnerCode  provided'))
+        if (!partnerId) {
+            return next(new InternalServerError('No partnerId  provided'))
         }
 
-        const partner = await PartnerProfileService.viewSinglePartnerByPartnerCode(partnerCode)
+        const partner = await PartnerProfileService.viewSinglePartner(partnerId)
         if (!partner) {
             return next(new InternalServerError('Partner not found'))
         }
